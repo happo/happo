@@ -2,6 +2,6 @@
 .cache/
 .npm
 /coverage/
-build
+dist
 node_modules
 npm-debug.log
