@@ -7,14 +7,14 @@ on:
     branches: [main]
 
 env:
+  FORCE_COLOR: 1
   PNPM_STORE_DIR: ./.cache/pnpm
 
 jobs:
-  typescript:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -23,7 +23,21 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
 
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm tsc
@@ -32,7 +46,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -41,7 +54,6 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
-
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm eslint

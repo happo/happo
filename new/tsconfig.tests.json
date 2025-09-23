@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+
+  "compilerOptions": {
+    "composite": true,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": false,
+    "declarationDir": "./tmp/tsc/tests",
+    "outDir": "./tmp/tsc/tests",
+    "types": ["node"],
+    "tsBuildInfoFile": "./tmp/tsc/tests.tsbuildinfo"
+  },
+
+  "references": [
+    {
+      "path": "./tsconfig.dist.json"
+    }
+  ],
+
+  "include": ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"]
+}
