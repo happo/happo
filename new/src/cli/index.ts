@@ -2,6 +2,8 @@
 
 import { any as findAny } from 'empathic/find';
 
+import type { Config } from '../config/index.ts';
+
 const CONFIG_FILENAMES = [
   'happo.config.js',
   'happo.config.mjs',
@@ -11,7 +13,7 @@ const CONFIG_FILENAMES = [
   'happo.config.cts',
 ];
 
-export function findConfigFile(): string | undefined {
+export function findConfigFile(): string {
   const configFilePath = findAny(CONFIG_FILENAMES, { cwd: process.cwd() });
 
   if (!configFilePath) {
@@ -23,4 +25,18 @@ export function findConfigFile(): string | undefined {
   return configFilePath;
 }
 
-console.log(findConfigFile());
+export async function loadConfigFile(configFilePath: string): Promise<Config> {
+  const config = await import(configFilePath);
+  return config.default;
+}
+
+async function main() {
+  const configFilePath = findConfigFile();
+  const config = await loadConfigFile(configFilePath);
+
+  console.log(config);
+}
+
+if (import.meta.main) {
+  main();
+}
