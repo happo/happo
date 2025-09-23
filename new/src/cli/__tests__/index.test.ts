@@ -1,7 +1,7 @@
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert';
 
-import { findConfigFile } from '../index.ts';
+import { findConfigFile, loadConfigFile } from '../index.ts';
 import { tmpfsMock, tmpfsRestore } from '../../test-utils/tmpfs.ts';
 
 afterEach(() => {
@@ -134,5 +134,24 @@ describe('findConfigFile', () => {
     assert.throws(() => {
       findConfigFile();
     }, /Happo config file could not be found/);
+  });
+});
+
+describe('loadConfigFile', () => {
+  it('loads the config file', async () => {
+    tmpfsMock({
+      'happo.config.ts': `
+        export default {
+          apiKey: "test-api-key",
+          apiSecret: "test-api-secret"
+        };
+      `,
+    });
+
+    const config = await loadConfigFile(findConfigFile());
+
+    assert.ok(config);
+    assert.strictEqual(config.apiKey, 'test-api-key');
+    assert.strictEqual(config.apiSecret, 'test-api-secret');
   });
 });
