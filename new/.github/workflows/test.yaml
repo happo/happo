@@ -26,7 +26,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm exec tsc
+      - run: pnpm tsc
 
   lint:
     runs-on: ubuntu-latest
