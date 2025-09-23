@@ -13,6 +13,10 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    name: Test (Node ${{ matrix.node-version }})
+    strategy:
+      matrix:
+        node-version: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -21,13 +25,14 @@ jobs:
           run_install: false
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
 
   typescript:
     runs-on: ubuntu-latest
+    name: TypeScript
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -42,8 +47,9 @@ jobs:
 
       - run: pnpm tsc
 
-  lint:
+  eslint:
     runs-on: ubuntu-latest
+    name: ESLint
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
