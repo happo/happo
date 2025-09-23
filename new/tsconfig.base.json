@@ -1,38 +1,27 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
-    // File Layout
-    "rootDir": ".",
-    "outDir": "./tmp/tsc",
-
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
     "target": "esnext",
     "types": ["node"],
     "noEmit": false,
+    "emitDeclarationOnly": true,
 
-    // Other Outputs
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
 
-    // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
 
-    // Style Options
     "noImplicitReturns": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
 
-    // Recommended Options
     "strict": true,
-    // "jsx": "react-jsx",
     "verbatimModuleSyntax": true,
     "isolatedDeclarations": true,
     "isolatedModules": true,

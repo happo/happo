@@ -3,24 +3,24 @@
   "version": "1.0.0",
   "description": "",
   "bin": {
-    "happo": "./dist/cli/index.js"
+    "happo": "./src/cli/index.ts"
   },
   "type": "module",
-  "main": "./dist/config/index.js",
-  "types": "./dist/config/index.d.ts",
+  "main": "./src/config/index.ts",
+  "types": "./types/config/index.d.ts",
   "exports": {
     ".": {
-      "default": "./dist/config/index.js",
-      "types": "./dist/config/index.d.ts"
+      "default": "./src/config/index.ts",
+      "types": "./types/config/index.d.ts"
     }
   },
   "scripts": {
     "build": "tsc --build",
     "build:watch": "tsc --build --watch",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf types",
     "eslint": "eslint .",
     "prepare": "pnpm clean && pnpm build",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "tsc": "tsc --build tsconfig.json"
   },
   "keywords": [],

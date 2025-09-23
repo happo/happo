@@ -1,4 +1,4 @@
-import { defineConfig } from './src/config/index.js';
+import { defineConfig } from './src/config/index.ts';
 import type { Config } from './src/config/index.ts';
 
 const config: Config = defineConfig({
