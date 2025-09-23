@@ -6,11 +6,22 @@
     "happo": "./dist/cli/index.js"
   },
   "type": "module",
-  "exports": {},
+  "main": "./dist/config/index.js",
+  "types": "./dist/config/index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./dist/config/index.js",
+      "types": "./dist/config/index.d.ts"
+    }
+  },
   "scripts": {
+    "build": "tsc --build",
+    "build:watch": "tsc --build --watch",
+    "clean": "rm -rf dist",
     "eslint": "eslint .",
-    "prepare": "npx tsc --noEmit false",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepare": "pnpm clean && pnpm build",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc --build tsconfig.json"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.settings.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../../dist/cli",
+    "types": ["node"],
+    "composite": true
+  },
+  "include": ["**/*.ts"],
+  "references": []
+}
