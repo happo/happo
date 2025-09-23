@@ -2,15 +2,15 @@ import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert';
 
 import { findConfigFile, loadConfigFile } from '../index.ts';
-import { tmpfsMock, tmpfsRestore } from '../../test-utils/tmpfs.ts';
+import * as tmpfs from '../../test-utils/tmpfs.ts';
 
 afterEach(() => {
-  tmpfsRestore();
+  tmpfs.restore();
 });
 
 describe('findConfigFile', () => {
   it('finds happo.config.js', () => {
-    tmpfsMock({
+    tmpfs.mock({
       'happo.config.js': '',
     });
 
@@ -21,7 +21,7 @@ describe('findConfigFile', () => {
   });
 
   it('finds happo.config.mjs', () => {
-    tmpfsMock({
+    tmpfs.mock({
       'happo.config.mjs': '',
     });
 
@@ -32,7 +32,7 @@ describe('findConfigFile', () => {
   });
 
   it('finds happo.config.cjs', () => {
-    tmpfsMock({
+    tmpfs.mock({
       'happo.config.cjs': '',
     });
 
@@ -43,7 +43,7 @@ describe('findConfigFile', () => {
   });
 
   it('finds happo.config.ts', () => {
-    tmpfsMock({
+    tmpfs.mock({
       'happo.config.ts': '',
     });
 
@@ -54,7 +54,7 @@ describe('findConfigFile', () => {
   });
 
   it('finds happo.config.mts', () => {
-    tmpfsMock({
+    tmpfs.mock({
       'happo.config.mts': '',
     });
 
@@ -65,7 +65,7 @@ describe('findConfigFile', () => {
   });
 
   it('finds happo.config.cts', () => {
-    tmpfsMock({
+    tmpfs.mock({
       'happo.config.cts': '',
     });
 
@@ -76,7 +76,7 @@ describe('findConfigFile', () => {
   });
 
   it('finds the config file in a parent directory', () => {
-    const tmpDir = tmpfsMock({
+    const tmpDir = tmpfs.mock({
       'happo.config.ts': '',
       projects: {
         pizza: {
@@ -93,7 +93,7 @@ describe('findConfigFile', () => {
   });
 
   it('finds the config file in a subdirectory', () => {
-    const tmpDir = tmpfsMock({
+    const tmpDir = tmpfs.mock({
       'happo.config.ts': '',
       projects: {
         pizza: {
@@ -111,7 +111,7 @@ describe('findConfigFile', () => {
   });
 
   it('finds the config file in a subdirectory with a different extension', () => {
-    const tmpDir = tmpfsMock({
+    const tmpDir = tmpfs.mock({
       'happo.config.js': '',
       projects: {
         pizza: {
@@ -129,7 +129,7 @@ describe('findConfigFile', () => {
   });
 
   it('throws an error if no config file is found', () => {
-    tmpfsMock({});
+    tmpfs.mock({});
 
     assert.throws(() => {
       findConfigFile();
@@ -139,7 +139,7 @@ describe('findConfigFile', () => {
 
 describe('loadConfigFile', () => {
   it('loads the config file', async () => {
-    tmpfsMock({
+    tmpfs.mock({
       'happo.config.ts': `
         export default {
           apiKey: "test-api-key",
