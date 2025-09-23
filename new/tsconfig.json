@@ -1,41 +1,19 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
+  "extends": "./tsconfig.settings.json",
+
+  "include": ["*.ts"],
+  "exclude": ["./dist"],
+
   "compilerOptions": {
-    // File Layout
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "composite": true
+  },
 
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
-    "module": "esnext",
-    "target": "esnext",
-    "types": ["node"],
-
-    // Other Outputs
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-    "noEmit": true,
-
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
-    // Style Options
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
-
-    // Recommended Options
-    "strict": true,
-    // "jsx": "react-jsx",
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force",
-    "skipLibCheck": true
-  }
+  "references": [
+    {
+      "path": "./src/cli"
+    },
+    {
+      "path": "./src/config"
+    }
+  ]
 }

@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "rootDir": "./src",
+  "outDir": "./dist",
+  "include": ["./src"]
+}
