@@ -10,6 +10,24 @@ env:
   PNPM_STORE_DIR: ./.cache/pnpm
 
 jobs:
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec tsc
+
   lint:
     runs-on: ubuntu-latest
     steps:
