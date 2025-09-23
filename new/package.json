@@ -5,6 +5,7 @@
   "bin": {
     "happo": "./dist/cli/index.js"
   },
+  "type": "module",
   "exports": {},
   "scripts": {
     "eslint": "eslint .",

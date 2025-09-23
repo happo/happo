@@ -1,4 +1,6 @@
 {
+  "exclude": ["./*.ts", "./dist"],
+
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
@@ -7,7 +9,8 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "esnext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "target": "esnext",
     "types": ["node"],
 
