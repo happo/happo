@@ -24,9 +24,9 @@ function flattenFiles(files: Files, prefix: string = ''): Record<string, string>
   return flattened;
 }
 
-export function tmpfsMock(files: Files = {}): string {
+export function mock(files: Files = {}): string {
   if (tempDir) {
-    throw new Error('tmpfsMock() called before restore()');
+    throw new Error('tmpfs mock() called before restore()');
   }
 
   originalCwd = process.cwd();
@@ -50,7 +50,7 @@ export function tmpfsMock(files: Files = {}): string {
   return tempDir;
 }
 
-export function tmpfsRestore(): void {
+export function restore(): void {
   if (!originalCwd || !tempDir) {
     // Avoid errors if restore is called without mock or multiple times
     return;
