@@ -14,9 +14,12 @@
 
   "references": [
     {
+      "path": "./tsconfig.browser.json"
+    },
+    {
       "path": "./tsconfig.dist.json"
     }
   ],
 
-  "include": ["src/**/*.test.ts", "src/**/__tests__/**/*.ts", "src/browser/**/*.ts"]
+  "include": ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"]
 }
