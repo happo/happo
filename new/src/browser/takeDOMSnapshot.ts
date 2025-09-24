@@ -40,14 +40,14 @@ function getContentFromStyleSheet(element: HTMLElement | CSSStyleSheet): string 
   } else if (
     'sheet' in element &&
     element.sheet &&
-    (element.sheet as any).cssRules
+    (element.sheet as CSSStyleSheet).cssRules
   ) {
     // Handle <style> or <link> elements that have a sheet property
-    const cssRules = (element.sheet as any).cssRules as CSSRuleList;
+    const cssRules = (element.sheet as CSSStyleSheet).cssRules as CSSRuleList;
     lines = Array.from(cssRules).map((rule: CSSRule) => rule.cssText);
-  } else if ((element as any).cssRules) {
+  } else if ((element as CSSStyleSheet).cssRules) {
     // Handle CSSStyleSheet objects (including adoptedStyleSheets)
-    const cssRules = (element as any).cssRules as CSSRuleList;
+    const cssRules = (element as CSSStyleSheet).cssRules as CSSRuleList;
     lines = Array.from(cssRules).map((rule: CSSRule) => rule.cssText);
   } else {
     return '';
@@ -339,8 +339,8 @@ function transformToElementArray(
   }
 
   // Handle array-like objects
-  if (typeof (elements as any).length !== 'undefined') {
-    return Array.from(elements as any);
+  if (typeof (elements as NodeListOf<HTMLElement>).length !== 'undefined') {
+    return Array.from(elements as NodeListOf<HTMLElement>);
   }
 
   return [elements];

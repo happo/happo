@@ -1,23 +1,21 @@
-import globals from 'globals';
-import js from '@eslint/js';
+import { defineConfig } from 'eslint/config';
+import tseslint from 'typescript-eslint';
+import eslint from '@eslint/js';
 import configPrettier from 'eslint-config-prettier';
 
-export default [
+export default defineConfig(
   {
     ignores: ['coverage/**'],
   },
 
-  js.configs.recommended,
+  eslint.configs.recommended,
+  tseslint.configs.recommended,
   configPrettier,
 
   {
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: {
-        ...globals.node,
-        ...globals.browser,
-      },
     },
   },
-];
+);

@@ -39,10 +39,10 @@
     "@types/parse-srcset": "^1.0.0",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
-    "globals": "^16.4.0",
     "jsdom": "^27.0.0",
     "prettier": "^3.6.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.1"
   },
   "dependencies": {
     "empathic": "^2.0.0",
