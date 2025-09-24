@@ -52,16 +52,16 @@ function displayError(message: string): void {
   );
   const inner = document.createElement('div');
   inner.textContent = message;
-  el.appendChild(inner);
+  el.append(inner);
   document.addEventListener('DOMContentLoaded', () => {
-    document.body.appendChild(el);
+    document.body.append(el);
   });
 }
 
 export default function applyConstructedStylesPatch(
   win: ExtendedWindow = globalThis.window as ExtendedWindow,
 ): void {
-  if (typeof win.CSSStyleSheet === 'undefined') {
+  if (win.CSSStyleSheet === undefined) {
     console.error('CSSStyleSheet is not supported in this browser');
     return;
   }

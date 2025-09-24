@@ -6,13 +6,11 @@ import { MD5 } from '../md5.ts';
 let md5: MD5;
 
 function stringToArray(str: string) {
-  let length = str.length,
-    buff = new ArrayBuffer(length),
-    arr = new Uint8Array(buff),
-    i;
+  const buff = new ArrayBuffer(str.length);
+  const arr = new Uint8Array(buff);
 
-  for (i = 0; i < length; i += 1) {
-    arr[i] = str.charCodeAt(i);
+  for (let i = 0; i < str.length; i += 1) {
+    arr[i] = str.codePointAt(i) ?? 0;
   }
 
   return arr;
@@ -27,7 +25,7 @@ it('passes the self test', () => {
 });
 
 it('hashes a 64 byte string', () => {
-  let str = '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592',
+  const str = '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592',
     expectedResult = 'e0b153045b08d59d4e18a98ab823ac42',
     arr = stringToArray(str);
 
@@ -37,7 +35,7 @@ it('hashes a 64 byte string', () => {
 });
 
 it('hashes a 128 byte string', () => {
-  let str =
+  const str =
       '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592',
     expectedResult = 'b12bc24f5507eba4ee27092f70148415',
     arr = stringToArray(str);
@@ -48,7 +46,7 @@ it('hashes a 128 byte string', () => {
 });
 
 it('hashes a 160 byte string', () => {
-  let str =
+  const str =
       '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c5925d41402abc4b2a765d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c5925d41402abc4b2a76',
     expectedResult = '66a1e6b119bf30ade63378f770e52549',
     arr = stringToArray(str);
@@ -86,13 +84,13 @@ it('works incrementally', () => {
 });
 
 it('is resumable', () => {
-  let result, state;
+  let state;
 
   md5.appendStr('5d41402abc4b2a421456');
   md5.appendStr('5d41402abc4b2a421456');
   md5.appendStr('5d41402abc4b2a421456');
   md5.appendStr('5d41402abc4b2a421456a234');
-  result = md5.end();
+  const result = md5.end();
 
   // AppendStr
   md5.start();
@@ -131,7 +129,7 @@ it('can handle UTF8 strings', () => {
 
   assert.strictEqual(MD5.hashStr(str), 'e462805dcf84413d5eddca45a4b88a5e');
 
-  str = '\u30b9\u3092\u98df';
+  str = '\u30B9\u3092\u98DF';
   arr = stringToArray(str);
 
   md5 = new MD5();

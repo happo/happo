@@ -40,14 +40,14 @@ function getContentFromStyleSheet(element: HTMLElement | CSSStyleSheet): string 
   } else if (
     'sheet' in element &&
     element.sheet &&
-    (element.sheet as any).cssRules
+    (element.sheet as CSSStyleSheet).cssRules
   ) {
     // Handle <style> or <link> elements that have a sheet property
-    const cssRules = (element.sheet as any).cssRules as CSSRuleList;
+    const cssRules = (element.sheet as CSSStyleSheet).cssRules as CSSRuleList;
     lines = Array.from(cssRules).map((rule: CSSRule) => rule.cssText);
-  } else if ((element as any).cssRules) {
+  } else if ((element as CSSStyleSheet).cssRules) {
     // Handle CSSStyleSheet objects (including adoptedStyleSheets)
-    const cssRules = (element as any).cssRules as CSSRuleList;
+    const cssRules = (element as CSSStyleSheet).cssRules as CSSRuleList;
     lines = Array.from(cssRules).map((rule: CSSRule) => rule.cssText);
   } else {
     return '';
@@ -67,11 +67,11 @@ function extractCSSBlocks(doc: Document): CSSBlock[] {
   const blocks: CSSBlock[] = [];
   const styleElements = doc.querySelectorAll(CSS_ELEMENTS_SELECTOR);
 
-  styleElements.forEach((element) => {
+  for (const element of styleElements) {
     if (element.closest('happo-shadow-content')) {
       // Skip if element is inside a happo-shadow-content element. These need to
       // be scoped to the shadow root and cannot be part of the global styles.
-      return;
+      continue;
     }
     if (element.tagName === 'LINK') {
       // <link href>
@@ -87,13 +87,13 @@ function extractCSSBlocks(doc: Document): CSSBlock[] {
       const key = MD5.hashStr(content);
       blocks.push({ content, key, baseUrl: element.baseURI });
     }
-  });
+  }
 
-  (doc.adoptedStyleSheets || []).forEach((sheet) => {
+  for (const sheet of doc.adoptedStyleSheets || []) {
     const content = getContentFromStyleSheet(sheet);
     const key = MD5.hashStr(content);
     blocks.push({ key, content, baseUrl: sheet.href || document.baseURI });
-  });
+  }
   return blocks;
 }
 
@@ -131,10 +131,10 @@ function getElementAssetUrls(
 ): AssetUrl[] {
   const allUrls: AssetUrl[] = [];
   const allElements = [element].concat(Array.from(element.querySelectorAll('*')));
-  allElements.forEach((element) => {
+  for (const element of allElements) {
     if (element.tagName === 'SCRIPT') {
       // skip script elements
-      return;
+      continue;
     }
     const srcset = element.getAttribute('srcset');
     const src = element.getAttribute('src');
@@ -175,12 +175,12 @@ function getElementAssetUrls(
     if (linkHref) {
       allUrls.push({ url: linkHref, baseUrl: element.baseURI });
     }
-  });
+  }
   return allUrls.filter(({ url }) => !url.startsWith('data:'));
 }
 
 function copyStyles(sourceElement: HTMLElement, targetElement: HTMLElement): void {
-  const computedStyle = window.getComputedStyle(sourceElement);
+  const computedStyle = globalThis.getComputedStyle(sourceElement);
 
   for (let i = 0; i < computedStyle.length; i++) {
     const key = computedStyle[i];
@@ -261,13 +261,10 @@ function inlineCanvases(
 }
 
 function registerScrollPositions(doc: Document): void {
-  const elements = doc.body.querySelectorAll('*');
+  const elements = doc.body.querySelectorAll<HTMLElement | SVGElement>('*');
   for (const node of elements) {
     if (node.scrollTop !== 0 || node.scrollLeft !== 0) {
-      node.setAttribute(
-        'data-happo-scrollposition',
-        `${node.scrollTop},${node.scrollLeft}`,
-      );
+      node.dataset.happoScrollposition = `${node.scrollTop},${node.scrollLeft}`;
     }
   }
 }
@@ -288,9 +285,9 @@ function registerCheckedInputs(doc: Document): void {
 
 function extractElementAttributes(el: Element): Record<string, string> {
   const result: Record<string, string> = {};
-  [...el.attributes].forEach((item) => {
+  for (const item of el.attributes) {
     result[item.name] = item.value;
-  });
+  }
   return result;
 }
 
@@ -339,8 +336,8 @@ function transformToElementArray(
   }
 
   // Handle array-like objects
-  if (typeof (elements as any).length !== 'undefined') {
-    return Array.from(elements as any);
+  if ((elements as NodeListOf<HTMLElement>).length !== undefined) {
+    return Array.from(elements as NodeListOf<HTMLElement>);
   }
 
   return [elements];
@@ -373,14 +370,14 @@ function inlineShadowRoots(element: HTMLElement): void {
     if (element.shadowRoot) {
       for (const styleSheet of element.shadowRoot.adoptedStyleSheets) {
         const styleElement = document.createElement('style');
-        styleElement.setAttribute('data-happo-inlined', 'true');
+        styleElement.dataset.happoInlined = 'true';
         const styleContent = getContentFromStyleSheet(styleSheet);
         styleElement.textContent = styleContent;
-        hiddenElement.appendChild(styleElement);
+        hiddenElement.append(styleElement);
       }
 
       hiddenElement.innerHTML += element.shadowRoot.innerHTML;
-      element.appendChild(hiddenElement);
+      element.append(hiddenElement);
     }
   }
 }
@@ -442,18 +439,25 @@ export default function takeDOMSnapshot({
         })
       : undefined;
 
-    element.querySelectorAll('script').forEach((scriptEl) => {
+    for (const scriptEl of element.querySelectorAll('script')) {
       if (scriptEl.parentNode) {
-        scriptEl.parentNode.removeChild(scriptEl);
+        scriptEl.remove();
       }
-    });
+    }
 
-    doc
-      .querySelectorAll('[data-happo-focus]')
-      .forEach((e) => e.removeAttribute('data-happo-focus'));
+    for (const e of doc.querySelectorAll<HTMLElement | SVGElement>(
+      '[data-happo-focus]',
+    )) {
+      delete e.dataset.happoFocus;
+    }
 
-    if (doc.activeElement && doc.activeElement !== doc.body) {
-      doc.activeElement.setAttribute('data-happo-focus', 'true');
+    if (
+      doc.activeElement &&
+      doc.activeElement !== doc.body &&
+      (doc.activeElement instanceof globalThis.window.HTMLElement ||
+        doc.activeElement instanceof globalThis.window.SVGElement)
+    ) {
+      doc.activeElement.dataset.happoFocus = 'true';
     }
 
     inlineShadowRoots(element);
@@ -468,7 +472,7 @@ export default function takeDOMSnapshot({
     if (strategy === 'hoist') {
       htmlParts.push(element.outerHTML);
     } else if (strategy === 'clip') {
-      element.setAttribute('data-happo-clip', 'true');
+      element.dataset.happoClip = 'true';
       htmlParts.push(doc.body.outerHTML);
     } else {
       throw new Error(`Unknown strategy: ${strategy}`);
@@ -489,11 +493,13 @@ export default function takeDOMSnapshot({
   const bodyElementAttrs = extractElementAttributes(doc.body);
 
   // Remove our shadow content elements so that they don't affect the page
-  doc.querySelectorAll('happo-shadow-content').forEach((e) => e.remove());
+  for (const e of doc.querySelectorAll('happo-shadow-content')) e.remove();
   if (strategy === 'clip') {
-    doc
-      .querySelectorAll('[data-happo-clip]')
-      .forEach((e) => e.removeAttribute('data-happo-clip'));
+    for (const e of doc.querySelectorAll<HTMLElement | SVGElement>(
+      '[data-happo-clip]',
+    )) {
+      delete e.dataset.happoClip;
+    }
   }
 
   return {

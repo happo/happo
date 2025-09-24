@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom';
 
 import takeDOMSnapshot from '../takeDOMSnapshot.ts';
 
-let originalWindow = globalThis.window;
+const originalWindow = globalThis.window;
 
 function initDOM(html: string) {
   const dom = new JSDOM(html);
@@ -94,7 +94,7 @@ describe('takeDOMSnapshot', () => {
     if (!element) {
       throw new Error('Element not found');
     }
-    let snapshot = takeDOMSnapshot({ doc, element });
+    const snapshot = takeDOMSnapshot({ doc, element });
     assert.equal(
       snapshot.html.trim(),
       `
@@ -124,7 +124,7 @@ describe('takeDOMSnapshot', () => {
     if (!element) {
       throw new Error('Element not found');
     }
-    let snapshot = takeDOMSnapshot({ doc, element });
+    const snapshot = takeDOMSnapshot({ doc, element });
     assert.equal(snapshot.assetUrls.length, 3);
     assert.equal(snapshot.assetUrls[0]?.url, '/hello.png');
     assert.equal(snapshot.assetUrls[1]?.url, '/world.png');
