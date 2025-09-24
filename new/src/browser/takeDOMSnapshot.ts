@@ -1,10 +1,10 @@
-import cryptoJS from 'crypto-js';
 import parseSrcset from 'parse-srcset';
 
 import { findCSSAssetUrls } from './findCSSAssetUrls.ts';
 import applyConstructedStylesPatch, {
   recordedCSSSymbol,
 } from './applyConstructedStylesPatch.ts';
+import { MD5 } from './md5.ts';
 
 export { applyConstructedStylesPatch };
 
@@ -84,14 +84,14 @@ function extractCSSBlocks(doc: Document): CSSBlock[] {
     } else {
       const content = getContentFromStyleSheet(element as HTMLElement);
       // Create a hash so that we can dedupe equal styles
-      const key = cryptoJS.MD5(content).toString();
+      const key = MD5.hashStr(content);
       blocks.push({ content, key, baseUrl: element.baseURI });
     }
   });
 
   (doc.adoptedStyleSheets || []).forEach((sheet) => {
     const content = getContentFromStyleSheet(sheet);
-    const key = cryptoJS.MD5(content).toString();
+    const key = MD5.hashStr(content);
     blocks.push({ key, content, baseUrl: sheet.href || document.baseURI });
   });
   return blocks;
@@ -215,7 +215,7 @@ function inlineCanvases(
       }
       const image = doc.createElement('img');
 
-      const url = `/.happo-tmp/_inlined/${cryptoJS.MD5(canvasImageBase64).toString()}.png`;
+      const url = `/.happo-tmp/_inlined/${MD5.hashStr(canvasImageBase64)}.png`;
       image.src = url;
       (image as ExtendedHTMLElementWithBase64)._base64Url = canvasImageBase64;
       const style = canvas.getAttribute('style');
