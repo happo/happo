@@ -9,10 +9,11 @@
     "declarationMap": true,
     "declarationDir": "./types",
     "sourceMap": true,
-    "tsBuildInfoFile": "./tmp/tsc/dist.tsbuildinfo"
+    "tsBuildInfoFile": "./tmp/tsc/browser.tsbuildinfo",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": []
   },
 
-  "include": ["src/**/*.ts"],
-
-  "exclude": ["**/__tests__/**", "**/*.test.ts", "src/browser/**"]
+  "include": ["src/browser/**/*.ts"],
+  "exclude": ["**/__tests__/**", "**/*.test.ts"]
 }
