@@ -1,4 +1,4 @@
-const recordedCSSSymbol: unique symbol = Symbol('recordedCssRules');
+export const recordedCSSSymbol: unique symbol = Symbol('recordedCssRules');
 const hasBrokenIndexesSymbol: unique symbol = Symbol('hasBrokenIndexes');
 const isInstalledSymbol: unique symbol = Symbol('isInstalled');
 
@@ -188,5 +188,3 @@ export default function applyConstructedStylesPatch(
     });
   };
 }
-
-export { recordedCSSSymbol };

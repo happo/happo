@@ -6,6 +6,8 @@ import applyConstructedStylesPatch, {
   recordedCSSSymbol,
 } from './applyConstructedStylesPatch.ts';
 
+export { applyConstructedStylesPatch };
+
 const CSS_ELEMENTS_SELECTOR = 'style,link[rel="stylesheet"][href]';
 const COMMENT_PATTERN = /^\/\*.+\*\/$/;
 
@@ -412,7 +414,7 @@ interface DOMSnapshotResult {
   bodyElementAttrs: Record<string, string>;
 }
 
-function takeDOMSnapshot({
+export default function takeDOMSnapshot({
   doc,
   element: oneOrMoreElements,
   responsiveInlinedCanvases = false,
@@ -502,6 +504,3 @@ function takeDOMSnapshot({
     bodyElementAttrs,
   };
 }
-
-export default takeDOMSnapshot;
-export { applyConstructedStylesPatch };
