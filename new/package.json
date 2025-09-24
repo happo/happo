@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsc --build",
     "build:watch": "tsc --build --watch",
-    "clean": "rm -rf types",
+    "clean": "rm -rf types tmp/tsc",
     "eslint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "node --test",

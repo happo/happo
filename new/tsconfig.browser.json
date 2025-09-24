@@ -3,11 +3,11 @@
 
   "compilerOptions": {
     "composite": true,
-    "rootDir": "./src/browser",
-    "outDir": "./types/browser",
+    "rootDir": "./src",
+    "outDir": "./types",
     "declaration": true,
     "declarationMap": true,
-    "declarationDir": "./types/browser",
+    "declarationDir": "./types",
     "sourceMap": true,
     "tsBuildInfoFile": "./tmp/tsc/browser.tsbuildinfo",
     "lib": ["dom", "dom.iterable", "esnext"],
