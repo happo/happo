@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
-import path from 'path';
+import path from 'node:path';
 import assert from 'node:assert';
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'node:url';
 import resolveEnvironment from '../index.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -175,7 +175,7 @@ describe('resolveEnvironment', () => {
       GITHUB_SHA: 'ccddffddccffdd',
       GITHUB_EVENT_PATH: path.resolve(__dirname, 'github_merge_group_event.json'),
     };
-    let result = await resolveEnvironment(githubEnv);
+    const result = await resolveEnvironment(githubEnv);
     assert.equal(result.beforeSha, 'f95f852bd8fca8fcc58a9a2d6c842781e32a215e');
     assert.equal(result.afterSha, 'ec26c3e57ca3a959ca5aad62de7213c562f8c821');
     assert.equal(

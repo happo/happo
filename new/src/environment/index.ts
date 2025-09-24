@@ -1,5 +1,5 @@
-import { spawnSync } from 'child_process';
-import crypto from 'crypto';
+import { spawnSync } from 'node:child_process';
+import crypto from 'node:crypto';
 
 interface GitHubEvent {
   pull_request?: {
@@ -66,8 +66,8 @@ const envKeys: readonly string[] = [
 
 async function resolveGithubEvent(GITHUB_EVENT_PATH: string): Promise<GitHubEvent> {
   try {
-    const fs = await import('fs/promises');
-    const content = await fs.readFile(GITHUB_EVENT_PATH, 'utf-8');
+    const fs = await import('node:fs/promises');
+    const content = await fs.readFile(GITHUB_EVENT_PATH, 'utf8');
     return JSON.parse(content);
   } catch (e) {
     throw new Error(
@@ -177,7 +177,7 @@ async function resolveMessage(
   }
 
   const res = spawnSync('git', ['log', '-1', '--pretty=%s'], {
-    encoding: 'utf-8',
+    encoding: 'utf8',
   });
   if (res.status !== 0) {
     return undefined;
@@ -190,7 +190,7 @@ function resolveShaFromTagMatcher(tagMatcher: string): string | undefined {
     'git',
     ['tag', '--list', tagMatcher, '--sort', 'refname', '--no-contains'],
     {
-      encoding: 'utf-8',
+      encoding: 'utf8',
     },
   );
   if (res.status !== 0) {
@@ -203,14 +203,14 @@ function resolveShaFromTagMatcher(tagMatcher: string): string | undefined {
     return undefined;
   }
   const allTags = rawAllTags.split('\n');
-  const tag = allTags[allTags.length - 1];
+  const tag = allTags.at(-1);
 
   if (!tag) {
     throw new Error('No tag found matching the pattern');
   }
 
   const commitRes = spawnSync('git', ['rev-list', '-n', '1', tag], {
-    encoding: 'utf-8',
+    encoding: 'utf8',
   });
   if (commitRes.status !== 0) {
     throw new Error(
@@ -252,7 +252,7 @@ async function resolveBeforeSha(
     }
   }
 
-  if (/^dev-/.test(afterSha)) {
+  if (afterSha.startsWith('dev-')) {
     // The afterSha has been auto-generated. Use the special __LATEST__ sha in
     // these cases, forcing a comparison against the latest approved report.
     return '__LATEST__';
@@ -278,14 +278,14 @@ async function resolveBeforeSha(
   if (SYSTEM_PULLREQUEST_TARGETBRANCH) {
     baseAzureBranch = [
       'origin',
-      SYSTEM_PULLREQUEST_TARGETBRANCH.split('/').reverse()[0],
+      SYSTEM_PULLREQUEST_TARGETBRANCH.split('/').toReversed()[0],
     ].join('/');
   }
 
   const baseBranch =
     HAPPO_BASE_BRANCH || BASE_BRANCH || baseAzureBranch || 'origin/main';
   const res = spawnSync('git', ['merge-base', baseBranch, afterSha], {
-    encoding: 'utf-8',
+    encoding: 'utf8',
   });
   if (res.status !== 0) {
     console.error(`[HAPPO] Ignored error when resolving base commit: ${res.stderr}`);
@@ -319,9 +319,9 @@ async function resolveAfterSha(
   }
   if (SYSTEM_PULLREQUEST_SOURCEBRANCH) {
     // azure pull request
-    const rawBranchName = SYSTEM_PULLREQUEST_SOURCEBRANCH.split('/').reverse()[0];
+    const rawBranchName = SYSTEM_PULLREQUEST_SOURCEBRANCH.split('/').toReversed()[0];
     const res = spawnSync('git', ['rev-parse', `origin/${rawBranchName}`], {
-      encoding: 'utf-8',
+      encoding: 'utf8',
     });
     if (res.status === 0 && res.stdout) {
       const sha = res.stdout.split('\n')[0];
@@ -369,7 +369,7 @@ function resolveFallbackShas(
       `${beforeSha}^`,
     ],
     {
-      encoding: 'utf-8',
+      encoding: 'utf8',
     },
   );
   if (res.status !== 0) {
@@ -396,7 +396,7 @@ export default async function resolveEnvironment(
   const beforeSha = await resolveBeforeSha(env, afterSha);
   const result = {
     link: await resolveLink(env),
-    message: /^dev-/.test(afterSha) ? undefined : await resolveMessage(env),
+    message: afterSha.startsWith('dev-') ? undefined : await resolveMessage(env),
     beforeSha,
     afterSha,
     nonce: env.HAPPO_NONCE,
