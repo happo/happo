@@ -2,6 +2,7 @@ import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 import eslint from '@eslint/js';
 import configPrettier from 'eslint-config-prettier';
+import pluginUnicorn from 'eslint-plugin-unicorn';
 
 type Config = ReturnType<typeof defineConfig>;
 
@@ -12,6 +13,7 @@ const config: Config = defineConfig(
 
   eslint.configs.recommended,
   tseslint.configs.recommended,
+  pluginUnicorn.configs.unopinionated,
   configPrettier,
 
   {

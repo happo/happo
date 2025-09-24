@@ -12,14 +12,14 @@ interface Files {
 function flattenFiles(files: Files, prefix: string = ''): Record<string, string> {
   const flattened: Record<string, string> = {};
 
-  Object.entries(files).forEach(([filePath, content]) => {
+  for (const [filePath, content] of Object.entries(files)) {
     const fullPath = path.join(prefix, filePath);
     if (typeof content === 'object' && content !== null) {
       Object.assign(flattened, flattenFiles(content, fullPath));
     } else if (typeof content === 'string') {
       flattened[fullPath] = content;
     }
-  });
+  }
 
   return flattened;
 }
@@ -37,7 +37,7 @@ export function mock(files: Files = {}): string {
   const flattenedFiles = flattenFiles(files);
 
   // Create specified files
-  Object.entries(flattenedFiles).forEach(([filePath, content]) => {
+  for (const [filePath, content] of Object.entries(flattenedFiles)) {
     const dir = path.dirname(filePath);
     if (dir !== '.') {
       // Ensure the directory exists within the temp dir
@@ -45,7 +45,7 @@ export function mock(files: Files = {}): string {
     }
 
     fs.writeFileSync(path.join(tempDir, filePath), content);
-  });
+  }
 
   return tempDir;
 }

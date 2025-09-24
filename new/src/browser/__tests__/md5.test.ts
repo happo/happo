@@ -10,7 +10,7 @@ function stringToArray(str: string) {
   const arr = new Uint8Array(buff);
 
   for (let i = 0; i < str.length; i += 1) {
-    arr[i] = str.charCodeAt(i);
+    arr[i] = str.codePointAt(i) ?? 0;
   }
 
   return arr;
@@ -129,7 +129,7 @@ it('can handle UTF8 strings', () => {
 
   assert.strictEqual(MD5.hashStr(str), 'e462805dcf84413d5eddca45a4b88a5e');
 
-  str = '\u30b9\u3092\u98df';
+  str = '\u30B9\u3092\u98DF';
   arr = stringToArray(str);
 
   md5 = new MD5();
