@@ -10,7 +10,8 @@
     "declarationDir": "./types/browser",
     "sourceMap": true,
     "tsBuildInfoFile": "./tmp/tsc/browser.tsbuildinfo",
-    "lib": ["dom", "dom.iterable", "esnext"]
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": []
   },
 
   "include": ["src/browser/**/*.ts"],
