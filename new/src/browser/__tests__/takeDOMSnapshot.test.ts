@@ -4,14 +4,18 @@ import { JSDOM } from 'jsdom';
 
 import takeDOMSnapshot from '../takeDOMSnapshot.ts';
 
+let originalWindow = globalThis.window;
+
 function initDOM(html: string) {
   const dom = new JSDOM(html);
+
+  // @ts-expect-error Type 'DOMWindow' is not assignable to type 'Window & typeof globalThis'.
   globalThis.window = dom.window;
 }
 
 describe('takeDOMSnapshot', () => {
   afterEach(() => {
-    globalThis.window = undefined;
+    globalThis.window = originalWindow;
   });
 
   it('takes a basic snapshot', () => {
