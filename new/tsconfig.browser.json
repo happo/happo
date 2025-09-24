@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "./src/browser",
+    "outDir": "./types/browser",
+    "declaration": true,
+    "declarationMap": true,
+    "declarationDir": "./types/browser",
+    "sourceMap": true,
+    "tsBuildInfoFile": "./tmp/tsc/browser.tsbuildinfo",
+    "lib": ["dom", "dom.iterable", "esnext"]
+  },
+
+  "include": ["src/browser/**/*.ts"],
+  "exclude": ["**/__tests__/**", "**/*.test.ts"]
+}
