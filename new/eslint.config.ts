@@ -3,9 +3,11 @@ import tseslint from 'typescript-eslint';
 import eslint from '@eslint/js';
 import configPrettier from 'eslint-config-prettier';
 
-export default defineConfig(
+type Config = ReturnType<typeof defineConfig>;
+
+const config: Config = defineConfig(
   {
-    ignores: ['coverage/**'],
+    ignores: ['coverage/**', 'tmp/**', 'types/**'],
   },
 
   eslint.configs.recommended,
@@ -13,9 +15,13 @@ export default defineConfig(
   configPrettier,
 
   {
+    files: ['**/*.ts'],
+
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
     },
   },
 );
+
+export default config;

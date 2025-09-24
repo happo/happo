@@ -39,6 +39,7 @@
     "@types/parse-srcset": "^1.0.0",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
+    "jiti": "^2.6.0",
     "jsdom": "^27.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
