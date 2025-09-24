@@ -19,7 +19,7 @@
     "build:watch": "tsc --build --watch",
     "clean": "rm -rf types",
     "eslint": "eslint .",
-    "prepare": "pnpm clean && pnpm build",
+    "prepublishOnly": "pnpm clean && pnpm build",
     "test": "node --test",
     "tsc": "tsc --build tsconfig.json"
   },
