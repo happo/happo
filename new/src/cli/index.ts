@@ -3,6 +3,7 @@
 import { any as findAny } from 'empathic/find';
 
 import type { Config } from '../config/index.ts';
+import resolveEnvironment from '../environment/index.ts';
 
 const CONFIG_FILENAMES = [
   'happo.config.js',
@@ -33,8 +34,9 @@ export async function loadConfigFile(configFilePath: string): Promise<Config> {
 async function main() {
   const configFilePath = findConfigFile();
   const config = await loadConfigFile(configFilePath);
+  const environment = await resolveEnvironment();
 
-  console.log(config);
+  console.log(config, environment);
 }
 
 if (import.meta.main) {
