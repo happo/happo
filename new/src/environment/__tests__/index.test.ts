@@ -1,7 +1,8 @@
-import { describe, it } from 'node:test';
-import path from 'node:path';
 import assert from 'node:assert';
+import path from 'node:path';
+import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
+
 import resolveEnvironment from '../index.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

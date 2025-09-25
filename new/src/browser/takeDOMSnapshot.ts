@@ -1,9 +1,9 @@
 import parseSrcset from 'parse-srcset';
 
-import { findCSSAssetUrls } from './findCSSAssetUrls.ts';
 import applyConstructedStylesPatch, {
   recordedCSSSymbol,
 } from './applyConstructedStylesPatch.ts';
+import { findCSSAssetUrls } from './findCSSAssetUrls.ts';
 import { MD5 } from './md5.ts';
 
 export { applyConstructedStylesPatch };
