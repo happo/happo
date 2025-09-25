@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 let originalCwd: string = '';
 let tempDir: string = '';
@@ -30,7 +31,8 @@ export function mock(files: Files = {}): string {
   }
 
   originalCwd = process.cwd();
-  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tmpfs'));
+
+  tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'tmpfs')));
   process.chdir(tempDir);
 
   // Flatten the files object
@@ -66,4 +68,26 @@ export function restore(): void {
     originalCwd = '';
     tempDir = '';
   }
+}
+
+export function getTempDir(): string {
+  return tempDir;
+}
+
+export function exec(command: string, args?: string[]): string {
+  if (!tempDir) {
+    throw new Error('tmpfs exec() called before mock()');
+  }
+
+  const result = spawnSync(command, args, {
+    cwd: tempDir,
+  });
+
+  if (result.status !== 0) {
+    throw new Error(
+      `Command ${command} ${args?.join(' ')} failed: ${result.stderr}`,
+    );
+  }
+
+  return result.stdout.toString();
 }
