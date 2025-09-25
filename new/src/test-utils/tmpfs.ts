@@ -102,6 +102,7 @@ export function gitInit(): void {
   exec('git', ['init']);
   exec('git', ['config', 'user.name', 'Test User']);
   exec('git', ['config', 'user.email', 'test@example.com']);
+  exec('git', ['branch', '-M', 'main']);
   exec('git', ['add', '.']);
-  exec('git', ['commit', '-m', 'Initial commit']);
+  exec('git', ['commit', '-m', 'Initial commit', '--allow-empty']);
 }
