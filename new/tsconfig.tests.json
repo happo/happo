@@ -21,5 +21,9 @@
     }
   ],
 
-  "include": ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"]
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/__tests__/**/*.ts",
+    "src/test-utils/**/*.ts"
+  ]
 }
