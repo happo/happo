@@ -99,7 +99,6 @@ Each target supports advanced options like:
 - Viewport sizing
 - Maximum height/width
 - Color scheme preferences
-- Reduced motion preferences
 
 ## 🧪 Testing
 
