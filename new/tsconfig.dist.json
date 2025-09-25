@@ -14,5 +14,10 @@
 
   "include": ["src/**/*.ts"],
 
-  "exclude": ["**/__tests__/**", "**/*.test.ts", "src/browser/**"]
+  "exclude": [
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "src/browser/**",
+    "src/test-utils/**"
+  ]
 }
