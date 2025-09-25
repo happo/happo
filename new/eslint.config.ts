@@ -30,6 +30,10 @@ const config: Config = defineConfig(
     },
 
     rules: {
+      // https://eslint.org/docs/latest/rules/prefer-template
+      'prefer-template': 'error',
+
+      // https://github.com/lydell/eslint-plugin-simple-import-sort
       'simple-import-sort/imports': 'error',
     },
   },

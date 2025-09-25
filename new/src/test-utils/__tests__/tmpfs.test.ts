@@ -70,7 +70,7 @@ describe('exec', () => {
 
     it('executes in the temp dir', () => {
       const result = tmpfs.exec('pwd');
-      assert.strictEqual(result, tmpfs.getTempDir() + '\n');
+      assert.strictEqual(result, `${tmpfs.getTempDir()}\n`);
     });
   });
 });
