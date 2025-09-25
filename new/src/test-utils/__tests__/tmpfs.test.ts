@@ -48,7 +48,7 @@ describe('exec', () => {
   it('throws an error if exec is called before mock', () => {
     assert.throws(
       () => tmpfs.exec('echo', ['Hello, world!']),
-      new Error('tmpfs exec() called before mock()'),
+      new Error('tmpfs.exec() called before tmpfs.mock()'),
     );
   });
 
@@ -71,6 +71,70 @@ describe('exec', () => {
     it('executes in the temp dir', () => {
       const result = tmpfs.exec('pwd');
       assert.strictEqual(result, tmpfs.getTempDir() + '\n');
+    });
+  });
+});
+
+describe('gitInit', () => {
+  it('throws an error if gitInit is called before mock', () => {
+    assert.throws(
+      () => tmpfs.gitInit(),
+      new Error('tmpfs.gitInit() called before tmpfs.mock()'),
+    );
+  });
+
+  describe('after tmpfs mock', () => {
+    beforeEach(() => {
+      tmpfs.mock({
+        'test.txt': 'Hello, world!',
+      });
+    });
+
+    afterEach(() => {
+      tmpfs.restore();
+    });
+
+    it('initializes a git repository', () => {
+      assert.strictEqual(
+        fs.existsSync(path.join(tmpfs.getTempDir(), '.git')),
+        false,
+      );
+
+      tmpfs.gitInit();
+
+      assert.strictEqual(fs.existsSync(path.join(tmpfs.getTempDir(), '.git')), true);
+    });
+
+    it('commits the files in the temp dir', () => {
+      tmpfs.gitInit();
+
+      const gitLs = tmpfs.exec('git', ['ls-files']);
+      assert.strictEqual(gitLs, 'test.txt\n');
+    });
+
+    it('configures the git user', () => {
+      tmpfs.gitInit();
+
+      const gitConfig = tmpfs.exec('git', ['config', 'user.name']);
+      assert.strictEqual(gitConfig, 'Test User\n');
+    });
+
+    it('configures the git email', () => {
+      tmpfs.gitInit();
+
+      const gitConfig = tmpfs.exec('git', ['config', 'user.email']);
+      assert.strictEqual(gitConfig, 'test@example.com\n');
+    });
+
+    it('can commit more files', () => {
+      tmpfs.gitInit();
+
+      fs.writeFileSync(
+        path.join(tmpfs.getTempDir(), 'test2.txt'),
+        'Hello, world 2!',
+      );
+      tmpfs.exec('git', ['add', 'test2.txt']);
+      tmpfs.exec('git', ['commit', '-m', 'Add test2.txt']);
     });
   });
 });

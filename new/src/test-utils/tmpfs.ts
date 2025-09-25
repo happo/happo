@@ -27,7 +27,7 @@ function flattenFiles(files: Files, prefix: string = ''): Record<string, string>
 
 export function mock(files: Files = {}): string {
   if (tempDir) {
-    throw new Error('tmpfs mock() called before restore()');
+    throw new Error('tmpfs.mock() called before tmpfs.restore()');
   }
 
   originalCwd = process.cwd();
@@ -74,10 +74,14 @@ export function getTempDir(): string {
   return tempDir;
 }
 
-export function exec(command: string, args?: string[]): string {
+function assertMocked(caller: string): void {
   if (!tempDir) {
-    throw new Error('tmpfs exec() called before mock()');
+    throw new Error(`tmpfs.${caller}() called before tmpfs.mock()`);
   }
+}
+
+export function exec(command: string, args?: string[]): string {
+  assertMocked('exec');
 
   const result = spawnSync(command, args, {
     cwd: tempDir,
@@ -90,4 +94,14 @@ export function exec(command: string, args?: string[]): string {
   }
 
   return result.stdout.toString();
+}
+
+export function gitInit(): void {
+  assertMocked('gitInit');
+
+  exec('git', ['init']);
+  exec('git', ['config', 'user.name', 'Test User']);
+  exec('git', ['config', 'user.email', 'test@example.com']);
+  exec('git', ['add', '.']);
+  exec('git', ['commit', '-m', 'Initial commit']);
 }
