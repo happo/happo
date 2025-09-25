@@ -2,8 +2,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-
-
 An open source library for integrating with [happo.io](https://happo.io) - a visual regression testing platform that helps you catch unintended visual changes in your applications.
 
 ## ⚠️ Active Development
@@ -25,11 +23,11 @@ For comprehensive documentation, visit [docs.happo.io](https://docs.happo.io).
 ## 📦 Installation
 
 ```bash
-npm install happo
+npm install happo --save-dev
 # or
-pnpm add happo
+pnpm add happo --save-dev
 # or
-yarn add happo
+yarn add happo --dev
 ```
 
 ## 🛠️ Usage
@@ -75,6 +73,7 @@ The CLI will automatically find your configuration file and execute the visual r
 ### Supported Configuration Files
 
 The library automatically detects configuration files in the following order:
+
 - `happo.config.js`
 - `happo.config.mjs`
 - `happo.config.cjs`
@@ -91,10 +90,12 @@ The library automatically detects configuration files in the following order:
 ### Browser Targets
 
 Supported browser types:
+
 - **Desktop**: `chrome`, `firefox`, `edge`, `safari`, `accessibility`
 - **Mobile**: `ios-safari`, `ipad-safari`
 
 Each target supports advanced options like:
+
 - Viewport sizing
 - Maximum height/width
 - Color scheme preferences
@@ -138,6 +139,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 💡 Support
 
 For support and questions:
+
 - Check the [documentation](https://docs.happo.io)
 - Open an issue in this GitHub repository
 - Contact happo.io support at support@happo.io
