@@ -5,6 +5,8 @@
 dist
 node_modules
 npm-debug.log
+playwright-report/
+test-results/
 tmp
 types
 tsconfig.tsbuildinfo

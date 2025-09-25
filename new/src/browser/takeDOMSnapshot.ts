@@ -12,7 +12,7 @@ const CSS_ELEMENTS_SELECTOR = 'style,link[rel="stylesheet"][href]';
 const COMMENT_PATTERN = /^\/\*.+\*\/$/;
 
 if (globalThis.window) {
-  applyConstructedStylesPatch();
+  applyConstructedStylesPatch(globalThis.window);
 }
 
 // Extend HTMLElement and CSSStyleSheet to include our custom properties
@@ -31,7 +31,7 @@ function getContentFromStyleSheet(element: HTMLElement | CSSStyleSheet): string 
     // Handle <style> elements with direct textContent
     lines = element.textContent.split('\n').map((line) => line.trim());
   } else if (
-    'recordedCSSSymbol' in element &&
+    recordedCSSSymbol in element &&
     (element as ExtendedHTMLElement | ExtendedCSSStyleSheet)[recordedCSSSymbol]
   ) {
     lines = (element as ExtendedHTMLElement | ExtendedCSSStyleSheet)[
@@ -403,7 +403,7 @@ interface TakeDOMSnapshotOptions {
   strategy?: 'hoist' | 'clip';
 }
 
-interface DOMSnapshotResult {
+export interface DOMSnapshotResult {
   html: string;
   assetUrls: AssetUrl[];
   cssBlocks: CSSBlock[];
