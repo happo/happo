@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { afterEach,beforeEach, describe, it } from 'node:test';
+import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import * as tmpfs from '../tmpfs.ts';
 
@@ -105,6 +105,13 @@ describe('gitInit', () => {
       assert.strictEqual(fs.existsSync(path.join(tmpfs.getTempDir(), '.git')), true);
     });
 
+    it('uses main as the default branch', () => {
+      tmpfs.gitInit();
+
+      const gitBranch = tmpfs.exec('git', ['branch', '--show-current']);
+      assert.strictEqual(gitBranch, 'main\n');
+    });
+
     it('commits the files in the temp dir', () => {
       tmpfs.gitInit();
 
@@ -135,6 +142,20 @@ describe('gitInit', () => {
       );
       tmpfs.exec('git', ['add', 'test2.txt']);
       tmpfs.exec('git', ['commit', '-m', 'Add test2.txt']);
+    });
+  });
+
+  describe('in an empty repo', () => {
+    beforeEach(() => {
+      tmpfs.mock({});
+    });
+
+    afterEach(() => {
+      tmpfs.restore();
+    });
+
+    it('can init', () => {
+      tmpfs.gitInit();
     });
   });
 });

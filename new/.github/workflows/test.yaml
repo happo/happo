@@ -19,8 +19,6 @@ jobs:
         node-version: [22, 24]
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -30,6 +28,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      - name: Log environment variables
+        run: node -e "console.log(JSON.stringify(Object.fromEntries(Object.entries(process.env).sort()), null, 2))"
       - run: pnpm test --experimental-test-coverage --test-coverage-exclude="**/__tests__/**"
 
   typescript:
