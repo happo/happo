@@ -1,8 +1,8 @@
-import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert';
+import { afterEach,describe, it } from 'node:test';
 
-import { findConfigFile, loadConfigFile } from '../index.ts';
 import * as tmpfs from '../../test-utils/tmpfs.ts';
+import { findConfigFile, loadConfigFile } from '../index.ts';
 
 afterEach(() => {
   tmpfs.restore();

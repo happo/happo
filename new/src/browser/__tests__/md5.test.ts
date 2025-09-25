@@ -1,5 +1,5 @@
-import { beforeEach, it } from 'node:test';
 import assert from 'node:assert';
+import { beforeEach, it } from 'node:test';
 
 import { MD5 } from '../md5.ts';
 
