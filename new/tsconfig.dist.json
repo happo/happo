@@ -3,11 +3,10 @@
 
   "compilerOptions": {
     "composite": true,
-    "rootDir": "./src",
     "outDir": "./types",
+    "declarationDir": "./types",
     "declaration": true,
     "declarationMap": true,
-    "declarationDir": "./types",
     "sourceMap": true,
     "tsBuildInfoFile": "./tmp/tsc/dist.tsbuildinfo"
   },
