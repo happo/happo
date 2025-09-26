@@ -1,10 +1,11 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 
-import imageSize from 'image-size';
+import { imageSize } from 'image-size';
 import pAll from 'p-all';
 
 import findCSSAssetUrls from '../browser/findCSSAssetUrls.js';
+import type { Config } from '../config/index.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.js';
 // import type { Config } from '../config/index.ts';
 import resolveEnvironment from '../environment/index.js';
@@ -174,22 +175,22 @@ class Controller {
   private localSnapshots: LocalSnapshot[] = [];
   // private localSnapshotImages: Record<string, any> = {};
   private happoDebug: boolean = false;
-  private happoConfig: Record<string, any> | null = null;
+  private happoConfig: Config | null = null;
 
   // Public getters for testing
-  get config() {
+  get config(): Config | null {
     return this.happoConfig;
   }
 
-  get snapshotsList() {
+  get snapshotsList(): Snapshot[] {
     return this.snapshots;
   }
 
-  get assetUrls() {
+  get assetUrls(): AssetUrl[] {
     return this.snapshotAssetUrls;
   }
 
-  get cssBlocks() {
+  get cssBlocks(): CSSBlock[] {
     return this.allCssBlocks;
   }
 
