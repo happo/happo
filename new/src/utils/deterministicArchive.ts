@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Writable } from 'node:stream';
 
-import Archiver from 'archiver';
+import type { EntryData } from 'archiver';
+import archiver from 'archiver';
 import { glob } from 'glob';
 
 import validateArchive from './validateArchive.ts';
@@ -15,12 +16,12 @@ const FILE_CREATION_DATE = new Date('Fri Feb 08 2019 13:31:55 GMT+0100 (CET)');
 // Type definitions
 interface FileEntry {
   name: string;
-  stream: NodeJS.ReadableStream;
+  stream: fs.ReadStream;
 }
 
 interface ContentEntry {
   name: string;
-  content: string | Buffer | NodeJS.ReadableStream;
+  content: string | Buffer | fs.ReadStream;
 }
 
 interface ArchiveResult {
@@ -46,7 +47,7 @@ async function resolveFilesRecursiveForDir(dirOrFile: string): Promise<FileEntry
       dot: true,
     });
 
-    return files.map((fullPath: string): FileEntry => {
+    return files.map((fullPath: string) => {
       return {
         name: path.relative(resolvedDirOrFile, fullPath),
         stream: fs.createReadStream(fullPath),
@@ -58,7 +59,7 @@ async function resolveFilesRecursiveForDir(dirOrFile: string): Promise<FileEntry
     {
       name: path.relative(process.cwd(), resolvedDirOrFile),
       stream: fs.createReadStream(resolvedDirOrFile),
-    } as FileEntry,
+    },
   ];
 }
 
@@ -103,7 +104,7 @@ export default async function deterministicArchive(
   );
 
   return new Promise<ArchiveResult>((resolve, reject) => {
-    const archive = new Archiver('zip', {
+    const archive = archiver('zip', {
       // Concurrency in the stat queue leads to non-deterministic output.
       // https://github.com/archiverjs/node-archiver/issues/383#issuecomment-2253139948
       statConcurrency: 1,
@@ -118,8 +119,8 @@ export default async function deterministicArchive(
       done();
     };
 
-    const entries: unknown[] = [];
-    archive.on('entry', (entry: unknown) => {
+    const entries: Array<EntryData> = [];
+    archive.on('entry', (entry) => {
       entries.push(entry);
     });
 
