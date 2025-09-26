@@ -154,12 +154,6 @@ interface BaseTarget {
   prefersColorScheme?: 'light' | 'dark';
 
   /**
-   * Set `prefersReducedMotion: true` to make the browser prefer reduced motion
-   * when rendering the UI.
-   */
-  prefersReducedMotion?: boolean;
-
-  /**
    * Set `allowPointerEvents: true` to allow pointer events in the browser
    *
    * By default Happo injects some CSS to prevent spurious hover effects caused
@@ -189,6 +183,12 @@ interface MobileSafariTarget extends BaseTarget {
 interface DesktopTarget extends BaseTarget {
   browserType: DesktopBrowserType;
   viewport: `${number}x${number}`;
+
+  /**
+   * Set `prefersReducedMotion: true` to make the browser prefer reduced motion
+   * when rendering the UI.
+   */
+  prefersReducedMotion?: boolean;
 }
 
 type Target = MobileSafariTarget | DesktopTarget;
