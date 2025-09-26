@@ -9,7 +9,7 @@ type Config = ReturnType<typeof defineConfig>;
 
 const config: Config = defineConfig(
   {
-    ignores: ['coverage/**', 'dist/**', 'tmp/**', 'types/**'],
+    ignores: ['coverage/**', 'dist/**', 'tmp/**', 'types/**', '**/test-assets/**'],
   },
 
   eslint.configs.recommended,
