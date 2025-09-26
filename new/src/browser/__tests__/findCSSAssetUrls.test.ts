@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { findCSSAssetUrls } from '../findCSSAssetUrls.ts';
+import findCSSAssetUrls from '../findCSSAssetUrls.ts';
 
 describe('findCSSAssetUrls', () => {
   it('finds asset urls in CSS', () => {
