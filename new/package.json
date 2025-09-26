@@ -21,7 +21,7 @@
     "clean": "rm -rf dist tmp/tsc types",
     "eslint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
-    "test": "node --import tsx --test src/**/*.test.ts",
+    "test": "node --test src/**/*.test.ts",
     "test:playwright": "playwright test",
     "tsc": "tsc --build tsconfig.json"
   },
@@ -50,7 +50,6 @@
     "jsdom": "^27.0.0",
     "prettier": "^3.6.2",
     "serve-handler": "^6.1.6",
-    "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.44.1"
   },

@@ -1,4 +1,4 @@
-import takeDOMSnapshot from './takeDOMSnapshot.js';
+import takeDOMSnapshot from './takeDOMSnapshot.ts';
 
 declare global {
   interface Window {
