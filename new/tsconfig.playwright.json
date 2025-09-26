@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.tests.json",
+
+  "references": [
+    {
+      "path": "./tsconfig.browser.json"
+    },
+    {
+      "path": "./tsconfig.dist.json"
+    }
+  ],
+
+  "include": ["src/**/__playwright__/**/*.ts"]
+}

@@ -8,6 +8,10 @@
     "noEmit": false,
     "emitDeclarationOnly": true,
 
+    "rootDir": "./src",
+    "declarationDir": "./tmp/tsc",
+    "outDir": "./tmp/tsc",
+
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,

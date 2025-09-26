@@ -6,8 +6,6 @@
     "emitDeclarationOnly": true,
     "declaration": true,
     "declarationMap": false,
-    "declarationDir": "./tmp/tsc/tests",
-    "outDir": "./tmp/tsc/tests",
     "types": ["node"],
     "tsBuildInfoFile": "./tmp/tsc/tests.tsbuildinfo"
   },

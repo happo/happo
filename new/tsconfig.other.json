@@ -3,7 +3,7 @@
 
   "compilerOptions": {
     "composite": true,
-    "outDir": "./tmp/tsc/other",
+    "rootDir": "./",
     "tsBuildInfoFile": "./tmp/tsc/other.tsbuildinfo"
   },
 
