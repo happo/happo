@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const config: ReturnType<typeof defineConfig> = defineConfig({
   testDir: 'src',
-  testMatch: '**/__playwright__/**/*.test.ts',
+  testMatch: '**/__playwright__/**/*.spec.ts',
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:7700',
