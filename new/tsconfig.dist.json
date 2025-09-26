@@ -5,10 +5,7 @@
     "composite": true,
     "outDir": "./types",
     "declarationDir": "./types",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "tsBuildInfoFile": "./tmp/tsc/dist.tsbuildinfo"
+    "tsBuildInfoFile": "./tmp/tsc/tconfig.dist.tsbuildinfo"
   },
 
   "include": ["src/**/*.ts"],

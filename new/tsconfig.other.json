@@ -4,7 +4,7 @@
   "compilerOptions": {
     "composite": true,
     "rootDir": "./",
-    "tsBuildInfoFile": "./tmp/tsc/other.tsbuildinfo"
+    "tsBuildInfoFile": "./tmp/tsc/tsconfig.other.tsbuildinfo"
   },
 
   "references": [

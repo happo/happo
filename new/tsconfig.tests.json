@@ -3,11 +3,8 @@
 
   "compilerOptions": {
     "composite": true,
-    "emitDeclarationOnly": true,
-    "declaration": true,
-    "declarationMap": false,
-    "types": ["node"],
-    "tsBuildInfoFile": "./tmp/tsc/tests.tsbuildinfo"
+    "tsBuildInfoFile": "./tmp/tsc/tsconfig.tests.tsbuildinfo",
+    "types": ["node"]
   },
 
   "references": [
