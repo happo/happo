@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-env
-      - run: pnpm playwright install chromium
+      - uses: ./.github/actions/setup-playwright
       - run: pnpm build:browser
       - run: pnpm test:playwright
 
