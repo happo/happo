@@ -2,16 +2,12 @@
   "extends": "./tsconfig.base.json",
 
   "compilerOptions": {
+    "composite": true,
     "module": "esnext",
     "moduleResolution": "bundler",
-    "composite": true,
     "outDir": "./dist",
     "declarationDir": "./types",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "tsBuildInfoFile": "./tmp/tsc/browser.tsbuildinfo",
-    "emitDeclarationOnly": true,
+    "tsBuildInfoFile": "./tmp/tsc/tsconfig.browser.tsbuildinfo",
     "lib": ["dom", "dom.iterable", "esnext"],
     "types": []
   },
