@@ -65,7 +65,6 @@
     "base64-stream": "^1.0.0",
     "empathic": "^2.0.0",
     "form-data": "^4.0.4",
-    "glob": "^11.0.3",
     "https-proxy-agent": "^7.0.6",
     "image-size": "^2.0.2",
     "jose": "^6.1.0",

@@ -5,7 +5,6 @@ import { Writable } from 'node:stream';
 
 import type { EntryData } from 'archiver';
 import archiver from 'archiver';
-import { glob } from 'glob';
 
 import validateArchive from './validateArchive.ts';
 
@@ -35,24 +34,31 @@ interface ArchiveResult {
  * @param dirOrFile - The directory or file path to resolve
  * @returns Promise resolving to an array of file entries
  */
-async function resolveFilesRecursiveForDir(dirOrFile: string): Promise<FileEntry[]> {
+async function resolveFilesRecursiveForDir(
+  dirOrFile: string,
+): Promise<Arrary<FileEntry>> {
   const resolvedDirOrFile = path.resolve(dirOrFile);
   const isDir = (await fs.promises.lstat(resolvedDirOrFile)).isDirectory();
 
   if (isDir) {
-    const files = await glob('**/*', {
-      cwd: resolvedDirOrFile,
-      nodir: true,
-      absolute: true,
-      dot: true,
-    });
+    const fileEntries: Array<FileEntry> = [];
 
-    return files.map((fullPath: string) => {
-      return {
-        name: path.relative(resolvedDirOrFile, fullPath),
-        stream: fs.createReadStream(fullPath),
-      };
-    });
+    for await (const fileType of fs.promises.glob('**/*', {
+      cwd: resolvedDirOrFile,
+      withFileTypes: true,
+    })) {
+      // Check if it's a file (not a directory)
+      if (fileType.isFile()) {
+        const fullPath = `${fileType.parentPath}/${fileType.name}`;
+
+        fileEntries.push({
+          name: path.relative(resolvedDirOrFile, fullPath),
+          stream: fs.createReadStream(fullPath),
+        });
+      }
+    }
+
+    return fileEntries;
   }
 
   return [
