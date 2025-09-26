@@ -32,6 +32,24 @@ jobs:
         run: node -e "console.log(JSON.stringify(Object.fromEntries(Object.entries(process.env).sort()), null, 2))"
       - run: pnpm test --experimental-test-coverage --test-coverage-exclude="**/__tests__/**"
 
+  playwright:
+    runs-on: ubuntu-latest
+    name: Test (Playwright)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm playwright install chromium
+      - run: pnpm build:browser
+      - run: pnpm test:playwright
+
   typescript:
     runs-on: ubuntu-latest
     name: TypeScript
