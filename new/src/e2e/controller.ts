@@ -6,6 +6,7 @@ import pAll from 'p-all';
 
 import findCSSAssetUrls from '../browser/findCSSAssetUrls.js';
 import type { Config } from '../config/index.ts';
+import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.js';
 // import type { Config } from '../config/index.ts';
 import resolveEnvironment from '../environment/index.js';
@@ -222,12 +223,13 @@ Docs:
       );
       return;
     }
+
     if (this.happoDebug) {
       console.log('[HAPPO] Running Controller.init');
     }
-    // TODO: Implement loadHappoConfig or import it properly
-    // this.happoConfig = await loadHappoConfig();
-    this.happoConfig = null; // Temporary placeholder
+
+    const configFilePath = findConfigFile();
+    this.happoConfig = await loadConfigFile(configFilePath);
   }
 
   isActive(): boolean {
