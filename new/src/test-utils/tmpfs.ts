@@ -25,6 +25,22 @@ function flattenFiles(files: Files, prefix: string = ''): Record<string, string>
   return flattened;
 }
 
+/**
+ * Testing util to create a temporary directory with the given files and chdir
+ * into it
+ *
+ * @example
+ * it('is a test', () => {
+ *   tmpfs.mock({
+ *     'test.txt': 'I like pizza',
+ *   });
+ *
+ *   assert.strictEqual(fs.readFileSync(path.join(tmpfs.getTempDir(), 'test.txt'), 'utf8'), 'I like pizza');
+ *
+ *   tmpfs.restore();
+ * });
+ * });
+ */
 export function mock(files: Files = {}): string {
   if (tempDir) {
     throw new Error('tmpfs.mock() called before tmpfs.restore()');
@@ -52,6 +68,10 @@ export function mock(files: Files = {}): string {
   return tempDir;
 }
 
+/**
+ * Restores the original working directory and chdirs back to the original
+ * directory
+ */
 export function restore(): void {
   if (!originalCwd || !tempDir) {
     // Avoid errors if restore is called without mock or multiple times
@@ -80,6 +100,17 @@ function assertMocked(caller: string): void {
   }
 }
 
+/**
+ * Executes a command in the temporary directory
+ *
+ * @example
+ * it('is a test', () => {
+ *   tmpfs.mock({});
+ *   const result = tmpfs.exec('echo', ['Hello, world!']);
+ *   assert.strictEqual(result, 'Hello, world!\n');
+ *   tmpfs.restore();
+ * });
+ */
 export function exec(command: string, args?: string[]): string {
   assertMocked('exec');
 
@@ -96,6 +127,19 @@ export function exec(command: string, args?: string[]): string {
   return result.stdout.toString();
 }
 
+/**
+ * Initializes a git repository in the temporary directory
+ *
+ * @example
+ * it('is a test', () => {
+ *   tmpfs.mock({});
+ *   tmpfs.gitInit();
+ *   fs.writeFileSync(path.join(tmpfs.getTempDir(), 'test.txt'), 'I like pizza');
+ *   tmpfs.exec('git', ['add', 'test.txt']);
+ *   tmpfs.exec('git', ['commit', '-m', 'Add test.txt']);
+ *   tmpfs.restore();
+ * });
+ */
 export function gitInit(): void {
   assertMocked('gitInit');
 
