@@ -19,11 +19,38 @@ interface RequestAttributes {
 }
 
 interface MakeRequestOptions {
+  /**
+   * Happo API key
+   */
   apiKey: string;
+
+  /**
+   * Happo API secret
+   */
   apiSecret: string;
+
+  /**
+   * The number of times to retry the request
+   * @default 0
+   */
   retryCount?: number;
+
+  /**
+   * The timeout in milliseconds
+   * @default 60_000
+   */
   timeout?: number;
+
+  /**
+   * The number of milliseconds before starting the first retry
+   * @default 1000
+   */
   retryMinTimeout?: number;
+
+  /**
+   * The maximum number of milliseconds between two retries
+   * @default Infinity
+   */
   retryMaxTimeout?: number;
 }
 
@@ -59,8 +86,8 @@ export default async function makeRequest(
     apiSecret,
     retryCount = 0,
     timeout = 60_000,
-    retryMinTimeout,
-    retryMaxTimeout,
+    retryMinTimeout = 1000,
+    retryMaxTimeout = Infinity,
   }: MakeRequestOptions,
   { HTTP_PROXY }: NodeJS.ProcessEnv = process.env,
 ): Promise<object | null> {
@@ -105,7 +132,7 @@ export default async function makeRequest(
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${signed}`,
-      'User-Agent': `happo.io@${version}`,
+      'User-Agent': `happo@${version}`,
     };
 
     if (jsonBody) {
