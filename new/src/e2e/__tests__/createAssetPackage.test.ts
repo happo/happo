@@ -12,7 +12,9 @@ let server: http.Server;
 beforeEach(async () => {
   server = http.createServer(
     (request: http.IncomingMessage, response: http.ServerResponse) => {
-      return handler(request, response, { public: 'test-fixtures' });
+      return handler(request, response, {
+        public: `${import.meta.dirname}/fixtures`,
+      });
     },
   );
 
@@ -53,7 +55,7 @@ describe('createAssetPackage', () => {
       },
     ]);
 
-    assert.equal(pkg.hash, '590dc2c60df5591fd9214bbf9a263f79');
+    assert.equal(pkg.hash, '72e01703a28841a98e6f705150c0a06e');
 
     const zip = new AdmZip(pkg.buffer);
     const entries = zip.getEntries();
