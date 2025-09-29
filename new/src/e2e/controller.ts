@@ -175,7 +175,7 @@ class Controller {
   private localSnapshots: LocalSnapshot[] = [];
   // private localSnapshotImages: Record<string, any> = {};
   private happoDebug: boolean = false;
-  private happoConfig: Config | null = null;
+  protected happoConfig: Config | null = null;
 
   // Public getters for testing
   get config(): Config | null {
@@ -192,6 +192,12 @@ class Controller {
 
   get cssBlocks(): CSSBlock[] {
     return this.allCssBlocks;
+  }
+
+  private assertHappoConfig(): asserts this is this & { happoConfig: Config } {
+    if (!this.happoConfig) {
+      throw new Error('Happo config not initialized');
+    }
   }
 
   async init(): Promise<void> {
@@ -246,12 +252,12 @@ Docs:
     buffer: Buffer<ArrayBuffer>;
     hash: string;
   }): Promise<string> {
-    if (!this.happoConfig) {
-      throw new Error('Happo config not initialized');
-    }
+    this.assertHappoConfig();
+
     if (!this.happoConfig.endpoint) {
       throw new Error('Missing `endpoint` in Happo config');
     }
+
     const assetsPath = await uploadAssets(buffer, {
       hash,
       endpoint: this.happoConfig.endpoint,
@@ -268,6 +274,9 @@ Docs:
     if (this.happoDebug) {
       console.log('[HAPPO] Running Controller.finish');
     }
+
+    this.assertHappoConfig();
+
     if (this.localSnapshots.length) {
       if (this.happoDebug) {
         console.log(
@@ -321,7 +330,7 @@ Docs:
       }
     }
     const allRequestIds = [];
-    for (const name of Object.keys(this.happoConfig!.targets)) {
+    for (const name of Object.keys(this.happoConfig.targets)) {
       if (this.happoDebug) {
         console.log(`[HAPPO] Sending snap-request(s) for target=${name}`);
       }
@@ -335,24 +344,24 @@ Docs:
         continue;
       }
 
-      if (!this.happoConfig!.targets[name]) {
+      if (!this.happoConfig.targets[name]) {
         throw new Error(`Target ${name} not found in Happo config`);
       }
 
-      if (!this.happoConfig!.endpoint) {
+      if (!this.happoConfig.endpoint) {
         throw new Error('Missing `endpoint` in Happo config');
       }
 
-      const target = this.happoConfig!.targets[name];
+      const target = this.happoConfig.targets[name];
       const remoteTarget = new RemoteBrowserTarget(target.browserType, target);
       const requestIds = await remoteTarget.execute({
         targetName: name,
-        endpoint: this.happoConfig!.endpoint,
+        endpoint: this.happoConfig.endpoint,
         globalCSS,
         assetsPackage: assetsPath,
         snapPayloads: snapshotsForTarget,
-        apiKey: this.happoConfig!.apiKey,
-        apiSecret: this.happoConfig!.apiSecret,
+        apiKey: this.happoConfig.apiKey,
+        apiSecret: this.happoConfig.apiSecret,
       });
       if (this.happoDebug) {
         console.log(
@@ -487,6 +496,8 @@ Docs:
   }
 
   async processSnapRequestIds(allRequestIds: string[]): Promise<void> {
+    this.assertHappoConfig();
+
     const { HAPPO_E2E_PORT } = process.env;
 
     if (HAPPO_E2E_PORT) {
@@ -506,12 +517,12 @@ Docs:
       const { afterSha } = environment;
       const reportResult = await makeRequest(
         {
-          url: `${this.happoConfig!.endpoint}/api/async-reports/${afterSha}`,
+          url: `${this.happoConfig.endpoint}/api/async-reports/${afterSha}`,
           method: 'POST',
           json: true,
-          body: { requestIds: allRequestIds, project: this.happoConfig!.project },
+          body: { requestIds: allRequestIds, project: this.happoConfig.project },
         },
-        { ...this.happoConfig!, maxTries: 3 },
+        { ...this.happoConfig, maxTries: 3 },
       );
 
       if (!reportResult) {
@@ -531,6 +542,8 @@ Docs:
   }
 
   handleDynamicTargets(targets?: (string | DynamicTarget)[]): string[] {
+    this.assertHappoConfig();
+
     const result: string[] = [];
     if (targets === undefined) {
       // return non-dynamic targets from .happo.js
@@ -538,7 +551,7 @@ Docs:
         return [];
       }
       return Object.keys(this.happoConfig.targets).filter(
-        (targetName) => !this.happoConfig!.targets[targetName]?.__dynamic,
+        (targetName) => !this.happoConfig.targets[targetName]?.__dynamic,
       );
     }
     for (const target of targets) {
