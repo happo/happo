@@ -11,6 +11,9 @@ interface Page {
   [key: string]: unknown;
 }
 
+/**
+ * PageSlice is an array of pages with the extra extendsSha property.
+ */
 interface PageSlice extends Array<Page> {
   extendsSha?: string;
 }
@@ -47,8 +50,9 @@ interface ExecuteParams {
 const MIN_INTERNET_EXPLORER_WIDTH = 400;
 
 function getPageSlices(pages: Page[], chunks: number): PageSlice[] {
-  const extendsPages: Record<string, Page[]> = {};
+  const extendsPages: Record<string, PageSlice> = {};
   const rawPages: Page[] = [];
+
   for (const page of pages) {
     if (page.extends) {
       extendsPages[page.extends] = extendsPages[page.extends] ?? [];
@@ -57,23 +61,28 @@ function getPageSlices(pages: Page[], chunks: number): PageSlice[] {
       rawPages.push(page);
     }
   }
+
   const result: PageSlice[] = [];
+
+  // First, split the raw pages into chunks
   const pagesPerChunk = Math.ceil(rawPages.length / chunks);
   for (let i = 0; i < chunks; i += 1) {
     const pageSlice = rawPages.slice(
       i * pagesPerChunk,
       i * pagesPerChunk + pagesPerChunk,
     );
+
     if (pageSlice.length > 0) {
-      result.push(pageSlice as PageSlice);
+      result.push(pageSlice);
     }
   }
 
-  for (const sha of Object.keys(extendsPages)) {
-    const pageSlice = extendsPages[sha] as PageSlice;
+  // Then, add the extends pages to the result
+  for (const [sha, pageSlice] of Object.entries(extendsPages)) {
     pageSlice.extendsSha = sha;
     result.push(pageSlice);
   }
+
   return result;
 }
 
