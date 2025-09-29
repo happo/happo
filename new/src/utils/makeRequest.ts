@@ -1,22 +1,17 @@
 import type AsyncRetryType from 'async-retry';
 import asyncRetry from 'async-retry';
-import FormData from 'form-data';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SignJWT } from 'jose';
 
 import packageJson from '../../package.json' with { type: 'json' };
 const { version } = packageJson;
 
-// Type definitions
-interface FormDataValue {
-  value: any;
-  options?: any;
-}
+type FormDataValue = string | File | undefined;
 
 interface RequestAttributes {
   url: string;
   method?: string;
-  formData?: Record<string, any>;
+  formData?: Record<string, FormDataValue>;
   body?: any;
   json?: boolean;
   [key: string]: any;
@@ -32,24 +27,19 @@ interface MakeRequestOptions {
   maxTries?: number;
 }
 
-function prepareFormData(data: Record<string, any>): FormData | undefined {
+function prepareFormData(data: Record<string, FormDataValue>): FormData | null {
   if (!data) {
-    return;
+    return null;
   }
+
   const form = new FormData();
-  for (const key of Object.keys(data)) {
-    const value = data[key];
-    if (typeof value === 'object' && value && 'options' in value) {
-      // We have a file
-      form.append(
-        key,
-        (value as FormDataValue).value,
-        (value as FormDataValue).options,
-      );
-    } else {
+
+  for (const [key, value] of Object.entries(data)) {
+    if (value) {
       form.append(key, value);
     }
   }
+
   return form;
 }
 
@@ -102,7 +92,7 @@ export default async function makeRequest(
       ? prepareFormData(formData)
       : jsonBody
         ? JSON.stringify(jsonBody)
-        : undefined;
+        : null;
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${signed}`,

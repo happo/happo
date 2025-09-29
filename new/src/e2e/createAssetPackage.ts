@@ -49,7 +49,7 @@ function getFileSuffixFromMimeType(mimeType = ''): string {
 
 export default async function createAssetPackage(
   urls: AssetUrl[],
-): Promise<{ buffer: Buffer; hash: string }> {
+): Promise<{ buffer: Buffer<ArrayBuffer>; hash: string }> {
   const { HAPPO_DOWNLOAD_ALL, HAPPO_DEBUG } = process.env;
 
   if (HAPPO_DEBUG) {

@@ -80,7 +80,7 @@ interface LocalSnapshotRegistrationParams {
   width?: number | undefined;
   height?: number | undefined;
   path?: string | undefined;
-  buffer?: Buffer | undefined;
+  buffer?: Buffer<ArrayBuffer> | undefined;
 }
 
 interface TimeframeParams {
@@ -244,7 +244,7 @@ Docs:
     buffer,
     hash,
   }: {
-    buffer: Buffer;
+    buffer: Buffer<ArrayBuffer>;
     hash: string;
   }): Promise<string> {
     if (!this.happoConfig) {
@@ -561,17 +561,21 @@ Docs:
     }
     return result;
   }
-  async uploadImage(pathOrBuffer: string | Buffer): Promise<string> {
+
+  async uploadImage(pathOrBuffer: string | Buffer<ArrayBuffer>): Promise<string> {
     if (!this.happoConfig) {
       throw new Error('Happo config not initialized');
     }
+
     const pathToFile = Buffer.isBuffer(pathOrBuffer) ? undefined : pathOrBuffer;
     if (this.happoDebug) {
       console.log(`[HAPPO] Uploading image ${pathToFile || ''}`);
     }
+
     const buffer = pathToFile
-      ? await fs.promises.readFile(pathToFile)
+      ? await fs.promises.readFile(pathToFile, { encoding: 'binary' })
       : pathOrBuffer;
+
     const hash = crypto.createHash('md5').update(buffer).digest('hex');
 
     const uploadUrlResult = await makeRequest(
@@ -599,10 +603,7 @@ Docs:
         method: 'POST',
         json: true,
         formData: {
-          file: {
-            options: { filename: 'image.png', contentType: 'image/png' },
-            value: buffer,
-          },
+          file: new File([buffer], 'image.png', { type: 'image/png' }),
         },
       },
       { ...this.happoConfig, maxTries: 2 },

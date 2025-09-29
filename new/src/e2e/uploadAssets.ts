@@ -35,18 +35,10 @@ interface FinalizeResponse {
 /**
  * Uploads assets via Happo's API
  *
- * @param {Buffer|Stream} streamOrBuffer
- * @param {Object} options
- * @param {string} options.hash
- * @param {string} options.endpoint
- * @param {string} options.apiKey
- * @param {string} options.apiSecret
- * @param {Logger} options.logger
- * @param {string} options.project
- * @returns {Promise<string>} The URL of the uploaded assets
+ * @returns The URL of the uploaded assets
  */
 async function uploadAssetsThroughHappo(
-  streamOrBuffer: Buffer | NodeJS.ReadableStream,
+  buffer: Buffer<ArrayBuffer>,
   { hash, endpoint, apiKey, apiSecret, logger, project }: UploadAssetsOptions,
 ): Promise<string> {
   try {
@@ -84,13 +76,7 @@ async function uploadAssetsThroughHappo(
       method: 'POST',
       json: true,
       formData: {
-        payload: {
-          options: {
-            filename: 'payload.zip',
-            contentType: 'application/zip',
-          },
-          value: streamOrBuffer,
-        },
+        payload: new File([buffer], 'payload.zip', { type: 'application/zip' }),
       },
     },
     { apiKey, apiSecret, retryCount: 2 },
@@ -102,18 +88,10 @@ async function uploadAssetsThroughHappo(
 /**
  * Uploads assets via signed URL
  *
- * @param {Buffer|Stream} streamOrBuffer
- * @param {Object} options
- * @param {string} options.hash
- * @param {string} options.endpoint
- * @param {string} options.apiKey
- * @param {string} options.apiSecret
- * @param {Logger} options.logger
- * @param {string} options.project
- * @returns {Promise<string>} The URL of the uploaded assets
+ * @returns The URL of the uploaded assets
  */
 async function uploadAssetsWithSignedUrl(
-  streamOrBuffer: Buffer | NodeJS.ReadableStream,
+  buffer: Buffer<ArrayBuffer>,
   { hash, endpoint, apiKey, apiSecret, logger, project }: UploadAssetsOptions,
 ): Promise<string> {
   // First we need to get the signed URL from Happo.
@@ -142,7 +120,7 @@ async function uploadAssetsWithSignedUrl(
     async (bail: (error: Error) => void) => {
       const res = await fetch(signedUrlRes.signedUrl!, {
         method: 'PUT',
-        body: streamOrBuffer as BodyInit,
+        body: buffer,
         headers: {
           'Content-Type': 'application/zip',
         },
@@ -188,12 +166,12 @@ async function uploadAssetsWithSignedUrl(
 }
 
 export default async function uploadAssets(
-  streamOrBuffer: Buffer | NodeJS.ReadableStream,
+  buffer: Buffer<ArrayBuffer>,
   options: UploadAssetsOptions,
 ): Promise<string> {
   if (process.env.HAPPO_SIGNED_URL) {
-    return uploadAssetsWithSignedUrl(streamOrBuffer, options);
+    return uploadAssetsWithSignedUrl(buffer, options);
   }
 
-  return uploadAssetsThroughHappo(streamOrBuffer, options);
+  return uploadAssetsThroughHappo(buffer, options);
 }

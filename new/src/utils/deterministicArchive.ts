@@ -24,7 +24,7 @@ interface ContentEntry {
 }
 
 interface ArchiveResult {
-  buffer: Buffer;
+  buffer: Buffer<ArrayBuffer>;
   hash: string;
 }
 

@@ -144,20 +144,16 @@ export default class RemoteBrowserTarget {
       const payloadHash = createHash(
         payloadString + (pageSlice ? Math.random() : ''),
       );
-      const formData: Record<string, unknown> = {
+      const formData: Record<string, string | File | undefined> = {
         type:
           pageSlice && pageSlice.extendsSha
             ? 'extends-report'
             : `browser-${this.browserName}`,
         targetName,
         payloadHash,
-        payload: {
-          options: {
-            filename: 'payload.json',
-            contentType: 'application/json',
-          },
-          value: payloadString,
-        },
+        payload: new File([payloadString], 'payload.json', {
+          type: 'application/json',
+        }),
       };
       if (pageSlice && pageSlice.extendsSha) {
         formData.extendsSha = pageSlice.extendsSha;
