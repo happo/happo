@@ -7,12 +7,6 @@ import handler from 'serve-handler';
 
 import createAssetPackage from '../createAssetPackage.ts';
 
-// Type definitions
-interface AssetUrl {
-  url: string;
-  baseUrl: string;
-}
-
 let server: http.Server;
 
 beforeEach(async () => {
@@ -57,7 +51,7 @@ describe('createAssetPackage', () => {
         url: 'http://localhost:3412/foo.html',
         baseUrl: 'http://localhost:3412',
       },
-    ] as AssetUrl[]);
+    ]);
 
     assert.equal(pkg.hash, '590dc2c60df5591fd9214bbf9a263f79');
 
