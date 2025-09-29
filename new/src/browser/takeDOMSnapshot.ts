@@ -243,7 +243,7 @@ function inlineCanvases(
       }
       replacements.push({ from: canvas, to: image });
     } catch (e) {
-      if ((e as Error).name === 'SecurityError') {
+      if (e instanceof Error && e.name === 'SecurityError') {
         console.warn('[HAPPO] Failed to convert tainted canvas to PNG image');
         console.warn(e);
       } else {
