@@ -2,7 +2,6 @@
   "extends": "./tsconfig.base.json",
 
   "compilerOptions": {
-    "composite": true,
     "outDir": "./types",
     "declarationDir": "./types",
     "tsBuildInfoFile": "./tmp/tsc/tconfig.dist.tsbuildinfo"
