@@ -31,8 +31,14 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await new Promise<void>((resolve) => {
-    server.close(resolve);
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve();
+    });
   });
 });
 
