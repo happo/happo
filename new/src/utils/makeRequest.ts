@@ -25,7 +25,6 @@ interface MakeRequestOptions {
   timeout?: number;
   retryMinTimeout?: number;
   retryMaxTimeout?: number;
-  maxTries?: number;
 }
 
 function prepareFormData(data: Record<string, FormDataValue>): FormData | null {

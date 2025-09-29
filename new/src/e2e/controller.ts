@@ -522,7 +522,7 @@ Docs:
           json: true,
           body: { requestIds: allRequestIds, project: this.happoConfig.project },
         },
-        { ...this.happoConfig, maxTries: 3 },
+        { ...this.happoConfig, retryCount: 3 },
       );
 
       if (!reportResult) {
@@ -607,7 +607,7 @@ Docs:
         method: 'GET',
         json: true,
       },
-      { ...this.happoConfig, maxTries: 2 },
+      { ...this.happoConfig, retryCount: 2 },
     );
 
     if (!uploadUrlResult) {
@@ -644,7 +644,7 @@ Docs:
           file: new File([buffer], 'image.png', { type: 'image/png' }),
         },
       },
-      { ...this.happoConfig, maxTries: 2 },
+      { ...this.happoConfig, retryCount: 2 },
     );
 
     if (!uploadResult) {
@@ -676,7 +676,7 @@ Docs:
         json: true,
         body: { snaps: this.localSnapshots },
       },
-      { ...this.happoConfig, maxTries: 3 },
+      { ...this.happoConfig, retryCount: 3 },
     );
 
     if (!reportResult) {
