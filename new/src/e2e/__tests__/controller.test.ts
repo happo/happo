@@ -1,48 +1,25 @@
 import assert from 'node:assert';
-import fs from 'node:fs';
 import http from 'node:http';
-import path from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { fileURLToPath } from 'node:url';
 
+import * as tmpfs from '../../test-utils/tmpfs.ts';
 import Controller from '../controller.ts';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const port = 3000;
 
-// Type definitions
-interface MockHappoConfig {
-  apiKey: string;
-  apiSecret: string;
-  project: string;
-  endpoint: string;
-  targets: {
-    chrome: {
-      execute: () => Promise<string[]>;
-    };
-  };
-}
-
-interface OriginalEnv {
-  HAPPO_ENABLED: string | undefined;
-  HAPPO_E2E_PORT: string | undefined;
-}
-
-let mockHappoConfig: MockHappoConfig;
-const mockHappoConfigPath = path.join(__dirname, '..', '.happo.js');
-
-const originalEnv: OriginalEnv = {
-  HAPPO_ENABLED: process.env.HAPPO_ENABLED,
-  HAPPO_E2E_PORT: process.env.HAPPO_E2E_PORT,
-};
+const originalEnv = structuredClone(process.env);
 
 let server: http.Server;
 
-before(() => {
+const TEST_API_KEY = 'test-api-key';
+const TEST_API_SECRET = 'test-api-secret';
+const TEST_PROJECT = 'test-project';
+
+before(async () => {
   process.env.HAPPO_ENABLED = 'true';
   process.env.HAPPO_E2E_PORT = port.toString();
+
+  let requestId = 0;
 
   server = http.createServer(
     (req: http.IncomingMessage, res: http.ServerResponse) => {
@@ -56,17 +33,17 @@ before(() => {
         return;
       }
 
-      res.end(JSON.stringify({}));
+      res.end(JSON.stringify({ requestId: `request-id-${requestId++}` }));
     },
   );
   server.listen(port);
 
   // Create a mock happo.js file
   const mockHappoConfigContents = `
-  module.exports = {
-    apiKey: 'test-api-key',
-    apiSecret: 'test-api-secret',
-    project: 'test-project',
+  export default {
+    apiKey: '${TEST_API_KEY}',
+    apiSecret: '${TEST_API_SECRET}',
+    project: '${TEST_PROJECT}',
     endpoint: 'http://localhost:${port}',
     targets: {
       chrome: {
@@ -75,29 +52,27 @@ before(() => {
     },
   };
   `;
-  fs.writeFileSync(mockHappoConfigPath, mockHappoConfigContents);
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  mockHappoConfig = require(mockHappoConfigPath);
+
+  tmpfs.mock({
+    'happo.config.js': mockHappoConfigContents,
+  });
 });
 
 after(() => {
-  for (const [key, value] of Object.entries(originalEnv)) {
-    process.env[key as keyof OriginalEnv] = value;
-  }
-
-  // Clean up the mock config
-  fs.unlinkSync(mockHappoConfigPath);
-
   server.close();
+
+  process.env = originalEnv;
+
+  tmpfs.restore();
 });
 
 describe('Controller', () => {
   it('initializes with the correct happo config', async () => {
     const controller = new Controller();
     await controller.init();
-    assert.strictEqual(controller.config?.apiKey, mockHappoConfig.apiKey);
-    assert.strictEqual(controller.config?.apiSecret, mockHappoConfig.apiSecret);
-    assert.strictEqual(controller.config?.project, mockHappoConfig.project);
+    assert.strictEqual(controller.config?.apiKey, TEST_API_KEY);
+    assert.strictEqual(controller.config?.apiSecret, TEST_API_SECRET);
+    assert.strictEqual(controller.config?.project, TEST_PROJECT);
     assert.deepStrictEqual(controller.snapshotsList, []);
     assert.deepStrictEqual(controller.assetUrls, []);
     assert.deepStrictEqual(controller.cssBlocks, []);
