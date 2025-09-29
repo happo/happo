@@ -76,12 +76,10 @@ async function resolveFilesRecursiveForDir(
  * @returns Promise resolving to a flattened array of file entries
  */
 async function resolveFilesRecursive(
-  ...dirsAndFiles: (string | null | undefined)[]
+  ...dirsAndFiles: string[]
 ): Promise<FileEntry[]> {
   const files = await Promise.all(
-    dirsAndFiles
-      .filter(Boolean)
-      .map((dirOrFile) => resolveFilesRecursiveForDir(dirOrFile as string)),
+    dirsAndFiles.map((dirOrFile) => resolveFilesRecursiveForDir(dirOrFile)),
   );
 
   return files.flat();
@@ -95,7 +93,7 @@ async function resolveFilesRecursive(
  * @returns Promise resolving to archive result with buffer and hash
  */
 export default async function deterministicArchive(
-  dirsAndFiles: (string | null | undefined)[],
+  dirsAndFiles: string[],
   contentToArchive: ArchiveContentEntry[] = [],
 ): Promise<ArchiveResult> {
   const uniqueDirsAndFiles = Array.from(new Set(dirsAndFiles));
