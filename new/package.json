@@ -21,7 +21,7 @@
     "clean": "rm -rf dist tmp/tsc types",
     "eslint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
-    "test": "node --test src/**/*.test.ts",
+    "test": "./scripts/test.ts",
     "test:playwright": "playwright test",
     "tsc": "tsc --build tsconfig.json"
   },
