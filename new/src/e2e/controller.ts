@@ -56,7 +56,7 @@ interface CSSBlock {
   key: string;
   content?: string;
   href?: string | undefined;
-  baseUrl: string;
+  baseUrl?: string | undefined;
   assetsBaseUrl?: string;
 }
 
