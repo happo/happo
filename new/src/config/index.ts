@@ -65,7 +65,7 @@ export interface Config {
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';
 type DesktopBrowserType = 'chrome' | 'firefox' | 'edge' | 'safari' | 'accessibility';
-type BrowserType = MobileSafariBrowserType | DesktopBrowserType;
+export type BrowserType = MobileSafariBrowserType | DesktopBrowserType;
 
 interface BaseTarget {
   browserType: BrowserType;
@@ -184,6 +184,9 @@ interface BaseTarget {
    * Set the viewport size for the browser
    */
   viewport: `${number}x${number}`;
+
+  // Internal flag for dynamic targets
+  __dynamic?: boolean;
 }
 
 interface MobileSafariTarget extends BaseTarget {

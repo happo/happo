@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { imageSize } from 'image-size';
 import pAll from 'p-all';
 
-import type { Config } from '../config/index.ts';
+import type { BrowserType, Config, Target } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.js';
 // import type { Config } from '../config/index.ts';
@@ -48,8 +48,8 @@ interface AssetUrl {
 
 interface DynamicTarget {
   name: string;
-  viewport: string;
-  browser: string;
+  viewport: `${number}x${number}`;
+  browserType: BrowserType;
 }
 
 interface CSSBlock {
@@ -528,7 +528,7 @@ Docs:
         return [];
       }
       return Object.keys(this.happoConfig.targets).filter(
-        (targetName) => !this.happoConfig!.targets[targetName].__dynamic,
+        (targetName) => !this.happoConfig!.targets[targetName]?.__dynamic,
       );
     }
     for (const target of targets) {
@@ -539,7 +539,7 @@ Docs:
         typeof target === 'object' &&
         target.name &&
         target.viewport &&
-        target.browser
+        target.browserType
       ) {
         if (!this.happoConfig) {
           throw new Error('Happo config not initialized');
@@ -547,12 +547,14 @@ Docs:
         if (this.happoConfig.targets[target.name]) {
           // already added
         } else {
+          const targetName = target.name;
+          const constructedTarget: Target = {
+            viewport: target.viewport,
+            browserType: target.browserType,
+            __dynamic: true,
+          };
           // add dynamic target
-          this.happoConfig.targets[target.name] = new RemoteBrowserTarget(
-            target.browser,
-            target,
-          );
-          this.happoConfig.targets[target.name].__dynamic = true;
+          this.happoConfig.targets[targetName] = constructedTarget;
         }
         result.push(target.name);
       }
