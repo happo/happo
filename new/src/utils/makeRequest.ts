@@ -1,7 +1,8 @@
 import type AsyncRetryType from 'async-retry';
 import asyncRetry from 'async-retry';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SignJWT } from 'jose';
+import type { RequestInit } from 'undici';
+import { fetch, FormData, ProxyAgent } from 'undici';
 
 import packageJson from '../../package.json' with { type: 'json' };
 const { version } = packageJson;
@@ -104,14 +105,18 @@ export default async function makeRequest(
     }
 
     try {
-      const response = await fetch(url, {
+      const fetchOptions: RequestInit = {
         headers,
-        compress: true,
-        agent: HTTP_PROXY ? new HttpsProxyAgent(HTTP_PROXY) : undefined,
         signal: AbortSignal.timeout(timeout),
         ...requestAttributes,
         body,
-      });
+      };
+
+      if (HTTP_PROXY) {
+        fetchOptions.dispatcher = new ProxyAgent(HTTP_PROXY);
+      }
+
+      const response = await fetch(url, fetchOptions);
 
       if (!response.ok) {
         const error = new Error(
