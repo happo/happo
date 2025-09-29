@@ -40,8 +40,8 @@ interface StartOptions {
 export default class Logger {
   private print: PrintFunction;
   private stderrPrint: PrintFunction;
-  private startTime?: number;
-  private startMsg?: string;
+  private startTime?: number | undefined;
+  private startMsg?: string | undefined;
 
   constructor({
     stderrPrint = (str: string) => process.stderr.write(str),

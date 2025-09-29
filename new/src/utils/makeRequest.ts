@@ -1,3 +1,4 @@
+import type AsyncRetryType from 'async-retry';
 import asyncRetry from 'async-retry';
 import FormData from 'form-data';
 import { HttpsProxyAgent } from 'https-proxy-agent';
@@ -52,6 +53,10 @@ function prepareFormData(data: Record<string, any>): FormData | undefined {
   return form;
 }
 
+export interface ProcessEnv {
+  [key: string]: string | undefined;
+}
+
 export default async function makeRequest(
   requestAttributes: RequestAttributes,
   {
@@ -62,12 +67,12 @@ export default async function makeRequest(
     retryMinTimeout,
     retryMaxTimeout,
   }: MakeRequestOptions,
-  { HTTP_PROXY }: { HTTP_PROXY?: string } = process.env,
+  { HTTP_PROXY }: ProcessEnv = process.env,
 ): Promise<any> {
   const { url, method = 'GET', formData, body: jsonBody } = requestAttributes;
 
-  const retryOpts: any = {
-    onRetry: (error: Error) => {
+  const retryOpts: AsyncRetryType.Options = {
+    onRetry: (error: unknown) => {
       console.warn(
         `Failed ${method} ${url}. Retrying (at ${new Date().toISOString()}) ...`,
       );

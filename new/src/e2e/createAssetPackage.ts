@@ -107,7 +107,7 @@ export default async function createAssetPackage(
           if (isDynamic || isExternalUrl) {
             // Add a file suffix so that svg images work
             name = `${name}${getFileSuffixFromMimeType(
-              fetchRes.headers.get('content-type'),
+              fetchRes.headers.get('content-type') || 'image/png',
             )}`;
           }
 
