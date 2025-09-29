@@ -513,6 +513,17 @@ Docs:
         },
         { ...this.happoConfig!, maxTries: 3 },
       );
+
+      if (!reportResult) {
+        console.error('[HAPPO] No reportResult');
+        return;
+      }
+
+      if (!('url' in reportResult)) {
+        console.error('[HAPPO] No url in reportResult');
+        return;
+      }
+
       console.log(`[HAPPO] ${reportResult.url}`);
 
       return;
@@ -586,19 +597,34 @@ Docs:
       { ...this.happoConfig, maxTries: 2 },
     );
 
-    if (!uploadUrlResult.uploadUrl) {
+    if (!uploadUrlResult) {
+      throw new Error('No uploadUrlResult');
+    }
+
+    if (!('uploadUrl' in uploadUrlResult) || !uploadUrlResult.uploadUrl) {
+      if (!('url' in uploadUrlResult)) {
+        throw new Error('Missing url in uploadUrlResult when uploadUrl is missing');
+      }
+
+      const { url } = uploadUrlResult;
+
       // image has already been uploaded
       if (this.happoDebug) {
-        console.log(
-          `[HAPPO] Image has already been uploaded: ${uploadUrlResult.url}`,
-        );
+        console.log(`[HAPPO] Image has already been uploaded: ${url}`);
       }
-      return uploadUrlResult.url;
+
+      return typeof url === 'string' ? url : String(url);
+    }
+
+    const { uploadUrl } = uploadUrlResult;
+
+    if (typeof uploadUrl !== 'string') {
+      throw new TypeError('uploadUrlResult.uploadUrl is not a string');
     }
 
     const uploadResult = await makeRequest(
       {
-        url: uploadUrlResult.uploadUrl,
+        url: uploadUrl,
         method: 'POST',
         json: true,
         formData: {
@@ -607,16 +633,29 @@ Docs:
       },
       { ...this.happoConfig, maxTries: 2 },
     );
-    if (this.happoDebug) {
-      console.log(`[HAPPO] Uploaded image: ${uploadUrlResult.url}`);
+
+    if (!uploadResult) {
+      throw new Error('No uploadResult');
     }
-    return uploadResult.url;
+
+    if (this.happoDebug) {
+      console.log(`[HAPPO] Uploaded image: ${uploadUrl}`);
+    }
+
+    if (!('url' in uploadResult)) {
+      throw new Error('No url in uploadResult');
+    }
+
+    return typeof uploadResult.url === 'string'
+      ? uploadResult.url
+      : String(uploadResult.url);
   }
 
   async uploadLocalSnapshots(): Promise<string> {
     if (!this.happoConfig) {
       throw new Error('Happo config not initialized');
     }
+
     const reportResult = await makeRequest(
       {
         url: `${this.happoConfig.endpoint}/api/snap-requests/with-results`,
@@ -626,7 +665,18 @@ Docs:
       },
       { ...this.happoConfig, maxTries: 3 },
     );
-    return reportResult.requestId;
+
+    if (!reportResult) {
+      throw new Error('No reportResult');
+    }
+
+    if (!('requestId' in reportResult)) {
+      throw new Error('No requestId in reportResult');
+    }
+
+    return typeof reportResult.requestId === 'string'
+      ? reportResult.requestId
+      : String(reportResult.requestId);
   }
 
   async registerBase64ImageChunk({

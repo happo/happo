@@ -141,9 +141,11 @@ export default class RemoteBrowserTarget {
         pages: pageSlice,
         extendsSha: pageSlice ? pageSlice.extendsSha : undefined,
       });
+
       const payloadHash = createHash(
         payloadString + (pageSlice ? Math.random() : ''),
       );
+
       const formData: Record<string, string | File | undefined> = {
         type:
           pageSlice && pageSlice.extendsSha
@@ -155,10 +157,12 @@ export default class RemoteBrowserTarget {
           type: 'application/json',
         }),
       };
+
       if (pageSlice && pageSlice.extendsSha) {
         formData.extendsSha = pageSlice.extendsSha;
       }
-      return makeRequest(
+
+      const requestResult = await makeRequest(
         {
           url: `${endpoint}/api/snap-requests?payloadHash=${payloadHash}`,
           method: 'POST',
@@ -167,23 +171,34 @@ export default class RemoteBrowserTarget {
         },
         { apiKey, apiSecret, retryCount: 5 },
       );
+
+      if (!requestResult) {
+        throw new Error('No requestResult');
+      }
+
+      if (!('requestId' in requestResult)) {
+        throw new Error('No requestId in requestResult');
+      }
+
+      return { requestId: String(requestResult.requestId) };
     };
+
     const requestIds: string[] = [];
+
     if (staticPackage) {
       for (let i = 0; i < this.chunks; i += 1) {
-        // We allow one `await` inside the loop here to avoid POSTing all payloads
-        // to the server at the same time (thus reducing load a little).
-
-        const { requestId }: { requestId: string } = await boundMakeRequest({
+        // We `await` here inside the loop to avoid POSTing all payloads to the
+        // server at the same time (thus reducing load a little).
+        const { requestId } = await boundMakeRequest({
           chunk: { index: i, total: this.chunks },
         });
         requestIds.push(requestId);
       }
     } else if (pages) {
       for (const pageSlice of getPageSlices(pages, this.chunks)) {
-        // We allow one `await` inside the loop here to avoid POSTing all payloads
-        // to the server at the same time (thus reducing load a little).
-        const { requestId }: { requestId: string } = await boundMakeRequest({
+        // We `await` here inside the loop to avoid POSTing all payloads to the
+        // server at the same time (thus reducing load a little).
+        const { requestId } = await boundMakeRequest({
           pageSlice,
         });
         requestIds.push(requestId);
@@ -195,9 +210,10 @@ export default class RemoteBrowserTarget {
           i * snapsPerChunk,
           i * snapsPerChunk + snapsPerChunk,
         );
-        // We allow one `await` inside the loop here to avoid POSTing all payloads
-        // to the server at the same time (thus reducing load a little).
-        const { requestId }: { requestId: string } = await boundMakeRequest({
+
+        // We `await` here inside the loop to avoid POSTing all payloads to the
+        // server at the same time (thus reducing load a little).
+        const { requestId } = await boundMakeRequest({
           slice,
         });
         requestIds.push(requestId);

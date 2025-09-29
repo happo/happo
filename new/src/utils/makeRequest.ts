@@ -13,9 +13,9 @@ interface RequestAttributes {
   url: string;
   method?: string;
   formData?: Record<string, FormDataValue>;
-  body?: any;
+  body?: unknown;
   json?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface MakeRequestOptions {
@@ -44,6 +44,15 @@ function prepareFormData(data: Record<string, FormDataValue>): FormData | null {
   return form;
 }
 
+class ErrorWithStatusCode extends Error {
+  statusCode: number;
+
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
 export default async function makeRequest(
   requestAttributes: RequestAttributes,
   {
@@ -55,7 +64,7 @@ export default async function makeRequest(
     retryMaxTimeout,
   }: MakeRequestOptions,
   { HTTP_PROXY }: NodeJS.ProcessEnv = process.env,
-): Promise<any> {
+): Promise<object | null> {
   const { url, method = 'GET', formData, body: jsonBody } = requestAttributes;
 
   const retryOpts: AsyncRetryType.Options = {
@@ -119,22 +128,31 @@ export default async function makeRequest(
       const response = await fetch(url, fetchOptions);
 
       if (!response.ok) {
-        const error = new Error(
+        throw new ErrorWithStatusCode(
           `Request to ${method} ${url} failed: ${
             response.status
           } - ${await response.text()}`,
-        ) as Error & { statusCode?: number };
-        error.statusCode = response.status;
-        throw error;
+          response.status,
+        );
       }
 
       const result = await response.json();
+
+      if (typeof result !== 'object') {
+        throw new TypeError(`Response is not an object: ${JSON.stringify(result)}`);
+      }
+
       return result;
-    } catch (error: any) {
-      if (error.type === 'aborted') {
+    } catch (maybeError) {
+      const error =
+        maybeError instanceof Error ? maybeError : new Error(String(maybeError));
+
+      if (error.name === 'TimeoutError') {
         error.message = `Timeout when fetching ${url} using method ${method}`;
       }
+
       error.message = `${error.message} (took ${Date.now() - start} ms)`;
+
       throw error;
     }
   }, retryOpts);
