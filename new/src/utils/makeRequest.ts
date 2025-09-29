@@ -44,7 +44,7 @@ function prepareFormData(data: Record<string, FormDataValue>): FormData | null {
   return form;
 }
 
-class ErrorWithStatusCode extends Error {
+export class ErrorWithStatusCode extends Error {
   statusCode: number;
 
   constructor(message: string, statusCode: number) {

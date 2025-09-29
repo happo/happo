@@ -1,7 +1,7 @@
 import retry from 'async-retry';
 
 import { logTag } from '../utils/Logger.ts';
-import makeRequest from '../utils/makeRequest.ts';
+import makeRequest, { ErrorWithStatusCode } from '../utils/makeRequest.ts';
 
 // Type definitions
 interface Logger {
@@ -18,20 +18,6 @@ interface UploadAssetsOptions {
   project?: string | undefined;
 }
 
-interface AssetsDataResponse {
-  path: string;
-  uploadedAt: string;
-}
-
-interface SignedUrlResponse {
-  path?: string;
-  signedUrl?: string;
-}
-
-interface FinalizeResponse {
-  path: string;
-}
-
 /**
  * Uploads assets via Happo's API
  *
@@ -43,23 +29,40 @@ async function uploadAssetsThroughHappo(
 ): Promise<string> {
   try {
     // Check if the assets already exist. If so, we don't have to upload them.
-    const assetsDataRes = (await makeRequest(
+    const assetsDataRes = await makeRequest(
       {
         url: `${endpoint}/api/snap-requests/assets-data/${hash}`,
         method: 'GET',
         json: true,
       },
       { apiKey, apiSecret },
-    )) as AssetsDataResponse;
+    );
+
+    if (!assetsDataRes) {
+      throw new Error('Failed to get assets data');
+    }
+
+    if (!('path' in assetsDataRes)) {
+      throw new Error('Asset data response is missing path');
+    }
+
+    if (!('uploadedAt' in assetsDataRes)) {
+      throw new Error('Asset data response is missing uploadedAt');
+    }
+
+    const { path: uploadedPath, uploadedAt } = assetsDataRes;
+
     logger.info(
       `${logTag(project)}Reusing existing assets at ${
-        assetsDataRes.path
-      } (previously uploaded on ${assetsDataRes.uploadedAt})`,
+        uploadedPath
+      } (previously uploaded on ${uploadedAt})`,
     );
-    return assetsDataRes.path;
-  } catch (error: unknown) {
-    const err = error as Error & { statusCode?: number; stack?: string };
-    if (err.statusCode !== 404) {
+
+    return typeof uploadedPath === 'string' ? uploadedPath : String(uploadedPath);
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+
+    if (err instanceof ErrorWithStatusCode && err.statusCode !== 404) {
       logger.warn(
         `${logTag(
           project,
@@ -70,7 +73,7 @@ async function uploadAssetsThroughHappo(
     }
   }
 
-  const assetsRes = (await makeRequest(
+  const assetsRes = await makeRequest(
     {
       url: `${endpoint}/api/snap-requests/assets/${hash}`,
       method: 'POST',
@@ -80,9 +83,19 @@ async function uploadAssetsThroughHappo(
       },
     },
     { apiKey, apiSecret, retryCount: 2 },
-  )) as { path: string };
+  );
 
-  return assetsRes.path;
+  if (!assetsRes) {
+    throw new Error('Failed to get assets data');
+  }
+
+  if (!('path' in assetsRes)) {
+    throw new Error('Asset data response is missing path');
+  }
+
+  const { path: assetsPath } = assetsRes;
+
+  return typeof assetsPath === 'string' ? assetsPath : String(assetsPath);
 }
 
 /**
@@ -95,30 +108,42 @@ async function uploadAssetsWithSignedUrl(
   { hash, endpoint, apiKey, apiSecret, logger, project }: UploadAssetsOptions,
 ): Promise<string> {
   // First we need to get the signed URL from Happo.
-  const signedUrlRes = (await makeRequest(
+  const signedUrlRes = await makeRequest(
     {
       url: `${endpoint}/api/snap-requests/assets/${hash}/signed-url`,
       method: 'GET',
       json: true,
     },
     { apiKey, apiSecret, retryCount: 3 },
-  )) as SignedUrlResponse;
+  );
 
   if (!signedUrlRes) {
     throw new Error('Failed to get signed URL');
   }
 
-  // If the asset has already been uploaded, we can return the path now.
-  if (signedUrlRes.path) {
-    logger.info(`${logTag(project)}Reusing existing assets at ${signedUrlRes.path}`);
-    return signedUrlRes.path;
+  if (!('path' in signedUrlRes)) {
+    throw new Error('Signed URL response is missing path');
   }
+
+  const { path: signedUrlPath } = signedUrlRes;
+
+  // If the asset has already been uploaded, we can return the path now.
+  if (signedUrlPath) {
+    logger.info(`${logTag(project)}Reusing existing assets at ${signedUrlPath}`);
+    return typeof signedUrlPath === 'string' ? signedUrlPath : String(signedUrlPath);
+  }
+
+  if (!('signedUrl' in signedUrlRes)) {
+    throw new Error('Signed URL response is missing signedUrl');
+  }
+
+  const { signedUrl } = signedUrlRes;
 
   // Upload the assets to the signed URL using node's built-in fetch with
   // retries
   await retry(
     async (bail: (error: Error) => void) => {
-      const res = await fetch(signedUrlRes.signedUrl!, {
+      const res = await fetch(String(signedUrl), {
         method: 'PUT',
         body: buffer,
         headers: {
@@ -153,16 +178,26 @@ async function uploadAssetsWithSignedUrl(
   );
 
   // Finally, we need to tell Happo that we've uploaded the assets.
-  const finalizeRes = (await makeRequest(
+  const finalizeRes = await makeRequest(
     {
       url: `${endpoint}/api/snap-requests/assets/${hash}/signed-url/finalize`,
       method: 'POST',
       json: true,
     },
     { apiKey, apiSecret, retryCount: 3 },
-  )) as FinalizeResponse;
+  );
 
-  return finalizeRes.path;
+  if (!finalizeRes) {
+    throw new Error('Failed to finalize assets');
+  }
+
+  if (!('path' in finalizeRes)) {
+    throw new Error('Finalize response is missing path');
+  }
+
+  const { path: finalizedPath } = finalizeRes;
+
+  return typeof finalizedPath === 'string' ? finalizedPath : String(finalizedPath);
 }
 
 export default async function uploadAssets(
