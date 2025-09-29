@@ -36,7 +36,7 @@ interface ArchiveResult {
  */
 async function resolveFilesRecursiveForDir(
   dirOrFile: string,
-): Promise<Arrary<FileEntry>> {
+): Promise<Array<FileEntry>> {
   const resolvedDirOrFile = path.resolve(dirOrFile);
   const isDir = (await fs.promises.lstat(resolvedDirOrFile)).isDirectory();
 
