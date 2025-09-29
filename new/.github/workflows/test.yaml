@@ -24,7 +24,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Log environment variables
         run: node -e "console.log(JSON.stringify(Object.fromEntries(Object.entries(process.env).sort()), null, 2))"
-      - run: pnpm test --experimental-test-coverage --test-coverage-exclude="**/__tests__/**"
+      - run: pnpm test --coverage
 
   playwright:
     runs-on: ubuntu-latest
