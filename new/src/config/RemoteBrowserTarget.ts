@@ -1,21 +1,8 @@
 import makeRequest from '../utils/makeRequest.ts';
 import createHash from './createHash.js';
+import type { Target } from './index.ts';
 
-const POLL_INTERVAL = 5000; // 5 secs
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
-
-// Type definitions
-interface WaitForParams {
-  requestId: string;
-  endpoint: string;
-  apiKey: string;
-  apiSecret: string;
-}
-
-interface SnapResult {
-  snapRequestId: string;
-  [key: string]: unknown;
-}
 
 interface Page {
   url: string;
@@ -39,8 +26,14 @@ interface BoundMakeRequestParams {
   pageSlice?: PageSlice | undefined;
 }
 
+export interface CSSBlock {
+  id: string;
+  conditional: boolean;
+  css: string;
+}
+
 interface ExecuteParams {
-  globalCSS?: string;
+  globalCSS?: string | Array<CSSBlock>;
   assetsPackage?: unknown;
   staticPackage?: unknown;
   snapPayloads?: unknown[];
@@ -48,44 +41,7 @@ interface ExecuteParams {
   apiSecret: string;
   endpoint: string;
   pages?: Page[];
-  asyncResults?: boolean;
   targetName?: string;
-}
-
-interface RemoteBrowserTargetOptions {
-  viewport: string;
-  chunks?: number;
-  maxHeight?: number;
-  [key: string]: unknown;
-}
-
-async function waitFor({
-  requestId,
-  endpoint,
-  apiKey,
-  apiSecret,
-}: WaitForParams): Promise<SnapResult[]> {
-  const { status, result } = await makeRequest(
-    {
-      url: `${endpoint}/api/snap-requests/${requestId}`,
-      method: 'GET',
-      json: true,
-    },
-    { apiKey, apiSecret, retryCount: 5 },
-  );
-  if (status === 'done') {
-    return result.map(
-      (i: unknown) =>
-        ({
-          ...(i as Record<string, unknown>),
-          snapRequestId: requestId,
-        }) as SnapResult,
-    );
-  }
-  await new Promise<void>((r) => {
-    setTimeout(r, POLL_INTERVAL);
-  });
-  return waitFor({ requestId, endpoint, apiKey, apiSecret });
 }
 
 const MIN_INTERNET_EXPLORER_WIDTH = 400;
@@ -130,7 +86,7 @@ export default class RemoteBrowserTarget {
 
   constructor(
     browserName: string,
-    { viewport, chunks = 1, maxHeight, ...otherOptions }: RemoteBrowserTargetOptions,
+    { viewport = '1024x768', chunks = 1, maxHeight, ...otherOptions }: Target,
   ) {
     const viewportMatch = viewport.match(VIEWPORT_PATTERN);
     if (!viewportMatch) {
@@ -166,9 +122,8 @@ export default class RemoteBrowserTarget {
     apiSecret,
     endpoint,
     pages,
-    asyncResults = false,
     targetName,
-  }: ExecuteParams): Promise<SnapResult[] | string[]> {
+  }: ExecuteParams): Promise<Array<string>> {
     const boundMakeRequest = async ({
       slice,
       chunk,
@@ -217,7 +172,6 @@ export default class RemoteBrowserTarget {
         { apiKey, apiSecret, retryCount: 5 },
       );
     };
-    const promises: Promise<SnapResult[]>[] = [];
     const requestIds: string[] = [];
     if (staticPackage) {
       for (let i = 0; i < this.chunks; i += 1) {
@@ -227,11 +181,7 @@ export default class RemoteBrowserTarget {
         const { requestId }: { requestId: string } = await boundMakeRequest({
           chunk: { index: i, total: this.chunks },
         });
-        if (asyncResults) {
-          requestIds.push(requestId);
-        } else {
-          promises.push(waitFor({ requestId, endpoint, apiKey, apiSecret }));
-        }
+        requestIds.push(requestId);
       }
     } else if (pages) {
       for (const pageSlice of getPageSlices(pages, this.chunks)) {
@@ -240,11 +190,7 @@ export default class RemoteBrowserTarget {
         const { requestId }: { requestId: string } = await boundMakeRequest({
           pageSlice,
         });
-        if (asyncResults) {
-          requestIds.push(requestId);
-        } else {
-          promises.push(waitFor({ requestId, endpoint, apiKey, apiSecret }));
-        }
+        requestIds.push(requestId);
       }
     } else {
       const snapsPerChunk = Math.ceil((snapPayloads?.length ?? 0) / this.chunks);
@@ -258,23 +204,10 @@ export default class RemoteBrowserTarget {
         const { requestId }: { requestId: string } = await boundMakeRequest({
           slice,
         });
-        if (asyncResults) {
-          requestIds.push(requestId);
-        } else {
-          promises.push(waitFor({ requestId, endpoint, apiKey, apiSecret }));
-        }
+        requestIds.push(requestId);
       }
     }
 
-    if (asyncResults) {
-      return requestIds;
-    }
-
-    const result: SnapResult[] = [];
-    for (const list of await Promise.all(promises)) {
-      result.push(...list);
-    }
-
-    return result;
+    return requestIds;
   }
 }

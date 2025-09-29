@@ -179,6 +179,11 @@ interface BaseTarget {
    * with Happo, you may also want to use the `applyPseudoClasses` option.
    */
   allowPointerEvents?: boolean;
+
+  /**
+   * Set the viewport size for the browser
+   */
+  viewport: `${number}x${number}`;
 }
 
 interface MobileSafariTarget extends BaseTarget {
@@ -187,7 +192,6 @@ interface MobileSafariTarget extends BaseTarget {
 
 interface DesktopTarget extends BaseTarget {
   browserType: DesktopBrowserType;
-  viewport: `${number}x${number}`;
 
   /**
    * Set `prefersReducedMotion: true` to make the browser prefer reduced motion
@@ -196,7 +200,7 @@ interface DesktopTarget extends BaseTarget {
   prefersReducedMotion?: boolean;
 }
 
-type Target = MobileSafariTarget | DesktopTarget;
+export type Target = MobileSafariTarget | DesktopTarget;
 
 export function defineConfig(config: Config): Config {
   return config;

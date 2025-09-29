@@ -40,14 +40,6 @@ interface LocalSnapshot {
   height?: number | undefined;
 }
 
-interface CSSBlock {
-  key: string;
-  href?: string;
-  baseUrl?: string;
-  content?: string;
-  assetsBaseUrl?: string;
-}
-
 interface AssetUrl {
   url: string;
   baseUrl?: string | undefined;
@@ -58,6 +50,14 @@ interface DynamicTarget {
   name: string;
   viewport: string;
   browser: string;
+}
+
+interface CSSBlock {
+  key: string;
+  content?: string;
+  href?: string | undefined;
+  baseUrl: string;
+  assetsBaseUrl?: string;
 }
 
 interface SnapshotRegistrationParams {
@@ -303,14 +303,12 @@ Docs:
     const globalCSS = this.allCssBlocks.map((block) => ({
       id: block.key,
       conditional: true,
-      css: block.content,
+      css: block.content || '',
     }));
     for (const url of uniqueUrls) {
       if (url.name && /^\/_external\//.test(url.name) && url.name !== url.url) {
         for (const block of globalCSS) {
-          block.css = block.css
-            ? block.css.split(url.url).join(url.name!)
-            : undefined;
+          block.css = block.css ? block.css.split(url.url).join(url.name!) : '';
         }
         for (const snapshot of this.snapshots) {
           snapshot.html = snapshot.html.split(url.url).join(url.name!);
@@ -338,9 +336,18 @@ Docs:
         continue;
       }
 
-      const requestIds = await this.happoConfig!.targets[name].execute({
+      if (!this.happoConfig!.targets[name]) {
+        throw new Error(`Target ${name} not found in Happo config`);
+      }
+
+      if (!this.happoConfig!.endpoint) {
+        throw new Error('Missing `endpoint` in Happo config');
+      }
+
+      const target = this.happoConfig!.targets[name];
+      const remoteTarget = new RemoteBrowserTarget(target.browserType, target);
+      const requestIds = await remoteTarget.execute({
         targetName: name,
-        asyncResults: true,
         endpoint: this.happoConfig!.endpoint,
         globalCSS,
         assetsPackage: assetsPath,
