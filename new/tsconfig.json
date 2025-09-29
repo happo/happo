@@ -3,6 +3,7 @@
   "references": [
     { "path": "./tsconfig.browser.json" },
     { "path": "./tsconfig.dist.json" },
+    { "path": "./tsconfig.isomorphic.json" },
     { "path": "./tsconfig.other.json" },
     { "path": "./tsconfig.playwright.json" },
     { "path": "./tsconfig.tests.json" }

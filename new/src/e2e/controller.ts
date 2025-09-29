@@ -4,12 +4,12 @@ import fs from 'node:fs';
 import { imageSize } from 'image-size';
 import pAll from 'p-all';
 
-import findCSSAssetUrls from '../browser/findCSSAssetUrls.js';
 import type { Config } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.js';
 // import type { Config } from '../config/index.ts';
 import resolveEnvironment from '../environment/index.js';
+import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.js';
 import makeRequest from '../utils/makeRequest.ts';
 import convertBase64FileToReal from './convertBase64FileToReal.js';
 import createAssetPackage from './createAssetPackage.js';

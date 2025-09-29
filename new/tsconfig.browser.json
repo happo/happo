@@ -12,6 +12,6 @@
     "types": []
   },
 
-  "include": ["src/browser/**/*.ts"],
+  "include": ["src/browser/**/*.ts", "src/isomorphic/**/*.ts"],
   "exclude": ["**/__tests__/**", "**/__playwright__/**", "**/*.test.ts"]
 }

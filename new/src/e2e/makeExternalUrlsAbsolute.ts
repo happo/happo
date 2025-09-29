@@ -1,6 +1,6 @@
 import { URL } from 'node:url';
 
-import findCSSAssetUrls from '../browser/findCSSAssetUrls.ts';
+import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.ts';
 
 export default function makeExternalUrlsAbsolute(
   text: string,
