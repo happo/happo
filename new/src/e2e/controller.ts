@@ -6,18 +6,18 @@ import pAll from 'p-all';
 
 import type { BrowserType, Config, Target } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
-import RemoteBrowserTarget from '../config/RemoteBrowserTarget.js';
+import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
 // import type { Config } from '../config/index.ts';
-import resolveEnvironment from '../environment/index.js';
-import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.js';
+import resolveEnvironment from '../environment/index.ts';
+import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.ts';
 import makeRequest from '../utils/makeRequest.ts';
-import convertBase64FileToReal from './convertBase64FileToReal.js';
-import type { AssetUrl } from './createAssetPackage.js';
-import createAssetPackage from './createAssetPackage.js';
-import proxiedFetch from './fetch.js';
-import makeAbsolute from './makeAbsolute.js';
-import makeExternalUrlsAbsolute from './makeExternalUrlsAbsolute.js';
-import uploadAssets from './uploadAssets.js';
+import convertBase64FileToReal from './convertBase64FileToReal.ts';
+import type { AssetUrl } from './createAssetPackage.ts';
+import createAssetPackage from './createAssetPackage.ts';
+import proxiedFetch from './fetch.ts';
+import makeAbsolute from './makeAbsolute.ts';
+import makeExternalUrlsAbsolute from './makeExternalUrlsAbsolute.ts';
+import uploadAssets from './uploadAssets.ts';
 
 // Type definitions
 interface Snapshot {

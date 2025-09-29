@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import AdmZip from 'adm-zip';
 import handler from 'serve-handler';
 
-import createAssetPackage from '../createAssetPackage.js';
+import createAssetPackage from '../createAssetPackage.ts';
 
 // Type definitions
 interface AssetUrl {

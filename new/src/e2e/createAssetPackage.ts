@@ -5,8 +5,8 @@ import mime from 'mime-types';
 
 import type { ArchiveContentEntry } from '../utils/deterministicArchive.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
-import proxiedFetch from './fetch.js';
-import makeAbsolute from './makeAbsolute.js';
+import proxiedFetch from './fetch.ts';
+import makeAbsolute from './makeAbsolute.ts';
 
 // Type definitions
 export interface AssetUrl {

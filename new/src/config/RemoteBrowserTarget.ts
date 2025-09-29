@@ -1,5 +1,5 @@
 import makeRequest from '../utils/makeRequest.ts';
-import createHash from './createHash.js';
+import createHash from './createHash.ts';
 import type { Target } from './index.ts';
 
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
