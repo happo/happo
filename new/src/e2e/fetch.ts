@@ -1,4 +1,6 @@
 import asyncRetry from 'async-retry';
+import type { Response } from 'undici';
+import { fetch as undiciFetch } from 'undici';
 
 const { HTTP_PROXY } = process.env;
 
@@ -17,7 +19,7 @@ export default async function fetch(
 ): Promise<Response> {
   return asyncRetry(
     async (bail: (error: Error) => void) => {
-      const response = await fetch(url);
+      const response = await undiciFetch(url);
 
       if (response.status >= 400 && response.status < 500) {
         bail(

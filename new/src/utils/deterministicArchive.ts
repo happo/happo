@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { Writable } from 'node:stream';
+import { Readable, Writable } from 'node:stream';
 
 import type { EntryData } from 'archiver';
 import archiver from 'archiver';
@@ -18,9 +18,9 @@ interface FileEntry {
   stream: fs.ReadStream;
 }
 
-interface ContentEntry {
+export interface ArchiveContentEntry {
   name: string;
-  content: string | Buffer | fs.ReadStream;
+  content: string | Buffer | fs.ReadStream | Readable;
 }
 
 interface ArchiveResult {
@@ -96,7 +96,7 @@ async function resolveFilesRecursive(
  */
 export default async function deterministicArchive(
   dirsAndFiles: (string | null | undefined)[],
-  contentToArchive: ContentEntry[] = [],
+  contentToArchive: ArchiveContentEntry[] = [],
 ): Promise<ArchiveResult> {
   const uniqueDirsAndFiles = Array.from(new Set(dirsAndFiles));
 

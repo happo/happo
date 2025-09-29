@@ -1,7 +1,9 @@
 import crypto from 'node:crypto';
+import { Readable } from 'node:stream';
 
 import mime from 'mime-types';
 
+import type { ArchiveContentEntry } from '../utils/deterministicArchive.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import proxiedFetch from './fetch.js';
 import makeAbsolute from './makeAbsolute.js';
@@ -11,11 +13,6 @@ export interface AssetUrl {
   url: string;
   baseUrl?: string | undefined;
   name?: string;
-}
-
-interface ArchiveContent {
-  name: string;
-  content: any; // Response body type
 }
 
 function stripQueryParams(url: string): string {
@@ -59,7 +56,7 @@ export default async function createAssetPackage(
   const seenUrls = new Set<string>();
 
   const archiveFiles: string[] = [];
-  const archiveContent: ArchiveContent[] = [];
+  const archiveContent: ArchiveContentEntry[] = [];
 
   // Get all of the archive items in parallel first. Then add them to the
   // archive serially afterwards to ensure that packages are created
@@ -104,6 +101,11 @@ export default async function createAssetPackage(
         try {
           const fetchRes = await proxiedFetch(fetchUrl, { retryCount: 5 });
 
+          const { body } = fetchRes;
+          if (!body) {
+            throw new Error(`No body for ${fetchUrl}`);
+          }
+
           if (isDynamic || isExternalUrl) {
             // Add a file suffix so that svg images work
             name = `${name}${getFileSuffixFromMimeType(
@@ -116,9 +118,11 @@ export default async function createAssetPackage(
           name = decodeURI(name);
           item.name = `/${name}`;
 
+          const content = Readable.fromWeb(body);
+
           archiveContent.push({
             name,
-            content: fetchRes.body,
+            content,
           });
         } catch (error) {
           console.log(`[HAPPO] Failed to fetch url ${fetchUrl}`);
