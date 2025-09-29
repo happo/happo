@@ -35,6 +35,11 @@ export interface Config {
   targets: Record<string, Target>;
 
   /**
+   * The endpoint to use for the happo run. Defaults to `https://happo.io`
+   */
+  endpoint?: string;
+
+  /**
    * The project to use for the happo run
    *
    * If you have multiple projects configured for your Happo account, specify

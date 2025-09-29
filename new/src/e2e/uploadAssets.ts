@@ -15,7 +15,7 @@ interface UploadAssetsOptions {
   apiKey: string;
   apiSecret: string;
   logger: Logger;
-  project: string;
+  project?: string | undefined;
 }
 
 interface AssetsDataResponse {

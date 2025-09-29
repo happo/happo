@@ -250,6 +250,9 @@ Docs:
     if (!this.happoConfig) {
       throw new Error('Happo config not initialized');
     }
+    if (!this.happoConfig.endpoint) {
+      throw new Error('Missing `endpoint` in Happo config');
+    }
     const assetsPath = await uploadAssets(buffer, {
       hash,
       endpoint: this.happoConfig.endpoint,

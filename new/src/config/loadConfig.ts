@@ -25,5 +25,5 @@ export function findConfigFile(): string {
 
 export async function loadConfigFile(configFilePath: string): Promise<Config> {
   const config = await import(configFilePath);
-  return config.default;
+  return { endpoint: 'https://happo.io', ...config.default };
 }
