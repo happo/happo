@@ -1,14 +1,9 @@
 import asyncRetry from 'async-retry';
-import type { Response } from 'undici';
-import { fetch as undiciFetch } from 'undici';
+import type { RequestInit, Response } from 'undici';
+import { fetch as undiciFetch, ProxyAgent } from 'undici';
 
-const { HTTP_PROXY } = process.env;
+import { ErrorWithStatusCode } from '../utils/makeRequest.ts';
 
-if (HTTP_PROXY) {
-  throw new Error(
-    'HTTP_PROXY is not supported yet in the happo library. Reach out to support@happo.io if you need this feature.',
-  );
-}
 interface FetchParams {
   retryCount?: number;
 }
@@ -19,27 +14,36 @@ export default async function fetch(
 ): Promise<Response> {
   return asyncRetry(
     async (bail: (error: Error) => void) => {
-      const response = await undiciFetch(url);
+      const fetchOptions: RequestInit = {};
+
+      if (process.env.HTTP_PROXY) {
+        fetchOptions.dispatcher = new ProxyAgent(process.env.HTTP_PROXY);
+      }
+
+      const response = await undiciFetch(url, fetchOptions);
 
       if (response.status >= 400 && response.status < 500) {
         bail(
-          new Error(
+          new ErrorWithStatusCode(
             `[HAPPO] Request to ${url} failed: ${response.status} - ${await response.text()}`,
+            response.status,
           ),
         );
+
         return response;
       }
 
       if (!response.ok) {
-        const error = new Error(
+        // This will be retried
+        throw new ErrorWithStatusCode(
           `[HAPPO] Request to ${url} failed: ${response.status} - ${await response.text()}`,
-        ) as Error & { statusCode?: number };
-        error.statusCode = response.status;
-        throw error; // This will be retried
+          response.status,
+        );
       }
 
       return response;
     },
+
     {
       retries: retryCount,
       onRetry: (error: Error) => {
