@@ -12,6 +12,7 @@ import resolveEnvironment from '../environment/index.js';
 import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.js';
 import makeRequest from '../utils/makeRequest.ts';
 import convertBase64FileToReal from './convertBase64FileToReal.js';
+import type { AssetUrl } from './createAssetPackage.js';
 import createAssetPackage from './createAssetPackage.js';
 import proxiedFetch from './fetch.js';
 import makeAbsolute from './makeAbsolute.js';
@@ -38,12 +39,6 @@ interface LocalSnapshot {
   url: string;
   width?: number | undefined;
   height?: number | undefined;
-}
-
-interface AssetUrl {
-  url: string;
-  baseUrl?: string | undefined;
-  name?: string | undefined;
 }
 
 interface DynamicTarget {
@@ -106,14 +101,18 @@ function dedupeSnapshots(snapshots: Snapshot[]): Snapshot[] {
 
 function getUniqueUrls(urls: AssetUrl[]): AssetUrl[] {
   const seenKeys = new Set<string>();
-  const result: AssetUrl[] = [];
+
+  const result = [];
+
   for (const url of urls) {
     const key = [url.url, url.baseUrl].join('||');
+
     if (!seenKeys.has(key)) {
       result.push(url);
       seenKeys.add(key);
     }
   }
+
   return result;
 }
 
@@ -296,7 +295,7 @@ Docs:
     }
 
     const uniqueUrls = getUniqueUrls(allUrls);
-    const { buffer, hash } = await createAssetPackage(uniqueUrls as any);
+    const { buffer, hash } = await createAssetPackage(uniqueUrls);
 
     const assetsPath = await this.uploadAssetsIfNeeded({ buffer, hash });
 

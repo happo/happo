@@ -7,9 +7,9 @@ import proxiedFetch from './fetch.js';
 import makeAbsolute from './makeAbsolute.js';
 
 // Type definitions
-interface AssetUrl {
+export interface AssetUrl {
   url: string;
-  baseUrl?: string;
+  baseUrl?: string | undefined;
   name?: string;
 }
 
