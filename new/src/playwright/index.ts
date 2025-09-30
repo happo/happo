@@ -1,4 +1,6 @@
 /* eslint-disable no-empty-pattern */
+import path from 'node:path';
+
 import type {
   ElementHandle,
   Locator,
@@ -12,7 +14,10 @@ import { test as base } from '@playwright/test';
 
 import Controller from '../e2e/controller.ts';
 
-const pathToBrowserBuild = import.meta.resolve('./dist/browser/main.js');
+const pathToBrowserBuild = path.resolve(
+  import.meta.dirname,
+  '../../dist/browser/main.bundle.js',
+);
 
 const controller = new Controller();
 
