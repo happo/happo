@@ -7,7 +7,7 @@ const { version } = packageJson;
 
 type FormDataValue = string | File | undefined;
 
-interface RequestAttributes {
+export interface RequestAttributes {
   url: string;
   method?: string;
   formData?: Record<string, FormDataValue>;
@@ -16,7 +16,7 @@ interface RequestAttributes {
   [key: string]: unknown;
 }
 
-interface MakeRequestOptions {
+export interface MakeRequestOptions {
   /**
    * Happo API key
    */
@@ -163,16 +163,17 @@ export default async function makeRequest(
 
       return result;
     } catch (maybeError) {
-      const error =
+      const originalError =
         maybeError instanceof Error ? maybeError : new Error(String(maybeError));
 
-      if (error.name === 'TimeoutError') {
-        error.message = `Timeout when fetching ${url} using method ${method}`;
-      }
+      const message =
+        originalError.name === 'TimeoutError'
+          ? `Timeout when fetching ${url} using method ${method}`
+          : originalError.message;
 
-      error.message = `${error.message} (took ${Date.now() - start} ms)`;
-
-      throw error;
+      throw new Error(`${message} (took ${Date.now() - start} ms)`, {
+        cause: originalError,
+      });
     }
   }, retryOpts);
 }
