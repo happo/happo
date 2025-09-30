@@ -2,8 +2,8 @@
   "extends": "./tsconfig.base.json",
 
   "compilerOptions": {
-    "rootDir": "./",
-    "tsBuildInfoFile": "./tmp/tsc/tsconfig.other.tsbuildinfo"
+    "rootDir": "../",
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.other.tsbuildinfo"
   },
 
   "references": [
@@ -13,5 +13,5 @@
   ],
 
   "include": ["*.ts"],
-  "exclude": ["src/**/*.ts"]
+  "exclude": ["../src/**/*.ts"]
 }
