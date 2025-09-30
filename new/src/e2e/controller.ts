@@ -29,8 +29,8 @@ interface Snapshot {
   html: string;
   component: string;
   variant: string;
-  targets?: string[] | undefined;
-  stylesheets?: string[] | undefined;
+  targets?: Array<string> | undefined;
+  stylesheets?: Array<string> | undefined;
   htmlElementAttrs?: Record<string, string> | undefined;
   bodyElementAttrs?: Record<string, string> | undefined;
 }
@@ -38,7 +38,7 @@ interface Snapshot {
 interface LocalSnapshot {
   component: string;
   variant: string;
-  targets?: string[] | undefined;
+  targets?: Array<string> | undefined;
   target?: string | undefined;
   url: string;
   width?: number | undefined;
@@ -62,11 +62,11 @@ interface CSSBlock {
 interface SnapshotRegistrationParams {
   timestamp?: number | undefined;
   html: string;
-  assetUrls: AssetUrl[];
-  cssBlocks: CSSBlock[];
+  assetUrls: Array<AssetUrl>;
+  cssBlocks: Array<CSSBlock>;
   component: string;
   variant: string;
-  targets?: (string | DynamicTarget)[] | undefined;
+  targets?: Array<string | DynamicTarget> | undefined;
   htmlElementAttrs?: Record<string, string> | undefined;
   bodyElementAttrs?: Record<string, string> | undefined;
 }
@@ -74,7 +74,7 @@ interface SnapshotRegistrationParams {
 interface LocalSnapshotRegistrationParams {
   component: string;
   variant: string;
-  targets?: string[] | undefined;
+  targets?: Array<string> | undefined;
   target?: string | undefined;
   width?: number | undefined;
   height?: number | undefined;
@@ -94,7 +94,7 @@ interface Base64ChunkParams {
   isLast: boolean;
 }
 
-function dedupeSnapshots(snapshots: Snapshot[]): Snapshot[] {
+function dedupeSnapshots(snapshots: Array<Snapshot>): Array<Snapshot> {
   const allIndexed: Record<string, Snapshot> = {};
   for (const snapshot of snapshots) {
     const key = [snapshot.component, snapshot.variant].join('-_|_-');
@@ -103,7 +103,7 @@ function dedupeSnapshots(snapshots: Snapshot[]): Snapshot[] {
   return Object.values(allIndexed);
 }
 
-function getUniqueUrls(urls: AssetUrl[]): AssetUrl[] {
+function getUniqueUrls(urls: Array<AssetUrl>): Array<AssetUrl> {
   const seenKeys = new Set<string>();
 
   const result = [];
@@ -124,7 +124,7 @@ function ampersands(string: string): string {
   return string.replaceAll('&', '&amp;');
 }
 
-async function downloadCSSContent(blocks: CSSBlock[]): Promise<void> {
+async function downloadCSSContent(blocks: Array<CSSBlock>): Promise<void> {
   const { HAPPO_DEBUG } = process.env;
 
   const actions = blocks.map((block) => async () => {
@@ -175,10 +175,10 @@ async function downloadCSSContent(blocks: CSSBlock[]): Promise<void> {
 }
 
 class Controller {
-  private snapshots: Snapshot[] = [];
-  private allCssBlocks: CSSBlock[] = [];
-  private snapshotAssetUrls: AssetUrl[] = [];
-  private localSnapshots: LocalSnapshot[] = [];
+  private snapshots: Array<Snapshot> = [];
+  private allCssBlocks: Array<CSSBlock> = [];
+  private snapshotAssetUrls: Array<AssetUrl> = [];
+  private localSnapshots: Array<LocalSnapshot> = [];
   // private localSnapshotImages: Record<string, any> = {};
   private happoDebug: boolean = false;
   protected happoConfig: ConfigWithDefaults | null = null;
@@ -188,15 +188,15 @@ class Controller {
     return this.happoConfig;
   }
 
-  get snapshotsList(): Snapshot[] {
+  get snapshotsList(): Array<Snapshot> {
     return this.snapshots;
   }
 
-  get assetUrls(): AssetUrl[] {
+  get assetUrls(): Array<AssetUrl> {
     return this.snapshotAssetUrls;
   }
 
-  get cssBlocks(): CSSBlock[] {
+  get cssBlocks(): Array<CSSBlock> {
     return this.allCssBlocks;
   }
 
@@ -525,7 +525,7 @@ Docs:
     });
   }
 
-  async processSnapRequestIds(allRequestIds: string[]): Promise<void> {
+  async processSnapRequestIds(allRequestIds: Array<string>): Promise<void> {
     this.assertHappoConfig();
 
     const { HAPPO_E2E_PORT } = process.env;
@@ -572,10 +572,10 @@ Docs:
     }
   }
 
-  handleDynamicTargets(targets?: (string | DynamicTarget)[]): string[] {
+  handleDynamicTargets(targets?: Array<string | DynamicTarget>): Array<string> {
     this.assertHappoConfig();
 
-    const result: string[] = [];
+    const result: Array<string> = [];
     if (targets === undefined) {
       // return non-dynamic targets from .happo.js
       if (!this.happoConfig) {

@@ -1,7 +1,7 @@
 const URL_PATTERN: RegExp = /(url\(['"]?)(.*?)(['"]?\))/g;
 
-function findCSSAssetUrls(string: string): string[] {
-  const result: string[] = [];
+function findCSSAssetUrls(string: string): Array<string> {
+  const result: Array<string> = [];
   let match: RegExpExecArray | null;
   while ((match = URL_PATTERN.exec(string))) {
     const url = match[2];

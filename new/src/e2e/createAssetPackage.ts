@@ -46,7 +46,7 @@ function getFileSuffixFromMimeType(mimeType = ''): string {
 }
 
 export default async function createAssetPackage(
-  urls: AssetUrl[],
+  urls: Array<AssetUrl>,
 ): Promise<{ buffer: Buffer<ArrayBuffer>; hash: string }> {
   const { HAPPO_DOWNLOAD_ALL, HAPPO_DEBUG } = process.env;
 
@@ -56,8 +56,8 @@ export default async function createAssetPackage(
 
   const seenUrls = new Set<string>();
 
-  const archiveFiles: string[] = [];
-  const archiveContent: ArchiveContentEntry[] = [];
+  const archiveFiles: Array<string> = [];
+  const archiveContent: Array<ArchiveContentEntry> = [];
 
   // Get all of the archive items in parallel first. Then add them to the
   // archive serially afterwards to ensure that packages are created

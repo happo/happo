@@ -33,7 +33,7 @@ export interface EnvironmentResult {
   fallbackShas: Array<string> | undefined;
 }
 
-const envKeys: readonly string[] = [
+const envKeys: ReadonlyArray<string> = [
   'BASE_BRANCH',
   'CHANGE_URL',
   'CIRCLE_PROJECT_REPONAME',

@@ -43,6 +43,12 @@ const config: Config = defineConfig(
     },
 
     rules: {
+      // https://typescript-eslint.io/rules/array-type
+      '@typescript-eslint/array-type': [
+        'error',
+        { default: 'generic', readonly: 'generic' },
+      ],
+
       // https://eslint.org/docs/latest/rules/prefer-template
       'prefer-template': 'error',
 

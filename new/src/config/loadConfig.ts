@@ -36,7 +36,7 @@ export async function loadConfigFile(
     };
   }
   const allTargets = Object.values(config.default.targets);
-  for (const target of allTargets as TargetWithDefaults[]) {
+  for (const target of allTargets as Array<TargetWithDefaults>) {
     target.viewport = target.viewport || '1024x768';
   }
   return {

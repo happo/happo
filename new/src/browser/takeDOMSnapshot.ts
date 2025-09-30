@@ -17,15 +17,15 @@ if (globalThis.window) {
 
 // Extend HTMLElement and CSSStyleSheet to include our custom properties
 interface ExtendedHTMLElement extends HTMLElement {
-  [recordedCSSSymbol]?: string[];
+  [recordedCSSSymbol]?: Array<string>;
 }
 
 interface ExtendedCSSStyleSheet extends CSSStyleSheet {
-  [recordedCSSSymbol]?: string[];
+  [recordedCSSSymbol]?: Array<string>;
 }
 
 function getContentFromStyleSheet(element: HTMLElement | CSSStyleSheet): string {
-  let lines: string[];
+  let lines: Array<string>;
 
   if ('textContent' in element && element.textContent) {
     // Handle <style> elements with direct textContent
@@ -63,8 +63,8 @@ interface CSSBlock {
   baseUrl: string;
 }
 
-function extractCSSBlocks(doc: Document): CSSBlock[] {
-  const blocks: CSSBlock[] = [];
+function extractCSSBlocks(doc: Document): Array<CSSBlock> {
+  const blocks: Array<CSSBlock> = [];
   const styleElements = doc.querySelectorAll(CSS_ELEMENTS_SELECTOR);
 
   for (const element of styleElements) {
@@ -128,8 +128,8 @@ function getElementAssetUrls(
       element: HTMLImageElement;
     }) => void;
   } = {},
-): AssetUrl[] {
-  const allUrls: AssetUrl[] = [];
+): Array<AssetUrl> {
+  const allUrls: Array<AssetUrl> = [];
   const allElements = [element].concat(Array.from(element.querySelectorAll('*')));
   for (const element of allElements) {
     if (element.tagName === 'SCRIPT') {
@@ -199,14 +199,14 @@ function inlineCanvases(
     responsiveInlinedCanvases = false,
   }: { doc: Document; responsiveInlinedCanvases?: boolean },
 ): { element: HTMLElement; cleanup: () => void } {
-  const canvases: HTMLCanvasElement[] = [];
+  const canvases: Array<HTMLCanvasElement> = [];
   if (element.tagName === 'CANVAS') {
     canvases.push(element as HTMLCanvasElement);
   }
   canvases.push(...Array.from(element.querySelectorAll('canvas')));
 
   let newElement = element;
-  const replacements: { from: HTMLCanvasElement; to: HTMLImageElement }[] = [];
+  const replacements: Array<{ from: HTMLCanvasElement; to: HTMLImageElement }> = [];
   for (const canvas of canvases) {
     try {
       const canvasImageBase64 = canvas.toDataURL('image/png');
@@ -306,7 +306,7 @@ function performDOMTransform({
   if (!elements.length) {
     return;
   }
-  const replacements: { from: Element; to: Element }[] = [];
+  const replacements: Array<{ from: Element; to: Element }> = [];
   for (const element of elements) {
     const replacement = transform(element, doc);
     replacements.push({ from: element, to: replacement });
@@ -320,8 +320,8 @@ function performDOMTransform({
 }
 
 function transformToElementArray(
-  elements: HTMLElement | HTMLElement[] | NodeListOf<HTMLElement>,
-): HTMLElement[] {
+  elements: HTMLElement | Array<HTMLElement> | NodeListOf<HTMLElement>,
+): Array<HTMLElement> {
   // Check if 'elements' is already an array
   if (Array.isArray(elements)) {
     return elements;
@@ -349,9 +349,9 @@ function transformToElementArray(
  * @param {HTMLElement} element
  */
 function inlineShadowRoots(element: HTMLElement): void {
-  const elements: HTMLElement[] = [element];
+  const elements: Array<HTMLElement> = [element];
 
-  const elementsToProcess: HTMLElement[] = [];
+  const elementsToProcess: Array<HTMLElement> = [];
   while (elements.length) {
     const currentElement = elements.shift();
     if (!currentElement) continue;
@@ -359,7 +359,7 @@ function inlineShadowRoots(element: HTMLElement): void {
     if (currentElement.shadowRoot) {
       elementsToProcess.unshift(currentElement); // LIFO so that leaf nodes are processed first
     }
-    elements.unshift(...(Array.from(currentElement.children) as HTMLElement[])); // LIFO so that leaf nodes are processed first
+    elements.unshift(...(Array.from(currentElement.children) as Array<HTMLElement>)); // LIFO so that leaf nodes are processed first
   }
 
   for (const element of elementsToProcess) {
@@ -382,7 +382,7 @@ function inlineShadowRoots(element: HTMLElement): void {
   }
 }
 
-function findSvgElementsWithSymbols(element: HTMLElement): SVGElement[] {
+function findSvgElementsWithSymbols(element: HTMLElement): Array<SVGElement> {
   return [...element.ownerDocument.querySelectorAll('svg')].filter((svg) =>
     svg.querySelector('symbol'),
   );
@@ -390,7 +390,7 @@ function findSvgElementsWithSymbols(element: HTMLElement): SVGElement[] {
 
 interface TakeDOMSnapshotOptions {
   doc: Document;
-  element: HTMLElement | HTMLElement[] | NodeListOf<HTMLElement>;
+  element: HTMLElement | Array<HTMLElement> | NodeListOf<HTMLElement>;
   responsiveInlinedCanvases?: boolean;
   transformDOM?: {
     selector: string;
@@ -405,8 +405,8 @@ interface TakeDOMSnapshotOptions {
 
 export interface DOMSnapshotResult {
   html: string;
-  assetUrls: AssetUrl[];
-  cssBlocks: CSSBlock[];
+  assetUrls: Array<AssetUrl>;
+  cssBlocks: Array<CSSBlock>;
   htmlElementAttrs: Record<string, string>;
   bodyElementAttrs: Record<string, string>;
 }
@@ -420,8 +420,8 @@ export default function takeDOMSnapshot({
   strategy = 'hoist',
 }: TakeDOMSnapshotOptions): DOMSnapshotResult {
   const allElements = transformToElementArray(oneOrMoreElements);
-  const htmlParts: string[] = [];
-  const assetUrls: AssetUrl[] = [];
+  const htmlParts: Array<string> = [];
+  const assetUrls: Array<AssetUrl> = [];
   for (const originalElement of allElements) {
     const { element, cleanup: canvasCleanup } = inlineCanvases(originalElement, {
       doc,

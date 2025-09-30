@@ -24,7 +24,7 @@ interface Chunk {
 }
 
 interface BoundMakeRequestParams {
-  slice?: unknown[] | undefined;
+  slice?: Array<unknown> | undefined;
   chunk?: Chunk | undefined;
   pageSlice?: PageSlice | undefined;
 }
@@ -39,19 +39,19 @@ interface ExecuteParams {
   globalCSS?: string | Array<CSSBlock>;
   assetsPackage?: unknown;
   staticPackage?: unknown;
-  snapPayloads?: unknown[];
+  snapPayloads?: Array<unknown>;
   apiKey: string;
   apiSecret: string;
   endpoint: string;
-  pages?: Page[];
+  pages?: Array<Page>;
   targetName?: string;
 }
 
 const MIN_INTERNET_EXPLORER_WIDTH = 400;
 
-function getPageSlices(pages: Page[], chunks: number): PageSlice[] {
+function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
   const extendsPages: Record<string, PageSlice> = {};
-  const rawPages: Page[] = [];
+  const rawPages: Array<Page> = [];
 
   for (const page of pages) {
     if (page.extends) {
@@ -62,7 +62,7 @@ function getPageSlices(pages: Page[], chunks: number): PageSlice[] {
     }
   }
 
-  const result: PageSlice[] = [];
+  const result: Array<PageSlice> = [];
 
   // First, split the raw pages into chunks
   const pagesPerChunk = Math.ceil(rawPages.length / chunks);
@@ -197,7 +197,7 @@ export default class RemoteBrowserTarget {
       return { requestId: String(requestResult.requestId) };
     };
 
-    const requestIds: string[] = [];
+    const requestIds: Array<string> = [];
 
     if (staticPackage) {
       for (let i = 0; i < this.chunks; i += 1) {

@@ -4,7 +4,7 @@ const isInstalledSymbol: unique symbol = Symbol('isInstalled');
 
 // Extend CSSStyleSheet interface to include our custom properties
 interface ExtendedCSSStyleSheet extends CSSStyleSheet {
-  [recordedCSSSymbol]?: string[];
+  [recordedCSSSymbol]?: Array<string>;
   [hasBrokenIndexesSymbol]?: boolean;
 }
 
