@@ -1,0 +1,16 @@
+{
+  // Isomorphic code is shared between the browser and the server, so we start
+  // by extending the browser config.
+  "extends": "./tsconfig.browser.json",
+
+  "compilerOptions": {
+    "tsBuildInfoFile": "./tmp/tsc/tsconfig.isomorphic.tsbuildinfo",
+
+    // Since isomorphic code can run on the server, we need to include the node
+    // types.
+    "types": ["node"]
+  },
+
+  "include": ["src/isomorphic/**/*.ts"],
+  "exclude": ["**/__tests__/**", "**/__playwright__/**", "**/*.test.ts"]
+}

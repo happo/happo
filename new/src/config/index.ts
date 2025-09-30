@@ -35,6 +35,11 @@ export interface Config {
   targets: Record<string, Target>;
 
   /**
+   * The endpoint to use for the happo run. Defaults to `https://happo.io`
+   */
+  endpoint?: string;
+
+  /**
    * The project to use for the happo run
    *
    * If you have multiple projects configured for your Happo account, specify
@@ -60,7 +65,7 @@ export interface Config {
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';
 type DesktopBrowserType = 'chrome' | 'firefox' | 'edge' | 'safari' | 'accessibility';
-type BrowserType = MobileSafariBrowserType | DesktopBrowserType;
+export type BrowserType = MobileSafariBrowserType | DesktopBrowserType;
 
 interface BaseTarget {
   browserType: BrowserType;
@@ -182,6 +187,10 @@ interface MobileSafariTarget extends BaseTarget {
 
 interface DesktopTarget extends BaseTarget {
   browserType: DesktopBrowserType;
+
+  /**
+   * Set the viewport size for the browser
+   */
   viewport: `${number}x${number}`;
 
   /**
@@ -191,7 +200,18 @@ interface DesktopTarget extends BaseTarget {
   prefersReducedMotion?: boolean;
 }
 
-type Target = MobileSafariTarget | DesktopTarget;
+export type Target = MobileSafariTarget | DesktopTarget;
+
+export interface TargetWithDefaults extends BaseTarget {
+  viewport: `${number}x${number}`;
+  __dynamic: boolean;
+  prefersReducedMotion?: boolean;
+}
+
+export interface ConfigWithDefaults extends Config {
+  targets: Record<string, TargetWithDefaults>;
+  endpoint: string;
+}
 
 export function defineConfig(config: Config): Config {
   return config;

@@ -1,9 +1,9 @@
 import parseSrcset from 'parse-srcset';
 
+import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.ts';
 import applyConstructedStylesPatch, {
   recordedCSSSymbol,
 } from './applyConstructedStylesPatch.ts';
-import { findCSSAssetUrls } from './findCSSAssetUrls.ts';
 import { MD5 } from './md5.ts';
 
 export { applyConstructedStylesPatch };
@@ -243,7 +243,7 @@ function inlineCanvases(
       }
       replacements.push({ from: canvas, to: image });
     } catch (e) {
-      if ((e as Error).name === 'SecurityError') {
+      if (e instanceof Error && e.name === 'SecurityError') {
         console.warn('[HAPPO] Failed to convert tainted canvas to PNG image');
         console.warn(e);
       } else {

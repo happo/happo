@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { afterEach,describe, it } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 
 import { JSDOM } from 'jsdom';
 
@@ -152,18 +152,18 @@ describe('takeDOMSnapshot', () => {
 </html>
   `);
     const { document: doc } = globalThis.window;
-    const radioInput = doc.querySelector(
+    const radioInput = doc.querySelector<HTMLInputElement>(
       'input[type="radio"][value="a"]',
-    ) as HTMLInputElement;
-    const checkboxInput = doc.querySelector(
+    );
+    const checkboxInput = doc.querySelector<HTMLInputElement>(
       'input[type="checkbox"][name="baz"]',
-    ) as HTMLInputElement;
+    );
     if (!radioInput || !checkboxInput) {
       throw new Error('Input elements not found');
     }
     radioInput.checked = true;
     checkboxInput.checked = true;
-    const element = doc.querySelector('form') as HTMLFormElement;
+    const element = doc.querySelector('form');
     if (!element) {
       throw new Error('Element not found');
     }

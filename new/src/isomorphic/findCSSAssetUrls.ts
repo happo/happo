@@ -1,6 +1,6 @@
-export const URL_PATTERN: RegExp = /(url\(['"]?)(.*?)(['"]?\))/g;
+const URL_PATTERN: RegExp = /(url\(['"]?)(.*?)(['"]?\))/g;
 
-export function findCSSAssetUrls(string: string): string[] {
+function findCSSAssetUrls(string: string): string[] {
   const result: string[] = [];
   let match: RegExpExecArray | null;
   while ((match = URL_PATTERN.exec(string))) {
@@ -11,3 +11,6 @@ export function findCSSAssetUrls(string: string): string[] {
   }
   return result;
 }
+
+export { URL_PATTERN };
+export default findCSSAssetUrls;

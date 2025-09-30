@@ -237,7 +237,7 @@ describe('resolveEnvironment', () => {
         GITHUB_EVENT_PATH: 'non-existing-path',
       });
     } catch (e) {
-      caughtError = e as Error;
+      caughtError = e instanceof Error ? e : new Error(String(e));
     }
     assert.ok(caughtError);
     assert.equal(
