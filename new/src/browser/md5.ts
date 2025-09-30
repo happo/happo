@@ -57,7 +57,7 @@ interface HasherState {
   buffer: string;
   buflen: number;
   length: number;
-  state: number[];
+  state: Array<number>;
 }
 
 const EMPTY_STATE = new Int32Array(4);
@@ -92,7 +92,7 @@ export class MD5 {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   ]);
   private static hexChars = '0123456789abcdef';
-  private static hexOut: string[] = [];
+  private static hexOut: Array<string> = [];
 
   // Permanent instance is to use for one-call hashing
   private static onePassHasher = new MD5();

@@ -139,7 +139,7 @@ export function writeFile(filePath: string, content: string): void {
  *   tmpfs.restore();
  * });
  */
-export function exec(command: string, args?: string[]): string {
+export function exec(command: string, args?: Array<string>): string {
   assertMocked('exec');
 
   const result = spawnSync(command, args, {
