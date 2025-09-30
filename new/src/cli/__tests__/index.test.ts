@@ -252,7 +252,9 @@ describe('main', () => {
           logger,
         );
 
-        assert.strictEqual(process.exitCode, 1);
+        // ls exits 1 on mac, but 2 in CI. Good enough to just assert that it's
+        // not 0 here.
+        assert.notStrictEqual(process.exitCode, 0);
         assert(logger.log.mock.callCount() >= 1);
       });
     });
