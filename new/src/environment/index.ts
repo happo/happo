@@ -22,7 +22,7 @@ interface GitHubEvent {
   after?: string;
 }
 
-interface EnvironmentResult {
+export interface EnvironmentResult {
   link: string | undefined;
   message: string | undefined;
   beforeSha: string | undefined;
