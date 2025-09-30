@@ -2,6 +2,7 @@ import eslint from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import configPrettier from 'eslint-config-prettier';
 import pluginCompat from 'eslint-plugin-compat';
+import pluginDepend from 'eslint-plugin-depend';
 import pluginSimpleImportSort from 'eslint-plugin-simple-import-sort';
 import pluginUnicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
@@ -23,8 +24,11 @@ const config: Config = defineConfig(
     files: ['**/*.ts'],
 
     plugins: {
+      depend: pluginDepend,
       'simple-import-sort': pluginSimpleImportSort,
     },
+
+    extends: ['depend/flat/recommended'],
 
     languageOptions: {
       ecmaVersion: 'latest',
