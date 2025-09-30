@@ -1,11 +1,12 @@
 import crypto from 'node:crypto';
 import { Readable } from 'node:stream';
+import type { ReadableStream } from 'node:stream/web';
 
 import mime from 'mime-types';
 
 import type { ArchiveContentEntry } from '../utils/deterministicArchive.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
-import proxiedFetch from './fetch.ts';
+import fetchWithRetry from './fetch.ts';
 import makeAbsolute from './makeAbsolute.ts';
 
 // Type definitions
@@ -99,9 +100,10 @@ export default async function createAssetPackage(
         }
 
         try {
-          const fetchRes = await proxiedFetch(fetchUrl, { retryCount: 5 });
+          const fetchRes = await fetchWithRetry(fetchUrl, { retryCount: 5 });
 
           const { body } = fetchRes;
+
           if (!body) {
             throw new Error(`No body for ${fetchUrl}`);
           }
@@ -118,7 +120,12 @@ export default async function createAssetPackage(
           name = decodeURI(name);
           item.name = `/${name}`;
 
-          const content = Readable.fromWeb(body);
+          const content = Readable.fromWeb(
+            // Unfortunately, it seems that we need to use a type cast here for
+            // now. More info:
+            // https://github.com/DefinitelyTyped/DefinitelyTyped/discussions/65542#discussioncomment-6071004
+            body as ReadableStream<Uint8Array>,
+          );
 
           archiveContent.push({
             name,

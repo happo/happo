@@ -18,7 +18,7 @@ import makeRequest from '../utils/makeRequest.ts';
 import convertBase64FileToReal from './convertBase64FileToReal.ts';
 import type { AssetUrl } from './createAssetPackage.ts';
 import createAssetPackage from './createAssetPackage.ts';
-import proxiedFetch from './fetch.ts';
+import fetchWithRetry from './fetch.ts';
 import makeAbsolute from './makeAbsolute.ts';
 import makeExternalUrlsAbsolute from './makeExternalUrlsAbsolute.ts';
 import uploadAssets from './uploadAssets.ts';
@@ -130,13 +130,14 @@ async function downloadCSSContent(blocks: CSSBlock[]): Promise<void> {
   const actions = blocks.map((block) => async () => {
     if (block.href) {
       const absUrl = makeAbsolute(block.href, block.baseUrl || '');
+
       if (HAPPO_DEBUG) {
         console.log(`[HAPPO] Downloading CSS file from ${absUrl}`);
       }
 
       let res;
       try {
-        res = await proxiedFetch(absUrl, { retryCount: 5 });
+        res = await fetchWithRetry(absUrl, { retryCount: 5 });
       } catch {
         console.warn(
           `[HAPPO] Failed to fetch CSS file from ${absUrl} (using ${block.href} with base URL ${block.baseUrl}). This might mean styles are missing in your Happo screenshots.`,
@@ -145,6 +146,7 @@ async function downloadCSSContent(blocks: CSSBlock[]): Promise<void> {
       }
 
       let text = await res.text();
+
       if (HAPPO_DEBUG) {
         console.log(
           `[HAPPO] Done downloading CSS file from ${absUrl}. Got ${text.length} chars back.`,
@@ -292,15 +294,18 @@ Docs:
       await this.processSnapRequestIds([await this.uploadLocalSnapshots()]);
       return;
     }
+
     if (!this.snapshots.length) {
       if (this.happoDebug) {
         console.log('[HAPPO] No snapshots recorded');
       }
       return;
     }
+
     this.snapshots = dedupeSnapshots(this.snapshots);
     await downloadCSSContent(this.allCssBlocks);
     const allUrls = [...this.snapshotAssetUrls];
+
     for (const block of this.allCssBlocks) {
       for (const url of findCSSAssetUrls(block.content || ''))
         allUrls.push({
@@ -319,11 +324,13 @@ Docs:
       conditional: true,
       css: block.content || '',
     }));
+
     for (const url of uniqueUrls) {
       if (url.name && /^\/_external\//.test(url.name) && url.name !== url.url) {
         for (const block of globalCSS) {
           block.css = block.css ? block.css.split(url.url).join(url.name!) : '';
         }
+
         for (const snapshot of this.snapshots) {
           snapshot.html = snapshot.html.split(url.url).join(url.name!);
           if (/&/.test(url.url)) {
@@ -335,14 +342,18 @@ Docs:
         }
       }
     }
+
     const allRequestIds = [];
+
     for (const name of Object.keys(this.happoConfig.targets)) {
       if (this.happoDebug) {
         console.log(`[HAPPO] Sending snap-request(s) for target=${name}`);
       }
+
       const snapshotsForTarget = this.snapshots.filter(
         ({ targets }) => !targets || targets.includes(name),
       );
+
       if (!snapshotsForTarget.length) {
         if (this.happoDebug) {
           console.log(`[HAPPO] No snapshots recorded for target=${name}. Skipping.`);
@@ -378,6 +389,7 @@ Docs:
       }
       allRequestIds.push(...requestIds);
     }
+
     await this.processSnapRequestIds(allRequestIds);
   }
 
@@ -395,6 +407,7 @@ Docs:
     if (!component) {
       throw new Error('Missing `component`');
     }
+
     if (!variant) {
       throw new Error('Missing `variant`');
     }
@@ -402,6 +415,7 @@ Docs:
     if (this.happoDebug) {
       console.log(`[HAPPO] Registering snapshot for ${component} > ${variant}`);
     }
+
     this.snapshotAssetUrls.push(...assetUrls);
     const targets = this.handleDynamicTargets(rawTargets);
     this.snapshots.push({
@@ -414,10 +428,12 @@ Docs:
       htmlElementAttrs,
       bodyElementAttrs,
     });
+
     for (const block of cssBlocks) {
       if (this.allCssBlocks.some((b) => b.key === block.key)) {
         continue;
       }
+
       this.allCssBlocks.push(block);
     }
   }
@@ -459,6 +475,7 @@ Docs:
         )} and ${new Date(end)}`,
       );
     }
+
     this.snapshots = this.snapshots.filter(({ timestamp }) => {
       if (!timestamp) {
         return true;
@@ -475,14 +492,18 @@ Docs:
         )} and ${new Date(end)}`,
       );
     }
+
     const seenSnapshots: Record<string, boolean> = {};
     this.snapshots = this.snapshots.filter((snapshot) => {
       const { timestamp, component, variant } = snapshot;
+
       if (!timestamp) {
         return true;
       }
+
       const id = [component, variant].join('-_|_-');
       const inTimeframe = timestamp >= start && timestamp <= end;
+
       if (inTimeframe) {
         if (seenSnapshots[id]) {
           // Found a duplicate made in the timeframe specified
@@ -493,10 +514,13 @@ Docs:
               )}`,
             );
           }
+
           return false;
         }
+
         seenSnapshots[id] = true;
       }
+
       return true;
     });
   }
@@ -512,6 +536,7 @@ Docs:
         method: 'POST',
         body: allRequestIds.join('\n'),
       });
+
       if (!fetchRes.ok) {
         throw new Error('Failed to communicate with happo-e2e server');
       }
@@ -556,14 +581,17 @@ Docs:
       if (!this.happoConfig) {
         return [];
       }
+
       return Object.keys(this.happoConfig.targets).filter(
         (targetName) => !this.happoConfig.targets[targetName]?.__dynamic,
       );
     }
+
     for (const target of targets) {
       if (typeof target === 'string') {
         result.push(target);
       }
+
       if (
         typeof target === 'object' &&
         target.name &&
@@ -573,6 +601,7 @@ Docs:
         if (!this.happoConfig) {
           throw new Error('Happo config not initialized');
         }
+
         if (this.happoConfig.targets[target.name]) {
           // already added
         } else {
@@ -585,9 +614,11 @@ Docs:
           // add dynamic target
           this.happoConfig.targets[targetName] = constructedTarget;
         }
+
         result.push(target.name);
       }
     }
+
     return result;
   }
 

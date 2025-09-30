@@ -90,7 +90,6 @@
     "mime-types": "^3.0.1",
     "p-all": "^5.0.1",
     "parse-srcset": "^1.0.2",
-    "supports-color": "^10.2.2",
-    "undici": "^7.16.0"
+    "supports-color": "^10.2.2"
   }
 }
