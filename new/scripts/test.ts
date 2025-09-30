@@ -209,14 +209,19 @@ function run() {
     }
   });
 
-  if (args.watch) {
-    currentProcess.on('exit', () => {
-      currentProcess = null;
-      // Print the commands again after the test run so the user can see how to
-      // use this again.
+  currentProcess.on('exit', (code, signal) => {
+    currentProcess = null;
+
+    if (args.watch) {
+      // Print the commands again after the test run so the user can see how
+      // to use this again.
       help();
-    });
-  }
+    } else {
+      // In non-watch mode, wait for the process to complete and exit with the
+      // same code
+      process.exitCode = signal ? 1 : code || 0;
+    }
+  });
 }
 
 function help() {
