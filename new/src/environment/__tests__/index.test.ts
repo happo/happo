@@ -1,5 +1,4 @@
 import assert from 'node:assert';
-import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -14,10 +13,7 @@ function initGitRepo() {
   tmpfs.exec('git', ['remote', 'add', 'origin', origin]);
 
   // Make a second commit in the main branch
-  fs.writeFileSync(
-    path.join(tmpfs.getTempDir(), 'another-file.txt'),
-    'I like pizza',
-  );
+  tmpfs.writeFile('another-file.txt', 'I like pizza');
   tmpfs.exec('git', ['add', 'another-file.txt']);
   tmpfs.exec('git', ['commit', '-m', 'Add another file']);
 
@@ -26,10 +22,7 @@ function initGitRepo() {
   const branch = 'resolve-env-test-branch';
 
   tmpfs.exec('git', ['checkout', '-b', branch]);
-  fs.writeFileSync(
-    path.join(tmpfs.getTempDir(), 'new-branch-file.txt'),
-    'I love pizza!',
-  );
+  tmpfs.writeFile('new-branch-file.txt', 'I love pizza!');
   tmpfs.exec('git', ['add', 'new-branch-file.txt']);
   tmpfs.exec('git', ['commit', '-m', 'Add new branch file']);
 
@@ -44,10 +37,7 @@ function initGitRepo() {
 
 function makeNewBranchAndCommit(fileContents: string) {
   tmpfs.exec('git', ['checkout', '-b', 'some-new-branch']);
-  fs.writeFileSync(
-    path.join(tmpfs.getTempDir(), 'new-branch-file.txt'),
-    fileContents,
-  );
+  tmpfs.writeFile('new-branch-file.txt', fileContents);
   tmpfs.exec('git', ['add', 'new-branch-file.txt']);
   tmpfs.exec('git', ['commit', '-m', 'Add new branch file']);
 }

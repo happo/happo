@@ -62,7 +62,7 @@ export function mock(files: Files = {}): string {
       fs.mkdirSync(path.join(tempDir, dir), { recursive: true });
     }
 
-    fs.writeFileSync(path.join(tempDir, filePath), content);
+    writeFile(filePath, content);
   }
 
   return tempDir;
@@ -101,6 +101,34 @@ function assertMocked(caller: string): void {
 }
 
 /**
+ * Writes a file to the temporary directory
+ *
+ * @example
+ * it('is a test', () => {
+ *   tmpfs.mock({});
+ *   tmpfs.writeFile('test.txt', 'Hello, world!');
+ *   assert.strictEqual(fs.readFileSync(path.join(tmpfs.getTempDir(), 'test.txt'), 'utf8'), 'Hello, world!');
+ *   tmpfs.restore();
+ * });
+ */
+export function writeFile(filePath: string, content: string): void {
+  assertMocked('writeFile');
+
+  if (filePath.startsWith('/')) {
+    throw new Error('filePath cannot start with a slash');
+  }
+
+  if (filePath.includes('..')) {
+    throw new Error('filePath cannot contain ..');
+  }
+
+  const fullPath = path.join(tempDir, filePath);
+  fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+
+  fs.writeFileSync(fullPath, content);
+}
+
+/**
  * Executes a command in the temporary directory
  *
  * @example
@@ -120,7 +148,7 @@ export function exec(command: string, args?: string[]): string {
 
   if (result.status !== 0) {
     throw new Error(
-      `Command ${command} ${args?.join(' ')} failed: ${result.stderr}`,
+      `Command \`${[command, ...(args ?? [])].join(' ')}\` failed: ${result.stderr}`,
     );
   }
 
@@ -134,7 +162,7 @@ export function exec(command: string, args?: string[]): string {
  * it('is a test', () => {
  *   tmpfs.mock({});
  *   tmpfs.gitInit();
- *   fs.writeFileSync(path.join(tmpfs.getTempDir(), 'test.txt'), 'I like pizza');
+ *   tmpfs.writeFile('test.txt', 'I like pizza');
  *   tmpfs.exec('git', ['add', 'test.txt']);
  *   tmpfs.exec('git', ['commit', '-m', 'Add test.txt']);
  *   tmpfs.restore();
