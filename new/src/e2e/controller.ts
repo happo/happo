@@ -4,7 +4,11 @@ import fs from 'node:fs';
 import { imageSize } from 'image-size';
 import pAll from 'p-all';
 
-import type { BrowserType, Config, Target } from '../config/index.ts';
+import type {
+  BrowserType,
+  ConfigWithDefaults,
+  TargetWithDefaults,
+} from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
 // import type { Config } from '../config/index.ts';
@@ -175,10 +179,10 @@ class Controller {
   private localSnapshots: LocalSnapshot[] = [];
   // private localSnapshotImages: Record<string, any> = {};
   private happoDebug: boolean = false;
-  protected happoConfig: Config | null = null;
+  protected happoConfig: ConfigWithDefaults | null = null;
 
   // Public getters for testing
-  get config(): Config | null {
+  get config(): ConfigWithDefaults | null {
     return this.happoConfig;
   }
 
@@ -194,7 +198,9 @@ class Controller {
     return this.allCssBlocks;
   }
 
-  private assertHappoConfig(): asserts this is this & { happoConfig: Config } {
+  private assertHappoConfig(): asserts this is this & {
+    happoConfig: ConfigWithDefaults;
+  } {
     if (!this.happoConfig) {
       throw new Error('Happo config not initialized');
     }
@@ -571,7 +577,7 @@ Docs:
           // already added
         } else {
           const targetName = target.name;
-          const constructedTarget: Target = {
+          const constructedTarget: TargetWithDefaults = {
             viewport: target.viewport,
             browserType: target.browserType,
             __dynamic: true,

@@ -179,14 +179,6 @@ interface BaseTarget {
    * with Happo, you may also want to use the `applyPseudoClasses` option.
    */
   allowPointerEvents?: boolean;
-
-  /**
-   * Set the viewport size for the browser
-   */
-  viewport: `${number}x${number}`;
-
-  // Internal flag for dynamic targets
-  __dynamic?: boolean;
 }
 
 interface MobileSafariTarget extends BaseTarget {
@@ -197,6 +189,11 @@ interface DesktopTarget extends BaseTarget {
   browserType: DesktopBrowserType;
 
   /**
+   * Set the viewport size for the browser
+   */
+  viewport: `${number}x${number}`;
+
+  /**
    * Set `prefersReducedMotion: true` to make the browser prefer reduced motion
    * when rendering the UI.
    */
@@ -204,6 +201,17 @@ interface DesktopTarget extends BaseTarget {
 }
 
 export type Target = MobileSafariTarget | DesktopTarget;
+
+export interface TargetWithDefaults extends BaseTarget {
+  viewport: `${number}x${number}`;
+  __dynamic: boolean;
+  prefersReducedMotion?: boolean;
+}
+
+export interface ConfigWithDefaults extends Config {
+  targets: Record<string, TargetWithDefaults>;
+  endpoint: string;
+}
 
 export function defineConfig(config: Config): Config {
   return config;

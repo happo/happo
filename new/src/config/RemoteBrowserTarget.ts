@@ -1,6 +1,6 @@
 import makeRequest from '../utils/makeRequest.ts';
 import createHash from './createHash.ts';
-import type { Target } from './index.ts';
+import type { TargetWithDefaults } from './index.ts';
 
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
 
@@ -95,7 +95,12 @@ export default class RemoteBrowserTarget {
 
   constructor(
     browserName: string,
-    { viewport = '1024x768', chunks = 1, maxHeight, ...otherOptions }: Target,
+    {
+      viewport = '1024x768',
+      chunks = 1,
+      maxHeight,
+      ...otherOptions
+    }: TargetWithDefaults,
   ) {
     const viewportMatch = viewport.match(VIEWPORT_PATTERN);
     if (!viewportMatch) {
