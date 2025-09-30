@@ -19,7 +19,7 @@
     "build:watch": "tsc --build --watch",
     "build:browser": "esbuild src/browser/main.ts --bundle --format=iife --global-name=happo --outfile=dist/browser/main.bundle.js --platform=browser --target=esnext",
     "clean": "rm -rf dist tmp/tsc types",
-    "eslint": "eslint .",
+    "lint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "./scripts/test.ts",
     "test:playwright": "playwright test",
@@ -28,6 +28,24 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "browserslist": {
+    "node": [
+      "node 22"
+    ],
+    "browser": [
+      "last 2 Chrome major versions",
+      "last 2 Firefox major versions",
+      "last 2 Safari major versions",
+      "last 2 Edge major versions"
+    ],
+    "isomorphic": [
+      "node 22",
+      "last 2 Chrome major versions",
+      "last 2 Firefox major versions",
+      "last 2 Safari major versions",
+      "last 2 Edge major versions"
+    ]
+  },
   "prettier": {
     "printWidth": 85,
     "singleQuote": true,
@@ -51,6 +69,7 @@
     "esbuild": "^0.25.10",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-compat": "^6.0.2",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unicorn": "^61.0.2",
     "jiti": "^2.6.0",
