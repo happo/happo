@@ -2,7 +2,7 @@
   "extends": "./tsconfig.tests.json",
 
   "compilerOptions": {
-    "tsBuildInfoFile": "./tmp/tsc/tsconfig.playwright.tsbuildinfo"
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.playwright.tsbuildinfo"
   },
 
   "references": [
@@ -14,5 +14,5 @@
     }
   ],
 
-  "include": ["src/**/__playwright__/**/*.ts"]
+  "include": ["../src/**/__playwright__/**/*.ts"]
 }
