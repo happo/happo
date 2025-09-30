@@ -210,7 +210,8 @@ export interface TargetWithDefaults extends BaseTarget {
 
 export interface ConfigWithDefaults extends Config {
   targets: Record<string, TargetWithDefaults>;
-  endpoint: string;
+  endpoint: NonNullable<Config['endpoint']>;
+  githubApiUrl: NonNullable<Config['githubApiUrl']>;
 }
 
 export function defineConfig(config: Config): Config {

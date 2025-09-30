@@ -39,5 +39,9 @@ export async function loadConfigFile(
   for (const target of allTargets as TargetWithDefaults[]) {
     target.viewport = target.viewport || '1024x768';
   }
-  return { endpoint: 'https://happo.io', ...config.default };
+  return {
+    endpoint: 'https://happo.io',
+    githubApiUrl: 'https://api.github.com',
+    ...config.default,
+  };
 }

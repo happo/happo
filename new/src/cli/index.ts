@@ -5,27 +5,59 @@ import { parseArgs } from 'node:util';
 import packageJson from '../../package.json' with { type: 'json' };
 import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
+import { DEFAULT_PORT as DEFAULT_E2E_PORT, finalizeAll } from '../e2e/wrapper.ts';
 import resolveEnvironment from '../environment/index.ts';
 
+function parseDashdashCommandParts(rawArgs: Array<string>): Array<string> {
+  const dashdashIndex = rawArgs.indexOf('--');
+  if (dashdashIndex === -1) {
+    return [];
+  }
+  return rawArgs.slice(dashdashIndex + 1);
+}
+
 function parseRawArgs(rawArgs: Array<string>) {
-  return parseArgs({
+  const parsedArgs = parseArgs({
     args: rawArgs,
+
     options: {
       version: {
         type: 'boolean',
         short: 'v',
       },
+
       help: {
         type: 'boolean',
         short: 'h',
       },
+
       config: {
         type: 'string',
         short: 'c',
       },
+
+      e2eAllowFailures: {
+        type: 'boolean',
+        default: false,
+      },
+
+      e2ePort: {
+        type: 'string',
+        default: DEFAULT_E2E_PORT,
+      },
+
+      e2eSkippedExamples: {
+        type: 'string',
+      },
     },
+
     allowPositionals: true,
   });
+
+  return {
+    ...parsedArgs,
+    dashdashCommandParts: parseDashdashCommandParts(rawArgs),
+  };
 }
 
 const helpText = `Happo ${packageJson.version}
@@ -39,18 +71,37 @@ Options:
   --config   Path to happo config file
   --version  Show version number
   --help     Show help text
+
+Specific to e2e command:
+  --e2e-allow-failures    Allow failures for e2e tests (default: false)
+  --e2e-port              Port to listen on for e2e tests (default: ${DEFAULT_E2E_PORT})
+  --e2e-skipped-examples  List of skipped examples as JSON
+
+Examples:
+  happo
+  happo --config path/to/happo.config.ts
+  happo --version
+  happo --help
+  happo e2e -- playwright test
+  happo e2e finalize
+  happo e2e --e2e-allow-failures -- cypress run
   `;
 
-export async function main(rawArgs: Array<string> = process.argv): Promise<void> {
+type Logger = Pick<Console, 'log' | 'error'>;
+
+export async function main(
+  rawArgs: Array<string> = process.argv,
+  logger: Logger = console,
+): Promise<void> {
   const args = parseRawArgs(rawArgs.slice(2));
   // Handle --version flag
   if (args.values.version) {
-    console.log(packageJson.version);
+    logger.log(packageJson.version);
     return;
   }
 
   if (args.values.help) {
-    console.log(helpText);
+    logger.log(helpText);
     return;
   }
 
@@ -64,19 +115,27 @@ export async function main(rawArgs: Array<string> = process.argv): Promise<void>
 
   switch (command) {
     case 'e2e': {
-      await handleE2ECommand(config, environment);
+      await handleE2ECommand(
+        config,
+        environment,
+        args.positionals,
+        args.dashdashCommandParts,
+        args.values.e2eAllowFailures,
+        args.values.e2ePort,
+        logger,
+      );
       break;
     }
 
     case undefined: {
       // Default command - run happo tests
-      await handleDefaultCommand(config, environment);
+      await handleDefaultCommand(config, environment, logger);
       break;
     }
 
     default: {
-      console.error(`Unknown command: ${command}\n`);
-      console.error(helpText);
+      logger.error(`Unknown command: ${command}\n`);
+      logger.error(helpText);
       process.exitCode = 1;
       return;
     }
@@ -86,20 +145,41 @@ export async function main(rawArgs: Array<string> = process.argv): Promise<void>
 async function handleDefaultCommand(
   config: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
+  logger: Logger,
 ): Promise<void> {
-  console.log('Running happo tests...');
-  console.log('Config:', config);
-  console.log('Environment:', environment);
+  logger.log('Running happo tests...');
+  logger.log('Config:', config);
+  logger.log('Environment:', environment);
   // TODO: Implement actual test running logic
 }
 
 async function handleE2ECommand(
   config: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
+  positionals: Array<string>,
+  dashdashCommandParts: Array<string>,
+  e2eAllowFailures: boolean,
+  e2ePort: string,
+  logger: Logger,
 ): Promise<void> {
-  console.log('Setting up happo wrapper for Cypress and Playwright...');
-  console.log('Config:', config);
-  console.log('Environment:', environment);
+  if (positionals[1] === 'finalize') {
+    await finalizeAll({ happoConfig: config, environment, logger });
+    return;
+  }
+
+  if (!dashdashCommandParts || dashdashCommandParts.length === 0) {
+    logger.error('Missing command for e2e action');
+    logger.error(helpText);
+    process.exitCode = 1;
+    return;
+  }
+
+  logger.log('Setting up happo wrapper for Cypress and Playwright...');
+  logger.log('Config:', config);
+  logger.log('Environment:', environment);
+  logger.log('Dashdash command parts:', dashdashCommandParts);
+  logger.log('E2E allow failures:', e2eAllowFailures);
+  logger.log('E2E port:', e2ePort);
   // TODO: Implement e2e setup logic
 }
 
