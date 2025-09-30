@@ -1,8 +1,6 @@
 import type AsyncRetryType from 'async-retry';
 import asyncRetry from 'async-retry';
 import { SignJWT } from 'jose';
-import type { RequestInit } from 'undici';
-import { fetch, FormData, ProxyAgent } from 'undici';
 
 import packageJson from '../../package.json' with { type: 'json' };
 const { version } = packageJson;
@@ -89,7 +87,6 @@ export default async function makeRequest(
     retryMinTimeout = 1000,
     retryMaxTimeout = Infinity,
   }: MakeRequestOptions,
-  { HTTP_PROXY }: NodeJS.ProcessEnv = process.env,
 ): Promise<object | null> {
   const { url, method = 'GET', formData, body: jsonBody } = requestAttributes;
 
@@ -146,10 +143,6 @@ export default async function makeRequest(
         ...requestAttributes,
         body,
       };
-
-      if (HTTP_PROXY) {
-        fetchOptions.dispatcher = new ProxyAgent(HTTP_PROXY);
-      }
 
       const response = await fetch(url, fetchOptions);
 

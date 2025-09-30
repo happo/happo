@@ -21,21 +21,18 @@ before(async () => {
 
   let requestId = 0;
 
-  server = http.createServer(
-    (req: http.IncomingMessage, res: http.ServerResponse) => {
-      // Set proper headers
-      res.setHeader('Content-Type', 'application/json');
+  server = http.createServer((req, res) => {
+    // Set proper headers
+    res.setHeader('Content-Type', 'application/json');
 
-      if (req.url?.startsWith('/api/snap-requests/assets-data/')) {
-        res.end(
-          JSON.stringify({ path: '/path/to/asset', uploadedAt: '2021-01-01' }),
-        );
-        return;
-      }
+    if (req.url?.startsWith('/api/snap-requests/assets-data/')) {
+      res.end(JSON.stringify({ path: '/path/to/asset', uploadedAt: '2021-01-01' }));
+      return;
+    }
 
-      res.end(JSON.stringify({ requestId: `request-id-${requestId++}` }));
-    },
-  );
+    res.end(JSON.stringify({ requestId: `request-id-${requestId++}` }));
+  });
+
   server.listen(port);
 
   // Create a mock happo.js file

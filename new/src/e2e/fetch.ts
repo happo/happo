@@ -1,6 +1,4 @@
 import asyncRetry from 'async-retry';
-import type { RequestInit, Response } from 'undici';
-import { fetch as undiciFetch, ProxyAgent } from 'undici';
 
 import { ErrorWithStatusCode } from '../utils/makeRequest.ts';
 
@@ -8,19 +6,13 @@ interface FetchParams {
   retryCount?: number;
 }
 
-export default async function fetch(
+export default async function fetchWithRetry(
   url: string,
   { retryCount = 0 }: FetchParams = {},
 ): Promise<Response> {
   return asyncRetry(
     async (bail: (error: Error) => void) => {
-      const fetchOptions: RequestInit = {};
-
-      if (process.env.HTTP_PROXY) {
-        fetchOptions.dispatcher = new ProxyAgent(process.env.HTTP_PROXY);
-      }
-
-      const response = await undiciFetch(url, fetchOptions);
+      const response = await fetch(url);
 
       if (response.status >= 400 && response.status < 500) {
         bail(
