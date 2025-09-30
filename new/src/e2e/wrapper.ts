@@ -6,7 +6,7 @@ import resolveEnvironment, { type EnvironmentResult } from '../environment/index
 import postGitHubComment from '../network/postGitHubComment.ts';
 import makeRequest from '../utils/makeRequest.ts';
 
-const allRequestIds = new Set<number>();
+let allRequestIds: Set<number>;
 
 export const DEFAULT_PORT = '5339';
 
@@ -243,7 +243,7 @@ function startServer(
   port: string,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
   happoConfig: ConfigWithDefaults,
-) {
+): Promise<() => Promise<void>> {
   function requestHandler(req: http.IncomingMessage, res: http.ServerResponse) {
     const bodyParts: Array<string> = [];
     req.on('data', (chunk: Buffer) => {
@@ -276,13 +276,34 @@ function startServer(
     });
   }
   const server = http.createServer(requestHandler);
-  return new Promise<void>((resolve) => {
+  return new Promise<() => Promise<void>>((resolve) => {
     server.listen(port, () => {
-      resolve();
+      async function closeServer() {
+        await new Promise<void>((res, rej) => {
+          server.close((err) => {
+            if (err) rej(err);
+            else {
+              res();
+            }
+          });
+        });
+      }
+      resolve(closeServer);
     });
   });
 }
 
+/**
+ * Runs a command with the wrapper and returns the exit code.
+ *
+ * @param dashdashCommandParts The command to run with the wrapper
+ * @param happoConfig The Happo config
+ * @param environment The environment
+ * @param port The port to listen on
+ * @param allowFailures Whether to allow failures
+ * @param logger The logger
+ * @returns The exit code of the command
+ */
 export default async function runWithWrapper(
   dashdashCommandParts: Array<string>,
   happoConfig: ConfigWithDefaults,
@@ -291,30 +312,37 @@ export default async function runWithWrapper(
   allowFailures: boolean,
   logger: Logger,
 ): Promise<number> {
-  await startServer(port, environment, happoConfig);
+  allRequestIds = new Set<number>();
+  const closeServer = await startServer(port, environment, happoConfig);
   logger.log(`[HAPPO] Listening on port ${port}`);
 
-  return new Promise((resolve, reject) => {
-    const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
-      stdio: 'inherit',
-      env: { ...process.env, HAPPO_E2E_PORT: port },
-      shell: process.platform == 'win32',
-    });
+  try {
+    const exitCode = await new Promise<number>((resolve, reject) => {
+      const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
+        stdio: 'inherit',
+        env: { ...process.env, HAPPO_E2E_PORT: port },
+        shell: process.platform == 'win32',
+      });
 
-    child.on('error', (e) => {
-      return reject(e);
-    });
+      child.on('error', (e) => {
+        return reject(e);
+      });
 
-    child.on('close', async (code: number) => {
-      if (code === 0 || allowFailures) {
-        try {
-          await finalizeHappoReport(happoConfig, environment, logger);
-        } catch (e) {
-          logger.error('Failed to finalize Happo report', e);
-          return reject(e);
+      child.on('close', async (code: number) => {
+        if (code === 0 || allowFailures) {
+          try {
+            await finalizeHappoReport(happoConfig, environment, logger);
+          } catch (e) {
+            logger.error('Failed to finalize Happo report', e);
+            return reject(e);
+          }
         }
-      }
-      return resolve(code);
+        resolve(code);
+      });
     });
-  });
+    return exitCode;
+  } finally {
+    allRequestIds.clear();
+    await closeServer();
+  }
 }
