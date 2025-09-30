@@ -11,9 +11,20 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { watch } from 'node:fs';
 import readline from 'node:readline';
+import Reporters from 'node:test/reporters';
 import { parseArgs } from 'node:util';
 
 let selectedFiles: Array<string> = [];
+
+type Reporter = keyof typeof Reporters | 'github';
+const REPORTERS: Record<Reporter, string> = {
+  dot: 'dot',
+  github: '@reporters/github',
+  junit: 'junit',
+  lcov: 'lcov',
+  spec: 'spec',
+  tap: 'tap',
+};
 
 // Parse command line arguments
 const { values: args, positionals } = parseArgs({
@@ -35,6 +46,14 @@ const { values: args, positionals } = parseArgs({
       short: 'c',
       description: 'Show coverage',
     },
+    reporter: {
+      type: 'string',
+      short: 'r',
+      description:
+        'Reporter to use. Defaults to "spec" when running locally. When running in GitHub Actions, the github reporter is added automatically.',
+      default: ['spec'],
+      multiple: true,
+    },
     help: {
       type: 'boolean',
       short: 'h',
@@ -42,6 +61,10 @@ const { values: args, positionals } = parseArgs({
     },
   },
 });
+
+if (process.env.GITHUB_ACTION) {
+  args.reporter.unshift('github');
+}
 
 // If positional arguments are provided, treat them as patterns
 const patterns = positionals.length > 0 ? positionals : [];
@@ -160,6 +183,17 @@ function run() {
       '--experimental-test-coverage',
       '--test-coverage-exclude="**/__tests__/**"',
     );
+  }
+
+  for (const reporter of args.reporter) {
+    if (REPORTERS[reporter]) {
+      nodeTestArgs.push(
+        `--test-reporter=${REPORTERS[reporter]}`,
+        '--test-reporter-destination=stdout',
+      );
+    } else {
+      console.warn(`Unknown reporter: ${reporter}`);
+    }
   }
 
   // The positional list of files  needs to come after other flags
