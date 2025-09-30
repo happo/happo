@@ -176,7 +176,7 @@ process.on('SIGTERM', () => {
 });
 
 function run() {
-  const nodeTestArgs = ['--test'];
+  const nodeTestArgs = ['--trace-uncaught', '--test'];
 
   if (args.coverage) {
     nodeTestArgs.push(
