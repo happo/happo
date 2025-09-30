@@ -32,9 +32,14 @@ const helpText = `Happo ${packageJson.version}
 Usage: happo [command]
 
 Commands:
-  e2e      Set up happo wrapper for Cypress and Playwright
-  test     Run happo tests
-  version  Show version number`;
+  <default> Run happo tests
+  e2e       Set up happo wrapper for Cypress and Playwright
+
+Options:
+  --config   Path to happo config file
+  --version  Show version number
+  --help     Show help text
+  `;
 
 export async function main(rawArgs: Array<string> = process.argv): Promise<void> {
   const args = parseRawArgs(rawArgs.slice(2));
