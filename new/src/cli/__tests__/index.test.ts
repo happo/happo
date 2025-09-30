@@ -1,5 +1,4 @@
 import assert from 'node:assert';
-import fs from 'node:fs';
 import path from 'node:path';
 import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
@@ -85,8 +84,8 @@ describe('main', () => {
 
   describe('config flag', () => {
     it('uses custom config file with --config flag', async () => {
-      fs.writeFileSync(
-        path.join(tmpfs.getTempDir(), 'custom.config.ts'),
+      tmpfs.writeFile(
+        'custom.config.ts',
         `export default {
   apiKey: 'custom-key',
   apiSecret: 'custom-secret',
@@ -117,8 +116,8 @@ describe('main', () => {
     });
 
     it('uses custom config file with -c flag', async () => {
-      fs.writeFileSync(
-        path.join(tmpfs.getTempDir(), 'custom.config.ts'),
+      tmpfs.writeFile(
+        'custom.config.ts',
         `export default {
   apiKey: 'custom-key',
   apiSecret: 'custom-secret',

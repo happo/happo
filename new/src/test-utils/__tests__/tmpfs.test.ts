@@ -5,6 +5,10 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import * as tmpfs from '../tmpfs.ts';
 
+afterEach(() => {
+  tmpfs.restore();
+});
+
 it('creates the files in the temp dir', () => {
   tmpfs.mock({
     'test.txt': 'I like pizza',
@@ -28,8 +32,14 @@ it('creates the files in the temp dir', () => {
   assert.deepStrictEqual(fs.readdirSync(path.join(tmpfs.getTempDir(), 'subdir')), [
     'test2.txt',
   ]);
+});
 
-  tmpfs.restore();
+it('throws if called twice without restore', () => {
+  tmpfs.mock({});
+  assert.throws(
+    () => tmpfs.mock({}),
+    new Error('tmpfs.mock() called before tmpfs.restore()'),
+  );
 });
 
 describe('getTempDir', () => {
@@ -40,7 +50,43 @@ describe('getTempDir', () => {
   it('returns a non-empty string if a temp dir is set', () => {
     tmpfs.mock({});
     assert.match(tmpfs.getTempDir(), /^\/\w+/);
-    tmpfs.restore();
+  });
+});
+
+describe('writeFile', () => {
+  it('throws an error if writeFile is called before mock', () => {
+    assert.throws(
+      () => tmpfs.writeFile('test.txt', 'Hello, world!'),
+      new Error('tmpfs.writeFile() called before tmpfs.mock()'),
+    );
+  });
+
+  describe('after tmpfs mock', () => {
+    beforeEach(() => {
+      tmpfs.mock({});
+    });
+
+    it('throws an error if the filePath starts with a slash', () => {
+      assert.throws(
+        () => tmpfs.writeFile('/test.txt', 'Hello, world!'),
+        new Error('filePath cannot start with a slash'),
+      );
+    });
+
+    it('throws an error if the filePath contains ..', () => {
+      assert.throws(
+        () => tmpfs.writeFile('../test.txt', 'Hello, world!'),
+        new Error('filePath cannot contain ..'),
+      );
+    });
+
+    it('writes a file to the temp dir', () => {
+      tmpfs.writeFile('test.txt', 'Hello, world!');
+      assert.strictEqual(
+        fs.readFileSync(path.join(tmpfs.getTempDir(), 'test.txt'), 'utf8'),
+        'Hello, world!',
+      );
+    });
   });
 });
 
@@ -59,8 +105,11 @@ describe('exec', () => {
       });
     });
 
-    afterEach(() => {
-      tmpfs.restore();
+    it('throws an error if the command fails', () => {
+      assert.throws(
+        () => tmpfs.exec('false'),
+        new Error('Command `false` failed: '),
+      );
     });
 
     it('can exec commands with arguments', () => {
@@ -88,10 +137,6 @@ describe('gitInit', () => {
       tmpfs.mock({
         'test.txt': 'Hello, world!',
       });
-    });
-
-    afterEach(() => {
-      tmpfs.restore();
     });
 
     it('initializes a git repository', () => {
@@ -136,10 +181,7 @@ describe('gitInit', () => {
     it('can commit more files', () => {
       tmpfs.gitInit();
 
-      fs.writeFileSync(
-        path.join(tmpfs.getTempDir(), 'test2.txt'),
-        'Hello, world 2!',
-      );
+      tmpfs.writeFile('test2.txt', 'Hello, world 2!');
       tmpfs.exec('git', ['add', 'test2.txt']);
       tmpfs.exec('git', ['commit', '-m', 'Add test2.txt']);
     });
@@ -148,10 +190,6 @@ describe('gitInit', () => {
   describe('in an empty repo', () => {
     beforeEach(() => {
       tmpfs.mock({});
-    });
-
-    afterEach(() => {
-      tmpfs.restore();
     });
 
     it('can init', () => {
