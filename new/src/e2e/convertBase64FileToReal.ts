@@ -13,14 +13,9 @@ export default async function convertBase64FileToReal(
     outStream.on('error', reject);
   });
   readStream.pipe(new Base64Decode()).pipe(outStream);
+
   await readyPromise;
-  await new Promise<void>((resolve, reject) =>
-    fs.unlink(filenameB64, (error) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve();
-      }
-    }),
-  );
+
+  // Clean up the base64 file after we're done
+  await fs.promises.unlink(filenameB64);
 }

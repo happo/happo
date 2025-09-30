@@ -739,25 +739,9 @@ Docs:
     const filenameB64 = `${filename}.b64`;
     if (isFirst) {
       await fs.promises.mkdir('.happo-tmp/_inlined', { recursive: true });
-      await new Promise<void>((resolve, reject) =>
-        fs.writeFile(filenameB64, base64Chunk, (e) => {
-          if (e) {
-            reject(e);
-          } else {
-            resolve();
-          }
-        }),
-      );
+      await fs.promises.writeFile(filenameB64, base64Chunk);
     } else {
-      await new Promise<void>((resolve, reject) =>
-        fs.appendFile(filenameB64, base64Chunk, (e) => {
-          if (e) {
-            reject(e);
-          } else {
-            resolve();
-          }
-        }),
-      );
+      await fs.promises.appendFile(filenameB64, base64Chunk);
     }
 
     if (isLast) {
