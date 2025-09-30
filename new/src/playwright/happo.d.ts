@@ -1,16 +1,12 @@
-import type { ElementHandle, Node } from '@playwright/test';
-
-interface HappoSnapshotOptions {
-  doc?: Document | null;
-  element?: ElementHandle | Node | null;
-  strategy?: 'hoist' | 'clip';
-}
+import type {
+  DOMSnapshotResult,
+  TakeDOMSnapshotOptions,
+} from '../isomorphic/types.ts';
 
 declare global {
   interface Window {
-    happoTakeDOMSnapshot: (options: HappoSnapshotOptions) => Promise<{
-      html: string;
-      css: string;
-    }>;
+    happoTakeDOMSnapshot: (
+      options: TakeDOMSnapshotOptions,
+    ) => Promise<DOMSnapshotResult>;
   }
 }

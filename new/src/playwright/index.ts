@@ -35,6 +35,16 @@ export interface WorkerFixtures {
   _happoForEachWorker: void;
 }
 
+function assertHTMLElement(element: Node | null): asserts element is HTMLElement {
+  if (element === null) {
+    throw new Error('element cannot be null');
+  }
+
+  if (element.nodeType !== Node.ELEMENT_NODE) {
+    throw new Error('element must be an HTMLElement');
+  }
+}
+
 const BATCH_SIZE = 4;
 let specCounter = 0;
 
@@ -72,6 +82,7 @@ export const test: TestType<
   ],
 
   // Injects the Happo script before each test
+  // This defines `globalThis.happoTakeDOMSnapshot`
   page: async ({ page }, use) => {
     await page.addInitScript({ path: pathToBrowserBuild });
     await use(page);
@@ -110,12 +121,15 @@ export const test: TestType<
           : handleOrLocator;
 
       const snapshot = await page.evaluate(
-        ({ element, strategy }) =>
-          globalThis.happoTakeDOMSnapshot({
+        ({ element, strategy }) => {
+          assertHTMLElement(element);
+
+          return globalThis.window.happoTakeDOMSnapshot({
             doc: element?.ownerDocument,
             element,
             strategy,
-          }),
+          });
+        },
         {
           element: elementHandle,
           strategy: snapshotStrategy,

@@ -1,6 +1,12 @@
 import parseSrcset from 'parse-srcset';
 
 import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.ts';
+import type {
+  AssetUrl,
+  CSSBlock,
+  DOMSnapshotResult,
+  TakeDOMSnapshotOptions,
+} from '../isomorphic/types.ts';
 import applyConstructedStylesPatch, {
   recordedCSSSymbol,
 } from './applyConstructedStylesPatch.ts';
@@ -56,13 +62,6 @@ function getContentFromStyleSheet(element: HTMLElement | CSSStyleSheet): string 
   return lines.filter((line) => line && !COMMENT_PATTERN.test(line)).join('\n');
 }
 
-interface CSSBlock {
-  key: string;
-  content?: string;
-  href?: string | undefined;
-  baseUrl: string;
-}
-
 function extractCSSBlocks(doc: Document): Array<CSSBlock> {
   const blocks: Array<CSSBlock> = [];
   const styleElements = doc.querySelectorAll(CSS_ELEMENTS_SELECTOR);
@@ -106,11 +105,6 @@ function defaultHandleBase64Image({
 }): void {
   // Simply make the base64Url the src of the image
   element.src = base64Url;
-}
-
-interface AssetUrl {
-  url: string;
-  baseUrl: string;
 }
 
 // Extend HTMLElement to include custom properties
@@ -388,29 +382,6 @@ function findSvgElementsWithSymbols(element: HTMLElement): Array<SVGElement> {
   );
 }
 
-interface TakeDOMSnapshotOptions {
-  doc: Document;
-  element: HTMLElement | Array<HTMLElement> | NodeListOf<HTMLElement>;
-  responsiveInlinedCanvases?: boolean;
-  transformDOM?: {
-    selector: string;
-    transform: (element: Element, doc: Document) => Element;
-  };
-  handleBase64Image?: (params: {
-    base64Url: string;
-    element: HTMLImageElement;
-  }) => void;
-  strategy?: 'hoist' | 'clip';
-}
-
-export interface DOMSnapshotResult {
-  html: string;
-  assetUrls: Array<AssetUrl>;
-  cssBlocks: Array<CSSBlock>;
-  htmlElementAttrs: Record<string, string>;
-  bodyElementAttrs: Record<string, string>;
-}
-
 export default function takeDOMSnapshot({
   doc,
   element: oneOrMoreElements,
@@ -419,6 +390,13 @@ export default function takeDOMSnapshot({
   handleBase64Image,
   strategy = 'hoist',
 }: TakeDOMSnapshotOptions): DOMSnapshotResult {
+  if (doc == null) {
+    throw new Error('doc cannot be null or undefined');
+  }
+  if (oneOrMoreElements == null) {
+    throw new Error('oneOrMoreElements cannot be null or undefined');
+  }
+
   const allElements = transformToElementArray(oneOrMoreElements);
   const htmlParts: Array<string> = [];
   const assetUrls: Array<AssetUrl> = [];
