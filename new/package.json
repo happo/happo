@@ -22,7 +22,7 @@
     "lint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "./scripts/test.ts",
-    "test:playwright": "playwright test",
+    "test:playwright": "node src/cli/index.ts e2e -- playwright test",
     "tsc": "tsc --build tsconfig.json"
   },
   "keywords": [],
