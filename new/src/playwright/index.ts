@@ -1,5 +1,14 @@
 /* eslint-disable no-empty-pattern */
-import { type ElementHandle, type Locator, test as base } from '@playwright/test';
+import type {
+  ElementHandle,
+  Locator,
+  PlaywrightTestArgs,
+  PlaywrightTestOptions,
+  PlaywrightWorkerArgs,
+  PlaywrightWorkerOptions,
+  TestType,
+} from '@playwright/test';
+import { test as base } from '@playwright/test';
 
 import Controller from '../e2e/controller.ts';
 
@@ -7,8 +16,7 @@ const pathToBrowserBuild = import.meta.resolve('./dist/browser/main.js');
 
 const controller = new Controller();
 
-// Define the type for the screenshot function
-export type ScreenshotFunction = (
+type ScreenshotFunction = (
   handleOrLocator: ElementHandle | Locator | null,
   options: {
     component: string;
@@ -18,29 +26,23 @@ export type ScreenshotFunction = (
   },
 ) => Promise<void>;
 
+export interface TestFixtures {
+  happoScreenshot: ScreenshotFunction;
+  _happoForEachTest: void;
+}
+
+export interface WorkerFixtures {
+  _happoForEachWorker: void;
+}
+
 const BATCH_SIZE = 4;
 let specCounter = 0;
 
 // Extend Playwright's `test` object with the `screenshot` fixture
-export const test: ReturnType<
-  typeof base.extend<
-    {
-      happoScreenshot: ScreenshotFunction;
-      _happoForEachTest: void;
-    },
-    {
-      _happoForEachWorker: void;
-    }
-  >
-> = base.extend<
-  {
-    happoScreenshot: ScreenshotFunction;
-    _happoForEachTest: void;
-  },
-  {
-    _happoForEachWorker: void;
-  }
->({
+export const test: TestType<
+  PlaywrightTestArgs & PlaywrightTestOptions & TestFixtures,
+  PlaywrightWorkerArgs & PlaywrightWorkerOptions & WorkerFixtures
+> = base.extend<TestFixtures, WorkerFixtures>({
   // Runs once per worker, before any test starts
   _happoForEachWorker: [
     async ({}, use) => {
