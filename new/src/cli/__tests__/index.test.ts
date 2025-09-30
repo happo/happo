@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import fs from 'node:fs';
 import path from 'node:path';
 import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
@@ -218,13 +219,41 @@ describe('main', () => {
       });
 
       it('runs command when provided', async () => {
-        await main(['npx', 'happo', 'e2e', '--', 'echo', 'hello'], logger);
-
-        assert(logger.log.mock.callCount() >= 1);
-        assert.match(
-          logger.log.mock.calls[0]?.arguments[0],
-          /Setting up happo wrapper/,
+        await main(
+          [
+            'npx',
+            'happo',
+            'e2e',
+            '--',
+            'touch',
+            path.join(tmpfs.getTempDir(), 'happy-to-be-here.txt'),
+          ],
+          logger,
         );
+
+        assert.strictEqual(process.exitCode, 0);
+        assert(logger.log.mock.callCount() >= 1);
+
+        assert.ok(
+          fs.statSync(path.join(tmpfs.getTempDir(), 'happy-to-be-here.txt')),
+        );
+      });
+
+      it('exits with the exit code of the command', async () => {
+        await main(
+          [
+            'npx',
+            'happo',
+            'e2e',
+            '--',
+            'ls',
+            path.join(tmpfs.getTempDir(), 'non-existent.txt'),
+          ],
+          logger,
+        );
+
+        assert.strictEqual(process.exitCode, 1);
+        assert(logger.log.mock.callCount() >= 1);
       });
     });
   });

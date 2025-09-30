@@ -5,7 +5,10 @@ import { parseArgs } from 'node:util';
 import packageJson from '../../package.json' with { type: 'json' };
 import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
-import { DEFAULT_PORT as DEFAULT_E2E_PORT, finalizeAll } from '../e2e/wrapper.ts';
+import runWithWrapper, {
+  DEFAULT_PORT as DEFAULT_E2E_PORT,
+  finalizeAll,
+} from '../e2e/wrapper.ts';
 import resolveEnvironment from '../environment/index.ts';
 
 function parseDashdashCommandParts(rawArgs: Array<string>): Array<string> {
@@ -180,7 +183,16 @@ async function handleE2ECommand(
   logger.log('Dashdash command parts:', dashdashCommandParts);
   logger.log('E2E allow failures:', e2eAllowFailures);
   logger.log('E2E port:', e2ePort);
-  // TODO: Implement e2e setup logic
+
+  const exitCode = await runWithWrapper(
+    dashdashCommandParts,
+    config,
+    environment,
+    e2ePort,
+    e2eAllowFailures,
+    logger,
+  );
+  process.exitCode = exitCode;
 }
 
 if (import.meta.main) {
