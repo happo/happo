@@ -63,17 +63,23 @@ export async function main(rawArgs: Array<string> = process.argv): Promise<void>
   const command = args.positionals[0];
 
   switch (command) {
-    case 'e2e':
+    case 'e2e': {
       await handleE2ECommand(config, environment);
       break;
-    case undefined:
+    }
+
+    case undefined: {
       // Default command - run happo tests
       await handleDefaultCommand(config, environment);
       break;
-    default:
+    }
+
+    default: {
       console.error(`Unknown command: ${command}\n`);
       console.error(helpText);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
+    }
   }
 }
 

@@ -6,9 +6,6 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import { main } from '../index.ts';
 
-// Mock process.exit
-const originalExit = process.exit;
-
 beforeEach(() => {
   // Create a mock config file
   tmpfs.mock({
@@ -25,16 +22,13 @@ beforeEach(() => {
       };
     `,
   });
-
-  // Mock process.exit to prevent actual exit
-  process.exit = mock.fn() as typeof process.exit;
 });
 
 afterEach(() => {
   tmpfs.restore();
 
   // Restore original values
-  process.exit = originalExit;
+  process.exitCode = undefined;
 
   // Silence console methods
   mock.method(console, 'log', () => {});
@@ -208,22 +202,7 @@ describe('main', () => {
         'Unknown command: unknown-command\n',
       );
       assert.ok(consoleError.mock.calls[1]?.arguments[0].includes('Happo 1.0.0'));
-      assert.strictEqual(
-        (
-          process.exit as typeof process.exit & {
-            mock: { callCount(): number; calls: Array<{ arguments: [number] }> };
-          }
-        ).mock.callCount(),
-        1,
-      );
-      assert.strictEqual(
-        (
-          process.exit as typeof process.exit & {
-            mock: { callCount(): number; calls: Array<{ arguments: [number] }> };
-          }
-        ).mock.calls[0]?.arguments[0],
-        1,
-      );
+      assert.strictEqual(process.exitCode, 1);
     });
   });
 });
