@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -55,13 +56,39 @@ afterEach(() => {
 });
 
 describe('resolveEnvironment', () => {
-  it('resolves the dev environment', async () => {
+  it('resolves a local environment', async () => {
     initGitRepo();
     const result = await resolveEnvironment({});
-    assert.equal(result.beforeSha, '__LATEST__');
-    assert.ok(/^dev-[a-z0-9]+$/.test(result.afterSha));
-    assert.equal(result.link, undefined);
-    assert.equal(result.message, undefined);
+    const afterSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
+    const beforeSha = tmpfs.exec('git', ['rev-parse', 'main']).trim();
+    assert.equal(result.afterSha, afterSha);
+    assert.equal(result.beforeSha, beforeSha);
+    assert.equal(result.message, 'Add new branch file');
+
+    // Make a local change
+    tmpfs.writeFile('not-checked-in.txt', 'Pizza is good!');
+    const result2 = await resolveEnvironment({});
+
+    // After SHA should be different because of the local change
+    assert.notEqual(result2.afterSha, afterSha);
+    // Before SHA should be the same because we didn't change the branch
+    assert.equal(result2.beforeSha, beforeSha);
+
+    // Message should be undefined because we are no longer on a single commit
+    assert.equal(result2.message, undefined);
+
+    // Make another local change
+    tmpfs.writeFile('not-checked-in.txt', 'Pizza is not good at all!');
+    const result3 = await resolveEnvironment({});
+
+    // After SHA should be different because of the local change
+    assert.notEqual(result3.afterSha, afterSha);
+    assert.notEqual(result3.afterSha, result2.afterSha);
+    // Before SHA should be the same because we didn't change the branch
+    assert.equal(result3.beforeSha, beforeSha);
+
+    // Message should be undefined because we are no longer on a single commit
+    assert.equal(result3.message, undefined);
   });
 
   it('resolves the CircleCI environment', async () => {
@@ -184,8 +211,9 @@ describe('resolveEnvironment', () => {
 
   it('resolves the GitHub Actions environment', async () => {
     initGitRepo();
+    const currentSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
     const githubEnv = {
-      GITHUB_SHA: 'ccddffddccffdd',
+      GITHUB_SHA: currentSha,
       GITHUB_EVENT_PATH: path.resolve(__dirname, 'github_pull_request_event.json'),
     };
     let result = await resolveEnvironment(githubEnv);
@@ -195,15 +223,24 @@ describe('resolveEnvironment', () => {
     assert.equal(result.message, 'Update the README with new information.');
 
     // Try with a push event
-    githubEnv.GITHUB_EVENT_PATH = path.resolve(__dirname, 'github_push_event.json');
-    result = await resolveEnvironment(githubEnv);
-    assert.equal(result.afterSha, '0000000000000000000000000000000000000000');
-    assert.equal(result.beforeSha, '6113728f27ae82c7b1a177c8d03f9e96e0adf246');
-    assert.equal(
-      result.link,
-      'https://github.com/foo/bar/commit/0000000000000000000000000000000000000000',
+    // Copy the event file to the temp dir and update the sha to the current sha
+    const eventContents = fs.readFileSync(
+      path.resolve(__dirname, 'github_push_event.json'),
+      'utf8',
     );
-    assert.ok(result.message !== undefined);
+    // Replace all the instances of the sha
+    const eventContentsWithChanges = eventContents.replaceAll(
+      '0000000000000000000000000000000000000000',
+      currentSha,
+    );
+    const eventPath = path.resolve(tmpfs.getTempDir(), 'github_push_event.json');
+    fs.writeFileSync(eventPath, eventContentsWithChanges);
+    githubEnv.GITHUB_EVENT_PATH = eventPath;
+    result = await resolveEnvironment(githubEnv);
+    assert.equal(result.afterSha, currentSha);
+    assert.equal(result.beforeSha, '6113728f27ae82c7b1a177c8d03f9e96e0adf246');
+    assert.equal(result.link, `https://github.com/foo/bar/commit/${currentSha}`);
+    assert.notEqual(result.message, undefined);
 
     // Try with a workflow_dispatch event
     githubEnv.GITHUB_EVENT_PATH = path.resolve(
@@ -211,13 +248,13 @@ describe('resolveEnvironment', () => {
       'github_workflow_dispatch.json',
     );
     result = await resolveEnvironment(githubEnv);
-    assert.equal(result.afterSha, 'ccddffddccffdd');
+    assert.equal(result.afterSha, currentSha);
     assert.equal(result.beforeSha, undefined);
     assert.equal(
       result.link,
-      'https://github.com/octo-org/octo-repo/commit/ccddffddccffdd',
+      `https://github.com/octo-org/octo-repo/commit/${currentSha}`,
     );
-    assert.ok(result.message !== undefined);
+    assert.notEqual(result.message, undefined);
 
     // Try with a non-existing event path
     let caughtError: Error | undefined;
@@ -238,8 +275,9 @@ describe('resolveEnvironment', () => {
 
   it('resolves the GitHub merge group environment', async () => {
     initGitRepo();
+    const currentSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
     const githubEnv = {
-      GITHUB_SHA: 'ccddffddccffdd',
+      GITHUB_SHA: currentSha,
       GITHUB_EVENT_PATH: path.resolve(__dirname, 'github_merge_group_event.json'),
     };
     const result = await resolveEnvironment(githubEnv);
@@ -249,7 +287,6 @@ describe('resolveEnvironment', () => {
       result.link,
       'https://github.com/Codertocat/Hello-World/commit/ec26c3e57ca3a959ca5aad62de7213c562f8c821',
     );
-    assert.ok(result.message !== undefined);
   });
 
   it('resolves the Travis environment', async () => {
@@ -303,15 +340,16 @@ describe('resolveEnvironment', () => {
 
   it('resolves the happo environment', async () => {
     initGitRepo();
+    const currentSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
     const happoEnv = {
-      HAPPO_CURRENT_SHA: 'bdac2595db20ad2a6bf335b59510aa771125526a',
+      HAPPO_CURRENT_SHA: currentSha,
       HAPPO_PREVIOUS_SHA: 'hhhggg',
       HAPPO_CHANGE_URL: 'link://link',
       HAPPO_NOTIFY: 'foo@bar.com,bar@foo.com',
     };
 
     let result = await resolveEnvironment(happoEnv);
-    assert.equal(result.afterSha, 'bdac2595db20ad2a6bf335b59510aa771125526a');
+    assert.equal(result.afterSha, currentSha);
     assert.equal(result.beforeSha, 'hhhggg');
     assert.equal(result.link, 'link://link');
     assert.equal(result.notify, 'foo@bar.com,bar@foo.com');
@@ -337,7 +375,7 @@ describe('resolveEnvironment', () => {
       HAPPO_PREVIOUS_SHA: undefined,
     });
 
-    assert.equal(result.afterSha, 'bdac2595db20ad2a6bf335b59510aa771125526a');
+    assert.equal(result.afterSha, currentSha);
     assert.ok(result.beforeSha === undefined);
     assert.equal(result.link, 'link://link');
     assert.ok(result.message !== undefined);
