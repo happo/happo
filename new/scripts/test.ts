@@ -80,11 +80,22 @@ if (args.help) {
   process.exit(0);
 }
 
+const DIRS_WITH_TESTS = ['src', 'tsconfigs', 'scripts'];
+
 function listFiles() {
   // Use find to get test files, then fzf to filter them
   const find = spawnSync(
     'find',
-    ['src', '-type', 'f', '-name', '*.test.ts', '!', '-path', '*/__playwright__/*'],
+    [
+      ...DIRS_WITH_TESTS,
+      '-type',
+      'f',
+      '-name',
+      '*.test.ts',
+      '!',
+      '-path',
+      '*/__playwright__/*',
+    ],
     {
       stdio: ['inherit', 'pipe', 'inherit'],
     },
@@ -233,12 +244,11 @@ function help() {
 }
 
 function watchFiles() {
-  const directories = ['src'];
   const watchers: Array<{ close: () => void }> = [];
 
   run();
 
-  for (const dir of directories) {
+  for (const dir of DIRS_WITH_TESTS) {
     try {
       const watcher = watch(dir, { recursive: true }, (eventType, filename) => {
         if (filename) {
