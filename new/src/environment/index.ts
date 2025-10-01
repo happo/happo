@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import crypto from 'node:crypto';
+import crypto, { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 
 interface GitHubEvent {
   pull_request?: {
@@ -163,6 +164,7 @@ async function resolveLink(
 
 async function resolveMessage(
   env: Record<string, string | undefined>,
+  afterSha: string,
 ): Promise<string | undefined> {
   const { GITHUB_EVENT_PATH, HAPPO_MESSAGE } = env;
 
@@ -176,13 +178,17 @@ async function resolveMessage(
     }
   }
 
-  const res = spawnSync('git', ['log', '-1', '--pretty=%s'], {
+  const res = spawnSync('git', ['log', '-1', '--pretty=%s', afterSha], {
     encoding: 'utf8',
   });
   if (res.status !== 0) {
     return undefined;
   }
-  return res.stdout.split('\n')[0];
+  const message = res.stdout.split('\n')[0];
+  if (!message) {
+    return undefined;
+  }
+  return message;
 }
 
 function resolveShaFromTagMatcher(tagMatcher: string): string | undefined {
@@ -252,12 +258,6 @@ async function resolveBeforeSha(
     }
   }
 
-  if (afterSha.startsWith('dev-')) {
-    // The afterSha has been auto-generated. Use the special __LATEST__ sha in
-    // these cases, forcing a comparison against the latest approved report.
-    return '__LATEST__';
-  }
-
   if (GITHUB_EVENT_PATH) {
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
     if (ghEvent.pull_request) {
@@ -294,9 +294,79 @@ async function resolveBeforeSha(
   return res.stdout.split('\n')[0];
 }
 
+function getHeadShaWithLocalChanges(): {
+  headSha: string;
+  headShaWithLocalChanges: string;
+} {
+  const randomSha = randomBytes(20).toString('hex');
+  // Get the HEAD sha from the git repo, or if we have local changes, add them to the sha
+  const res = spawnSync('git', ['rev-parse', 'HEAD'], {
+    encoding: 'utf8',
+  });
+  if (res.status !== 0) {
+    return { headSha: randomSha, headShaWithLocalChanges: randomSha };
+  }
+  const headSha = res.stdout.split('\n')[0];
+  if (!headSha) {
+    return { headSha: randomSha, headShaWithLocalChanges: randomSha };
+  }
+
+  // Check for local changes
+  const diffRes = spawnSync('git', ['diff'], {
+    encoding: 'utf8',
+  });
+
+  // If git diff fails, return HEAD sha
+  if (diffRes.status !== 0) {
+    return { headSha, headShaWithLocalChanges: headSha };
+  }
+
+  const lsRes = spawnSync('git', ['ls-files', '--other', '--exclude-standard'], {
+    encoding: 'utf8',
+  });
+
+  if (lsRes.status !== 0) {
+    return { headSha, headShaWithLocalChanges: headSha };
+  }
+
+  const localChanges = [diffRes.stdout.trim(), lsRes.stdout.trim()];
+
+  // Get contents of untracked files
+  const untrackedFiles = lsRes.stdout
+    .trim()
+    .split('\n')
+    .filter((file) => file.trim());
+
+  for (const file of untrackedFiles) {
+    try {
+      const content = readFileSync(file, 'utf8');
+      localChanges.push(content);
+    } catch {
+      // If we can't read the file, include just the filename
+      localChanges.push(`${file}:<unreadable>`);
+    }
+  }
+
+  const allChanges = localChanges.join('');
+
+  if (!allChanges.trim()) {
+    return { headSha, headShaWithLocalChanges: headSha };
+  }
+
+  // If there are local changes, create a hash that includes both HEAD and the changes
+  const headShaWithLocalChanges = crypto
+    .createHash('sha256')
+    .update(headSha)
+    .update(allChanges)
+    .digest('hex')
+    .slice(0, 40);
+
+  return { headSha, headShaWithLocalChanges };
+}
+
 async function resolveAfterSha(
   env: Record<string, string | undefined>,
-): Promise<string> {
+): Promise<string | { headSha: string; headShaWithLocalChanges: string }> {
   const {
     HAPPO_CURRENT_SHA,
     CURRENT_SHA,
@@ -342,11 +412,14 @@ async function resolveAfterSha(
     if (ghEvent.merge_group) {
       return ghEvent.merge_group.head_sha;
     }
-    return (
-      ghEvent.after || GITHUB_SHA || `dev-${crypto.randomBytes(4).toString('hex')}`
-    );
+    if (ghEvent.after) {
+      return ghEvent.after;
+    }
+    if (GITHUB_SHA) {
+      return GITHUB_SHA;
+    }
   }
-  return `dev-${crypto.randomBytes(4).toString('hex')}`;
+  return getHeadShaWithLocalChanges();
 }
 
 function resolveFallbackShas(
@@ -393,12 +466,21 @@ export default async function resolveEnvironment(
 ): Promise<EnvironmentResult> {
   const debugMode = !!env.HAPPO_DEBUG;
   const afterSha = await resolveAfterSha(env);
-  const beforeSha = await resolveBeforeSha(env, afterSha);
+
+  const realAfterSha = typeof afterSha === 'string' ? afterSha : afterSha.headSha;
+  const afterShaWithLocalChanges =
+    typeof afterSha === 'string' ? afterSha : afterSha.headShaWithLocalChanges;
+
+  // Resolve the before SHA with the true HEAD SHA
+  const beforeSha = await resolveBeforeSha(env, realAfterSha);
   const result = {
     link: await resolveLink(env),
-    message: afterSha.startsWith('dev-') ? undefined : await resolveMessage(env),
+
+    // Resolve message with the SHA that includes local changes
+    message: await resolveMessage(env, afterShaWithLocalChanges),
+
     beforeSha,
-    afterSha,
+    afterSha: afterShaWithLocalChanges,
     nonce: env.HAPPO_NONCE,
     debugMode,
     notify: env.HAPPO_NOTIFY,
