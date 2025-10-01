@@ -1,12 +1,7 @@
-import type {
-  DOMSnapshotResult,
-  TakeDOMSnapshotOptions,
-} from '../isomorphic/types.ts';
+import type { WindowHappo } from '../isomorphic/types.ts';
 
 declare global {
   interface Window {
-    happoTakeDOMSnapshot: (
-      options: TakeDOMSnapshotOptions,
-    ) => Promise<DOMSnapshotResult>;
+    happo: WindowHappo['happo'];
   }
 }
