@@ -4,12 +4,17 @@
  */
 export default function assertHTMLElement(
   element: Node | null,
+  gt: typeof globalThis = globalThis,
 ): asserts element is HTMLElement {
   if (element === null) {
     throw new Error('element cannot be null');
   }
 
-  if (element.nodeType !== Node.ELEMENT_NODE) {
-    throw new Error('element must be an HTMLElement');
+  if (element.nodeType !== gt.Node.ELEMENT_NODE) {
+    throw new Error('element must have a nodeType of ELEMENT_NODE');
+  }
+
+  if (!(element instanceof gt.HTMLElement)) {
+    throw new TypeError('element must be an HTMLElement instance');
   }
 }

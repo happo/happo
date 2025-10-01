@@ -1,24 +1,12 @@
 import assert from 'node:assert';
-import { afterEach, describe, it } from 'node:test';
+import { describe, it } from 'node:test';
 
-import { JSDOM } from 'jsdom';
-
+import withJSDOM from '../../test-utils/withJSDOM.ts';
 import takeDOMSnapshot from '../takeDOMSnapshot.ts';
 
-const originalWindow = globalThis.window;
-
-function initDOM(html: string) {
-  const dom = new JSDOM(html);
-
-  // @ts-expect-error Type 'DOMWindow' is not assignable to type 'Window & typeof globalThis'.
-  globalThis.window = dom.window;
-}
+const initDOM = withJSDOM();
 
 describe('takeDOMSnapshot', () => {
-  afterEach(() => {
-    globalThis.window = originalWindow;
-  });
-
   it('takes a basic snapshot', () => {
     initDOM(`
 <!DOCTYPE html>

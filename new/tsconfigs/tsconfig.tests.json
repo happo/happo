@@ -12,6 +12,9 @@
     },
     {
       "path": "./tsconfig.dist.json"
+    },
+    {
+      "path": "./tsconfig.isomorphic.json"
     }
   ],
 
