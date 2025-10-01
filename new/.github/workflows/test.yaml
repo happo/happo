@@ -9,6 +9,8 @@ on:
 env:
   FORCE_COLOR: 1
   PNPM_STORE_DIR: ./.cache/pnpm
+  HAPPO_API_KEY: ${{ secrets.HAPPO_API_KEY }}
+  HAPPO_API_SECRET: ${{ secrets.HAPPO_API_SECRET }}
 
 jobs:
   test:
