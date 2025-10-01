@@ -3,9 +3,7 @@ import assertHTMLElement from './assertHTMLElement.ts';
 import takeDOMSnapshot from './takeDOMSnapshot.ts';
 
 declare global {
-  interface Window {
-    happo: WindowHappo['happo'];
-  }
+  var happo: WindowHappo['happo'];
 }
 
 const happo: WindowHappo['happo'] = {
@@ -13,4 +11,4 @@ const happo: WindowHappo['happo'] = {
   assertHTMLElement,
 };
 
-globalThis.window.happo = happo;
+globalThis.happo = happo;
