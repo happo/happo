@@ -176,7 +176,11 @@ process.on('SIGTERM', () => {
 });
 
 function run() {
-  const nodeTestArgs = ['--trace-uncaught', '--test'];
+  const nodeTestArgs = [
+    '--trace-uncaught',
+    '--test',
+    '--experimental-test-module-mocks',
+  ];
 
   if (args.coverage) {
     nodeTestArgs.push(
