@@ -7,12 +7,19 @@
     "tsBuildInfoFile": "../tmp/tsc/tconfig.dist.tsbuildinfo"
   },
 
+  "references": [
+    {
+      "path": "./tsconfig.isomorphic.json"
+    }
+  ],
+
   "include": ["../src/**/*.ts"],
 
   "exclude": [
     "../**/__tests__/**",
     "../**/*.test.ts",
     "../src/browser/**",
+    "../src/isomorphic/**",
     "../src/test-utils/**"
   ]
 }
