@@ -117,9 +117,9 @@ export const test: TestType<
 
       const snapshot = await page.evaluate(
         ({ element, strategy }) => {
-          globalThis.window.happo.assertHTMLElement(element);
+          globalThis.happo.assertHTMLElement(element);
 
-          return globalThis.window.happo.takeDOMSnapshot({
+          return globalThis.happo.takeDOMSnapshot({
             doc: element?.ownerDocument,
             element,
             strategy,

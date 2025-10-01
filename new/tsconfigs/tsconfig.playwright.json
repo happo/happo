@@ -2,7 +2,8 @@
   "extends": "./tsconfig.tests.json",
 
   "compilerOptions": {
-    "tsBuildInfoFile": "../tmp/tsc/tsconfig.playwright.tsbuildinfo"
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.playwright.tsbuildinfo",
+    "lib": ["dom", "dom.iterable", "esnext"]
   },
 
   "references": [

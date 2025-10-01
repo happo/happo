@@ -11,6 +11,12 @@
     "types": []
   },
 
-  "include": ["../src/browser/**/*.ts", "../src/isomorphic/**/*.ts"],
+  "references": [
+    {
+      "path": "./tsconfig.isomorphic.json"
+    }
+  ],
+
+  "include": ["../src/browser/**/*.ts"],
   "exclude": ["../**/__tests__/**", "../**/__playwright__/**", "../**/*.test.ts"]
 }

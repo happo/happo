@@ -6,6 +6,7 @@
     "allowImportingTsExtensions": true,
     "target": "esnext",
     "types": ["node"],
+    "lib": ["esnext"],
     "noEmit": false,
     "emitDeclarationOnly": true,
 

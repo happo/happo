@@ -6,9 +6,7 @@ import handler from 'serve-handler';
 import type { WindowHappo } from '../../isomorphic/types.ts';
 
 declare global {
-  interface Window {
-    happo: WindowHappo['happo'];
-  }
+  var happo: WindowHappo['happo'];
 }
 
 let server: http.Server;
@@ -46,7 +44,7 @@ test('regular elements', async ({ page }) => {
   await page.goto('/regular-elements');
 
   const snapshot = await page.evaluate(() => {
-    return globalThis.window.happo.takeDOMSnapshot({
+    return globalThis.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -71,7 +69,7 @@ test('style collection', async ({ page }) => {
   await page.goto('/style-collection');
 
   const snapshot = await page.evaluate(() => {
-    return globalThis.window.happo.takeDOMSnapshot({
+    return globalThis.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -94,7 +92,7 @@ test('one custom element', async ({ page }) => {
   await page.goto('/one-custom-element');
 
   const snapshot = await page.evaluate(() => {
-    return globalThis.window.happo.takeDOMSnapshot({
+    return globalThis.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -118,7 +116,7 @@ test('nested custom elements', async ({ page }) => {
   const htmlBefore = await layoutContainer?.evaluate((el) => el.outerHTML);
 
   const snapshot = await page.evaluate(() => {
-    return globalThis.window.happo.takeDOMSnapshot({
+    return globalThis.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -172,7 +170,7 @@ test('custom element with special stylesheets', async ({ page }) => {
   await page.goto('/custom-element-with-special-stylesheets');
 
   const snapshot = await page.evaluate(() => {
-    return globalThis.window.happo.takeDOMSnapshot({
+    return globalThis.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -205,7 +203,7 @@ test('svg sprites', async ({ page }) => {
   await page.goto('/svg-sprites');
 
   const snapshot = await page.evaluate(() => {
-    return globalThis.window.happo.takeDOMSnapshot({
+    return globalThis.happo.takeDOMSnapshot({
       doc: document,
       element: document.querySelector('main')!,
     });
@@ -223,7 +221,7 @@ test('clip strategy', async ({ page }) => {
   await page.goto('/svg-sprites');
 
   const snapshot = await page.evaluate(() => {
-    return globalThis.window.happo.takeDOMSnapshot({
+    return globalThis.happo.takeDOMSnapshot({
       doc: document,
       element: document.querySelector('main')!,
       strategy: 'clip',
@@ -246,7 +244,7 @@ test('unknown strategy', async ({ page }) => {
 
   await expect(
     page.evaluate(() => {
-      return globalThis.window.happo.takeDOMSnapshot({
+      return globalThis.happo.takeDOMSnapshot({
         doc: document,
         element: document.querySelector('main')!,
         // @ts-expect-error - test unknown strategy
@@ -263,7 +261,7 @@ test('constructed styles', async ({ page }) => {
 
   {
     const snapshot = await page.evaluate(() => {
-      return globalThis.window.happo.takeDOMSnapshot({
+      return globalThis.happo.takeDOMSnapshot({
         doc: document,
         element: document.body,
       });
@@ -294,7 +292,7 @@ test('constructed styles', async ({ page }) => {
   // Take another snapshot to make sure that the styles are not duplicated.
   {
     const snapshot = await page.evaluate(() => {
-      return globalThis.window.happo.takeDOMSnapshot({
+      return globalThis.happo.takeDOMSnapshot({
         doc: document,
         element: document.body,
       });
