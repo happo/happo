@@ -1,9 +1,16 @@
+import type { WindowHappo } from '../isomorphic/types.ts';
+import assertHTMLElement from './assertHTMLElement.ts';
 import takeDOMSnapshot from './takeDOMSnapshot.ts';
 
 declare global {
   interface Window {
-    happoTakeDOMSnapshot: typeof takeDOMSnapshot;
+    happo: WindowHappo['happo'];
   }
 }
 
-globalThis.window.happoTakeDOMSnapshot = takeDOMSnapshot;
+const happo: WindowHappo['happo'] = {
+  takeDOMSnapshot,
+  assertHTMLElement,
+};
+
+globalThis.window.happo = happo;

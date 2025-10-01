@@ -3,10 +3,12 @@ import http from 'node:http';
 import { expect, type Page, test } from '@playwright/test';
 import handler from 'serve-handler';
 
-import type { DOMSnapshotResult } from '../../isomorphic/types.ts';
+import type { WindowHappo } from '../../isomorphic/types.ts';
 
 declare global {
-  var happoTakeDOMSnapshot: typeof import('../takeDOMSnapshot.ts').default;
+  interface Window {
+    happo: WindowHappo['happo'];
+  }
 }
 
 let server: http.Server;
@@ -43,8 +45,8 @@ test('regular elements', async ({ page }) => {
 
   await page.goto('/regular-elements');
 
-  const snapshot = await page.evaluate((): DOMSnapshotResult => {
-    return globalThis.happoTakeDOMSnapshot({
+  const snapshot = await page.evaluate(() => {
+    return globalThis.window.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -68,8 +70,8 @@ test('style collection', async ({ page }) => {
 
   await page.goto('/style-collection');
 
-  const snapshot = await page.evaluate((): DOMSnapshotResult => {
-    return globalThis.window.happoTakeDOMSnapshot({
+  const snapshot = await page.evaluate(() => {
+    return globalThis.window.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -91,8 +93,8 @@ test('one custom element', async ({ page }) => {
 
   await page.goto('/one-custom-element');
 
-  const snapshot = await page.evaluate((): DOMSnapshotResult => {
-    return globalThis.happoTakeDOMSnapshot({
+  const snapshot = await page.evaluate(() => {
+    return globalThis.window.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -115,8 +117,8 @@ test('nested custom elements', async ({ page }) => {
   const layoutContainer = await page.$('layout-container');
   const htmlBefore = await layoutContainer?.evaluate((el) => el.outerHTML);
 
-  const snapshot = await page.evaluate((): DOMSnapshotResult => {
-    return globalThis.happoTakeDOMSnapshot({
+  const snapshot = await page.evaluate(() => {
+    return globalThis.window.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -169,8 +171,8 @@ test('custom element with special stylesheets', async ({ page }) => {
 
   await page.goto('/custom-element-with-special-stylesheets');
 
-  const snapshot = await page.evaluate((): DOMSnapshotResult => {
-    return globalThis.happoTakeDOMSnapshot({
+  const snapshot = await page.evaluate(() => {
+    return globalThis.window.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
     });
@@ -202,8 +204,8 @@ test('svg sprites', async ({ page }) => {
 
   await page.goto('/svg-sprites');
 
-  const snapshot = await page.evaluate((): DOMSnapshotResult => {
-    return globalThis.happoTakeDOMSnapshot({
+  const snapshot = await page.evaluate(() => {
+    return globalThis.window.happo.takeDOMSnapshot({
       doc: document,
       element: document.querySelector('main')!,
     });
@@ -220,8 +222,8 @@ test('clip strategy', async ({ page }) => {
 
   await page.goto('/svg-sprites');
 
-  const snapshot = await page.evaluate((): DOMSnapshotResult => {
-    return globalThis.happoTakeDOMSnapshot({
+  const snapshot = await page.evaluate(() => {
+    return globalThis.window.happo.takeDOMSnapshot({
       doc: document,
       element: document.querySelector('main')!,
       strategy: 'clip',
@@ -244,7 +246,7 @@ test('unknown strategy', async ({ page }) => {
 
   await expect(
     page.evaluate(() => {
-      return globalThis.happoTakeDOMSnapshot({
+      return globalThis.window.happo.takeDOMSnapshot({
         doc: document,
         element: document.querySelector('main')!,
         // @ts-expect-error - test unknown strategy
@@ -260,8 +262,8 @@ test('constructed styles', async ({ page }) => {
   await page.goto('/constructed-styles');
 
   {
-    const snapshot = await page.evaluate((): DOMSnapshotResult => {
-      return globalThis.happoTakeDOMSnapshot({
+    const snapshot = await page.evaluate(() => {
+      return globalThis.window.happo.takeDOMSnapshot({
         doc: document,
         element: document.body,
       });
@@ -291,8 +293,8 @@ test('constructed styles', async ({ page }) => {
 
   // Take another snapshot to make sure that the styles are not duplicated.
   {
-    const snapshot = await page.evaluate((): DOMSnapshotResult => {
-      return globalThis.happoTakeDOMSnapshot({
+    const snapshot = await page.evaluate(() => {
+      return globalThis.window.happo.takeDOMSnapshot({
         doc: document,
         element: document.body,
       });

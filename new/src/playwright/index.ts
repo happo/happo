@@ -77,7 +77,7 @@ export const test: TestType<
   ],
 
   // Injects the Happo script before each test
-  // This defines `globalThis.happoTakeDOMSnapshot`
+  // This defines `globalThis.window.happo`
   page: async ({ page }, use) => {
     await page.addInitScript({ path: pathToBrowserBuild });
     await use(page);
@@ -117,20 +117,11 @@ export const test: TestType<
 
       const snapshot = await page.evaluate(
         ({ element, strategy }) => {
-          // Make some checks to make sure that the element is a valid
-          // HTMLElement. We can't use a typescript assertion because the code
-          // in `evaluate` runs in the browser, not in Node.
-          if (element === null) {
-            throw new Error('element cannot be null');
-          }
+          globalThis.window.happo.assertHTMLElement(element);
 
-          if (element.nodeType !== Node.ELEMENT_NODE) {
-            throw new Error('element must be an HTMLElement');
-          }
-
-          return globalThis.window.happoTakeDOMSnapshot({
+          return globalThis.window.happo.takeDOMSnapshot({
             doc: element?.ownerDocument,
-            element: element as HTMLElement,
+            element,
             strategy,
           });
         },

@@ -32,3 +32,10 @@ export interface DOMSnapshotResult {
   htmlElementAttrs: Record<string, string>;
   bodyElementAttrs: Record<string, string>;
 }
+
+export interface WindowHappo {
+  happo: {
+    takeDOMSnapshot: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
+    assertHTMLElement: (element: Node | null) => asserts element is HTMLElement;
+  };
+}
