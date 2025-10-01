@@ -40,16 +40,6 @@ export interface WorkerFixtures {
   _happoForEachWorker: void;
 }
 
-function assertHTMLElement(element: Node | null): asserts element is HTMLElement {
-  if (element === null) {
-    throw new Error('element cannot be null');
-  }
-
-  if (element.nodeType !== Node.ELEMENT_NODE) {
-    throw new Error('element must be an HTMLElement');
-  }
-}
-
 const BATCH_SIZE = 4;
 let specCounter = 0;
 
@@ -127,11 +117,20 @@ export const test: TestType<
 
       const snapshot = await page.evaluate(
         ({ element, strategy }) => {
-          assertHTMLElement(element);
+          // Make some checks to make sure that the element is a valid
+          // HTMLElement. We can't use a typescript assertion because the code
+          // in `evaluate` runs in the browser, not in Node.
+          if (element === null) {
+            throw new Error('element cannot be null');
+          }
+
+          if (element.nodeType !== Node.ELEMENT_NODE) {
+            throw new Error('element must be an HTMLElement');
+          }
 
           return globalThis.window.happoTakeDOMSnapshot({
             doc: element?.ownerDocument,
-            element,
+            element: element as HTMLElement,
             strategy,
           });
         },
