@@ -116,8 +116,11 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 
 1. Clone the repository
 2. Install dependencies: `pnpm install`
-3. Run tests: `pnpm test`
-4. Build the project: `pnpm build`
+3. Build the project: `pnpm build`
+4. Run tests: `pnpm test` and `pnpm test:playwright`
+
+To run the tests you will need a `.env.local` file with some keys. Use
+`env.example` as a starting point.
 
 ### Code Style
 

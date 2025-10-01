@@ -21,8 +21,8 @@
     "clean": "rm -rf dist tmp/tsc types",
     "lint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
-    "test": "./scripts/test.ts",
-    "test:playwright": "playwright test",
+    "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
+    "test:playwright": "node --env-file-if-exists=.env.local src/cli/index.ts e2e -- playwright test",
     "tsc": "tsc --build tsconfig.json"
   },
   "keywords": [],

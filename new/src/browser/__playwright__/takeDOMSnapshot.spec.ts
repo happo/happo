@@ -3,7 +3,7 @@ import http from 'node:http';
 import { expect, type Page, test } from '@playwright/test';
 import handler from 'serve-handler';
 
-import type { DOMSnapshotResult } from '../takeDOMSnapshot.ts';
+import type { DOMSnapshotResult } from '../../isomorphic/types.ts';
 
 declare global {
   var happoTakeDOMSnapshot: typeof import('../takeDOMSnapshot.ts').default;

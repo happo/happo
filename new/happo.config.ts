@@ -11,6 +11,11 @@ const config: Config = defineConfig({
       viewport: '1024x768',
     },
 
+    chromeSmall: {
+      browserType: 'chrome',
+      viewport: '375x667',
+    },
+
     accessibility: {
       browserType: 'accessibility',
       viewport: '375x667',
