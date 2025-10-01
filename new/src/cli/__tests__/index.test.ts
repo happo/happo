@@ -5,7 +5,6 @@ import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
-import { main } from '../index.ts';
 
 interface Logger {
   log: Mock<Console['log']>;
@@ -13,24 +12,36 @@ interface Logger {
 }
 
 let logger: Logger;
+let main: (argv: Array<string>, logger: Logger) => Promise<void>;
+const makeRequestMock: Mock<(url: string, init?: RequestInit) => Promise<unknown>> =
+  mock.fn(async () => ({
+    statusCode: 200,
+    body: { success: true },
+  }));
 
-beforeEach(() => {
+// mock makeRequest.ts *before* importing ../index.ts
+mock.module('../../utils/makeRequest.ts', {
+  defaultExport: makeRequestMock, // <- default export
+});
+
+// Install fresh mocks & imports for each test
+beforeEach(async () => {
   logger = {
     log: mock.fn(),
     error: mock.fn(),
   };
 
-  // Create a mock config file
+  // Now import the SUT; it will see the mocked module
+  ({ main } = await import('../index.ts'));
+
+  // Default config file for tests
   tmpfs.mock({
     'happo.config.ts': `
       export default {
         apiKey: 'test-key',
         apiSecret: 'test-secret',
         targets: {
-          chrome: {
-            browserType: 'chrome',
-            viewport: '1024x768',
-          },
+          chrome: { browserType: 'chrome', viewport: '1024x768' },
         },
       };
     `,
@@ -88,15 +99,10 @@ describe('main', () => {
       tmpfs.writeFile(
         'custom.config.ts',
         `export default {
-  apiKey: 'custom-key',
-  apiSecret: 'custom-secret',
-  targets: {
-    firefox: {
-      browserType: 'firefox',
-      viewport: '800x600',
-    },
-  },
-};`,
+        apiKey: 'custom-key',
+        apiSecret: 'custom-secret',
+        targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
+      };`,
       );
 
       await main(
@@ -110,25 +116,17 @@ describe('main', () => {
       );
 
       assert.ok(logger.log.mock.callCount() >= 3);
-      assert.strictEqual(
-        logger.log.mock.calls[0]?.arguments[0],
-        'Running happo tests...',
-      );
+      assert.equal(logger.log.mock.calls[0]?.arguments[0], 'Running happo tests...');
     });
 
     it('uses custom config file with -c flag', async () => {
       tmpfs.writeFile(
         'custom.config.ts',
         `export default {
-  apiKey: 'custom-key',
-  apiSecret: 'custom-secret',
-  targets: {
-    firefox: {
-      browserType: 'firefox',
-      viewport: '800x600',
-    },
-  },
-};`,
+        apiKey: 'custom-key',
+        apiSecret: 'custom-secret',
+        targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
+      };`,
       );
 
       await main(
@@ -256,6 +254,38 @@ describe('main', () => {
         // not 0 here.
         assert.notStrictEqual(process.exitCode, 0);
         assert(logger.log.mock.callCount() >= 1);
+      });
+
+      it('fails to finalize when HAPPO_NONCE is not set', async () => {
+        await main(['npx', 'happo', 'e2e', 'finalize'], logger);
+        assert.equal(process.exitCode, 1);
+        assert(logger.error.mock.callCount() >= 1);
+        assert.match(
+          logger.error.mock.calls[0]?.arguments[0],
+          /Missing HAPPO_NONCE environment variable/,
+        );
+      });
+
+      it('can finalize a report with a HAPPO_NONCE', async () => {
+        try {
+          process.env.HAPPO_NONCE = 'test-nonce';
+
+          process.env.HAPPO_PREVIOUS_SHA = 'test-sha';
+          process.env.HAPPO_CURRENT_SHA = 'test-sha';
+
+          await main(['npx', 'happo', 'e2e', 'finalize'], logger);
+          if (process.exitCode !== 0) {
+            console.log('process.exitCode', process.exitCode);
+            console.log('logger.log.mock.calls', logger.log.mock.calls);
+            console.log('logger.error.mock.calls', logger.error.mock.calls);
+          }
+          assert.equal(process.exitCode, 0);
+          assert(makeRequestMock.mock.callCount() > 0);
+        } finally {
+          delete process.env.HAPPO_NONCE;
+          delete process.env.HAPPO_PREVIOUS_SHA;
+          delete process.env.HAPPO_CURRENT_SHA;
+        }
       });
     });
   });

@@ -166,7 +166,14 @@ async function handleE2ECommand(
   logger: Logger,
 ): Promise<void> {
   if (positionals[1] === 'finalize') {
-    await finalizeAll({ happoConfig: config, environment, logger });
+    try {
+      await finalizeAll({ happoConfig: config, environment, logger });
+    } catch (e) {
+      logger.error(e instanceof Error ? e.message : String(e), e);
+      process.exitCode = 1;
+      return;
+    }
+    process.exitCode = 0;
     return;
   }
 
