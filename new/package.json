@@ -15,9 +15,10 @@
     }
   },
   "scripts": {
-    "build": "tsc --build",
-    "build:watch": "tsc --build --watch",
+    "all": "node ./scripts/allchecks.ts",
+    "build": "tsc --build --pretty",
     "build:browser": "esbuild src/browser/main.ts --bundle --format=iife --global-name=happo --outfile=dist/browser/main.bundle.js --platform=browser --target=esnext",
+    "build:watch": "tsc --build --watch",
     "clean": "rm -rf dist tmp/tsc types",
     "lint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
