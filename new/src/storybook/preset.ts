@@ -1,9 +1,7 @@
-function managerEntries(entry = []) {
-  return [...entry, require.resolve('./addon')];
+export function managerEntries(entry = []) {
+  return [...entry, import.meta.resolve('./addon')];
 }
 
-function config(entry = []) {
-  return [...entry, require.resolve('./decorator')];
+export function config(entry = []) {
+  return [...entry, import.meta.resolve('./decorator')];
 }
-
-module.exports = { managerEntries, config };

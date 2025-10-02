@@ -1,6 +1,6 @@
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { spawn } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const getStorybookVersionFromPackageJson = require('./getStorybookVersionFromPackageJson');
 const getStorybookBuildCommandParts = require('./getStorybookBuildCommandParts');
@@ -9,7 +9,7 @@ const { HAPPO_DEBUG, HAPPO_STORYBOOK_BUILD_COMMAND } = process.env;
 
 function validateSkipped(skipped) {
   if (!Array.isArray(skipped)) {
-    throw new Error(`The \`skip\` option didn't provide an array`);
+    throw new TypeError(`The \`skip\` option didn't provide an array`);
   }
   if (skipped.some((item) => !item.component || !item.variant)) {
     throw new Error(
@@ -57,8 +57,7 @@ function buildStorybook({ configDir, staticDir, outputDir }) {
       configDir,
     ];
     if (staticDir) {
-      params.push('--static-dir');
-      params.push(staticDir);
+      params.push('--static-dir', staticDir);
     }
     let binary = fs.existsSync('yarn.lock') ? 'yarn' : 'npx';
 
@@ -120,7 +119,7 @@ module.exports = function happoStorybookPlugin({
             ? skip
             : [];
         validateSkipped(skipped);
-        const iframeContent = fs.readFileSync(iframePath, 'utf-8');
+        const iframeContent = fs.readFileSync(iframePath, 'utf8');
         fs.writeFileSync(
           iframePath,
           iframeContent.replace(

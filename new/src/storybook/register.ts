@@ -1,12 +1,12 @@
-const { SB_ROOT_ELEMENT_SELECTOR } = require('./constants');
+import { SB_ROOT_ELEMENT_SELECTOR } from './constants';
 
-const time = window.happoTime || {
+const time = globalThis.happoTime || {
   originalDateNow: Date.now,
-  originalSetTimeout: window.setTimeout.bind(window),
+  originalSetTimeout: globalThis.setTimeout.bind(globalThis),
 };
 
 const ASYNC_TIMEOUT = 100;
-const STORY_STORE_TIMEOUT = 10000;
+const STORY_STORE_TIMEOUT = 10_000;
 
 let renderTimeoutMs = 2000;
 let examples;
@@ -30,10 +30,7 @@ async function waitForSomeContent(elem, start = time.originalDateNow()) {
   const duration = time.originalDateNow() - start;
   if (html === '' && duration < ASYNC_TIMEOUT) {
     return new Promise((resolve) =>
-      time.originalSetTimeout(
-        () => resolve(waitForSomeContent(elem, start)),
-        10,
-      ),
+      time.originalSetTimeout(() => resolve(waitForSomeContent(elem, start)), 10),
     );
   }
   return html;
@@ -43,10 +40,7 @@ async function waitForWaitFor(waitFor, start = time.originalDateNow()) {
   const duration = time.originalDateNow() - start;
   if (!waitFor() && duration < renderTimeoutMs) {
     return new Promise((resolve) =>
-      time.originalSetTimeout(
-        () => resolve(waitForWaitFor(waitFor, start)),
-        50,
-      ),
+      time.originalSetTimeout(() => resolve(waitForWaitFor(waitFor, start)), 50),
     );
   }
 }
@@ -59,10 +53,8 @@ async function getStoryStore(startTime = time.originalDateNow()) {
     );
   }
 
-  const {
-    __STORYBOOK_CLIENT_API__: clientApi,
-    __STORYBOOK_PREVIEW__: preview,
-  } = window;
+  const { __STORYBOOK_CLIENT_API__: clientApi, __STORYBOOK_PREVIEW__: preview } =
+    globalThis;
 
   if (clientApi && clientApi._storyStore) {
     return clientApi._storyStore;
@@ -127,16 +119,16 @@ async function getExamples() {
     })
     .filter(Boolean)
     .reduce((result, { themes, ...rest }) => {
-      if (!themes) {
-        result.push(rest);
-      } else {
-        themes.forEach((theme) => {
+      if (themes) {
+        for (const theme of themes) {
           result.push({
             ...rest,
             variant: `${rest.variant} [${theme}]`,
             theme,
           });
-        });
+        }
+      } else {
+        result.push(rest);
       }
 
       return result;
@@ -179,14 +171,14 @@ function filterExamples(all) {
 
 let initConfig = {};
 
-window.happo = {};
+globalThis.happo = {};
 
-window.happo.init = (config) => {
+globalThis.happo.init = (config) => {
   initConfig = config;
 };
 
 function renderStory(story, { force = false } = {}) {
-  const channel = window.__STORYBOOK_ADDONS_CHANNEL__;
+  const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
   let isPlaying = false;
   let loadingCount = 0;
   return new Promise((resolve) => {
@@ -214,8 +206,7 @@ function renderStory(story, { force = false } = {}) {
         channel.off('storyRenderPhaseChanged', handleRenderPhaseChanged);
         clearTimeout(timeout);
         if (isPlaying && forcedHappoScreenshotSteps) {
-          const pausedAtStep =
-            forcedHappoScreenshotSteps[forcedHappoScreenshotSteps.length - 1];
+          const pausedAtStep = forcedHappoScreenshotSteps.at(-1);
           if (!pausedAtStep.done) {
             return resolve({ pausedAtStep });
           }
@@ -244,7 +235,7 @@ function renderStory(story, { force = false } = {}) {
   });
 }
 
-window.happo.nextExample = async () => {
+globalThis.happo.nextExample = async () => {
   if (!examples) {
     examples = filterExamples(await getExamples());
   }
@@ -267,24 +258,22 @@ window.happo.nextExample = async () => {
 
   try {
     if (
-      window.happoSkipped &&
-      window.happoSkipped.some(
+      globalThis.happoSkipped &&
+      globalThis.happoSkipped.some(
         (item) => item.component === component && item.variant === variant,
       )
     ) {
-      console.log(
-        `Skipping ${component}, ${variant} since it is in the skip list`,
-      );
+      console.log(`Skipping ${component}, ${variant} since it is in the skip list`);
       return { component, variant, skipped: true };
     }
 
     const docsRootElement = document.getElementById('docs-root');
     if (docsRootElement) {
-      docsRootElement.setAttribute('data-happo-ignore', 'true');
+      docsRootElement.dataset.happoIgnore = 'true';
     }
 
     const rootElement = document.querySelector(SB_ROOT_ELEMENT_SELECTOR);
-    rootElement.setAttribute('data-happo-ignore', 'true');
+    rootElement.dataset.happoIgnore = 'true';
 
     const { afterScreenshot } = examples[currentIndex - 1] || {};
     if (typeof afterScreenshot === 'function') {
@@ -313,7 +302,7 @@ window.happo.nextExample = async () => {
     }
 
     if (theme && themeSwitcher) {
-      await themeSwitcher(theme, window.__STORYBOOK_ADDONS_CHANNEL__);
+      await themeSwitcher(theme, globalThis.__STORYBOOK_ADDONS_CHANNEL__);
     }
 
     await waitForSomeContent(rootElement);
@@ -321,7 +310,7 @@ window.happo.nextExample = async () => {
     if (/sb-show-errordisplay/.test(document.body.className)) {
       // It's possible that the error is from unmounting the previous story. We
       // can try re-rendering in this case.
-      window.__STORYBOOK_ADDONS_CHANNEL__.emit('forceReRender');
+      globalThis.__STORYBOOK_ADDONS_CHANNEL__.emit('forceReRender');
       await waitForSomeContent(rootElement);
     }
 
@@ -343,7 +332,7 @@ window.happo.nextExample = async () => {
       '#storybook-highlights-root',
     );
     if (highlightsRootElement) {
-      highlightsRootElement.setAttribute('data-happo-ignore', 'true');
+      highlightsRootElement.dataset.happoIgnore = 'true';
     }
 
     return { component, variant, waitForContent };
@@ -351,10 +340,10 @@ window.happo.nextExample = async () => {
     console.warn(e);
     return { component, variant };
   } finally {
-    if (!pausedAtStep) {
-      currentIndex++;
-    } else {
+    if (pausedAtStep) {
       pausedAtStep.done = true;
+    } else {
+      currentIndex++;
     }
   }
 };
@@ -399,4 +388,4 @@ export function setThemeSwitcher(func) {
 export function setShouldWaitForCompletedEvent(swfce) {
   shouldWaitForCompletedEvent = swfce;
 }
-export const isHappoRun = () => window.__IS_HAPPO_RUN;
+export const isHappoRun = () => globalThis.__IS_HAPPO_RUN;

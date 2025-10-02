@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { addons, makeDecorator } from 'storybook/preview-api';
 
-const { SB_ROOT_ELEMENT_SELECTOR } = require('./constants');
+import { SB_ROOT_ELEMENT_SELECTOR } from './constants';
 
 function HappoDecorator({ params, children }) {
   useEffect(() => {

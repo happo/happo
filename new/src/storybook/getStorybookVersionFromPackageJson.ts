@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 module.exports = function getStorybookVersionFromPackageJson(
   packageJsonPath = path.join(process.cwd(), 'package.json'),
@@ -21,7 +21,7 @@ module.exports = function getStorybookVersionFromPackageJson(
 
   if (storybookPackage) {
     const storybookVersion = combinedDependencies[storybookPackage];
-    const majorVersion = parseInt(storybookVersion.match(/\d/)[0], 10);
+    const majorVersion = Number.parseInt(storybookVersion.match(/\d/)[0], 10);
     return majorVersion;
   } else {
     throw new Error('Storybook is not listed as a dependency in package.json');

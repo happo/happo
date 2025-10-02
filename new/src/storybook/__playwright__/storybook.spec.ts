@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect,test } from '@playwright/test';
 
 test('can interact with ModifyGlobalState story', async ({ page }) => {
   // Navigate to the ModifyGlobalState story
