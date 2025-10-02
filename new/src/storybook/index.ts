@@ -7,13 +7,21 @@ import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackage
 
 const { HAPPO_DEBUG, HAPPO_STORYBOOK_BUILD_COMMAND } = process.env;
 
-function validateSkipped(skipped) {
+interface SkipItem {
+  component: string;
+  variant: string;
+}
+
+type SkipItems = Array<SkipItem>;
+
+function assertSkippedIsSkipItems(skipped: unknown): asserts skipped is SkipItems {
   if (!Array.isArray(skipped)) {
     throw new TypeError(`The \`skip\` option didn't provide an array`);
   }
+
   if (skipped.some((item) => !item.component || !item.variant)) {
     throw new Error(
-      `Each item provided by the \`skip\` option need a \`component\` and a \`variant\` property`,
+      `Each item provided by the \`skip\` option needs a \`component\` and a \`variant\` property`,
     );
   }
 }
@@ -36,6 +44,10 @@ function resolveBuildCommandParts() {
     }
   }
 
+  if (!version) {
+    throw new Error('Failed to determine Storybook version');
+  }
+
   if (version < 9) {
     throw new Error(
       `Storybook v${version} is not supported. Please upgrade to v9 or later, or downgrade happo-plugin-storybook to an earlier version.`,
@@ -45,10 +57,24 @@ function resolveBuildCommandParts() {
   return getStorybookBuildCommandParts();
 }
 
-function buildStorybook({ configDir, staticDir, outputDir }) {
+function buildStorybook({
+  configDir,
+  staticDir,
+  outputDir,
+}: {
+  configDir: string;
+  staticDir?: string | undefined;
+  outputDir: string;
+}): Promise<void> {
   return new Promise((resolve, reject) => {
     fs.rmSync(outputDir, { recursive: true, force: true });
+
     const buildCommandParts = resolveBuildCommandParts();
+
+    if (!buildCommandParts[0]) {
+      throw new Error('Failed to resolve build command parts');
+    }
+
     const params = [
       ...buildCommandParts,
       '--output-dir',
@@ -56,9 +82,11 @@ function buildStorybook({ configDir, staticDir, outputDir }) {
       '--config-dir',
       configDir,
     ];
+
     if (staticDir) {
       params.push('--static-dir', staticDir);
     }
+
     let binary = fs.existsSync('yarn.lock') ? 'yarn' : 'npx';
 
     if (buildCommandParts[0].includes('node_modules')) {
@@ -69,6 +97,7 @@ function buildStorybook({ configDir, staticDir, outputDir }) {
     if (HAPPO_DEBUG) {
       console.log(`[happo] Using build command \`${binary} ${params.join(' ')}\``);
     }
+
     const spawned = spawn(binary, params, {
       stdio: 'inherit',
       shell: process.platform == 'win32',
@@ -97,18 +126,26 @@ export default function happoStorybookPlugin({
   outputDir = '.out',
   usePrebuiltPackage = false,
   skip,
+}: {
+  configDir?: string;
+  staticDir?: string;
+  outputDir?: string;
+  usePrebuiltPackage?: boolean;
+  skip?: SkipItems | (() => Promise<SkipItems>) | undefined;
 } = {}) {
   return {
-    generateStaticPackage: async () => {
+    generateStaticPackage: async (): Promise<{ path: string }> => {
       if (!usePrebuiltPackage) {
         await buildStorybook({ configDir, staticDir, outputDir });
       }
+
       const iframePath = path.join(outputDir, 'iframe.html');
       if (!fs.existsSync(iframePath)) {
         throw new Error(
           'Failed to build static storybook package (missing iframe.html)',
         );
       }
+
       try {
         const skipped =
           typeof skip === 'function'
@@ -116,8 +153,11 @@ export default function happoStorybookPlugin({
             : Array.isArray(skip)
               ? skip
               : [];
-        validateSkipped(skipped);
+
+        assertSkippedIsSkipItems(skipped);
+
         const iframeContent = fs.readFileSync(iframePath, 'utf8');
+
         fs.writeFileSync(
           iframePath,
           iframeContent.replace(
@@ -131,8 +171,11 @@ export default function happoStorybookPlugin({
           `,
           ),
         );
-        // Tell happo.io where the files are located.
-        return { path: outputDir };
+
+        // Tell happo where the files are located.
+        return {
+          path: outputDir,
+        };
       } catch (e) {
         console.error(e);
         throw e;
