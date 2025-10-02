@@ -1,51 +1,68 @@
 import assert from 'node:assert';
-import path from 'node:path';
-import { describe, it } from 'node:test';
+import { afterEach, it } from 'node:test';
 
+import * as tmpfs from '../../test-utils/tmpfs.ts';
 import getStorybookVersionFromPackageJson from '../getStorybookVersionFromPackageJson.ts';
 
-describe('with project package.json', () => {
-  it('finds the right version', () => {
-    const version = getStorybookVersionFromPackageJson();
-    assert.strictEqual(version, 9);
-  });
+afterEach(() => {
+  tmpfs.restore();
 });
 
-describe('with storybook 8', () => {
-  it('finds the right version', () => {
-    const version = getStorybookVersionFromPackageJson(
-      path.resolve(__dirname, 'v8-package.json'),
-    );
-    assert.strictEqual(version, 8);
+it('finds storybook v9 from package.json', () => {
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      devDependencies: { storybook: '9.1.10' },
+    }),
   });
+
+  const version = getStorybookVersionFromPackageJson();
+  assert.strictEqual(version, 9);
 });
 
-describe('with storybook 7', () => {
-  it('finds the right version', () => {
-    const version = getStorybookVersionFromPackageJson(
-      path.resolve(__dirname, 'v7-package.json'),
-    );
-    assert.strictEqual(version, 7);
+it('finds storybook v8 from package.json', () => {
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      devDependencies: { '@storybook/vue': '8.0.0' },
+    }),
   });
+
+  const version = getStorybookVersionFromPackageJson();
+  assert.strictEqual(version, 8);
 });
 
-describe('with no dev dependencies', () => {
-  it('finds the right version', () => {
-    const version = getStorybookVersionFromPackageJson(
-      path.resolve(__dirname, 'no-devdeps-package.json'),
-    );
-    assert.strictEqual(version, 7);
+it('finds storybook v7 from package.json', () => {
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      devDependencies: { '@storybook/vue': '7.1.0' },
+    }),
   });
+
+  const version = getStorybookVersionFromPackageJson();
+  assert.strictEqual(version, 7);
 });
 
-describe('with no storybook dependencies', () => {
-  it('throws', () => {
-    assert.throws(
-      () =>
-        getStorybookVersionFromPackageJson(
-          path.resolve(__dirname, 'no-storybook-package.json'),
-        ),
-      /not listed/,
-    );
+it('finds storybook from package.json with no dev dependencies', () => {
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      dependencies: { storybook: '7.1.0' },
+    }),
   });
+
+  const version = getStorybookVersionFromPackageJson();
+  assert.strictEqual(version, 7);
+});
+
+it('throws if storybook is not listed as a dependency', () => {
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      dependencies: { react: '19.2.0' },
+    }),
+  });
+
+  assert.throws(() => getStorybookVersionFromPackageJson(), /not listed/);
 });
