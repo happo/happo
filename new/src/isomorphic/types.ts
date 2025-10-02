@@ -12,7 +12,7 @@ export interface CSSBlock {
 
 export interface TakeDOMSnapshotOptions {
   doc: Document | null | undefined;
-  element: HTMLElement | Array<HTMLElement> | NodeListOf<HTMLElement> | null;
+  element: Element | Array<Element> | NodeListOf<Element> | null;
   responsiveInlinedCanvases?: boolean;
   transformDOM?: {
     selector: string;
@@ -36,6 +36,6 @@ export interface DOMSnapshotResult {
 export interface WindowHappo {
   happo: {
     takeDOMSnapshot: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
-    assertHTMLElement: (element: Node | null) => asserts element is HTMLElement;
+    assertElement: (element: Node | null) => asserts element is Element;
   };
 }

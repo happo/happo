@@ -113,7 +113,7 @@ interface ExtendedHTMLElementWithBase64 extends HTMLElement {
 }
 
 function getElementAssetUrls(
-  element: HTMLElement,
+  element: Element,
   {
     handleBase64Image = defaultHandleBase64Image,
   }: {
@@ -187,12 +187,12 @@ function copyStyles(sourceElement: HTMLElement, targetElement: HTMLElement): voi
 }
 
 function inlineCanvases(
-  element: HTMLElement,
+  element: Element,
   {
     doc,
     responsiveInlinedCanvases = false,
   }: { doc: Document; responsiveInlinedCanvases?: boolean },
-): { element: HTMLElement; cleanup: () => void } {
+): { element: Element; cleanup: () => void } {
   const canvases: Array<HTMLCanvasElement> = [];
   if (element.tagName === 'CANVAS') {
     canvases.push(element as HTMLCanvasElement);
@@ -294,7 +294,7 @@ function performDOMTransform({
   doc: Document;
   selector: string;
   transform: (element: Element, doc: Document) => Element;
-  element: HTMLElement;
+  element: Element;
 }): (() => void) | undefined {
   const elements = Array.from(element.querySelectorAll(selector));
   if (!elements.length) {
@@ -314,8 +314,8 @@ function performDOMTransform({
 }
 
 function transformToElementArray(
-  elements: HTMLElement | Array<HTMLElement> | NodeListOf<HTMLElement>,
-): Array<HTMLElement> {
+  elements: Element | Array<Element> | NodeListOf<Element>,
+): Array<Element> {
   // Check if 'elements' is already an array
   if (Array.isArray(elements)) {
     return elements;
@@ -324,14 +324,14 @@ function transformToElementArray(
   if (elements instanceof globalThis.window.NodeList) {
     return Array.from(elements);
   }
-  // Check if 'elements' is a single HTMLElement
-  if (elements instanceof globalThis.window.HTMLElement) {
+  // Check if 'elements' is a single Element
+  if (elements instanceof globalThis.window.Element) {
     return [elements];
   }
 
   // Handle array-like objects
-  if ((elements as NodeListOf<HTMLElement>).length !== undefined) {
-    return Array.from(elements as NodeListOf<HTMLElement>);
+  if ((elements as NodeListOf<Element>).length !== undefined) {
+    return Array.from(elements as NodeListOf<Element>);
   }
 
   return [elements];
@@ -342,10 +342,10 @@ function transformToElementArray(
  *
  * @param {HTMLElement} element
  */
-function inlineShadowRoots(element: HTMLElement): void {
-  const elements: Array<HTMLElement> = [element];
+function inlineShadowRoots(element: Element): void {
+  const elements = [element];
 
-  const elementsToProcess: Array<HTMLElement> = [];
+  const elementsToProcess: Array<Element> = [];
   while (elements.length) {
     const currentElement = elements.shift();
     if (!currentElement) continue;
@@ -376,7 +376,7 @@ function inlineShadowRoots(element: HTMLElement): void {
   }
 }
 
-function findSvgElementsWithSymbols(element: HTMLElement): Array<SVGElement> {
+function findSvgElementsWithSymbols(element: Element): Array<SVGElement> {
   return [...element.ownerDocument.querySelectorAll('svg')].filter((svg) =>
     svg.querySelector('symbol'),
   );
@@ -423,7 +423,7 @@ export default function takeDOMSnapshot({
       }
     }
 
-    for (const e of doc.querySelectorAll<HTMLElement | SVGElement>(
+    for (const e of doc.querySelectorAll<HTMLElement | SVGElement | MathMLElement>(
       '[data-happo-focus]',
     )) {
       delete e.dataset.happoFocus;
@@ -433,7 +433,8 @@ export default function takeDOMSnapshot({
       doc.activeElement &&
       doc.activeElement !== doc.body &&
       (doc.activeElement instanceof globalThis.window.HTMLElement ||
-        doc.activeElement instanceof globalThis.window.SVGElement)
+        doc.activeElement instanceof globalThis.window.SVGElement ||
+        doc.activeElement instanceof globalThis.window.MathMLElement)
     ) {
       doc.activeElement.dataset.happoFocus = 'true';
     }
@@ -450,6 +451,16 @@ export default function takeDOMSnapshot({
     if (strategy === 'hoist') {
       htmlParts.push(element.outerHTML);
     } else if (strategy === 'clip') {
+      if (
+        !(element instanceof HTMLElement) &&
+        !(element instanceof SVGElement) &&
+        !(element instanceof MathMLElement)
+      ) {
+        throw new TypeError(
+          'element does not support the dataset property, i.e. it is not an HTMLElement or SVGElement or MathMLElement',
+        );
+      }
+
       element.dataset.happoClip = 'true';
       htmlParts.push(doc.body.outerHTML);
     } else {
