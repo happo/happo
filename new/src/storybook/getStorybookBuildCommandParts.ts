@@ -5,7 +5,7 @@ const { HAPPO_DEBUG } = process.env;
 
 export default function getStorybookBuildCommandParts(
   packageJsonPath: string = path.join(process.cwd(), 'package.json'),
-): Array<string> {
+): [string, string] {
   try {
     const data = fs.readFileSync(packageJsonPath, 'utf8');
     const packageJson = JSON.parse(data);

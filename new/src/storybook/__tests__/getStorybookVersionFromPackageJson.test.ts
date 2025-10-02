@@ -1,11 +1,13 @@
+import assert from 'node:assert';
 import path from 'node:path';
+import { describe, it } from 'node:test';
 
 import getStorybookVersionFromPackageJson from '../getStorybookVersionFromPackageJson.ts';
 
 describe('with project package.json', () => {
   it('finds the right version', () => {
     const version = getStorybookVersionFromPackageJson();
-    expect(version).toBe(9);
+    assert.strictEqual(version, 9);
   });
 });
 
@@ -14,7 +16,7 @@ describe('with storybook 8', () => {
     const version = getStorybookVersionFromPackageJson(
       path.resolve(__dirname, 'v8-package.json'),
     );
-    expect(version).toBe(8);
+    assert.strictEqual(version, 8);
   });
 });
 
@@ -23,7 +25,7 @@ describe('with storybook 7', () => {
     const version = getStorybookVersionFromPackageJson(
       path.resolve(__dirname, 'v7-package.json'),
     );
-    expect(version).toBe(7);
+    assert.strictEqual(version, 7);
   });
 });
 
@@ -32,16 +34,18 @@ describe('with no dev dependencies', () => {
     const version = getStorybookVersionFromPackageJson(
       path.resolve(__dirname, 'no-devdeps-package.json'),
     );
-    expect(version).toBe(7);
+    assert.strictEqual(version, 7);
   });
 });
 
 describe('with no storybook dependencies', () => {
   it('throws', () => {
-    expect(() =>
-      getStorybookVersionFromPackageJson(
-        path.resolve(__dirname, 'no-storybook-package.json'),
-      ),
-    ).toThrow(/not listed/);
+    assert.throws(
+      () =>
+        getStorybookVersionFromPackageJson(
+          path.resolve(__dirname, 'no-storybook-package.json'),
+        ),
+      /not listed/,
+    );
   });
 });

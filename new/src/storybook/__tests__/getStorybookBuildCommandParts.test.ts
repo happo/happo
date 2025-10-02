@@ -1,20 +1,23 @@
+import assert from 'node:assert';
 import path from 'node:path';
+import { describe, it } from 'node:test';
 
 import getStorybookBuildCommandParts from '../getStorybookBuildCommandParts.ts';
 
 describe('with project package.json', () => {
   it('returns the right command', () => {
     const parts = getStorybookBuildCommandParts();
-    expect(parts).toEqual(['storybook', 'build']);
+    assert.deepStrictEqual(parts, ['storybook', 'build']);
   });
 });
 
 describe('with a storybook script', () => {
-  xit('uses binary in node_modules/.bin', () => {
+  it.skip('uses binary in node_modules/.bin', () => {
     const parts = getStorybookBuildCommandParts(
       path.resolve(__dirname, 'no-devdeps-package.json'),
     );
-    expect(parts[0]).toMatch(/node_modules\/\.bin/);
-    expect(parts[1]).toEqual('build');
+
+    assert.match(parts[0], /node_modules\/\.bin/);
+    assert.strictEqual(parts[1], 'build');
   });
 });
