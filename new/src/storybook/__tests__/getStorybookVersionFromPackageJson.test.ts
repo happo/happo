@@ -1,6 +1,6 @@
-const path = require('node:path');
+import path from 'node:path';
 
-const getStorybookVersionFromPackageJson = require('../getStorybookVersionFromPackageJson');
+import getStorybookVersionFromPackageJson from '../getStorybookVersionFromPackageJson.ts';
 
 describe('with project package.json', () => {
   it('finds the right version', () => {

@@ -1,9 +1,9 @@
-const { spawn } = require('node:child_process');
-const fs = require('node:fs');
-const path = require('node:path');
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const getStorybookVersionFromPackageJson = require('./getStorybookVersionFromPackageJson');
-const getStorybookBuildCommandParts = require('./getStorybookBuildCommandParts');
+import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
+import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
 
 const { HAPPO_DEBUG, HAPPO_STORYBOOK_BUILD_COMMAND } = process.env;
 
@@ -67,9 +67,7 @@ function buildStorybook({ configDir, staticDir, outputDir }) {
     }
 
     if (HAPPO_DEBUG) {
-      console.log(
-        `[happo] Using build command \`${binary} ${params.join(' ')}\``,
-      );
+      console.log(`[happo] Using build command \`${binary} ${params.join(' ')}\``);
     }
     const spawned = spawn(binary, params, {
       stdio: 'inherit',
@@ -93,7 +91,7 @@ function buildStorybook({ configDir, staticDir, outputDir }) {
   });
 }
 
-module.exports = function happoStorybookPlugin({
+export default function happoStorybookPlugin({
   configDir = '.storybook',
   staticDir,
   outputDir = '.out',
@@ -116,8 +114,8 @@ module.exports = function happoStorybookPlugin({
           typeof skip === 'function'
             ? await skip()
             : Array.isArray(skip)
-            ? skip
-            : [];
+              ? skip
+              : [];
         validateSkipped(skipped);
         const iframeContent = fs.readFileSync(iframePath, 'utf8');
         fs.writeFileSync(
@@ -141,4 +139,4 @@ module.exports = function happoStorybookPlugin({
       }
     },
   };
-};
+}

@@ -1,6 +1,6 @@
-const path = require('node:path');
+import path from 'node:path';
 
-const getStorybookBuildCommandParts = require('../getStorybookBuildCommandParts');
+import getStorybookBuildCommandParts from '../getStorybookBuildCommandParts.ts';
 
 describe('with project package.json', () => {
   it('returns the right command', () => {

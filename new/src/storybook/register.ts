@@ -1,4 +1,4 @@
-import { SB_ROOT_ELEMENT_SELECTOR } from './constants';
+import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
 
 const time = globalThis.happoTime || {
   originalDateNow: Date.now,

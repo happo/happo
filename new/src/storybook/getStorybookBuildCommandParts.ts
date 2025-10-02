@@ -1,11 +1,11 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const { HAPPO_DEBUG } = process.env;
 
-module.exports = function getStorybook7BuildCommandParts(
-  packageJsonPath = path.join(process.cwd(), 'package.json'),
-) {
+export default function getStorybookBuildCommandParts(
+  packageJsonPath: string = path.join(process.cwd(), 'package.json'),
+): Array<string> {
   try {
     const data = fs.readFileSync(packageJsonPath, 'utf8');
     const packageJson = JSON.parse(data);
@@ -38,4 +38,4 @@ module.exports = function getStorybook7BuildCommandParts(
   }
 
   return ['storybook', 'build'];
-};
+}
