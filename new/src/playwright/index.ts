@@ -115,12 +115,16 @@ export const test: TestType<
           ? await handleOrLocator.elementHandle()
           : handleOrLocator;
 
+      if (!elementHandle) {
+        throw new Error('elementHandle cannot be null or undefined');
+      }
+
       const snapshot = await page.evaluate(
         ({ element, strategy }) => {
           globalThis.happo.assertHTMLElement(element);
 
           return globalThis.happo.takeDOMSnapshot({
-            doc: element?.ownerDocument,
+            doc: element.ownerDocument,
             element,
             strategy,
           });

@@ -394,7 +394,7 @@ export default function takeDOMSnapshot({
     throw new Error('doc cannot be null or undefined');
   }
   if (oneOrMoreElements == null) {
-    throw new Error('oneOrMoreElements cannot be null or undefined');
+    throw new Error('element cannot be null or undefined');
   }
 
   const allElements = transformToElementArray(oneOrMoreElements);
