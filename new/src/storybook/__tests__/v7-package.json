@@ -1,0 +1,11 @@
+{
+  "name": "test-project-v7",
+  "version": "0.0.0",
+  "dependencies": {
+    "@babel/runtime": "7.23.8"
+  },
+  "devDependencies": {
+    "@storybook/vue": "^7.1.0",
+    "webpack-dev-server": "4.15.1"
+  }
+}
