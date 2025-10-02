@@ -31,22 +31,7 @@ function resolveBuildCommandParts() {
     return HAPPO_STORYBOOK_BUILD_COMMAND.split(' ');
   }
 
-  let version;
-
-  try {
-    version = getStorybookVersionFromPackageJson();
-  } catch (e) {
-    if (HAPPO_DEBUG) {
-      console.log(
-        '[happo] Check for Storybook version in package.json failed. Details:',
-        e,
-      );
-    }
-  }
-
-  if (!version) {
-    throw new Error('Failed to determine Storybook version');
-  }
+  const version = getStorybookVersionFromPackageJson();
 
   if (version < 9) {
     throw new Error(
