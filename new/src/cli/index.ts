@@ -76,9 +76,9 @@ Options:
   --help     Show help text
 
 Specific to e2e command:
-  --e2e-allow-failures    Allow failures for e2e tests (default: false)
-  --e2e-port              Port to listen on for e2e tests (default: ${DEFAULT_E2E_PORT})
-  --e2e-skipped-examples  List of skipped examples as JSON
+  --e2eAllowFailures      Allow failures for e2e tests (default: false)
+  --e2ePort               Port to listen on for e2e tests (default: ${DEFAULT_E2E_PORT})
+  --e2eSkippedExamples    List of skipped examples as JSON
 
 Examples:
   happo
@@ -87,7 +87,7 @@ Examples:
   happo --help
   happo e2e -- playwright test
   happo e2e finalize
-  happo e2e --e2e-allow-failures -- cypress run
+  happo e2e --e2eAllowFailures -- cypress run
   `;
 
 type Logger = Pick<Console, 'log' | 'error'>;
