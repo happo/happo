@@ -100,4 +100,60 @@ describe('tsconfigs', () => {
       }
     }
   });
+
+  it('covers all TypeScript files', () => {
+    const tsconfigs = getAllTsconfigs();
+    const filesCoveredByTsconfigs = new Set(
+      tsconfigs.flatMap((tsconfig) => tsconfiglistFiles(tsconfig)),
+    );
+
+    const extensions = ['ts', 'tsx', 'mts', 'cts'];
+    const srcFiles = new Set(
+      fs.globSync([
+        ...extensions.map((extension) => `*.${extension}`),
+        ...extensions.map((extension) => `scripts/**/*.${extension}`),
+        ...extensions.map((extension) => `src/**/*.${extension}`),
+        ...extensions.map((extension) => `tsconfigs/**/*.${extension}`),
+      ]),
+    );
+
+    assert.ok(srcFiles.size > 0);
+
+    const missingFiles = srcFiles
+      // @ts-expect-error Set has .difference but it is not in the type yet
+      .difference(filesCoveredByTsconfigs);
+
+    assert.ok(
+      missingFiles.size === 0,
+      `Some files are not covered by any tsconfig file: ${JSON.stringify(Array.from(missingFiles), null, 2)}`,
+    );
+  });
+
+  it('does not include unexpected files', () => {
+    const tsconfigs = getAllTsconfigs();
+    const filesCoveredByTsconfigs = new Map(
+      tsconfigs.map((tsconfig) => [tsconfig, new Set(tsconfiglistFiles(tsconfig))]),
+    );
+
+    const bannedDirectories = [
+      'coverage',
+      'dist',
+      'node_modules',
+      'playwright-report',
+      'test-results',
+      'tmp',
+      'types',
+    ];
+
+    for (const [tsconfigFile, files] of filesCoveredByTsconfigs) {
+      for (const file of files) {
+        for (const bannedDirectory of bannedDirectories) {
+          assert.ok(
+            !file.startsWith(`${bannedDirectory}/`),
+            `${tsconfigFile} includes ${file}`,
+          );
+        }
+      }
+    }
+  });
 });

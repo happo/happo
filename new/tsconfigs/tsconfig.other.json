@@ -12,6 +12,11 @@
     }
   ],
 
-  "include": ["*.ts"],
-  "exclude": ["../src/**/*.ts"]
+  "include": ["../*.ts", "../scripts/**/*.ts"],
+  "exclude": [
+    "../src/**/*.ts",
+    "../**/__tests__/**",
+    "../**/__playwright__/**",
+    "../**/*.test.ts"
+  ]
 }
