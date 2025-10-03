@@ -32,9 +32,9 @@ importers:
       p-all:
         specifier: ^5.0.1
         version: 5.0.1
-      parse-srcset:
-        specifier: ^1.0.2
-        version: 1.0.2
+      srcset:
+        specifier: ^5.0.2
+        version: 5.0.2
       supports-color:
         specifier: ^10.2.2
         version: 10.2.2
@@ -72,9 +72,6 @@ importers:
       '@types/node':
         specifier: ^22.18.6
         version: 22.18.6
-      '@types/parse-srcset':
-        specifier: ^1.0.0
-        version: 1.0.0
       '@types/serve-handler':
         specifier: ^6.1.4
         version: 6.1.4
@@ -459,9 +456,6 @@ packages:
 
   '@types/node@22.18.6':
     resolution: {integrity: sha512-r8uszLPpeIWbNKtvWRt/DbVi5zbqZyj1PTmhRMqBMvDnaz1QpmSKujUtJLrqGZeoM8v72MfYggDceY4K1itzWQ==}
-
-  '@types/parse-srcset@1.0.0':
-    resolution: {integrity: sha512-5ehc1s3aIQJ05ZVAmYoqDUN8zvlrIZvRUfYP+2bhGNzrY5RQBeJS9JO9jpkVm/vSOW/MkRYLArS/fhXY5cgXPg==}
 
   '@types/readdir-glob@1.1.5':
     resolution: {integrity: sha512-raiuEPUYqXu+nvtY2Pe8s8FEmZ3x5yAH4VkLdihcPdalvsHltomrRC9BzuStrJ9yk06470hS0Crw0f1pXqD+Hg==}
@@ -1198,9 +1192,6 @@ packages:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
     engines: {node: '>=6'}
 
-  parse-srcset@1.0.2:
-    resolution: {integrity: sha512-/2qh0lav6CmI15FzA3i/2Bzk2zCgQhGMkvhOhKNcBVQ1ldgpbfiNTVslmooUmWJcADi1f1kIeynbDRVzNlfR6Q==}
-
   parse5@7.3.0:
     resolution: {integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==}
 
@@ -1357,6 +1348,10 @@ packages:
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
+
+  srcset@5.0.2:
+    resolution: {integrity: sha512-pucR5KmXL7uWI59sXE2nuodomLsfnIQDa5Fck0TooiyxsIx+JYGiFm+wFO7aaDvvl/43ipjUjAb5je7dcAwlzQ==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   stack-utils@2.0.6:
     resolution: {integrity: sha512-XlkWvfIm6RmsWtNJx+uqtKLS8eqFbxUg0ZzLXqY0caEy9l7hruX8IpiDnjsLavoBgqCCR71TqWO8MaXYheJ3RQ==}
@@ -1819,8 +1814,6 @@ snapshots:
   '@types/node@22.18.6':
     dependencies:
       undici-types: 6.21.0
-
-  '@types/parse-srcset@1.0.0': {}
 
   '@types/readdir-glob@1.1.5':
     dependencies:
@@ -2609,8 +2602,6 @@ snapshots:
     dependencies:
       callsites: 3.1.0
 
-  parse-srcset@1.0.2: {}
-
   parse5@7.3.0:
     dependencies:
       entities: 6.0.1
@@ -2739,6 +2730,8 @@ snapshots:
   signal-exit@4.1.0: {}
 
   source-map-js@1.2.1: {}
+
+  srcset@5.0.2: {}
 
   stack-utils@2.0.6:
     dependencies:

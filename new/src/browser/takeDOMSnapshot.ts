@@ -1,4 +1,4 @@
-import parseSrcset from 'parse-srcset';
+import { parseSrcset } from 'srcset';
 
 import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.ts';
 import type {
@@ -149,7 +149,7 @@ function getElementAssetUrls(
     }
     if (srcset) {
       allUrls.push(
-        ...parseSrcset(srcset).map((p: { url: string }) => ({
+        ...parseSrcset(srcset).map((p) => ({
           url: p.url,
           baseUrl: element.baseURI,
         })),
@@ -157,7 +157,7 @@ function getElementAssetUrls(
     }
     if (style) {
       allUrls.push(
-        ...findCSSAssetUrls(style).map((url: string) => ({
+        ...findCSSAssetUrls(style).map((url) => ({
           url,
           baseUrl: element.baseURI,
         })),
