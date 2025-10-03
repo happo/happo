@@ -135,6 +135,17 @@ describe('findConfigFile', () => {
       findConfigFile();
     }, /Happo config file could not be found/);
   });
+
+  it('uses the HAPPO_CONFIG_FILE environment variable if it is set', () => {
+    try {
+      process.env.HAPPO_CONFIG_FILE = 'my-happo.config.ts';
+      const foundConfigFile = findConfigFile();
+      assert.ok(foundConfigFile);
+      assert.strictEqual(foundConfigFile, process.env.HAPPO_CONFIG_FILE);
+    } finally {
+      delete process.env.HAPPO_CONFIG_FILE;
+    }
+  });
 });
 
 describe('loadConfigFile', () => {

@@ -12,6 +12,10 @@ const CONFIG_FILENAMES = [
 ];
 
 export function findConfigFile(): string {
+  if (process.env.HAPPO_CONFIG_FILE) {
+    return process.env.HAPPO_CONFIG_FILE;
+  }
+
   const configFilePath = findAny(CONFIG_FILENAMES, { cwd: process.cwd() });
 
   if (!configFilePath) {

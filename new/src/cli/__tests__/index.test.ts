@@ -239,6 +239,42 @@ describe('main', () => {
         );
       });
 
+      it('passes along an environment variable for loading the happo config', async () => {
+        tmpfs.writeFile(
+          'my-happo-config.ts',
+          "export default { apiKey: 'test-key', apiSecret: 'test-secret' };",
+        );
+        tmpfs.writeFile(
+          'overwrite-happo-config.js',
+          `const fs = require('fs');
+          fs.writeFileSync(process.env.HAPPO_CONFIG_FILE, 'changed it!');
+          `,
+        );
+        await main(
+          [
+            'npx',
+            'happo',
+            'e2e',
+            '--e2ePort',
+            process.env.HAPPO_E2E_PORT || '5345',
+            '--config',
+            path.join(tmpfs.getTempDir(), 'my-happo-config.ts'),
+            '--',
+            'node',
+            path.join(tmpfs.getTempDir(), 'overwrite-happo-config.js'),
+          ],
+          logger,
+        );
+
+        assert.strictEqual(process.exitCode, 0);
+
+        const fileContents = fs.readFileSync(
+          path.join(tmpfs.getTempDir(), 'my-happo-config.ts'),
+          'utf8',
+        );
+        assert.strictEqual(fileContents, 'changed it!');
+      });
+
       it('exits with the exit code of the command', async () => {
         await main(
           [
