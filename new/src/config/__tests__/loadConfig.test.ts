@@ -4,8 +4,11 @@ import { afterEach, describe, it } from 'node:test';
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import { findConfigFile, loadConfigFile } from '../loadConfig.ts';
 
+const originalEnv = { ...process.env };
+
 afterEach(() => {
   tmpfs.restore();
+  process.env = { ...originalEnv };
 });
 
 describe('findConfigFile', () => {
@@ -137,14 +140,15 @@ describe('findConfigFile', () => {
   });
 
   it('uses the HAPPO_CONFIG_FILE environment variable if it is set', () => {
-    try {
-      process.env.HAPPO_CONFIG_FILE = 'my-happo.config.ts';
-      const foundConfigFile = findConfigFile();
-      assert.ok(foundConfigFile);
-      assert.strictEqual(foundConfigFile, process.env.HAPPO_CONFIG_FILE);
-    } finally {
-      delete process.env.HAPPO_CONFIG_FILE;
-    }
+    tmpfs.mock({
+      'happo.config.ts':
+        'export default { apiKey: "test-api-key", apiSecret: "test-api-secret" };',
+    });
+
+    process.env.HAPPO_CONFIG_FILE = 'my-happo.config.ts';
+    const foundConfigFile = findConfigFile();
+    assert.ok(foundConfigFile);
+    assert.strictEqual(foundConfigFile, process.env.HAPPO_CONFIG_FILE);
   });
 });
 
