@@ -26,6 +26,20 @@ const REPORTERS: Record<Reporter, string> = {
   tap: 'tap',
 };
 
+function assertValidReporter(reporter: string): asserts reporter is Reporter {
+  if (!Object.hasOwn(REPORTERS, reporter)) {
+    throw new Error(`Unknown reporter: ${reporter}`);
+  }
+}
+
+function assertValidReporters(
+  reporters: Array<string>,
+): asserts reporters is Array<Reporter> {
+  for (const reporter of reporters) {
+    assertValidReporter(reporter);
+  }
+}
+
 // Parse command line arguments
 const { values: args, positionals } = parseArgs({
   args: process.argv.slice(2),
@@ -200,6 +214,8 @@ function run() {
     );
   }
 
+  assertValidReporters(args.reporter);
+
   for (const reporter of args.reporter) {
     if (REPORTERS[reporter]) {
       nodeTestArgs.push(
@@ -258,7 +274,8 @@ function watchFiles() {
       });
       watchers.push(watcher);
     } catch (err) {
-      console.warn(`Could not watch directory ${dir}:`, err.message);
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`Could not watch directory ${dir}:`, message);
     }
   }
 
