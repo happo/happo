@@ -53,10 +53,8 @@ export interface NextExampleResult {
 }
 
 export interface WindowHappo {
-  happo: {
-    takeDOMSnapshot: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
-    assertElement: (element: Node | null) => asserts element is Element;
-    init?: (config: InitConfig) => void;
-    nextExample?: () => Promise<NextExampleResult | undefined>;
-  };
+  takeDOMSnapshot: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
+  assertElement: (element: Node | null) => asserts element is Element;
+  init?: (config: InitConfig) => void;
+  nextExample?: () => Promise<NextExampleResult | undefined>;
 }
