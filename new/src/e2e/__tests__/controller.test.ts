@@ -7,7 +7,7 @@ import Controller from '../controller.ts';
 
 const port = 3000;
 
-const originalEnv = structuredClone(process.env);
+const originalEnv = { ...process.env };
 
 let server: http.Server;
 
@@ -58,7 +58,7 @@ before(async () => {
 after(() => {
   server.close();
 
-  process.env = originalEnv;
+  process.env = { ...originalEnv };
 
   tmpfs.restore();
 });
