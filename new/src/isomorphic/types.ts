@@ -52,9 +52,8 @@ export interface NextExampleResult {
   waitForContent?: () => boolean;
 }
 
-export interface WindowHappo {
-  takeDOMSnapshot: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
-  assertElement: (element: Node | null) => asserts element is Element;
+export type WindowHappo = {
+  takeDOMSnapshot?: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
   init?: (config: InitConfig) => void;
   nextExample?: () => Promise<NextExampleResult | undefined>;
-}
+};

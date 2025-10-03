@@ -121,9 +121,18 @@ export const test: TestType<
 
       const snapshot = await page.evaluate(
         ({ element, strategy }) => {
-          globalThis.happo.assertElement(element);
+          if (!globalThis.happo) {
+            throw new Error('globalThis.happo is not defined');
+          }
 
-          return globalThis.happo.takeDOMSnapshot({
+          const { happo } = globalThis;
+          const { takeDOMSnapshot } = happo;
+
+          if (!takeDOMSnapshot) {
+            throw new Error('globalThis.happo.takeDOMSnapshot is not defined');
+          }
+
+          return takeDOMSnapshot({
             doc: element.ownerDocument,
             element,
             strategy,

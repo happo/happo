@@ -6,7 +6,9 @@ import handler from 'serve-handler';
 import type { WindowHappo } from '../../isomorphic/types.ts';
 
 declare global {
-  var happo: WindowHappo;
+  var happo: {
+    takeDOMSnapshot: NonNullable<WindowHappo['takeDOMSnapshot']>;
+  };
 }
 
 let server: http.Server;
