@@ -35,7 +35,7 @@ function flattenFiles(files: Files, prefix: string = ''): Record<string, string>
  *     'test.txt': 'I like pizza',
  *   });
  *
- *   assert.strictEqual(fs.readFileSync(path.join(tmpfs.getTempDir(), 'test.txt'), 'utf8'), 'I like pizza');
+ *   assert.strictEqual(fs.readFileSync(tmpfs.fullPath('test.txt'), 'utf8'), 'I like pizza');
  *
  *   tmpfs.restore();
  * });
@@ -101,13 +101,28 @@ function assertMocked(caller: string): void {
 }
 
 /**
+ * Returns the full path of a relative path in the temporary directory
+ *
+ * @example
+ * it('is a test', () => {
+ *   tmpfs.mock({});
+ *   tmpfs.writeFile('test.txt', 'Hello, world!');
+ *   assert.strictEqual(fs.readFileSync(tmpfs.fullPath('test.txt'), 'utf8'), 'Hello, world!');
+ *   tmpfs.restore();
+ * });
+ */
+export function fullPath(relativePath: string): string {
+  return path.join(getTempDir(), relativePath);
+}
+
+/**
  * Writes a file to the temporary directory
  *
  * @example
  * it('is a test', () => {
  *   tmpfs.mock({});
  *   tmpfs.writeFile('test.txt', 'Hello, world!');
- *   assert.strictEqual(fs.readFileSync(path.join(tmpfs.getTempDir(), 'test.txt'), 'utf8'), 'Hello, world!');
+ *   assert.strictEqual(fs.readFileSync(tmpfs.fullPath('test.txt'), 'utf8'), 'Hello, world!');
  *   tmpfs.restore();
  * });
  */

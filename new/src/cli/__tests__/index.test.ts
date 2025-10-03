@@ -1,6 +1,5 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
-import path from 'node:path';
 import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
@@ -106,12 +105,7 @@ describe('main', () => {
       );
 
       await main(
-        [
-          'npx',
-          'happo',
-          '--config',
-          path.join(tmpfs.getTempDir(), 'custom.config.ts'),
-        ],
+        ['npx', 'happo', '--config', tmpfs.fullPath('custom.config.ts')],
         logger,
       );
 
@@ -129,10 +123,7 @@ describe('main', () => {
       };`,
       );
 
-      await main(
-        ['npx', 'happo', '-c', path.join(tmpfs.getTempDir(), 'custom.config.ts')],
-        logger,
-      );
+      await main(['npx', 'happo', '-c', tmpfs.fullPath('custom.config.ts')], logger);
 
       assert.ok(logger.log.mock.callCount() >= 3);
       assert.strictEqual(
@@ -155,12 +146,7 @@ describe('main', () => {
       await assert.rejects(
         () =>
           main(
-            [
-              'npx',
-              'happo',
-              '--config',
-              path.join(tmpfs.getTempDir(), 'non-existent.config.ts'),
-            ],
+            ['npx', 'happo', '--config', tmpfs.fullPath('non-existent.config.ts')],
             logger,
           ),
         /Cannot find module .*non-existent.config.ts/,
@@ -226,7 +212,7 @@ describe('main', () => {
             process.env.HAPPO_E2E_PORT || '5345',
             '--',
             'touch',
-            path.join(tmpfs.getTempDir(), 'happy-to-be-here.txt'),
+            tmpfs.fullPath('happy-to-be-here.txt'),
           ],
           logger,
         );
@@ -234,9 +220,7 @@ describe('main', () => {
         assert.strictEqual(process.exitCode, 0);
         assert(logger.log.mock.callCount() >= 1);
 
-        assert.ok(
-          fs.statSync(path.join(tmpfs.getTempDir(), 'happy-to-be-here.txt')),
-        );
+        assert.ok(fs.statSync(tmpfs.fullPath('happy-to-be-here.txt')));
       });
 
       it('passes along an environment variable for loading the happo config', async () => {
@@ -258,10 +242,10 @@ describe('main', () => {
             '--e2ePort',
             process.env.HAPPO_E2E_PORT || '5345',
             '--config',
-            path.join(tmpfs.getTempDir(), 'my-happo-config.ts'),
+            tmpfs.fullPath('my-happo-config.ts'),
             '--',
             'node',
-            path.join(tmpfs.getTempDir(), 'overwrite-happo-config.js'),
+            tmpfs.fullPath('overwrite-happo-config.js'),
           ],
           logger,
         );
@@ -269,7 +253,7 @@ describe('main', () => {
         assert.strictEqual(process.exitCode, 0);
 
         const fileContents = fs.readFileSync(
-          path.join(tmpfs.getTempDir(), 'my-happo-config.ts'),
+          tmpfs.fullPath('my-happo-config.ts'),
           'utf8',
         );
         assert.strictEqual(fileContents, 'changed it!');
@@ -285,7 +269,7 @@ describe('main', () => {
             process.env.HAPPO_E2E_PORT || '5345',
             '--',
             'ls',
-            path.join(tmpfs.getTempDir(), 'non-existent.txt'),
+            tmpfs.fullPath('non-existent.txt'),
           ],
           logger,
         );

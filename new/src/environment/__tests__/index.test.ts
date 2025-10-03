@@ -10,7 +10,7 @@ import resolveEnvironment from '../index.ts';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function initGitRepo() {
-  const origin = `${tmpfs.getTempDir()}/.git`;
+  const origin = tmpfs.fullPath('.git');
   tmpfs.exec('git', ['remote', 'add', 'origin', origin]);
 
   // Make a second commit in the main branch
@@ -233,7 +233,7 @@ describe('resolveEnvironment', () => {
       '0000000000000000000000000000000000000000',
       currentSha,
     );
-    const eventPath = path.resolve(tmpfs.getTempDir(), 'github_push_event.json');
+    const eventPath = tmpfs.fullPath('github_push_event.json');
     fs.writeFileSync(eventPath, eventContentsWithChanges);
     githubEnv.GITHUB_EVENT_PATH = eventPath;
     result = await resolveEnvironment(githubEnv);
