@@ -18,20 +18,18 @@ it('creates the files in the temp dir', () => {
   });
 
   assert.strictEqual(
-    fs.readFileSync(path.join(tmpfs.getTempDir(), 'test.txt'), 'utf8'),
+    fs.readFileSync(tmpfs.fullPath('test.txt'), 'utf8'),
     'I like pizza',
   );
 
   assert.strictEqual(
-    fs.readFileSync(path.join(tmpfs.getTempDir(), 'subdir', 'test2.txt'), 'utf8'),
+    fs.readFileSync(tmpfs.fullPath('subdir/test2.txt'), 'utf8'),
     'I like ice cream',
   );
 
   const allFiles = fs.readdirSync(tmpfs.getTempDir());
   assert.deepStrictEqual(allFiles, ['subdir', 'test.txt']);
-  assert.deepStrictEqual(fs.readdirSync(path.join(tmpfs.getTempDir(), 'subdir')), [
-    'test2.txt',
-  ]);
+  assert.deepStrictEqual(fs.readdirSync(tmpfs.fullPath('subdir')), ['test2.txt']);
 });
 
 it('throws if called twice without restore', () => {
@@ -50,6 +48,16 @@ describe('getTempDir', () => {
   it('returns a non-empty string if a temp dir is set', () => {
     tmpfs.mock({});
     assert.match(tmpfs.getTempDir(), /^\/\w+/);
+  });
+});
+
+describe('fullPath', () => {
+  it('returns the full path of a relative path in the temp dir', () => {
+    tmpfs.mock({});
+    assert.strictEqual(
+      tmpfs.fullPath('test.txt'),
+      path.join(tmpfs.getTempDir(), 'test.txt'),
+    );
   });
 });
 
@@ -83,7 +91,7 @@ describe('writeFile', () => {
     it('writes a file to the temp dir', () => {
       tmpfs.writeFile('test.txt', 'Hello, world!');
       assert.strictEqual(
-        fs.readFileSync(path.join(tmpfs.getTempDir(), 'test.txt'), 'utf8'),
+        fs.readFileSync(tmpfs.fullPath('test.txt'), 'utf8'),
         'Hello, world!',
       );
     });
@@ -140,14 +148,11 @@ describe('gitInit', () => {
     });
 
     it('initializes a git repository', () => {
-      assert.strictEqual(
-        fs.existsSync(path.join(tmpfs.getTempDir(), '.git')),
-        false,
-      );
+      assert.strictEqual(fs.existsSync(tmpfs.fullPath('.git')), false);
 
       tmpfs.gitInit();
 
-      assert.strictEqual(fs.existsSync(path.join(tmpfs.getTempDir(), '.git')), true);
+      assert.strictEqual(fs.existsSync(tmpfs.fullPath('.git')), true);
     });
 
     it('uses main as the default branch', () => {
