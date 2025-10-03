@@ -125,6 +125,7 @@ export async function main(
         args.dashdashCommandParts,
         args.values.e2eAllowFailures,
         args.values.e2ePort,
+        configFilePath,
         logger,
       );
       break;
@@ -163,6 +164,7 @@ async function handleE2ECommand(
   dashdashCommandParts: Array<string>,
   e2eAllowFailures: boolean,
   e2ePort: string,
+  configFilePath: string,
   logger: Logger,
 ): Promise<void> {
   if (positionals[1] === 'finalize') {
@@ -198,6 +200,7 @@ async function handleE2ECommand(
     e2ePort,
     e2eAllowFailures,
     logger,
+    configFilePath,
   );
   process.exitCode = exitCode;
 }

@@ -311,6 +311,7 @@ export default async function runWithWrapper(
   port: string = DEFAULT_PORT,
   allowFailures: boolean,
   logger: Logger,
+  configFilePath: string,
 ): Promise<number> {
   allRequestIds = new Set<number>();
   const closeServer = await startServer(port, environment, happoConfig);
@@ -320,7 +321,11 @@ export default async function runWithWrapper(
     const exitCode = await new Promise<number>((resolve, reject) => {
       const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
         stdio: 'inherit',
-        env: { ...process.env, HAPPO_E2E_PORT: port },
+        env: {
+          ...process.env,
+          HAPPO_E2E_PORT: port,
+          HAPPO_CONFIG_FILE: configFilePath,
+        },
         shell: process.platform == 'win32',
       });
 
