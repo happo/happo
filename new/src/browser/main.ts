@@ -1,5 +1,5 @@
 import type { WindowHappo } from '../isomorphic/types.ts';
-import assertHTMLElement from './assertHTMLElement.ts';
+import assertElement from './assertElement.ts';
 import takeDOMSnapshot from './takeDOMSnapshot.ts';
 
 declare global {
@@ -8,7 +8,7 @@ declare global {
 
 const happo: WindowHappo['happo'] = {
   takeDOMSnapshot,
-  assertHTMLElement,
+  assertElement,
 };
 
 globalThis.happo = happo;
