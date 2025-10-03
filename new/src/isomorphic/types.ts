@@ -10,6 +10,18 @@ export interface CSSBlock {
   baseUrl: string;
 }
 
+export interface InitConfig {
+  chunk?: {
+    index: number;
+    total: number;
+  };
+  targetName?: string;
+  only?: {
+    component: string;
+    variant: string;
+  };
+}
+
 export interface TakeDOMSnapshotOptions {
   doc: Document | null | undefined;
   element: Element | Array<Element> | NodeListOf<Element> | null;
@@ -33,9 +45,18 @@ export interface DOMSnapshotResult {
   bodyElementAttrs: Record<string, string>;
 }
 
+export interface NextExampleResult {
+  component: string;
+  variant: string;
+  skipped?: boolean;
+  waitForContent?: () => boolean;
+}
+
 export interface WindowHappo {
   happo: {
     takeDOMSnapshot: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
     assertElement: (element: Node | null) => asserts element is Element;
+    init?: (config: InitConfig) => void;
+    nextExample?: () => Promise<NextExampleResult | undefined>;
   };
 }

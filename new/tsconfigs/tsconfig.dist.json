@@ -19,8 +19,8 @@
     "../**/*.test.ts",
     "../**/__playwright__/**",
     "../**/__tests__/**",
-    "../src/browser/**",
-    "../src/isomorphic/**",
+    "../src/**/browser/**",
+    "../src/**/isomorphic/**",
     "../src/test-utils/**"
   ]
 }

@@ -4,15 +4,9 @@ import path from 'node:path';
 
 import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
+import type { SkipItems } from './isomorphic/types.ts';
 
 const { HAPPO_DEBUG, HAPPO_STORYBOOK_BUILD_COMMAND } = process.env;
-
-interface SkipItem {
-  component: string;
-  variant: string;
-}
-
-type SkipItems = Array<SkipItem>;
 
 function assertSkippedIsSkipItems(skipped: unknown): asserts skipped is SkipItems {
   if (!Array.isArray(skipped)) {

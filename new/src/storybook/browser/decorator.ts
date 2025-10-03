@@ -3,20 +3,30 @@ import { addons, makeDecorator } from 'storybook/preview-api';
 
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
 
-function HappoDecorator({ params, children }) {
+interface HappoParams {
+  [key: string]: ((args: { rootElement: Element | null }) => unknown) | unknown;
+}
+
+function HappoDecorator({
+  params,
+  children,
+}: {
+  params: HappoParams | null;
+  children: React.ReactNode;
+}) {
   useEffect(() => {
-    if (!params) return;
+    if (!params) {
+      return;
+    }
 
     const channel = addons.getChannel();
-    async function listen({ funcName }) {
+    async function listen({ funcName }: { funcName: string }) {
       const rootElement = document.querySelector(SB_ROOT_ELEMENT_SELECTOR);
-      if (params[funcName] && typeof params[funcName] === 'function') {
+      if (params && params[funcName] && typeof params[funcName] === 'function') {
         const result = params[funcName]({ rootElement });
 
         if (result instanceof Promise) {
-          console.log(
-            `Invoked Happo function \`${funcName}\`. Awaiting result...`,
-          );
+          console.log(`Invoked Happo function \`${funcName}\`. Awaiting result...`);
           const finalResult = await result;
           console.log(
             `Async result of Happo function \`${funcName}\`:`,
@@ -47,6 +57,7 @@ function HappoDecorator({ params, children }) {
         })
         .filter(Boolean),
     });
+
     return () => {
       channel.off('happo/functions/invoke', listen);
     };
@@ -55,15 +66,14 @@ function HappoDecorator({ params, children }) {
   return children;
 }
 
-export const withHappo = makeDecorator({
+export const withHappo: ReturnType<typeof makeDecorator> = makeDecorator({
   name: 'withHappo',
   parameterName: 'happo',
   wrapper: (Story, context) => {
-    return (
-      <HappoDecorator params={context.parameters.happo}>
-        <Story />
-      </HappoDecorator>
-    );
+    return React.createElement(HappoDecorator, {
+      params: context.parameters.happo || null,
+      children: React.createElement(Story as React.ComponentType, null),
+    });
   },
 });
 

@@ -1,4 +1,33 @@
+import type { Channel } from 'storybook/internal/channels';
+import type { StoryStore } from 'storybook/internal/preview-api';
+
+import type { InitConfig, NextExampleResult } from '../../isomorphic/types.ts';
+import type { SkipItems } from '../isomorphic/types.ts';
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
+
+interface HappoTime {
+  originalDateNow: typeof Date.now;
+  originalSetTimeout: typeof setTimeout;
+}
+
+declare global {
+  var happoTime: HappoTime | undefined;
+  var happoSkipped: SkipItems | undefined;
+  var __IS_HAPPO_RUN: boolean | undefined;
+  var __STORYBOOK_CLIENT_API__:
+    | {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        _storyStore: StoryStore<any>;
+      }
+    | undefined;
+  var __STORYBOOK_PREVIEW__:
+    | {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        storyStoreValue: StoryStore<any>;
+      }
+    | undefined;
+  var __STORYBOOK_ADDONS_CHANNEL__: Channel | undefined;
+}
 
 const time = globalThis.happoTime || {
   originalDateNow: Date.now,
@@ -8,16 +37,40 @@ const time = globalThis.happoTime || {
 const ASYNC_TIMEOUT = 100;
 const STORY_STORE_TIMEOUT = 10_000;
 
+type HookFunction = ({
+  rootElement,
+}: {
+  rootElement: HTMLElement;
+}) => void | Promise<void>;
+
+interface Example {
+  component: string;
+  variant: string;
+  storyId: string;
+  delay: number;
+  waitForContent: () => boolean;
+  waitFor: () => boolean;
+  beforeScreenshot: HookFunction;
+  afterScreenshot: HookFunction;
+  targets: Array<string>;
+  theme?: string;
+}
+
 let renderTimeoutMs = 2000;
-let examples;
+let examples: Array<Example>;
 let currentIndex = 0;
-let defaultDelay;
-let themeSwitcher;
-let forcedHappoScreenshotSteps;
+let defaultDelay: number;
+let themeSwitcher: (theme: string, channel: Channel) => Promise<void>;
+let forcedHappoScreenshotSteps:
+  | Array<{ stepLabel: string; done: boolean }>
+  | undefined;
 let shouldWaitForCompletedEvent = true;
 
 class ForcedHappoScreenshot extends Error {
-  constructor(stepLabel) {
+  type: string;
+  step: string;
+
+  constructor(stepLabel: string) {
     super(`Forced screenshot with label "${stepLabel}"`);
     this.name = 'ForcedHappoScreenshot';
     this.type = 'ForcedHappoScreenshot';
@@ -25,24 +78,44 @@ class ForcedHappoScreenshot extends Error {
   }
 }
 
-async function waitForSomeContent(elem, start = time.originalDateNow()) {
+async function waitForSomeContent(
+  elem: HTMLElement,
+  start = time.originalDateNow(),
+): Promise<string> {
   const html = elem.innerHTML.trim();
   const duration = time.originalDateNow() - start;
+
   if (html === '' && duration < ASYNC_TIMEOUT) {
     return new Promise((resolve) =>
       time.originalSetTimeout(() => resolve(waitForSomeContent(elem, start)), 10),
     );
   }
+
   return html;
 }
 
-async function waitForWaitFor(waitFor, start = time.originalDateNow()) {
+async function waitForWaitFor(
+  waitFor: () => boolean,
+  start = time.originalDateNow(),
+): Promise<void> {
   const duration = time.originalDateNow() - start;
   if (!waitFor() && duration < renderTimeoutMs) {
     return new Promise((resolve) =>
       time.originalSetTimeout(() => resolve(waitForWaitFor(waitFor, start)), 50),
     );
   }
+
+  return;
+}
+
+/**
+ * Type safe function to check if a value is not null
+ *
+ * @example
+ * const filtered = values.filter(isNotNull);
+ */
+function isNotNull<T>(value: T): value is NonNullable<T> {
+  return value !== null;
 }
 
 async function getStoryStore(startTime = time.originalDateNow()) {
@@ -68,7 +141,7 @@ async function getStoryStore(startTime = time.originalDateNow()) {
   return getStoryStore(startTime);
 }
 
-async function getExamples() {
+async function getExamples(): Promise<Array<Example>> {
   const storyStore = await getStoryStore();
 
   if (!storyStore) {
@@ -117,8 +190,8 @@ async function getExamples() {
         themes,
       };
     })
-    .filter(Boolean)
-    .reduce((result, { themes, ...rest }) => {
+    .filter(isNotNull)
+    .reduce<Array<Example>>((result, { themes, ...rest }) => {
       if (themes) {
         for (const theme of themes) {
           result.push({
@@ -133,7 +206,7 @@ async function getExamples() {
 
       return result;
     }, [])
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       const aCompare = `${a.component}-${a.theme}-${a.storyId}`;
       const bCompare = `${b.component}-${b.theme}-${b.storyId}`;
       if (aCompare === bCompare) {
@@ -143,59 +216,85 @@ async function getExamples() {
     });
 }
 
-function filterExamples(all) {
-  if (initConfig.chunk) {
-    const examplesPerChunk = Math.ceil(all.length / initConfig.chunk.total);
-    const startIndex = initConfig.chunk.index * examplesPerChunk;
+let initConfig: InitConfig = {};
+
+function filterExamples(all: Array<Example>): Array<Example> {
+  const { chunk, targetName, only } = initConfig;
+
+  if (chunk) {
+    const examplesPerChunk = Math.ceil(all.length / chunk.total);
+    const startIndex = chunk.index * examplesPerChunk;
     const endIndex = startIndex + examplesPerChunk;
     all = all.slice(startIndex, endIndex);
   }
-  if (initConfig.targetName) {
+
+  if (targetName) {
     all = all.filter((e) => {
       if (!e.targets || !Array.isArray(e.targets)) {
         // This story hasn't been filtered for specific targets
         return true;
       }
-      return e.targets.includes(initConfig.targetName);
+
+      return e.targets.includes(targetName);
     });
   }
-  if (initConfig.only) {
+
+  if (only) {
     all = all.filter(
-      (e) =>
-        e.component === initConfig.only.component &&
-        e.variant === initConfig.only.variant,
+      (e) => e.component === only.component && e.variant === only.variant,
     );
   }
+
   return all;
 }
 
-let initConfig = {};
+globalThis.happo = globalThis.happo || {};
 
-globalThis.happo = {};
-
-globalThis.happo.init = (config) => {
+globalThis.happo.init = (config: InitConfig) => {
   initConfig = config;
 };
 
-function renderStory(story, { force = false } = {}) {
+interface Story {
+  kind: string;
+  story: string;
+  storyId: string;
+}
+
+function renderStory(
+  story: Story,
+  { force = false } = {},
+): Promise<{ pausedAtStep?: { stepLabel: string; done: boolean } }> {
   const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
+
+  if (!channel) {
+    throw new Error('Missing Storybook Addons Channel');
+  }
+
   let isPlaying = false;
   let loadingCount = 0;
+
   return new Promise((resolve) => {
     const timeout = time.originalSetTimeout(resolve, renderTimeoutMs);
-    function handleRenderPhaseChanged(ev) {
+    function handleRenderPhaseChanged(ev: { storyId: string; newPhase: string }) {
+      if (!channel) {
+        throw new Error('Missing Storybook Addons Channel');
+      }
+
       if (ev.storyId !== story.storyId) {
         console.log(
           `Skipping render phase event (${ev.newPhase}) because story IDs don't match. Current storyId: ${story.storyId}, event storyId: ${ev.storyId}`,
         );
         return;
       }
+
       if (ev.newPhase === 'loading') {
         loadingCount++;
       }
+
       if (ev.newPhase === 'finished' || ev.newPhase === 'aborted') {
         loadingCount--;
       }
+
       if (ev.newPhase === 'finished') {
         if (loadingCount > 0) {
           console.log(
@@ -203,16 +302,21 @@ function renderStory(story, { force = false } = {}) {
           );
           return;
         }
+
         channel.off('storyRenderPhaseChanged', handleRenderPhaseChanged);
         clearTimeout(timeout);
+
         if (isPlaying && forcedHappoScreenshotSteps) {
           const pausedAtStep = forcedHappoScreenshotSteps.at(-1);
-          if (!pausedAtStep.done) {
+
+          if (pausedAtStep && !pausedAtStep.done) {
             return resolve({ pausedAtStep });
           }
         }
-        return resolve();
+
+        return resolve({});
       }
+
       if (ev.newPhase === 'playing') {
         isPlaying = true;
       }
@@ -221,27 +325,45 @@ function renderStory(story, { force = false } = {}) {
     if (shouldWaitForCompletedEvent) {
       channel.on('storyRenderPhaseChanged', handleRenderPhaseChanged);
     }
+
     if (force) {
       channel.emit('forceRemount', story);
     } else {
       channel.emit('setCurrentStory', story);
     }
+
     if (!shouldWaitForCompletedEvent) {
       time.originalSetTimeout(() => {
         clearTimeout(timeout);
-        resolve();
+        resolve({});
       }, 0);
     }
   });
 }
 
-globalThis.happo.nextExample = async () => {
+function assertHTMLElement(element: Element | null): asserts element is HTMLElement {
+  if (element === null) {
+    throw new Error('element cannot be null');
+  }
+  if (!(element instanceof HTMLElement)) {
+    throw new TypeError('element must be an HTMLElement');
+  }
+}
+
+globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> => {
   if (!examples) {
     examples = filterExamples(await getExamples());
   }
+
   if (currentIndex >= examples.length) {
     return;
   }
+
+  const example = examples[currentIndex];
+  if (!example) {
+    throw new Error(`Missing example at index ${currentIndex}`);
+  }
+
   const {
     component,
     variant: rawVariant,
@@ -251,7 +373,7 @@ globalThis.happo.nextExample = async () => {
     waitFor,
     beforeScreenshot,
     theme,
-  } = examples[currentIndex];
+  } = example;
 
   let pausedAtStep;
   let variant = rawVariant;
@@ -273,10 +395,11 @@ globalThis.happo.nextExample = async () => {
     }
 
     const rootElement = document.querySelector(SB_ROOT_ELEMENT_SELECTOR);
+    assertHTMLElement(rootElement);
     rootElement.dataset.happoIgnore = 'true';
 
     const { afterScreenshot } = examples[currentIndex - 1] || {};
-    if (typeof afterScreenshot === 'function') {
+    if (afterScreenshot && typeof afterScreenshot === 'function') {
       try {
         await afterScreenshot({ rootElement });
       } catch (e) {
@@ -284,25 +407,30 @@ globalThis.happo.nextExample = async () => {
       }
     }
 
-    const renderResult =
-      (await renderStory(
-        {
-          kind: component,
-          story: rawVariant,
-          storyId,
-        },
-        { force: !!forcedHappoScreenshotSteps },
-      )) || {};
+    const renderResult = await renderStory(
+      {
+        kind: component,
+        story: rawVariant,
+        storyId,
+      },
+      { force: !!forcedHappoScreenshotSteps },
+    );
 
     pausedAtStep = renderResult.pausedAtStep;
+
     if (pausedAtStep) {
       variant = `${variant}-${pausedAtStep.stepLabel}`;
     } else {
       forcedHappoScreenshotSteps = undefined;
     }
 
+    const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
+    if (!channel) {
+      throw new Error('Missing Storybook Addons Channel');
+    }
+
     if (theme && themeSwitcher) {
-      await themeSwitcher(theme, globalThis.__STORYBOOK_ADDONS_CHANNEL__);
+      await themeSwitcher(theme, channel);
     }
 
     await waitForSomeContent(rootElement);
@@ -310,7 +438,7 @@ globalThis.happo.nextExample = async () => {
     if (/sb-show-errordisplay/.test(document.body.className)) {
       // It's possible that the error is from unmounting the previous story. We
       // can try re-rendering in this case.
-      globalThis.__STORYBOOK_ADDONS_CHANNEL__.emit('forceReRender');
+      channel.emit('forceReRender');
       await waitForSomeContent(rootElement);
     }
 
@@ -331,7 +459,12 @@ globalThis.happo.nextExample = async () => {
     const highlightsRootElement = document.querySelector(
       '#storybook-highlights-root',
     );
-    if (highlightsRootElement) {
+    if (
+      highlightsRootElement &&
+      (highlightsRootElement instanceof HTMLElement ||
+        highlightsRootElement instanceof SVGElement ||
+        highlightsRootElement instanceof MathMLElement)
+    ) {
       highlightsRootElement.dataset.happoIgnore = 'true';
     }
 
@@ -348,13 +481,14 @@ globalThis.happo.nextExample = async () => {
   }
 };
 
-export function forceHappoScreenshot(stepLabel) {
+export function forceHappoScreenshot(stepLabel: string): void {
   if (!examples) {
     console.log(
       `Ignoring forceHappoScreenshot with step label "${stepLabel}" since we are not currently rendering for Happo`,
     );
     return;
   }
+
   if (!stepLabel) {
     throw new Error(
       'Missing stepLabel argument. Make sure to pass a string as the first argument to this function. E.g. `forceHappoScreenshot("modal open")`',
@@ -376,16 +510,22 @@ export function forceHappoScreenshot(stepLabel) {
   throw new ForcedHappoScreenshot(stepLabel);
 }
 
-export function setDefaultDelay(delay) {
+export function setDefaultDelay(delay: number): void {
   defaultDelay = delay;
 }
-export function setRenderTimeoutMs(timeoutMs) {
+
+export function setRenderTimeoutMs(timeoutMs: number): void {
   renderTimeoutMs = timeoutMs;
 }
-export function setThemeSwitcher(func) {
+
+export function setThemeSwitcher(
+  func: (theme: string, channel: Channel) => Promise<void>,
+): void {
   themeSwitcher = func;
 }
-export function setShouldWaitForCompletedEvent(swfce) {
+
+export function setShouldWaitForCompletedEvent(swfce: boolean): void {
   shouldWaitForCompletedEvent = swfce;
 }
-export const isHappoRun = () => globalThis.__IS_HAPPO_RUN;
+
+export const isHappoRun = (): boolean => globalThis.__IS_HAPPO_RUN ?? false;
