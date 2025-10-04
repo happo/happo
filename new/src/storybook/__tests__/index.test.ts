@@ -6,6 +6,8 @@ import { it } from 'node:test';
 import happoStorybookPlugin from '../index.ts';
 
 it('removes the project.json after build', async () => {
-  const result = await happoStorybookPlugin().generateStaticPackage();
+  const result = await happoStorybookPlugin({
+    configDir: 'src/storybook/__tests__/storybook-app',
+  }).generateStaticPackage();
   assert.strictEqual(fs.existsSync(path.join(result.path, 'project.json')), false);
 });

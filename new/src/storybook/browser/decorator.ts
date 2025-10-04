@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { createElement, type ReactNode, useEffect } from 'react';
 import { addons, makeDecorator } from 'storybook/preview-api';
 
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
@@ -12,7 +12,7 @@ function HappoDecorator({
   children,
 }: {
   params: HappoParams | null;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   useEffect(() => {
     if (!params) {
@@ -70,9 +70,9 @@ export const withHappo: ReturnType<typeof makeDecorator> = makeDecorator({
   name: 'withHappo',
   parameterName: 'happo',
   wrapper: (Story, context) => {
-    return React.createElement(HappoDecorator, {
+    return createElement(HappoDecorator, {
       params: context.parameters.happo || null,
-      children: React.createElement(Story as React.ComponentType, null),
+      children: createElement(Story as React.ComponentType, null),
     });
   },
 });

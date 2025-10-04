@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { createElement, useEffect, useState } from 'react';
 import { AddonPanel } from 'storybook/internal/components';
 import {
   addons,
@@ -33,7 +33,7 @@ function HappoPanel() {
     };
   }, [state.storyId]);
 
-  return React.createElement(
+  return createElement(
     'div',
     {
       style: {
@@ -42,43 +42,39 @@ function HappoPanel() {
       },
     },
     happoParams
-      ? React.createElement(
+      ? createElement(
           'table',
           null,
-          React.createElement(
+          createElement(
             'tbody',
             null,
             Object.keys(happoParams).map((key) => {
               const val = happoParams[key];
 
-              return React.createElement(
+              return createElement(
                 'tr',
                 { key: key },
-                React.createElement(
+                createElement('td', null, createElement('code', null, `${key}:`)),
+                createElement(
                   'td',
                   null,
-                  React.createElement('code', null, `${key}:`),
-                ),
-                React.createElement(
-                  'td',
-                  null,
-                  React.createElement('code', null, JSON.stringify(val)),
+                  createElement('code', null, JSON.stringify(val)),
                 ),
               );
             }),
             functionParams.map((param) => {
-              return React.createElement(
+              return createElement(
                 'tr',
                 { key: param.key },
-                React.createElement(
+                createElement(
                   'td',
                   null,
-                  React.createElement('code', null, `${param.key}:`),
+                  createElement('code', null, `${param.key}:`),
                 ),
-                React.createElement(
+                createElement(
                   'td',
                   null,
-                  React.createElement(
+                  createElement(
                     'button',
                     {
                       onClick: () =>
@@ -94,7 +90,7 @@ function HappoPanel() {
             }),
           ),
         )
-      : React.createElement('div', null, 'No happo params for this story'),
+      : createElement('div', null, 'No happo params for this story'),
   );
 }
 
@@ -103,9 +99,9 @@ addons.register(ADDON_ID, () => {
     type: types.PANEL,
     title: 'Happo',
     render: ({ active }) => {
-      return React.createElement(AddonPanel, {
+      return createElement(AddonPanel, {
         active: active ?? false,
-        children: React.createElement(HappoPanel, null),
+        children: createElement(HappoPanel, null),
       });
     },
   });
