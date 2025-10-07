@@ -3,6 +3,7 @@ import { createElement, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ErrorBoundary } from 'react-error-boundary';
 
+// @ts-expect-error no types available for this image. TODO: fix this by adding a type to a .d.ts file.
 import testImage from './public/testImage.png';
 import Button from './src/Button.ts';
 import type { StoryObj } from './types.ts';

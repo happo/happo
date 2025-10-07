@@ -1,3 +1,5 @@
+import type { Decorator } from '@storybook/react-webpack5';
+
 import happoDecorator from '../../browser/decorator.ts';
 import { setRenderTimeoutMs, setThemeSwitcher } from '../../browser/register.ts';
 
@@ -18,4 +20,4 @@ export default {
   },
 };
 
-export const decorators = [happoDecorator];
+export const decorators: Array<Decorator> = [happoDecorator];
