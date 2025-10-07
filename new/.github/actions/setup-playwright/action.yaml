@@ -7,7 +7,8 @@ runs:
     - name: Get Playwright version
       shell: bash
       run: |
-        PLAYWRIGHT_VERSION=$(pnpm list @playwright/test --depth=0 | grep @playwright/test | awk '{print $2}')
+        PLAYWRIGHT_VERSION=$(pnpm ls @playwright/test --depth=0 --json | jq -r '.[0].devDependencies["@playwright/test"].version')
+        echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION"
         echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
 
     - name: Cache playwright binaries
