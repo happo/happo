@@ -9,7 +9,7 @@ runs:
       run: |
         PLAYWRIGHT_VERSION=$(pnpm ls @playwright/test --depth=0 --json | jq -r '.[0].devDependencies["@playwright/test"].version')
         echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION"
-        echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
+        echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
 
     - name: Cache playwright binaries
       uses: actions/cache@v4
