@@ -1,30 +1,20 @@
-import type { ReactNode } from 'react';
-import { createElement, useState } from 'react';
+import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import { expect, userEvent, within } from 'storybook/test';
 
 import { forceHappoScreenshot } from '../../browser/register.ts';
-import type { StoryObj } from './types.js';
+import Interactive from './src/Interactive.ts';
 
-function Interactive(): ReactNode {
-  const [value, setValue] = useState<boolean | undefined>();
-  return createElement(
-    'div',
-    null,
-    createElement('button', { onClick: () => setValue((old) => !old) }, 'click me'),
-    value && createElement('p', null, 'I was clicked'),
-    !value && createElement('p', null, 'I was not clicked'),
-  );
-}
-
-export default {
+const meta: Meta<typeof Interactive> = {
   title: 'Interactive',
   component: Interactive,
   argTypes: {
     onClick: { action: true },
   },
 };
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-export const Demo: StoryObj = {
+export const Demo: Story = {
   play: async ({ args, canvasElement, step }) => {
     if (!canvasElement || !step) return;
     const canvas = within(canvasElement);
@@ -53,7 +43,7 @@ export const Demo: StoryObj = {
   },
 };
 
-export const InteractiveThrowsError: StoryObj = {
+export const InteractiveThrowsError: Story = {
   // This story exists to test what happens when the play function throws an
   // error that isn't caused by `forceHappoScreenshot`.
   play: async ({ canvasElement, step }) => {
