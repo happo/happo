@@ -87,7 +87,6 @@
     "react-error-boundary": "^6.0.0",
     "serve-handler": "^6.1.6",
     "storybook": "^9.1.10",
-    "styled-components": "^6.1.19",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.44.1",
