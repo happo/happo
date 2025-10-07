@@ -15,4 +15,5 @@ const config: ReturnType<typeof defineConfig> = defineConfig({
     },
   ],
 });
+
 export default config;

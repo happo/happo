@@ -1,16 +1,27 @@
 /**
- * Make some checks to make sure that the element is a valid
- * Element instance.
+ * Throws if the element is not a valid Element instance, an array of elements,
+ * or a NodeList of elements.
  */
 export default function assertElement(
-  element: Node | null,
-  gt: typeof globalThis = globalThis,
-): asserts element is Element {
-  if (element === null) {
-    throw new Error('element cannot be null');
+  element: unknown,
+  gt: typeof globalThis = globalThis.window,
+): asserts element is Element | Array<Element> | NodeListOf<Element> {
+  if (element == null) {
+    throw new Error('element cannot be null or undefined');
   }
 
-  if (element.nodeType !== gt.Node.ELEMENT_NODE) {
+  if (typeof element !== 'object') {
+    throw new TypeError('element must be an object');
+  }
+
+  if (Array.isArray(element) || element instanceof gt.NodeList) {
+    for (const el of element) {
+      assertElement(el, gt);
+    }
+    return;
+  }
+
+  if ('nodeType' in element && element.nodeType !== gt.Node.ELEMENT_NODE) {
     throw new Error('element must have a nodeType of ELEMENT_NODE');
   }
 

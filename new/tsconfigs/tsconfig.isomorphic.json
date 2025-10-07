@@ -11,6 +11,6 @@
     "types": ["node"]
   },
 
-  "include": ["../src/isomorphic/**/*.ts"],
+  "include": ["../src/**/isomorphic/**/*.ts"],
   "exclude": ["../**/__tests__/**", "../**/__playwright__/**", "../**/*.test.ts"]
 }

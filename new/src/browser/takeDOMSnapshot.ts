@@ -10,6 +10,7 @@ import type {
 import applyConstructedStylesPatch, {
   recordedCSSSymbol,
 } from './applyConstructedStylesPatch.ts';
+import assertElement from './assertElement.ts';
 import { MD5 } from './md5.ts';
 
 export { applyConstructedStylesPatch };
@@ -393,9 +394,11 @@ export default function takeDOMSnapshot({
   if (doc == null) {
     throw new Error('doc cannot be null or undefined');
   }
-  if (oneOrMoreElements == null) {
-    throw new Error('element cannot be null or undefined');
+  if (doc.defaultView == null) {
+    throw new Error('doc.defaultView cannot be null or undefined');
   }
+
+  assertElement(oneOrMoreElements, doc.defaultView);
 
   const allElements = transformToElementArray(oneOrMoreElements);
   const htmlParts: Array<string> = [];

@@ -1,7 +1,9 @@
 .DS_Store
 .cache/
 .env.local
+.happo-out
 .npm
+.out
 /coverage/
 dist
 node_modules
@@ -9,5 +11,5 @@ npm-debug.log
 playwright-report/
 test-results/
 tmp
-types
 tsconfig.tsbuildinfo
+types
