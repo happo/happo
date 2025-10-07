@@ -24,7 +24,7 @@
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
     "test:playwright": "node --env-file-if-exists=.env.local src/cli/index.ts e2e -- playwright test",
-    "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p 6007",
+    "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p ${PORT:-6007}",
     "tsc": "tsc --build tsconfig.json"
   },
   "keywords": [],
