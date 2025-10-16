@@ -5,20 +5,25 @@ const config: Config = defineConfig({
   apiKey: process.env.HAPPO_API_KEY ?? '',
   apiSecret: process.env.HAPPO_API_SECRET ?? '',
 
-  targets: {
-    chrome: {
-      browserType: 'chrome',
-      viewport: '1024x768',
-    },
+  projects: {
+    default: {
+      integrationType: 'storybook',
+      targets: {
+        chrome: {
+          browserType: 'chrome',
+          viewport: '1024x768',
+        },
 
-    chromeSmall: {
-      browserType: 'chrome',
-      viewport: '375x667',
-    },
+        chromeSmall: {
+          browserType: 'chrome',
+          viewport: '375x667',
+        },
 
-    accessibility: {
-      browserType: 'accessibility',
-      viewport: '375x667',
+        accessibility: {
+          browserType: 'accessibility',
+          viewport: '375x667',
+        },
+      },
     },
   },
 });

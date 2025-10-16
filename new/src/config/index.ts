@@ -16,6 +16,29 @@ interface Page {
   title: string;
 }
 
+export interface ProjectConfig {
+  /**
+   * Browsers to use when generating snapshots
+   */
+  targets: Record<string, Target>;
+
+  /**
+   * Type of integration to use
+   *
+   * - 'storybook': Use Storybook to generate snapshots
+   * - 'e2e': Use Playwright or Cypress to generate snapshots
+   * - 'static': Use a static JS bundle to generate snapshots
+   *
+   * - 'pages': Use a list of pages to generate snapshots
+   */
+  integrationType: 'storybook' | 'cypress' | 'playwright' | 'static' | 'pages';
+
+  /**
+   * Pages to screenshot. Only used for the 'pages' integration type.
+   */
+  pages?: Array<Page>;
+}
+
 export interface Config {
   /**
    * Key used to authenticate with the Happo API. Never store this in plain
@@ -30,27 +53,9 @@ export interface Config {
   apiSecret: string;
 
   /**
-   * Browsers to test on
-   */
-  targets: Record<string, Target>;
-
-  /**
    * The endpoint to use for the happo run. Defaults to `https://happo.io`
    */
   endpoint?: string;
-
-  /**
-   * The project to use for the happo run
-   *
-   * If you have multiple projects configured for your Happo account, specify
-   * the name of the project you want to associate with. If left empty, the
-   * default project will be used.
-   */
-  project?: string;
-
-  plugins?: Array<unknown>;
-
-  pages?: Array<Page>;
 
   /**
    * Used when you have the CI script configured to post Happo statuses as comments
@@ -61,6 +66,12 @@ export interface Config {
    * for the API to be located at `/api/v3`).
    */
   githubApiUrl?: string;
+
+  /**
+   * Projects to run. Each project can have its own configuration for the
+   * integration type, targets, and pages.
+   */
+  projects: Record<string, ProjectConfig>;
 }
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';
@@ -208,8 +219,11 @@ export interface TargetWithDefaults extends BaseTarget {
   prefersReducedMotion?: boolean;
 }
 
-export interface ConfigWithDefaults extends Config {
+export interface ProjectConfigWithDefaults extends ProjectConfig {
   targets: Record<string, TargetWithDefaults>;
+}
+export interface ConfigWithDefaults extends Config {
+  projects: Record<string, ProjectConfigWithDefaults>;
   endpoint: NonNullable<Config['endpoint']>;
   githubApiUrl: NonNullable<Config['githubApiUrl']>;
 }
