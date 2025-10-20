@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./tsconfigs/tsconfig.browser.json" },
+    { "path": "./tsconfigs/tsconfig.cypress.json" },
     { "path": "./tsconfigs/tsconfig.dist.json" },
     { "path": "./tsconfigs/tsconfig.isomorphic.json" },
     { "path": "./tsconfigs/tsconfig.other.json" },

@@ -3,7 +3,8 @@
 
   "compilerOptions": {
     "tsBuildInfoFile": "../tmp/tsc/tsconfig.cypress.tsbuildinfo",
-    "lib": ["dom", "dom.iterable", "esnext"]
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["cypress"]
   },
 
   "references": [
@@ -11,9 +12,9 @@
       "path": "./tsconfig.browser.json"
     },
     {
-      "path": "./tsconfig.dist.json"
+      "path": "./tsconfig.isomorphic.json"
     }
   ],
 
-  "include": ["../src/**/__cypress__/**/*.ts"]
+  "include": ["../src/cypress/**/*.ts"]
 }

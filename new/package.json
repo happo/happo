@@ -71,6 +71,7 @@
     "@types/react-dom": "^19.2.0",
     "@types/serve-handler": "^6.1.4",
     "adm-zip": "^0.5.16",
+    "cypress": "^15.5.0",
     "esbuild": "^0.25.10",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",

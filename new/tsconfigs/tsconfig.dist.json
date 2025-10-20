@@ -21,6 +21,7 @@
     "../**/__tests__/**",
     "../src/**/browser/**",
     "../src/**/isomorphic/**",
+    "../src/**/cypress/**",
     "../src/test-utils/**"
   ]
 }

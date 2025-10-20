@@ -1,12 +1,46 @@
-const Controller = require('happo-e2e/controller');
+import Controller from 'happo-e2e/controller';
 
 const controller = new Controller();
 
-const localSnapshotImages = {};
+interface LocalSnapshotImage {
+  component: string;
+  variant: string;
+  targets?: Array<string>;
+  target: string;
+}
+
+const localSnapshotImages: Record<string, LocalSnapshotImage> = {};
 
 const { HAPPO_DEBUG } = process.env;
 
-function getCleanupTimeframe({ attempt, results }) {
+interface Attempt {
+  wallClockStartedAt?: string;
+  wallClockDuration?: number;
+  state: string;
+}
+
+interface TestResults {
+  stats?: {
+    startedAt: string;
+    endedAt: string;
+  };
+}
+
+interface Test {
+  attempts: Array<Attempt>;
+}
+
+interface SpecResults {
+  tests: Array<Test>;
+}
+
+function getCleanupTimeframe({
+  attempt,
+  results,
+}: {
+  attempt: Attempt;
+  results: SpecResults;
+}) {
   if (attempt.wallClockStartedAt && attempt.wallClockDuration) {
     // Cypress <= v12
     const start = new Date(attempt.wallClockStartedAt).getTime();
@@ -28,8 +62,32 @@ function getCleanupTimeframe({ attempt, results }) {
   return { start, end };
 }
 
+interface CypressPluginEvents {
+  (event: 'task', handler: Record<string, unknown>): void;
+  (event: 'before:spec', handler: () => Promise<null>): void;
+  (
+    event: 'after:spec',
+    handler: (spec: unknown, results: SpecResults) => Promise<null>,
+  ): void;
+  (
+    event: 'after:screenshot',
+    handler: (details: ScreenshotDetails) => Promise<null>,
+  ): void;
+}
+
+interface ScreenshotDetails {
+  name: string;
+  path: string;
+  dimensions: {
+    width: number;
+    height: number;
+  };
+}
+
 const task = {
-  register(on) {
+  isRegisteredCorrectly: false,
+
+  register(on: CypressPluginEvents) {
     on('task', task);
     on('before:spec', task.handleBeforeSpec);
     on('after:spec', task.handleAfterSpec);
@@ -37,7 +95,7 @@ const task = {
     task.isRegisteredCorrectly = true;
   },
 
-  async handleAfterSpec(spec, results) {
+  async handleAfterSpec(spec: unknown, results: SpecResults): Promise<null> {
     if (!controller.isActive()) {
       return;
     }
@@ -74,7 +132,7 @@ const task = {
     return null;
   },
 
-  async happoRegisterSnapshot(snapshot) {
+  async happoRegisterSnapshot(snapshot: Record<string, unknown>): Promise<null> {
     if (!controller.isActive()) {
       return null;
     }
@@ -82,12 +140,28 @@ const task = {
     return null;
   },
 
-  happoRegisterLocalSnapshot({ imageId, component, variant, target, targets }) {
+  happoRegisterLocalSnapshot({
+    imageId,
+    component,
+    variant,
+    target,
+    targets,
+  }: {
+    imageId: string;
+    component: string;
+    variant: string;
+    target: string;
+    targets?: Array<string>;
+  }): null {
     localSnapshotImages[imageId] = { component, variant, targets, target };
     return null;
   },
 
-  async handleAfterScreenshot({ name, path, dimensions }) {
+  async handleAfterScreenshot({
+    name,
+    path,
+    dimensions,
+  }: ScreenshotDetails): Promise<null> {
     if (!controller.isActive()) {
       return null;
     }
@@ -112,7 +186,17 @@ const task = {
     return null;
   },
 
-  async happoRegisterBase64Image({ base64Chunk, src, isFirst, isLast }) {
+  async happoRegisterBase64Image({
+    base64Chunk,
+    src,
+    isFirst,
+    isLast,
+  }: {
+    base64Chunk: string;
+    src: string;
+    isFirst: boolean;
+    isLast: boolean;
+  }): Promise<null> {
     if (!controller.isActive()) {
       return null;
     }
@@ -125,7 +209,7 @@ const task = {
     return null;
   },
 
-  async handleBeforeSpec() {
+  async handleBeforeSpec(): Promise<null> {
     await controller.init();
 
     if (controller.isActive() && !task.isRegisteredCorrectly) {
@@ -142,4 +226,4 @@ const task = {
   },
 };
 
-module.exports = task;
+export default task;
