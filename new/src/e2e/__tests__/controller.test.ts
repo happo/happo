@@ -40,13 +40,17 @@ before(async () => {
   export default {
     apiKey: '${TEST_API_KEY}',
     apiSecret: '${TEST_API_SECRET}',
-    project: '${TEST_PROJECT}',
-    endpoint: 'http://localhost:${port}',
-    targets: {
-      chrome: {
-        execute: async () => ['request-id-1'],
+    projects: {
+      '${TEST_PROJECT}': {
+        integrationType: 'e2e',
+        targets: {
+          chrome: {
+            execute: async () => ['request-id-1'],
+          },
+        },
       },
     },
+    endpoint: 'http://localhost:${port}',
   };
   `;
 
@@ -66,10 +70,13 @@ after(() => {
 describe('Controller', () => {
   it('initializes with the correct happo config', async () => {
     const controller = new Controller();
-    await controller.init();
+    await controller.init(TEST_PROJECT);
     assert.strictEqual(controller.config?.apiKey, TEST_API_KEY);
     assert.strictEqual(controller.config?.apiSecret, TEST_API_SECRET);
-    assert.strictEqual(controller.config?.project, TEST_PROJECT);
+    assert.strictEqual(
+      controller.config?.projects?.[TEST_PROJECT]?.integrationType,
+      'e2e',
+    );
     assert.deepStrictEqual(controller.snapshotsList, []);
     assert.deepStrictEqual(controller.assetUrls, []);
     assert.deepStrictEqual(controller.cssBlocks, []);
@@ -77,7 +84,7 @@ describe('Controller', () => {
 
   it('registers snapshots', async () => {
     const controller = new Controller();
-    await controller.init();
+    await controller.init(TEST_PROJECT);
 
     // Register a test snapshot
     await controller.registerSnapshot({
@@ -110,7 +117,7 @@ describe('Controller', () => {
 
   it('deduplicates snapshots', async () => {
     const controller = new Controller();
-    await controller.init();
+    await controller.init(TEST_PROJECT);
 
     await controller.registerSnapshot({
       html: '<div>Test</div>',
@@ -169,7 +176,7 @@ describe('Controller', () => {
   // https://github.com/happo/happo-e2e/issues/58
   it('gracefully handles CSS files that cannot be downloaded when there are external assets', async () => {
     const controller = new Controller();
-    await controller.init();
+    await controller.init(TEST_PROJECT);
 
     // Register a test snapshot
     await controller.registerSnapshot({
