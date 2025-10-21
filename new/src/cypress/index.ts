@@ -1,15 +1,26 @@
+import applyConstructedStylesPatch, {
+  isExtendedWindow,
+} from '../browser/applyConstructedStylesPatch.ts';
 import takeDOMSnapshot from '../browser/takeDOMSnapshot.ts';
-import chunked from './chunked.js';
+import type { TakeDOMSnapshotOptions } from '../isomorphic/types.ts';
+import chunked from './chunked.ts';
 
-Cypress.on('window:before:load', (win: unknown) => {
-  if (takeDOMSnapshot.applyConstructedStylesPatch) {
-    console.log('[Happo] Applying constructed styles patch');
-    takeDOMSnapshot.applyConstructedStylesPatch(win);
+/* eslint-disable @typescript-eslint/no-namespace */
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      happoScreenshot(options: HappoScreenshotOptions): Chainable<Element>;
+    }
   }
-});
+}
+/* eslint-enable @typescript-eslint/no-namespace */
 
-before(() => {
-  cy.on('window:load', takeDOMSnapshot.init);
+Cypress.on('window:before:load', (win: Window) => {
+  console.log('[Happo] Applying constructed styles patch');
+  if (!isExtendedWindow(win)) {
+    throw new TypeError('CSSStyleSheet is not supported in this browser');
+  }
+  applyConstructedStylesPatch(win);
 });
 
 interface CypressConfig {
@@ -27,66 +38,28 @@ export const configure = (userConfig?: Partial<CypressConfig>): void => {
   config = { ...config, ...userConfig };
 };
 
-function resolveTargetName(): string {
-  const { viewportHeight, viewportWidth } = Cypress.config();
-  return `${Cypress.browser.name}-${viewportWidth}x${viewportHeight}`;
-}
-
-interface TakeLocalSnapshotParams {
-  originalSubject: unknown;
-  component: string;
-  variant: string;
-  targets?: Array<string> | undefined;
-  options: Record<string, unknown>;
-}
-
-function takeLocalSnapshot({
-  originalSubject,
-  component,
-  variant,
-  targets,
-  options,
-}: TakeLocalSnapshotParams) {
-  const imageId = `${Math.random()}`.slice(2);
-  (cy.task as unknown as (name: string, data?: unknown, options?: unknown) => void)(
-    'happoRegisterLocalSnapshot',
-    {
-      imageId,
-      component,
-      variant,
-      targets,
-      target: resolveTargetName(),
-    },
-  );
-  cy.wrap(originalSubject, { log: false }).first().screenshot(imageId, options);
-}
-
-interface HappoScreenshotOptions {
+interface HappoScreenshotOptions extends TakeDOMSnapshotOptions {
   component?: string;
   variant?: string;
-  responsiveInlinedCanvases?: boolean;
   includeAllElements?: boolean;
-  transformDOM?: {
-    selector: string;
-    transform: (element: unknown, doc: unknown) => unknown;
-  };
   targets?: Array<string>;
   snapshotStrategy?: 'hoist' | 'clip';
-  [key: string]: unknown;
+
+  /**
+   * Options passed to the `cy.task` command
+   */
+  log?: boolean;
+  timeout?: number;
 }
 
-(
-  Cypress.Commands.add as unknown as (
-    name: string,
-    options: { prevSubject: boolean },
-    handler: (subject: unknown, options?: unknown) => void,
-  ) => void
-)(
+Cypress.Commands.add(
   'happoScreenshot',
   { prevSubject: true },
-  (originalSubject: unknown, options: unknown = {}) => {
-    const happoOptions = options as HappoScreenshotOptions;
+  (originalSubject: Array<Element>, options: HappoScreenshotOptions) => {
     const {
+      // `cy.state` is an internal command not exposed in the type definitions.
+      // We use it here to get the full title of the current test.
+      // @ts-expect-error - cy.state is not typed
       component = cy.state('runnable').fullTitle(),
       variant = 'default',
       responsiveInlinedCanvases,
@@ -94,72 +67,62 @@ interface HappoScreenshotOptions {
       transformDOM,
       targets,
       snapshotStrategy = 'hoist',
-      ...otherOptions
-    } = happoOptions;
+      log = false,
+      timeout = 10_000,
+    } = options;
 
-    if (config.localSnapshots) {
-      return takeLocalSnapshot({
-        originalSubject,
-        component,
-        variant,
-        targets,
-        options: otherOptions,
-      });
+    const doc = originalSubject[0]?.ownerDocument;
+    if (!doc) {
+      throw new Error('ownerDocument cannot be null or undefined');
     }
 
-    const doc = (
-      (originalSubject as Array<unknown>)[0] as { ownerDocument: unknown }
-    ).ownerDocument;
+    const taskOptions: Partial<Cypress.Loggable & Cypress.Timeoutable> = {
+      log,
+      timeout,
+    };
 
     const resInCan =
       typeof responsiveInlinedCanvases === 'boolean'
         ? responsiveInlinedCanvases
         : config.responsiveInlinedCanvases;
 
-    const domSnapshot = takeDOMSnapshot({
+    const element = includeAllElements ? originalSubject : originalSubject[0];
+    if (!element) {
+      throw new Error('element cannot be null or undefined');
+    }
+
+    const properties: TakeDOMSnapshotOptions = {
       doc,
-      element: includeAllElements
-        ? originalSubject
-        : (originalSubject as Array<unknown>)[0],
+      element,
       responsiveInlinedCanvases: resInCan,
-      transformDOM: transformDOM,
       strategy: snapshotStrategy,
-      handleBase64Image: ({
-        src,
-        base64Url,
-      }: {
-        src: string;
-        base64Url: string;
-      }) => {
+      handleBase64Image: ({ base64Url }) => {
         const rawBase64 = base64Url.replace(/^data:image\/png;base64,/, '');
         const chunks = chunked(rawBase64, config.canvasChunkSize);
         for (let i = 0; i < chunks.length; i++) {
           const base64Chunk = chunks[i];
           const isFirst = i === 0;
           const isLast = i === chunks.length - 1;
-          (
-            cy.task as unknown as (
-              name: string,
-              data?: unknown,
-              options?: unknown,
-            ) => void
-          )(
+          cy.task(
             'happoRegisterBase64Image',
             {
               base64Chunk,
-              src,
               isFirst,
               isLast,
             },
-            otherOptions,
+            taskOptions,
           );
         }
       },
-    });
+    };
 
-    (
-      cy.task as unknown as (name: string, data?: unknown, options?: unknown) => void
-    )(
+    if (transformDOM) {
+      properties.transformDOM = transformDOM;
+    }
+
+    const domSnapshot = takeDOMSnapshot(properties);
+
+    cy.task(
       'happoRegisterSnapshot',
       {
         timestamp: Date.now(),
@@ -168,7 +131,7 @@ interface HappoScreenshotOptions {
         targets,
         ...domSnapshot,
       },
-      otherOptions,
+      taskOptions,
     );
   },
 );

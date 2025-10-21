@@ -1,15 +1,6 @@
-import Controller from 'happo-e2e/controller';
+import Controller, { type SnapshotRegistrationParams } from '../e2e/controller.ts';
 
 const controller = new Controller();
-
-interface LocalSnapshotImage {
-  component: string;
-  variant: string;
-  targets?: Array<string>;
-  target: string;
-}
-
-const localSnapshotImages: Record<string, LocalSnapshotImage> = {};
 
 const { HAPPO_DEBUG } = process.env;
 
@@ -19,35 +10,20 @@ interface Attempt {
   state: string;
 }
 
-interface TestResults {
-  stats?: {
-    startedAt: string;
-    endedAt: string;
-  };
-}
-
-interface Test {
-  attempts: Array<Attempt>;
-}
-
-interface SpecResults {
-  tests: Array<Test>;
-}
-
 function getCleanupTimeframe({
   attempt,
   results,
 }: {
   attempt: Attempt;
-  results: SpecResults;
+  results: CypressCommandLine.RunResult;
 }) {
   if (attempt.wallClockStartedAt && attempt.wallClockDuration) {
-    // Cypress <= v12
+    // Cypress <= v12 (custom timing data)
     const start = new Date(attempt.wallClockStartedAt).getTime();
     return { start, end: start + attempt.wallClockDuration };
   }
 
-  // Cypress >= 13
+  // Cypress >= 13 (use official stats)
   if (!results.stats) {
     if (HAPPO_DEBUG) {
       console.log(
@@ -62,40 +38,40 @@ function getCleanupTimeframe({
   return { start, end };
 }
 
-interface CypressPluginEvents {
-  (event: 'task', handler: Record<string, unknown>): void;
-  (event: 'before:spec', handler: () => Promise<null>): void;
-  (
-    event: 'after:spec',
-    handler: (spec: unknown, results: SpecResults) => Promise<null>,
-  ): void;
-  (
-    event: 'after:screenshot',
-    handler: (details: ScreenshotDetails) => Promise<null>,
-  ): void;
+interface HappoTask {
+  isRegisteredCorrectly: boolean;
+  register(on: Cypress.PluginEvents): void;
+  handleAfterSpec(
+    spec: Cypress.Spec,
+    results: CypressCommandLine.RunResult,
+  ): Promise<void>;
+  happoRegisterSnapshot(snapshot: SnapshotRegistrationParams): Promise<null>;
+  happoRegisterBase64Image(params: {
+    base64Chunk: string;
+    src: string;
+    isFirst: boolean;
+    isLast: boolean;
+  }): Promise<null>;
+  handleBeforeSpec(): Promise<void>;
 }
 
-interface ScreenshotDetails {
-  name: string;
-  path: string;
-  dimensions: {
-    width: number;
-    height: number;
-  };
-}
-
-const task = {
+const task: HappoTask = {
   isRegisteredCorrectly: false,
 
-  register(on: CypressPluginEvents) {
-    on('task', task);
+  register(on: Cypress.PluginEvents) {
+    on('task', {
+      happoRegisterSnapshot: task.happoRegisterSnapshot,
+      happoRegisterBase64Image: task.happoRegisterBase64Image,
+    });
     on('before:spec', task.handleBeforeSpec);
     on('after:spec', task.handleAfterSpec);
-    on('after:screenshot', task.handleAfterScreenshot);
     task.isRegisteredCorrectly = true;
   },
 
-  async handleAfterSpec(spec: unknown, results: SpecResults): Promise<null> {
+  async handleAfterSpec(
+    _spec: Cypress.Spec,
+    results: CypressCommandLine.RunResult,
+  ): Promise<void> {
     if (!controller.isActive()) {
       return;
     }
@@ -103,86 +79,33 @@ const task = {
       for (const test of results.tests) {
         const wasRetried =
           test.attempts.some((t) => t.state === 'failed') &&
-          test.attempts[test.attempts.length - 1].state === 'passed';
+          test.attempts.at(-1)?.state === 'passed';
         if (!wasRetried) {
           continue;
         }
         for (const attempt of test.attempts) {
           if (attempt.state === 'failed') {
-            const { start, end } = getCleanupTimeframe({ attempt, results });
-            if (typeof controller.removeDuplicatesInTimeframe === 'function') {
-              // happo-e2e >= 2.4.0
-              controller.removeDuplicatesInTimeframe({
-                start,
-                end,
-              });
-            } else {
-              // happo-e2e < 2.4.0
-              controller.removeSnapshotsMadeBetween({
-                start,
-                end,
-              });
-            }
+            const { start, end } = getCleanupTimeframe({
+              attempt,
+              results,
+            });
+            controller.removeDuplicatesInTimeframe({
+              start,
+              end,
+            });
           }
         }
       }
     }
 
     await controller.finish();
-    return null;
   },
 
-  async happoRegisterSnapshot(snapshot: Record<string, unknown>): Promise<null> {
+  async happoRegisterSnapshot(snapshot: SnapshotRegistrationParams): Promise<null> {
     if (!controller.isActive()) {
       return null;
     }
     await controller.registerSnapshot(snapshot);
-    return null;
-  },
-
-  happoRegisterLocalSnapshot({
-    imageId,
-    component,
-    variant,
-    target,
-    targets,
-  }: {
-    imageId: string;
-    component: string;
-    variant: string;
-    target: string;
-    targets?: Array<string>;
-  }): null {
-    localSnapshotImages[imageId] = { component, variant, targets, target };
-    return null;
-  },
-
-  async handleAfterScreenshot({
-    name,
-    path,
-    dimensions,
-  }: ScreenshotDetails): Promise<null> {
-    if (!controller.isActive()) {
-      return null;
-    }
-
-    if (!name) {
-      return null;
-    }
-
-    const snapshotData = localSnapshotImages[name];
-    if (!snapshotData) {
-      if (HAPPO_DEBUG) {
-        console.log(`[HAPPO] Ignoring unregistered screenshot: ${name}`);
-      }
-      return;
-    }
-
-    await controller.registerLocalSnapshot({
-      ...snapshotData,
-      ...dimensions,
-      path,
-    });
     return null;
   },
 
@@ -209,20 +132,19 @@ const task = {
     return null;
   },
 
-  async handleBeforeSpec(): Promise<null> {
-    await controller.init();
+  async handleBeforeSpec(): Promise<void> {
+    await controller.init(process.env.HAPPO_PROJECT_NAME || 'default');
 
     if (controller.isActive() && !task.isRegisteredCorrectly) {
-      throw new Error(`happo-cypress hasn't been registered correctly. Make sure you call \`happoTask.register\` when you register the plugin:
+      throw new Error(`Happo hasn't been registered correctly. Make sure you call \`happoTask.register\` when you register the plugin:
 
-  const happoTask = require('happo-cypress/task');
+  const happoTask = require('happo/cypress/task');
 
   module.exports = (on) => {
     happoTask.register(on);
   };
       `);
     }
-    return null;
   },
 };
 

@@ -4,12 +4,15 @@
   "compilerOptions": {
     "tsBuildInfoFile": "../tmp/tsc/tsconfig.cypress.tsbuildinfo",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "types": ["cypress"]
+    "types": ["cypress", "node"]
   },
 
   "references": [
     {
       "path": "./tsconfig.browser.json"
+    },
+    {
+      "path": "./tsconfig.other.json"
     },
     {
       "path": "./tsconfig.isomorphic.json"

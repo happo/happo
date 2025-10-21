@@ -60,7 +60,7 @@ interface CSSBlock {
   assetsBaseUrl?: string;
 }
 
-interface SnapshotRegistrationParams {
+export interface SnapshotRegistrationParams {
   timestamp?: number | undefined;
   html: string;
   assetUrls: Array<AssetUrl>;
