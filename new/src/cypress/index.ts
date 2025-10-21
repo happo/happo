@@ -64,8 +64,10 @@ Cypress.Commands.add(
     const {
       // `cy.state` is an internal command not exposed in the type definitions.
       // We use it here to get the full title of the current test.
-      // @ts-expect-error - cy.state is not typed
-      component = cy.state('runnable').fullTitle(),
+      component = cy
+        // @ts-expect-error - cy.state is not exposed in the type definitions
+        .state('runnable')
+        .fullTitle(),
       variant = 'default',
       responsiveInlinedCanvases,
       includeAllElements,
