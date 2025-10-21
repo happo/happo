@@ -1,6 +1,6 @@
-import { expect, test } from './fixture.ts';
 import type { ServerInfo } from '../../test-utils/startServer.ts';
 import startServer from '../../test-utils/startServer.ts';
+import { expect, test } from './fixture.ts';
 
 let serverInfo: ServerInfo;
 

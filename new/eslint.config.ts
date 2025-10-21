@@ -13,6 +13,7 @@ const config: Config = defineConfig(
   {
     ignores: [
       '**/test-assets/**',
+      '.out/**',
       'coverage/**',
       'dist/**',
       'playwright-report/**',
