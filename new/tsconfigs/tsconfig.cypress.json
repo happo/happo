@@ -19,5 +19,5 @@
     }
   ],
 
-  "include": ["../src/cypress/**/*.ts"]
+  "include": ["../src/cypress/**/*.ts", "../src/test-utils/startServer.ts"]
 }

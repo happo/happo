@@ -9,7 +9,7 @@ import chunked from './chunked.ts';
 declare global {
   namespace Cypress {
     interface Chainable {
-      happoScreenshot(options: HappoScreenshotOptions): Chainable<Element>;
+      happoScreenshot(options?: HappoScreenshotOptions): Chainable<Element>;
     }
   }
 }
@@ -38,12 +38,18 @@ export const configure = (userConfig?: Partial<CypressConfig>): void => {
   config = { ...config, ...userConfig };
 };
 
-interface HappoScreenshotOptions extends TakeDOMSnapshotOptions {
+interface HappoScreenshotOptions {
   component?: string;
   variant?: string;
   includeAllElements?: boolean;
   targets?: Array<string>;
   snapshotStrategy?: 'hoist' | 'clip';
+  responsiveInlinedCanvases?: boolean;
+  canvasChunkSize?: number;
+  transformDOM?: {
+    selector: string;
+    transform: (element: Element, doc: Document) => Element;
+  };
 
   /**
    * Options passed to the `cy.task` command
@@ -55,7 +61,7 @@ interface HappoScreenshotOptions extends TakeDOMSnapshotOptions {
 Cypress.Commands.add(
   'happoScreenshot',
   { prevSubject: true },
-  (originalSubject: Array<Element>, options: HappoScreenshotOptions) => {
+  (originalSubject: Array<Element>, options: HappoScreenshotOptions = {}) => {
     const {
       // `cy.state` is an internal command not exposed in the type definitions.
       // We use it here to get the full title of the current test.
