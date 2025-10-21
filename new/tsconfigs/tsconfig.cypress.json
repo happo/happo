@@ -13,14 +13,9 @@
     },
     {
       "path": "./tsconfig.other.json"
-    },
-    {
-      "path": "./tsconfig.isomorphic.json"
-    },
-    {
-      "path": "./tsconfig.tests.json"
     }
   ],
 
-  "include": ["../src/cypress/**/*.ts"]
+  "include": ["../src/cypress/**/*.ts"],
+  "exclude": ["../src/**/__cypress__/**/*.ts"]
 }

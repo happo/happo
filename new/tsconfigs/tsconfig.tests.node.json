@@ -2,7 +2,7 @@
   "extends": "./tsconfig.base.json",
 
   "compilerOptions": {
-    "tsBuildInfoFile": "../tmp/tsc/tsconfig.tests.tsbuildinfo",
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.tests.node.tsbuildinfo",
     "types": ["node"]
   },
 

@@ -6,7 +6,8 @@
     { "path": "./tsconfigs/tsconfig.dist.json" },
     { "path": "./tsconfigs/tsconfig.isomorphic.json" },
     { "path": "./tsconfigs/tsconfig.other.json" },
-    { "path": "./tsconfigs/tsconfig.playwright.json" },
-    { "path": "./tsconfigs/tsconfig.tests.json" }
+    { "path": "./tsconfigs/tsconfig.tests.cypress.json" },
+    { "path": "./tsconfigs/tsconfig.tests.node.json" },
+    { "path": "./tsconfigs/tsconfig.tests.playwright.json" }
   ]
 }
