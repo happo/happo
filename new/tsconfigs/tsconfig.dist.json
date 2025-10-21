@@ -18,6 +18,7 @@
   "exclude": [
     "../**/*.test.ts",
     "../**/__playwright__/**",
+    "../**/__cypress__/**",
     "../**/__tests__/**",
     "../src/**/browser/**",
     "../src/**/isomorphic/**",
