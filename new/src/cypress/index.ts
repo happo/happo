@@ -5,15 +5,14 @@ import takeDOMSnapshot from '../browser/takeDOMSnapshot.ts';
 import type { TakeDOMSnapshotOptions } from '../isomorphic/types.ts';
 import chunked from './chunked.ts';
 
-/* eslint-disable @typescript-eslint/no-namespace */
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
     interface Chainable {
       happoScreenshot(options?: HappoScreenshotOptions): Chainable<Element>;
     }
   }
 }
-/* eslint-enable @typescript-eslint/no-namespace */
 
 Cypress.on('window:before:load', (win: Window) => {
   console.log('[Happo] Applying constructed styles patch');
