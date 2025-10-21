@@ -16,7 +16,7 @@ function getCleanupTimeframe({
 }: {
   attempt: Attempt;
   results: CypressCommandLine.RunResult;
-}) {
+}): { start: number; end: number } {
   if (attempt.wallClockStartedAt && attempt.wallClockDuration) {
     // Cypress <= v12 (custom timing data)
     const start = new Date(attempt.wallClockStartedAt).getTime();
