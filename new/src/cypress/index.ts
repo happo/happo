@@ -5,6 +5,26 @@ import takeDOMSnapshot from '../browser/takeDOMSnapshot.ts';
 import type { TakeDOMSnapshotOptions } from '../isomorphic/types.ts';
 import chunked from './chunked.ts';
 
+interface HappoScreenshotOptions {
+  component?: string;
+  variant?: string;
+  includeAllElements?: boolean;
+  targets?: Array<string>;
+  snapshotStrategy?: 'hoist' | 'clip';
+  responsiveInlinedCanvases?: boolean;
+  canvasChunkSize?: number;
+  transformDOM?: {
+    selector: string;
+    transform: (element: Element, doc: Document) => Element;
+  };
+
+  /**
+   * Options passed to the `cy.task` command
+   */
+  log?: boolean;
+  timeout?: number;
+}
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
@@ -36,26 +56,6 @@ let config: CypressConfig = {
 export const configure = (userConfig?: Partial<CypressConfig>): void => {
   config = { ...config, ...userConfig };
 };
-
-interface HappoScreenshotOptions {
-  component?: string;
-  variant?: string;
-  includeAllElements?: boolean;
-  targets?: Array<string>;
-  snapshotStrategy?: 'hoist' | 'clip';
-  responsiveInlinedCanvases?: boolean;
-  canvasChunkSize?: number;
-  transformDOM?: {
-    selector: string;
-    transform: (element: Element, doc: Document) => Element;
-  };
-
-  /**
-   * Options passed to the `cy.task` command
-   */
-  log?: boolean;
-  timeout?: number;
-}
 
 Cypress.Commands.add(
   'happoScreenshot',
