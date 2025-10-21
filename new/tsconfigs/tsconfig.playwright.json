@@ -12,8 +12,11 @@
     },
     {
       "path": "./tsconfig.dist.json"
+    },
+    {
+      "path": "./tsconfig.tests.json"
     }
   ],
 
-  "include": ["../src/**/__playwright__/**/*.ts", "../src/test-utils/startServer.ts"]
+  "include": ["../src/**/__playwright__/**/*.ts"]
 }

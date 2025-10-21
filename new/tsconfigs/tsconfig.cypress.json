@@ -16,8 +16,11 @@
     },
     {
       "path": "./tsconfig.isomorphic.json"
+    },
+    {
+      "path": "./tsconfig.tests.json"
     }
   ],
 
-  "include": ["../src/cypress/**/*.ts", "../src/test-utils/startServer.ts"]
+  "include": ["../src/cypress/**/*.ts"]
 }
