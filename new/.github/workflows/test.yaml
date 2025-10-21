@@ -8,9 +8,9 @@ on:
 
 env:
   FORCE_COLOR: 1
-  PNPM_STORE_DIR: ./.cache/pnpm
   HAPPO_API_KEY: ${{ secrets.HAPPO_API_KEY }}
   HAPPO_API_SECRET: ${{ secrets.HAPPO_API_SECRET }}
+  PNPM_STORE_DIR: ./.cache/pnpm
 
 jobs:
   test:
@@ -27,6 +27,15 @@ jobs:
       - name: Log environment variables
         run: node -e "console.log(JSON.stringify(Object.fromEntries(Object.entries(process.env).sort()), null, 2))"
       - run: pnpm test --coverage
+
+  cypress:
+    runs-on: ubuntu-latest
+    name: Test (Cypress)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - uses: ./.github/actions/setup-cypress
+      - run: pnpm test:cypress
 
   playwright:
     runs-on: ubuntu-latest

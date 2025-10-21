@@ -20,6 +20,13 @@ interface ExtendedWindow extends Window {
   CSSStyleSheet: ExtendedCSSStyleSheetConstructor;
 }
 
+export function isExtendedWindow(w: Window): w is ExtendedWindow {
+  return (
+    'CSSStyleSheet' in w &&
+    typeof (w as unknown as { CSSStyleSheet: unknown }).CSSStyleSheet === 'function'
+  );
+}
+
 // Helper to ensure our custom recorded array exists on the sheet.
 function ensureRecord(sheet: ExtendedCSSStyleSheet): void {
   if (!sheet[recordedCSSSymbol]) {

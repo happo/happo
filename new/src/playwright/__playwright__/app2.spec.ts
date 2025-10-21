@@ -1,6 +1,6 @@
+import type { ServerInfo } from '../../test-utils/startServer.ts';
+import startServer from '../../test-utils/startServer.ts';
 import { expect, test } from './fixture.ts';
-import type { ServerInfo } from './startServer.ts';
-import startServer from './startServer.ts';
 
 let serverInfo: ServerInfo;
 

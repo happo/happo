@@ -24,6 +24,8 @@
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
     "test:playwright": "node --env-file-if-exists=.env.local src/cli/index.ts e2e -- playwright test",
+    "test:cypress:open": "cypress open -C src/cypress/__cypress__/cypress.config.ts",
+    "test:cypress": "node --env-file-if-exists=.env.local src/cli/index.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
     "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p ${PORT:-6007}",
     "tsc": "tsc --build tsconfig.json"
   },
@@ -71,6 +73,7 @@
     "@types/react-dom": "^19.2.0",
     "@types/serve-handler": "^6.1.4",
     "adm-zip": "^0.5.16",
+    "cypress": "^15.5.0",
     "esbuild": "^0.25.10",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",

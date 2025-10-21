@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 
+import startServer, { type ServerInfo } from '../../test-utils/startServer.ts';
 import { test } from '../index.ts';
-import startServer, { type ServerInfo } from './startServer.ts';
 
 function assertError(error: unknown): asserts error is Error {
   if (!(error instanceof Error)) {

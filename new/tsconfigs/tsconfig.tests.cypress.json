@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+
+  "compilerOptions": {
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.cypress-tests.tsbuildinfo",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["cypress", "node"]
+  },
+
+  "references": [
+    {
+      "path": "./tsconfig.cypress.json"
+    },
+    {
+      "path": "./tsconfig.tests.node.json"
+    }
+  ],
+
+  "include": ["../src/**/__cypress__/**/*.ts"]
+}
