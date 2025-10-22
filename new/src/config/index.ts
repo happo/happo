@@ -16,7 +16,39 @@ interface Page {
   title: string;
 }
 
-export interface ProjectConfig {
+export interface Config {
+  /**
+   * Key used to authenticate with the Happo API. Never store this in plain
+   * text.
+   */
+  apiKey: string;
+
+  /**
+   * Secret used to authenticate with the Happo API. Never store this in plain
+   * text.
+   */
+  apiSecret: string;
+
+  /**
+   * The endpoint to use for the happo run. Defaults to `https://happo.io`
+   */
+  endpoint?: string;
+
+  /**
+   * The name of the project to associate the Happo run with. If not provided,
+   * the default project will be used.
+   */
+  project?: string;
+
+  /**
+   * Used when you have the CI script configured to post Happo statuses as comments
+   *
+   * The default is `'https://api.github.com'`. If you are using GitHub
+   * Enterprise, enter the URL to your local GitHub API here, such as
+   * `'https://ghe.mycompany.zone/api/v3'` (the default for GHE installation is
+   * for the API to be located at `/api/v3`).
+   */
+  githubApiUrl?: string;
   /**
    * Browsers to use when generating snapshots
    */
@@ -37,41 +69,6 @@ export interface ProjectConfig {
    * Pages to screenshot. Only used for the 'pages' integration type.
    */
   pages?: Array<Page>;
-}
-
-export interface Config {
-  /**
-   * Key used to authenticate with the Happo API. Never store this in plain
-   * text.
-   */
-  apiKey: string;
-
-  /**
-   * Secret used to authenticate with the Happo API. Never store this in plain
-   * text.
-   */
-  apiSecret: string;
-
-  /**
-   * The endpoint to use for the happo run. Defaults to `https://happo.io`
-   */
-  endpoint?: string;
-
-  /**
-   * Used when you have the CI script configured to post Happo statuses as comments
-   *
-   * The default is `'https://api.github.com'`. If you are using GitHub
-   * Enterprise, enter the URL to your local GitHub API here, such as
-   * `'https://ghe.mycompany.zone/api/v3'` (the default for GHE installation is
-   * for the API to be located at `/api/v3`).
-   */
-  githubApiUrl?: string;
-
-  /**
-   * Projects to run. Each project can have its own configuration for the
-   * integration type, targets, and pages.
-   */
-  projects: Record<string, ProjectConfig>;
 }
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';
@@ -219,13 +216,11 @@ export interface TargetWithDefaults extends BaseTarget {
   prefersReducedMotion?: boolean;
 }
 
-export interface ProjectConfigWithDefaults extends ProjectConfig {
-  targets: Record<string, TargetWithDefaults>;
-}
 export interface ConfigWithDefaults extends Config {
-  projects: Record<string, ProjectConfigWithDefaults>;
+  integrationType: NonNullable<Config['integrationType']>;
   endpoint: NonNullable<Config['endpoint']>;
   githubApiUrl: NonNullable<Config['githubApiUrl']>;
+  targets: Record<string, TargetWithDefaults>;
 }
 
 export function defineConfig(config: Config): Config {

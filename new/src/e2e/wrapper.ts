@@ -38,7 +38,6 @@ function assertCompareResult(
 async function compareReports(
   sha1: string,
   sha2: string,
-  project: string,
   happoConfig: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
 ) {
@@ -50,7 +49,7 @@ async function compareReports(
       body: {
         link: environment.link,
         message: environment.message,
-        project,
+        project: happoConfig.project,
         notify: environment.notify,
         fallbackShas: environment.fallbackShas,
       },
@@ -63,7 +62,6 @@ async function compareReports(
 
 async function postAsyncReport(
   requestIds: Array<number>,
-  project: string,
   environment: EnvironmentResult,
   happoConfig: ConfigWithDefaults,
 ) {
@@ -75,7 +73,7 @@ async function postAsyncReport(
       json: true,
       body: {
         requestIds,
-        project,
+        project: happoConfig.project,
         nonce,
         link,
         message,
@@ -95,7 +93,6 @@ type Logger = Pick<Console, 'log' | 'error'>;
 
 interface FinalizeAllOptions {
   happoConfig: ConfigWithDefaults;
-  project: string;
   environment: Awaited<ReturnType<typeof resolveEnvironment>>;
   skippedExamplesJSON?: string;
   logger: Logger;
@@ -103,7 +100,6 @@ interface FinalizeAllOptions {
 
 export async function finalizeAll({
   happoConfig,
-  project,
   environment,
   skippedExamplesJSON,
   logger,
@@ -119,7 +115,7 @@ export async function finalizeAll({
     nonce: string;
     skippedExamples: Array<Example>;
   } = {
-    project,
+    project: happoConfig.project,
     nonce,
     skippedExamples: [],
   };
@@ -148,7 +144,6 @@ export async function finalizeAll({
     const compareResult = await compareReports(
       beforeSha,
       afterSha,
-      project,
       happoConfig,
       environment,
     );
@@ -169,7 +164,6 @@ export async function finalizeAll({
 
 async function finalizeHappoReport(
   happoConfig: ConfigWithDefaults,
-  project: string,
   environment: EnvironmentResult,
   logger: Logger,
 ) {
@@ -179,7 +173,6 @@ async function finalizeHappoReport(
   }
   const reportResult = await postAsyncReport(
     [...allRequestIds],
-    project,
     environment,
     happoConfig,
   );
@@ -197,7 +190,7 @@ async function finalizeHappoReport(
         method: 'POST',
         json: true,
         body: {
-          project,
+          project: happoConfig.project,
           link,
           message,
         },
@@ -217,7 +210,6 @@ async function finalizeHappoReport(
       const compareResult = await compareReports(
         beforeSha,
         afterSha,
-        project,
         happoConfig,
         environment,
       );
@@ -249,7 +241,6 @@ async function finalizeHappoReport(
 
 function startServer(
   port: string,
-  project: string,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
   happoConfig: ConfigWithDefaults,
 ): Promise<() => Promise<void>> {
@@ -278,7 +269,7 @@ function startServer(
       const { nonce } = environment;
       if (nonce && potentialIds.length) {
         // Associate these snapRequests with the async report as soon as possible
-        await postAsyncReport(potentialIds, project, environment, happoConfig);
+        await postAsyncReport(potentialIds, environment, happoConfig);
       }
       res.writeHead(200);
       res.end('');
@@ -315,7 +306,6 @@ function startServer(
  */
 export default async function runWithWrapper(
   dashdashCommandParts: Array<string>,
-  project: string,
   happoConfig: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
   port: string = DEFAULT_PORT,
@@ -324,7 +314,7 @@ export default async function runWithWrapper(
   configFilePath: string,
 ): Promise<number> {
   allRequestIds = new Set<number>();
-  const closeServer = await startServer(port, project, environment, happoConfig);
+  const closeServer = await startServer(port, environment, happoConfig);
   logger.log(`[HAPPO] Listening on port ${port}`);
 
   try {
@@ -335,7 +325,6 @@ export default async function runWithWrapper(
           ...process.env,
           HAPPO_E2E_PORT: port,
           HAPPO_CONFIG_FILE: configFilePath,
-          HAPPO_PROJECT: project,
         },
         shell: process.platform == 'win32',
       });
@@ -347,7 +336,7 @@ export default async function runWithWrapper(
       child.on('close', async (code: number) => {
         if (code === 0 || allowFailures) {
           try {
-            await finalizeHappoReport(happoConfig, project, environment, logger);
+            await finalizeHappoReport(happoConfig, environment, logger);
           } catch (e) {
             logger.error('Failed to finalize Happo report', e);
             return reject(e);

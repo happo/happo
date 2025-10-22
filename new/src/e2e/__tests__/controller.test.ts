@@ -13,7 +13,6 @@ let server: http.Server;
 
 const TEST_API_KEY = 'test-api-key';
 const TEST_API_SECRET = 'test-api-secret';
-const TEST_PROJECT = 'test-project';
 
 before(async () => {
   process.env.HAPPO_ENABLED = 'true';
@@ -38,16 +37,12 @@ before(async () => {
   // Create a mock happo.js file
   const mockHappoConfigContents = `
   export default {
+    integrationType: 'e2e',
     apiKey: '${TEST_API_KEY}',
     apiSecret: '${TEST_API_SECRET}',
-    projects: {
-      '${TEST_PROJECT}': {
-        integrationType: 'e2e',
-        targets: {
-          chrome: {
-            execute: async () => ['request-id-1'],
-          },
-        },
+    targets: {
+      chrome: {
+        execute: async () => ['request-id-1'],
       },
     },
     endpoint: 'http://localhost:${port}',
@@ -70,13 +65,10 @@ after(() => {
 describe('Controller', () => {
   it('initializes with the correct happo config', async () => {
     const controller = new Controller();
-    await controller.init(TEST_PROJECT);
+    await controller.init();
     assert.strictEqual(controller.config?.apiKey, TEST_API_KEY);
     assert.strictEqual(controller.config?.apiSecret, TEST_API_SECRET);
-    assert.strictEqual(
-      controller.config?.projects?.[TEST_PROJECT]?.integrationType,
-      'e2e',
-    );
+    assert.strictEqual(controller.config?.integrationType, 'e2e');
     assert.deepStrictEqual(controller.snapshotsList, []);
     assert.deepStrictEqual(controller.assetUrls, []);
     assert.deepStrictEqual(controller.cssBlocks, []);
@@ -84,7 +76,7 @@ describe('Controller', () => {
 
   it('registers snapshots', async () => {
     const controller = new Controller();
-    await controller.init(TEST_PROJECT);
+    await controller.init();
 
     // Register a test snapshot
     await controller.registerSnapshot({
@@ -117,7 +109,7 @@ describe('Controller', () => {
 
   it('deduplicates snapshots', async () => {
     const controller = new Controller();
-    await controller.init(TEST_PROJECT);
+    await controller.init();
 
     await controller.registerSnapshot({
       html: '<div>Test</div>',
@@ -176,7 +168,7 @@ describe('Controller', () => {
   // https://github.com/happo/happo-e2e/issues/58
   it('gracefully handles CSS files that cannot be downloaded when there are external assets', async () => {
     const controller = new Controller();
-    await controller.init(TEST_PROJECT);
+    await controller.init();
 
     // Register a test snapshot
     await controller.registerSnapshot({

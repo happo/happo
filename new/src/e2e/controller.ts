@@ -7,7 +7,6 @@ import pAll from 'p-all';
 import type {
   BrowserType,
   ConfigWithDefaults,
-  ProjectConfigWithDefaults,
   TargetWithDefaults,
 } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
@@ -183,8 +182,6 @@ class Controller {
   // private localSnapshotImages: Record<string, any> = {};
   private happoDebug: boolean = false;
   protected happoConfig: ConfigWithDefaults | null = null;
-  protected happoProjectConfig: ProjectConfigWithDefaults | null = null;
-  protected happoProjectName: string = '';
 
   // Public getters for testing
   get config(): ConfigWithDefaults | null {
@@ -211,15 +208,7 @@ class Controller {
     }
   }
 
-  private assertHappoProjectConfig(): asserts this is this & {
-    happoProjectConfig: ProjectConfigWithDefaults;
-  } {
-    if (!this.happoProjectConfig) {
-      throw new Error('Happo project config not initialized');
-    }
-  }
-
-  async init(project: string): Promise<void> {
+  async init(): Promise<void> {
     this.snapshots = [];
     this.allCssBlocks = [];
     this.snapshotAssetUrls = [];
@@ -254,12 +243,6 @@ Docs:
 
     const configFilePath = findConfigFile();
     this.happoConfig = await loadConfigFile(configFilePath);
-    const projectConfig = this.happoConfig.projects[project];
-    if (!projectConfig) {
-      throw new Error(`Project ${project} not found in Happo config`);
-    }
-    this.happoProjectConfig = projectConfig;
-    this.happoProjectName = project;
   }
 
   isActive(): boolean {
@@ -289,7 +272,6 @@ Docs:
       apiKey: this.happoConfig.apiKey,
       apiSecret: this.happoConfig.apiSecret,
       logger: console,
-      project: this.happoProjectName,
     });
 
     return assetsPath;
@@ -301,7 +283,6 @@ Docs:
     }
 
     this.assertHappoConfig();
-    this.assertHappoProjectConfig();
 
     if (this.localSnapshots.length) {
       if (this.happoDebug) {
@@ -363,7 +344,7 @@ Docs:
 
     const allRequestIds = [];
 
-    for (const name of Object.keys(this.happoProjectConfig.targets)) {
+    for (const name of Object.keys(this.happoConfig.targets)) {
       if (this.happoDebug) {
         console.log(`[HAPPO] Sending snap-request(s) for target=${name}`);
       }
@@ -379,7 +360,7 @@ Docs:
         continue;
       }
 
-      if (!this.happoProjectConfig.targets[name]) {
+      if (!this.happoConfig.targets[name]) {
         throw new Error(`Target ${name} not found in Happo config`);
       }
 
@@ -387,7 +368,7 @@ Docs:
         throw new Error('Missing `endpoint` in Happo config');
       }
 
-      const target = this.happoProjectConfig.targets[name];
+      const target = this.happoConfig.targets[name];
       const remoteTarget = new RemoteBrowserTarget(target.browserType, target);
       const requestIds = await remoteTarget.execute({
         targetName: name,
@@ -569,7 +550,7 @@ Docs:
           url: `${this.happoConfig.endpoint}/api/async-reports/${afterSha}`,
           method: 'POST',
           json: true,
-          body: { requestIds: allRequestIds, project: this.happoProjectName },
+          body: { requestIds: allRequestIds, project: this.happoConfig.project },
         },
         { ...this.happoConfig, retryCount: 3 },
       );
@@ -591,8 +572,7 @@ Docs:
   }
 
   handleDynamicTargets(targets?: Array<string | DynamicTarget>): Array<string> {
-    this.assertHappoProjectConfig();
-
+    this.assertHappoConfig();
     const result: Array<string> = [];
     if (targets === undefined) {
       // return non-dynamic targets from .happo.js
@@ -600,8 +580,8 @@ Docs:
         return [];
       }
 
-      return Object.keys(this.happoProjectConfig.targets).filter(
-        (targetName) => !this.happoProjectConfig.targets[targetName]?.__dynamic,
+      return Object.keys(this.happoConfig.targets).filter(
+        (targetName) => !this.happoConfig.targets[targetName]?.__dynamic,
       );
     }
 
@@ -620,7 +600,7 @@ Docs:
           throw new Error('Happo config not initialized');
         }
 
-        if (this.happoProjectConfig.targets[target.name]) {
+        if (this.happoConfig.targets[target.name]) {
           // already added
         } else {
           const targetName = target.name;
@@ -630,7 +610,7 @@ Docs:
             __dynamic: true,
           };
           // add dynamic target
-          this.happoProjectConfig.targets[targetName] = constructedTarget;
+          this.happoConfig.targets[targetName] = constructedTarget;
         }
 
         result.push(target.name);

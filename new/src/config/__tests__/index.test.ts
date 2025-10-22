@@ -10,12 +10,8 @@ describe('defineConfig', () => {
       apiKey: 'test-api-key',
       apiSecret: 'test-api-secret',
 
-      projects: {
-        default: {
-          integrationType: 'cypress',
-          targets: {},
-        },
-      },
+      integrationType: 'cypress',
+      targets: {},
     };
 
     const config = defineConfig(configOptions);
