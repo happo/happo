@@ -342,6 +342,29 @@ export default async function runWithWrapper(
             logger.error('Failed to finalize Happo report', e);
             return reject(e);
           }
+        } else if (environment.beforeSha) {
+          logger.error(
+            'Command failed with exit code ${code}. Cancelling Happo job.',
+          );
+          try {
+            await makeRequest(
+              {
+                url: `${happoConfig.endpoint}/api/jobs/${environment.beforeSha}/${environment.afterSha}/cancel`,
+                method: 'POST',
+                json: true,
+                body: {
+                  status: 'failure',
+                  project: happoConfig.project,
+                  link: environment.link,
+                  message: `${happoConfig.integrationType} run failed`,
+                },
+              },
+              { ...happoConfig, retryCount: 3 },
+            );
+          } catch (e) {
+            logger.error('Failed to cancel Happo job', e);
+            return reject(e);
+          }
         }
         resolve(code);
       });
