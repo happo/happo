@@ -1,6 +1,6 @@
 import { any as findAny } from 'empathic/find';
 
-import type { ConfigWithDefaults } from './index.ts';
+import type { ConfigWithDefaults, TargetWithDefaults } from './index.ts';
 
 const CONFIG_FILENAMES = [
   'happo.config.js',
@@ -31,22 +31,23 @@ export async function loadConfigFile(
   configFilePath: string,
 ): Promise<ConfigWithDefaults> {
   const config = await import(configFilePath);
-  if (!config.default.projects) {
-    config.default.projects = {
-      default: {
-        integrationType: 'storybook',
-        targets: {
-          chrome: {
-            browserType: 'chrome',
-            viewport: '1024x768',
-          },
-        },
+  if (!config.default.targets) {
+    config.default.targets = {
+      chrome: {
+        browserType: 'chrome',
+        viewport: '1024x768',
       },
     };
+  }
+  const allTargets = Object.values(config.default.targets);
+  for (const target of allTargets as Array<TargetWithDefaults>) {
+    target.viewport = target.viewport || '1024x768';
   }
   return {
     endpoint: 'https://happo.io',
     githubApiUrl: 'https://api.github.com',
+    integrationType: 'storybook',
+    targets: allTargets,
     ...config.default,
   };
 }

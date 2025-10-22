@@ -39,12 +39,6 @@ function parseRawArgs(rawArgs: Array<string>) {
         short: 'c',
       },
 
-      project: {
-        type: 'string',
-        default: 'default',
-        short: 'p',
-      },
-
       e2eAllowFailures: {
         type: 'boolean',
         default: false,
@@ -78,7 +72,6 @@ Commands:
 
 Options:
   --config   Path to happo config file
-  --project  Project to run (default: default)
   --version  Show version number
   --help     Show help text
 
@@ -90,7 +83,6 @@ Specific to e2e command:
 Examples:
   happo
   happo --config path/to/happo.config.ts
-  happo --project my-project
   happo --version
   happo --help
   happo e2e -- playwright test
@@ -133,7 +125,6 @@ export async function main(
         args.dashdashCommandParts,
         args.values.e2eAllowFailures,
         args.values.e2ePort,
-        args.values.project,
         configFilePath,
         logger,
       );
@@ -173,13 +164,12 @@ async function handleE2ECommand(
   dashdashCommandParts: Array<string>,
   e2eAllowFailures: boolean,
   e2ePort: string,
-  project: string,
   configFilePath: string,
   logger: Logger,
 ): Promise<void> {
   if (positionals[1] === 'finalize') {
     try {
-      await finalizeAll({ happoConfig: config, project, environment, logger });
+      await finalizeAll({ happoConfig: config, environment, logger });
     } catch (e) {
       logger.error(e instanceof Error ? e.message : String(e), e);
       process.exitCode = 1;
@@ -205,7 +195,6 @@ async function handleE2ECommand(
 
   const exitCode = await runWithWrapper(
     dashdashCommandParts,
-    project,
     config,
     environment,
     e2ePort,

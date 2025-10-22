@@ -133,7 +133,7 @@ const task: HappoTask = {
   },
 
   async handleBeforeSpec(): Promise<void> {
-    await controller.init(process.env.HAPPO_PROJECT_NAME || 'default');
+    await controller.init();
 
     if (controller.isActive() && !task.isRegisteredCorrectly) {
       throw new Error(`Happo hasn't been registered correctly. Make sure you call \`happoTask.register\` when you register the plugin:

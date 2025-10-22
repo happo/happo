@@ -51,7 +51,7 @@ export const test: TestType<
   // Runs once per worker, before any test starts
   _happoForEachWorker: [
     async ({}, use) => {
-      await controller.init(process.env.HAPPO_PROJECT ?? 'default');
+      await controller.init();
       await use();
 
       // It's possible that the call to `finish` is not needed, since it's
@@ -70,7 +70,7 @@ export const test: TestType<
         // Send batch of 4 screenshots to Happo
         await controller.finish();
         // Clear the controller to make it ready for the next batch
-        await controller.init(process.env.HAPPO_PROJECT ?? 'default');
+        await controller.init();
       }
     },
     { scope: 'test', auto: true },
