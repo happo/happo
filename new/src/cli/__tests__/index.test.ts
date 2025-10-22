@@ -4,6 +4,7 @@ import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
+import type makeRequest from '../../utils/makeRequest.ts';
 
 interface Logger {
   log: Mock<Console['log']>;
@@ -12,11 +13,10 @@ interface Logger {
 
 let logger: Logger;
 let main: (argv: Array<string>, logger: Logger) => Promise<void>;
-const makeRequestMock: Mock<(url: string, init?: RequestInit) => Promise<unknown>> =
-  mock.fn(async () => ({
-    statusCode: 200,
-    body: { success: true },
-  }));
+const makeRequestMock: Mock<typeof makeRequest> = mock.fn(async () => ({
+  statusCode: 200,
+  body: { success: true },
+}));
 
 // mock makeRequest.ts *before* importing ../index.ts
 mock.module('../../utils/makeRequest.ts', {
@@ -331,6 +331,39 @@ describe('main', () => {
           delete process.env.HAPPO_PREVIOUS_SHA;
           delete process.env.HAPPO_CURRENT_SHA;
         }
+      });
+
+      describe('cancelling the Happo job', () => {
+        beforeEach(() => {
+          process.env.HAPPO_PREVIOUS_SHA = 'foobar';
+          process.env.HAPPO_CURRENT_SHA = 'barfoo';
+        });
+
+        it('cancels the Happo job when the command fails', async () => {
+          await main(
+            ['npx', 'happo', 'e2e', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
+            logger,
+          );
+          assert.notStrictEqual(process.exitCode, 0);
+          assert(makeRequestMock.mock.callCount() > 0);
+
+          const cancelRequest = makeRequestMock.mock.calls.at(-1);
+          if (!cancelRequest) {
+            throw new Error('No cancel request found');
+          }
+          assert.strictEqual(
+            cancelRequest.arguments[0]?.url,
+            'https://happo.io/api/jobs/foobar/barfoo/cancel',
+          );
+          assert.strictEqual(
+            (cancelRequest.arguments[0]?.body as { message: string })?.message,
+            'cypress run failed',
+          );
+        });
+        afterEach(() => {
+          delete process.env.HAPPO_PREVIOUS_SHA;
+          delete process.env.HAPPO_CURRENT_SHA;
+        });
       });
     });
   });
