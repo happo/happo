@@ -11,6 +11,7 @@ import runWithWrapper, {
   finalizeAll,
 } from '../e2e/wrapper.ts';
 import resolveEnvironment from '../environment/index.ts';
+import type { Logger } from '../isomorphic/types.ts';
 
 function parseDashdashCommandParts(rawArgs: Array<string>): Array<string> {
   const dashdashIndex = rawArgs.indexOf('--');
@@ -90,8 +91,6 @@ Examples:
   happo e2e finalize
   happo e2e --e2eAllowFailures -- cypress run
   `;
-
-type Logger = Pick<Console, 'log' | 'error'>;
 
 function makeAbsolute(configFilePath: string): string {
   if (configFilePath.startsWith('.')) {

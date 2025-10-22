@@ -1,5 +1,6 @@
 import { SignJWT } from 'jose';
 
+import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from './fetchWithRetry.ts';
 export { ErrorWithStatusCode } from './fetchWithRetry.ts';
 
@@ -66,6 +67,7 @@ export default async function makeHappoAPIRequest(
     retryMinTimeout = 1000,
     retryMaxTimeout = Infinity,
   }: MakeHappoAPIRequestOptions,
+  logger: Logger = console,
 ): Promise<object | null> {
   const signed = await signRequest(apiKey, apiSecret);
 
@@ -73,16 +75,20 @@ export default async function makeHappoAPIRequest(
     Authorization: `Bearer ${signed}`,
   };
 
-  const response = await fetchWithRetry(url, {
-    method,
-    headers,
-    formData,
-    body,
-    timeout,
-    retryCount,
-    retryMinTimeout,
-    retryMaxTimeout,
-  });
+  const response = await fetchWithRetry(
+    url,
+    {
+      method,
+      headers,
+      formData,
+      body,
+      timeout,
+      retryCount,
+      retryMinTimeout,
+      retryMaxTimeout,
+    },
+    logger,
+  );
 
   // We expect API responses to be JSON, so let's parse it as JSON here for
   // convenience.
