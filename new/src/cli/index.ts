@@ -165,6 +165,8 @@ async function handleDefaultCommand(
   // TODO: Implement actual test running logic
 }
 
+const E2E_INTEGRATION_TYPES = ['cypress', 'playwright'];
+
 async function handleE2ECommand(
   config: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
@@ -175,9 +177,9 @@ async function handleE2ECommand(
   configFilePath: string,
   logger: Logger,
 ): Promise<void> {
-  if (!['cypress', 'playwright'].includes(config.integrationType)) {
+  if (!E2E_INTEGRATION_TYPES.includes(config.integrationType)) {
     logger.error(
-      `Unsupported integration type used for e2e command: ${config.integrationType}`,
+      `Unsupported integration type used for e2e command: ${config.integrationType}. Supported integration types for e2e are: ${E2E_INTEGRATION_TYPES.join(', ')}`,
     );
     process.exitCode = 1;
     return;
