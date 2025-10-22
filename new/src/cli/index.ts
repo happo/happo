@@ -175,6 +175,13 @@ async function handleE2ECommand(
   configFilePath: string,
   logger: Logger,
 ): Promise<void> {
+  if (!['cypress', 'playwright'].includes(config.integrationType)) {
+    logger.error(
+      `Unsupported integration type used for e2e command: ${config.integrationType}`,
+    );
+    process.exitCode = 1;
+    return;
+  }
   if (positionals[1] === 'finalize') {
     try {
       await finalizeAll({ happoConfig: config, environment, logger });

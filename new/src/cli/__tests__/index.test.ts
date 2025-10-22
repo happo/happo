@@ -37,6 +37,7 @@ beforeEach(async () => {
   tmpfs.mock({
     'happo.config.ts': `
       export default {
+        integrationType: 'cypress',
         apiKey: 'test-key',
         apiSecret: 'test-secret',
         targets: {
@@ -98,6 +99,7 @@ describe('main', () => {
       tmpfs.writeFile(
         'custom.config.ts',
         `export default {
+        integrationType: 'cypress',
         apiKey: 'custom-key',
         apiSecret: 'custom-secret',
         targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
@@ -117,6 +119,7 @@ describe('main', () => {
       tmpfs.writeFile(
         'custom.config.ts',
         `export default {
+        integrationType: 'cypress',
         apiKey: 'custom-key',
         apiSecret: 'custom-secret',
         targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
@@ -223,10 +226,26 @@ describe('main', () => {
         assert.ok(fs.statSync(tmpfs.fullPath('happy-to-be-here.txt')));
       });
 
+      it('fails when integration type is not supported', async () => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `export default {
+            integrationType: 'storybook',
+          };`,
+        );
+        await main(['npx', 'happo', 'e2e', '--', 'echo', 'hello'], logger);
+        assert.strictEqual(process.exitCode, 1);
+        assert(logger.error.mock.callCount() >= 1);
+        assert.match(
+          logger.error.mock.calls[0]?.arguments[0],
+          /Unsupported integration type used for e2e command: storybook/,
+        );
+      });
+
       it('passes along an environment variable for loading the happo config', async () => {
         tmpfs.writeFile(
           'my-happo-config.ts',
-          "export default { apiKey: 'test-key', apiSecret: 'test-secret' };",
+          "export default { integrationType: 'cypress', apiKey: 'test-key', apiSecret: 'test-secret' };",
         );
         tmpfs.writeFile(
           'overwrite-happo-config.js',
