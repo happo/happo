@@ -57,3 +57,5 @@ export type WindowHappo = {
   init?: (config: InitConfig) => void;
   nextExample?: () => Promise<NextExampleResult | undefined>;
 };
+
+export type Logger = Pick<Console, 'log' | 'error'>;

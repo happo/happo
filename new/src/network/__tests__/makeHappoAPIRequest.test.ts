@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import http from 'node:http';
+import type { Mock } from 'node:test';
 import { after, before, beforeEach, describe, it, mock } from 'node:test';
 
 import multiparty from 'multiparty';
@@ -24,17 +25,25 @@ type FormDataResponse = {
   >;
 };
 
+interface Logger {
+  log: Mock<Console['log']>;
+  error: Mock<Console['error']>;
+}
+
+let logger: Logger;
+
 let props: RequestAttributes;
 let options: MakeHappoAPIRequestOptions;
 
 let httpServer: http.Server;
 let errorTries: number;
 
-// Suppress console.warn logs, so we don't see the retry logs when running these
-// tests.
-mock.method(console, 'warn', () => {});
-
 before(async () => {
+  logger = {
+    log: mock.fn(),
+    error: mock.fn(),
+  };
+
   httpServer = http.createServer((req, res) => {
     if (req.url === '/timeout') {
       setTimeout(() => {
@@ -113,7 +122,7 @@ beforeEach(() => {
 });
 
 it('returns the response', async () => {
-  const response = await makeHappoAPIRequest(props, options);
+  const response = await makeHappoAPIRequest(props, options, logger);
   assert.deepStrictEqual(response, { result: 'Hello world!' });
 });
 
@@ -121,7 +130,7 @@ it('can post json', async () => {
   props.url = 'http://localhost:8990/body-data';
   props.method = 'POST';
   props.body = { foo: 'bar' };
-  const response = await makeHappoAPIRequest(props, options);
+  const response = await makeHappoAPIRequest(props, options, logger);
   assert.deepStrictEqual(response, { body: { foo: 'bar' } });
 });
 
@@ -136,7 +145,7 @@ it('can upload form data with buffers', async () => {
       type: 'application/json',
     }),
   };
-  const response = await makeHappoAPIRequest(props, options);
+  const response = await makeHappoAPIRequest(props, options, logger);
   assert.ok(response);
   const responseData = response as FormDataResponse;
   assert.ok(responseData.files.payload);
@@ -177,7 +186,7 @@ it('can retry uploading form data with buffers', async () => {
       type: 'application/json',
     }),
   };
-  const response = await makeHappoAPIRequest(props, options);
+  const response = await makeHappoAPIRequest(props, options, logger);
   assert.ok(response);
   const responseData = response as FormDataResponse;
   assert.ok(responseData.files.payload);
@@ -213,7 +222,7 @@ describe('when the request fails twice and then succeeds', () => {
   });
 
   it('retries and succeeds', async () => {
-    const response = await makeHappoAPIRequest(props, options);
+    const response = await makeHappoAPIRequest(props, options, logger);
     assert.deepStrictEqual(response, { result: 'Hello world!' });
   });
 
@@ -228,7 +237,10 @@ describe('when the request fails twice and then succeeds', () => {
     it('waits the default amount of time before retrying', async () => {
       const start = Date.now();
 
-      await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
+      await assert.rejects(
+        () => makeHappoAPIRequest(props, options, logger),
+        /Nope/,
+      );
 
       const duration = Date.now() - start;
 
@@ -243,7 +255,10 @@ describe('when the request fails twice and then succeeds', () => {
     });
 
     it('throws without retrying', async () => {
-      await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
+      await assert.rejects(
+        () => makeHappoAPIRequest(props, options, logger),
+        /Nope/,
+      );
     });
   });
 
@@ -253,7 +268,10 @@ describe('when the request fails twice and then succeeds', () => {
     });
 
     it('throws without retrying', async () => {
-      await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
+      await assert.rejects(
+        () => makeHappoAPIRequest(props, options, logger),
+        /Nope/,
+      );
     });
   });
 
@@ -263,7 +281,10 @@ describe('when the request fails twice and then succeeds', () => {
     });
 
     it('throws without retrying', async () => {
-      await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
+      await assert.rejects(
+        () => makeHappoAPIRequest(props, options, logger),
+        /Nope/,
+      );
     });
   });
 });
@@ -275,7 +296,7 @@ describe('can have a timeout', () => {
     options.timeout = 1;
     options.retryCount = 0;
     await assert.rejects(
-      () => makeHappoAPIRequest(props, options),
+      () => makeHappoAPIRequest(props, options, logger),
       /Timeout when fetching http:\/\/localhost:8990\/timeout using method GET/,
     );
   });
@@ -287,6 +308,6 @@ describe('when the request fails repeatedly', () => {
   });
 
   it('gives up retrying', async () => {
-    await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
+    await assert.rejects(() => makeHappoAPIRequest(props, options, logger), /Nope/);
   });
 });

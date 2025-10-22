@@ -1,6 +1,7 @@
 import asyncRetry from 'async-retry';
 
 import packageJson from '../../package.json' with { type: 'json' };
+import type { Logger } from '../isomorphic/types.ts';
 
 const { version } = packageJson;
 
@@ -78,6 +79,7 @@ export default async function fetchWithRetry(
     retryMinTimeout = 1000,
     retryMaxTimeout = Infinity,
   }: FetchParams,
+  logger: Logger = console,
 ): Promise<Response> {
   return asyncRetry(
     async (bail: (error: Error) => void) => {
@@ -147,10 +149,10 @@ export default async function fetchWithRetry(
       minTimeout: retryMinTimeout,
       maxTimeout: retryMaxTimeout,
       onRetry: (error: Error) => {
-        console.warn(
+        logger.error(
           `[HAPPO] Failed fetching ${url} using method ${method}. Retrying (at ${new Date().toISOString()}) ...`,
         );
-        console.warn(error);
+        logger.error(error);
       },
     },
   );
