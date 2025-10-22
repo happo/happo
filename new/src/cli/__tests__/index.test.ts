@@ -21,7 +21,7 @@ const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
   }),
 );
 
-// mock makeHappoAPIRequest.ts *before* importing ../index.
+// mock makeHappoAPIRequest.ts *before* importing ../index.ts
 mock.module('../../network/makeHappoAPIRequest.ts', {
   defaultExport: makeHappoAPIRequestMock, // <- default export
 });
