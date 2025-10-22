@@ -4,6 +4,7 @@ import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
+import withOverrides from '../../test-utils/withOverrides.ts';
 import type makeRequest from '../../utils/makeRequest.ts';
 
 interface Logger {
@@ -311,13 +312,17 @@ describe('main', () => {
         );
       });
 
-      it('can finalize a report with a HAPPO_NONCE', async () => {
-        try {
-          process.env.HAPPO_NONCE = 'test-nonce';
+      describe('with HAPPO_NONCE', () => {
+        withOverrides(
+          () => process.env,
+          () => ({
+            HAPPO_NONCE: 'test-nonce',
+            HAPPO_PREVIOUS_SHA: 'test-sha',
+            HAPPO_CURRENT_SHA: 'test-sha',
+          }),
+        );
 
-          process.env.HAPPO_PREVIOUS_SHA = 'test-sha';
-          process.env.HAPPO_CURRENT_SHA = 'test-sha';
-
+        it('can finalize a report', async () => {
           await main(['npx', 'happo', 'e2e', 'finalize'], logger);
           if (process.exitCode !== 0) {
             console.log('process.exitCode', process.exitCode);
@@ -326,18 +331,17 @@ describe('main', () => {
           }
           assert.equal(process.exitCode, 0);
           assert(makeRequestMock.mock.callCount() > 0);
-        } finally {
-          delete process.env.HAPPO_NONCE;
-          delete process.env.HAPPO_PREVIOUS_SHA;
-          delete process.env.HAPPO_CURRENT_SHA;
-        }
+        });
       });
 
       describe('cancelling the Happo job', () => {
-        beforeEach(() => {
-          process.env.HAPPO_PREVIOUS_SHA = 'foobar';
-          process.env.HAPPO_CURRENT_SHA = 'barfoo';
-        });
+        withOverrides(
+          () => process.env,
+          () => ({
+            HAPPO_PREVIOUS_SHA: 'foobar',
+            HAPPO_CURRENT_SHA: 'barfoo',
+          }),
+        );
 
         it('cancels the Happo job when the command fails', async () => {
           await main(
@@ -359,10 +363,6 @@ describe('main', () => {
             (cancelRequest.arguments[0]?.body as { message: string })?.message,
             'cypress run failed',
           );
-        });
-        afterEach(() => {
-          delete process.env.HAPPO_PREVIOUS_SHA;
-          delete process.env.HAPPO_CURRENT_SHA;
         });
       });
     });
