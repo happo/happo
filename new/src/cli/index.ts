@@ -133,10 +133,39 @@ async function handleDefaultCommand(
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
   logger: Logger,
 ): Promise<void> {
-  logger.log('Running happo tests...');
-  logger.log('Config:', config);
-  logger.log('Environment:', environment);
-  // TODO: Implement actual test running logic
+  // Tell Happo that we are about to run a job
+  await startJob(config, environment, logger);
+
+  try {
+    // Prepare the payload for the job. This includes collecting assets and uploading them.
+    const payload = await preparePayload(config, environment, logger);
+    // Create the snap requests for the job.
+    const requestIds = await createSnapRequests(
+      payload,
+      config,
+      environment,
+      logger,
+    );
+
+    // Put together a report from the snap requests.
+    const asyncReport = await createAsyncReport(
+      requestIds,
+      config,
+      environment,
+      logger,
+    );
+
+    // Create an async comparison.
+    const asyncComparison = await createAsyncComparison(config, environment, logger);
+
+    logger.log(`[HAPPO] Async report URL: ${asyncReport.url}`);
+    logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.url}`);
+  } catch (e) {
+    logger.error(e instanceof Error ? e.message : String(e), e);
+    await cancelJob(config, environment, logger);
+    process.exitCode = 1;
+    return;
+  }
 }
 
 async function handleFinalizeCommand(
