@@ -236,10 +236,12 @@ describe('main', () => {
         await main(['npx', 'happo', 'e2e', '--', 'echo', 'hello'], logger);
         assert.strictEqual(process.exitCode, 1);
         assert(logger.error.mock.callCount() >= 1);
+        const errorMessage = logger.error.mock.calls[0]?.arguments[0];
         assert.match(
-          logger.error.mock.calls[0]?.arguments[0],
+          errorMessage,
           /Unsupported integration type used for e2e command: storybook/,
         );
+        assert.match(errorMessage, /Supported.*cypress.*playwright/);
       });
 
       it('passes along an environment variable for loading the happo config', async () => {
