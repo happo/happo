@@ -1,6 +1,6 @@
 import asyncRetry from 'async-retry';
 
-import { ErrorWithStatusCode } from '../utils/makeRequest.ts';
+import { ErrorWithStatusCode } from '../network/makeHappoAPIRequest.ts';
 
 interface FetchParams {
   retryCount?: number;

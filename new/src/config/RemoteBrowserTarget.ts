@@ -1,4 +1,4 @@
-import makeRequest from '../utils/makeRequest.ts';
+import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import createHash from './createHash.ts';
 import type { TargetWithDefaults } from './index.ts';
 
@@ -176,7 +176,7 @@ export default class RemoteBrowserTarget {
         formData.extendsSha = pageSlice.extendsSha;
       }
 
-      const requestResult = await makeRequest(
+      const requestResult = await makeHappoAPIRequest(
         {
           url: `${endpoint}/api/snap-requests?payloadHash=${payloadHash}`,
           method: 'POST',

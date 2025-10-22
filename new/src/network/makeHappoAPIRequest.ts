@@ -16,7 +16,7 @@ export interface RequestAttributes {
   [key: string]: unknown;
 }
 
-export interface MakeRequestOptions {
+export interface MakeHappoAPIRequestOptions {
   /**
    * Happo API key
    */
@@ -77,7 +77,7 @@ export class ErrorWithStatusCode extends Error {
   }
 }
 
-export default async function makeRequest(
+export default async function makeHappoAPIRequest(
   requestAttributes: RequestAttributes,
   {
     apiKey,
@@ -86,7 +86,7 @@ export default async function makeRequest(
     timeout = 60_000,
     retryMinTimeout = 1000,
     retryMaxTimeout = Infinity,
-  }: MakeRequestOptions,
+  }: MakeHappoAPIRequestOptions,
 ): Promise<object | null> {
   const { url, method = 'GET', formData, body: jsonBody } = requestAttributes;
 
