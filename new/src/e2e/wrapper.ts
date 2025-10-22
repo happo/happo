@@ -3,8 +3,8 @@ import http from 'node:http';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
 import resolveEnvironment, { type EnvironmentResult } from '../environment/index.ts';
+import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
-import makeRequest from '../utils/makeRequest.ts';
 
 let allRequestIds: Set<number>;
 
@@ -41,7 +41,7 @@ async function compareReports(
   happoConfig: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
 ) {
-  const compareResult = await makeRequest(
+  const compareResult = await makeHappoAPIRequest(
     {
       url: `${happoConfig.endpoint}/api/reports/${sha1}/compare/${sha2}`,
       method: 'POST',
@@ -67,7 +67,7 @@ async function postAsyncReport(
   happoConfig: ConfigWithDefaults,
 ) {
   const { afterSha, nonce, link, message } = environment;
-  return await makeRequest(
+  return await makeHappoAPIRequest(
     {
       url: `${happoConfig.endpoint}/api/async-reports/${afterSha}`,
       method: 'POST',
@@ -131,7 +131,7 @@ export async function finalizeAll({
     }
   }
 
-  await makeRequest(
+  await makeHappoAPIRequest(
     {
       url: `${happoConfig.endpoint}/api/async-reports/${afterSha}/finalize`,
       method: 'POST',
@@ -185,7 +185,7 @@ async function finalizeHappoReport(
   const { beforeSha, afterSha, link, message, nonce } = environment;
 
   if (beforeSha) {
-    const jobResult = await makeRequest(
+    const jobResult = await makeHappoAPIRequest(
       {
         url: `${happoConfig.endpoint}/api/jobs/${beforeSha}/${afterSha}`,
         method: 'POST',
@@ -347,7 +347,7 @@ export default async function runWithWrapper(
             'Command failed with exit code ${code}. Cancelling Happo job.',
           );
           try {
-            await makeRequest(
+            await makeHappoAPIRequest(
               {
                 url: `${happoConfig.endpoint}/api/jobs/${environment.beforeSha}/${environment.afterSha}/cancel`,
                 method: 'POST',

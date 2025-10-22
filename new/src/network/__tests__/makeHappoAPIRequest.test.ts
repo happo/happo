@@ -4,8 +4,11 @@ import { after, before, beforeEach, describe, it, mock } from 'node:test';
 
 import multiparty from 'multiparty';
 
-import type { MakeRequestOptions, RequestAttributes } from '../makeRequest.ts';
-import makeRequest from '../makeRequest.ts';
+import type {
+  MakeHappoAPIRequestOptions,
+  RequestAttributes,
+} from '../makeHappoAPIRequest.ts';
+import makeHappoAPIRequest from '../makeHappoAPIRequest.ts';
 
 type FormDataResponse = {
   fields: Record<string, Array<string>>;
@@ -22,7 +25,7 @@ type FormDataResponse = {
 };
 
 let props: RequestAttributes;
-let options: MakeRequestOptions;
+let options: MakeHappoAPIRequestOptions;
 
 let httpServer: http.Server;
 let errorTries: number;
@@ -110,7 +113,7 @@ beforeEach(() => {
 });
 
 it('returns the response', async () => {
-  const response = await makeRequest(props, options);
+  const response = await makeHappoAPIRequest(props, options);
   assert.deepStrictEqual(response, { result: 'Hello world!' });
 });
 
@@ -118,7 +121,7 @@ it('can post json', async () => {
   props.url = 'http://localhost:8990/body-data';
   props.method = 'POST';
   props.body = { foo: 'bar' };
-  const response = await makeRequest(props, options);
+  const response = await makeHappoAPIRequest(props, options);
   assert.deepStrictEqual(response, { body: { foo: 'bar' } });
 });
 
@@ -133,7 +136,7 @@ it('can upload form data with buffers', async () => {
       type: 'application/json',
     }),
   };
-  const response = await makeRequest(props, options);
+  const response = await makeHappoAPIRequest(props, options);
   assert.ok(response);
   const responseData = response as FormDataResponse;
   assert.ok(responseData.files.payload);
@@ -174,7 +177,7 @@ it('can retry uploading form data with buffers', async () => {
       type: 'application/json',
     }),
   };
-  const response = await makeRequest(props, options);
+  const response = await makeHappoAPIRequest(props, options);
   assert.ok(response);
   const responseData = response as FormDataResponse;
   assert.ok(responseData.files.payload);
@@ -210,7 +213,7 @@ describe('when the request fails twice and then succeeds', () => {
   });
 
   it('retries and succeeds', async () => {
-    const response = await makeRequest(props, options);
+    const response = await makeHappoAPIRequest(props, options);
     assert.deepStrictEqual(response, { result: 'Hello world!' });
   });
 
@@ -225,7 +228,7 @@ describe('when the request fails twice and then succeeds', () => {
     it('waits the default amount of time before retrying', async () => {
       const start = Date.now();
 
-      await assert.rejects(() => makeRequest(props, options), /Nope/);
+      await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
 
       const duration = Date.now() - start;
 
@@ -240,7 +243,7 @@ describe('when the request fails twice and then succeeds', () => {
     });
 
     it('throws without retrying', async () => {
-      await assert.rejects(() => makeRequest(props, options), /Nope/);
+      await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
     });
   });
 
@@ -250,7 +253,7 @@ describe('when the request fails twice and then succeeds', () => {
     });
 
     it('throws without retrying', async () => {
-      await assert.rejects(() => makeRequest(props, options), /Nope/);
+      await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
     });
   });
 
@@ -260,7 +263,7 @@ describe('when the request fails twice and then succeeds', () => {
     });
 
     it('throws without retrying', async () => {
-      await assert.rejects(() => makeRequest(props, options), /Nope/);
+      await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
     });
   });
 });
@@ -272,7 +275,7 @@ describe('can have a timeout', () => {
     options.timeout = 1;
     options.retryCount = 0;
     await assert.rejects(
-      () => makeRequest(props, options),
+      () => makeHappoAPIRequest(props, options),
       /Timeout when fetching http:\/\/localhost:8990\/timeout using method GET/,
     );
   });
@@ -284,6 +287,6 @@ describe('when the request fails repeatedly', () => {
   });
 
   it('gives up retrying', async () => {
-    await assert.rejects(() => makeRequest(props, options), /Nope/);
+    await assert.rejects(() => makeHappoAPIRequest(props, options), /Nope/);
   });
 });

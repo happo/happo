@@ -1,7 +1,9 @@
 import retry from 'async-retry';
 
+import makeHappoAPIRequest, {
+  ErrorWithStatusCode,
+} from '../network/makeHappoAPIRequest.ts';
 import { logTag } from '../utils/Logger.ts';
-import makeRequest, { ErrorWithStatusCode } from '../utils/makeRequest.ts';
 
 // Type definitions
 interface Logger {
@@ -29,7 +31,7 @@ async function uploadAssetsThroughHappo(
 ): Promise<string> {
   try {
     // Check if the assets already exist. If so, we don't have to upload them.
-    const assetsDataRes = await makeRequest(
+    const assetsDataRes = await makeHappoAPIRequest(
       {
         url: `${endpoint}/api/snap-requests/assets-data/${hash}`,
         method: 'GET',
@@ -73,7 +75,7 @@ async function uploadAssetsThroughHappo(
     }
   }
 
-  const assetsRes = await makeRequest(
+  const assetsRes = await makeHappoAPIRequest(
     {
       url: `${endpoint}/api/snap-requests/assets/${hash}`,
       method: 'POST',
@@ -108,7 +110,7 @@ async function uploadAssetsWithSignedUrl(
   { hash, endpoint, apiKey, apiSecret, logger, project }: UploadAssetsOptions,
 ): Promise<string> {
   // First we need to get the signed URL from Happo.
-  const signedUrlRes = await makeRequest(
+  const signedUrlRes = await makeHappoAPIRequest(
     {
       url: `${endpoint}/api/snap-requests/assets/${hash}/signed-url`,
       method: 'GET',
@@ -178,7 +180,7 @@ async function uploadAssetsWithSignedUrl(
   );
 
   // Finally, we need to tell Happo that we've uploaded the assets.
-  const finalizeRes = await makeRequest(
+  const finalizeRes = await makeHappoAPIRequest(
     {
       url: `${endpoint}/api/snap-requests/assets/${hash}/signed-url/finalize`,
       method: 'POST',

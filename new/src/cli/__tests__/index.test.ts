@@ -3,9 +3,9 @@ import fs from 'node:fs';
 import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
+import type makeHappoAPIRequest from '../../network/makeHappoAPIRequest.ts';
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import withOverrides from '../../test-utils/withOverrides.ts';
-import type makeRequest from '../../utils/makeRequest.ts';
 
 interface Logger {
   log: Mock<Console['log']>;
@@ -14,14 +14,16 @@ interface Logger {
 
 let logger: Logger;
 let main: (argv: Array<string>, logger: Logger) => Promise<void>;
-const makeRequestMock: Mock<typeof makeRequest> = mock.fn(async () => ({
-  statusCode: 200,
-  body: { success: true },
-}));
+const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
+  async () => ({
+    statusCode: 200,
+    body: { success: true },
+  }),
+);
 
-// mock makeRequest.ts *before* importing ../index.ts
-mock.module('../../utils/makeRequest.ts', {
-  defaultExport: makeRequestMock, // <- default export
+// mock makeHappoAPIRequest.ts *before* importing ../index.ts
+mock.module('../../network/makeHappoAPIRequest.ts', {
+  defaultExport: makeHappoAPIRequestMock, // <- default export
 });
 
 // Install fresh mocks & imports for each test
@@ -330,7 +332,7 @@ describe('main', () => {
             console.log('logger.error.mock.calls', logger.error.mock.calls);
           }
           assert.equal(process.exitCode, 0);
-          assert(makeRequestMock.mock.callCount() > 0);
+          assert(makeHappoAPIRequestMock.mock.callCount() > 0);
         });
       });
 
@@ -349,9 +351,9 @@ describe('main', () => {
             logger,
           );
           assert.notStrictEqual(process.exitCode, 0);
-          assert(makeRequestMock.mock.callCount() > 0);
+          assert(makeHappoAPIRequestMock.mock.callCount() > 0);
 
-          const cancelRequest = makeRequestMock.mock.calls.at(-1);
+          const cancelRequest = makeHappoAPIRequestMock.mock.calls.at(-1);
           if (!cancelRequest) {
             throw new Error('No cancel request found');
           }

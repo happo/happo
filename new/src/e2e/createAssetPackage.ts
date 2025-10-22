@@ -4,9 +4,9 @@ import type { ReadableStream } from 'node:stream/web';
 
 import mime from 'mime-types';
 
+import fetchWithRetry from '../network/fetchWithRetry.ts';
 import type { ArchiveContentEntry } from '../utils/deterministicArchive.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
-import fetchWithRetry from './fetch.ts';
 import makeAbsolute from './makeAbsolute.ts';
 
 // Type definitions

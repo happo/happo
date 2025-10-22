@@ -14,11 +14,11 @@ import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
 // import type { Config } from '../config/index.ts';
 import resolveEnvironment from '../environment/index.ts';
 import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.ts';
-import makeRequest from '../utils/makeRequest.ts';
+import fetchWithRetry from '../network/fetchWithRetry.ts';
+import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import convertBase64FileToReal from './convertBase64FileToReal.ts';
 import type { AssetUrl } from './createAssetPackage.ts';
 import createAssetPackage from './createAssetPackage.ts';
-import fetchWithRetry from './fetch.ts';
 import makeAbsolute from './makeAbsolute.ts';
 import makeExternalUrlsAbsolute from './makeExternalUrlsAbsolute.ts';
 import uploadAssets from './uploadAssets.ts';
@@ -545,7 +545,7 @@ Docs:
       // still helpful when running e.g. `cypress open` locally.
       const environment = await resolveEnvironment();
       const { afterSha } = environment;
-      const reportResult = await makeRequest(
+      const reportResult = await makeHappoAPIRequest(
         {
           url: `${this.happoConfig.endpoint}/api/async-reports/${afterSha}`,
           method: 'POST',
@@ -636,7 +636,7 @@ Docs:
 
     const hash = crypto.createHash('md5').update(buffer).digest('hex');
 
-    const uploadUrlResult = await makeRequest(
+    const uploadUrlResult = await makeHappoAPIRequest(
       {
         url: `${this.happoConfig.endpoint}/api/images/${hash}/upload-url`,
         method: 'GET',
@@ -670,7 +670,7 @@ Docs:
       throw new TypeError('uploadUrlResult.uploadUrl is not a string');
     }
 
-    const uploadResult = await makeRequest(
+    const uploadResult = await makeHappoAPIRequest(
       {
         url: uploadUrl,
         method: 'POST',
@@ -704,7 +704,7 @@ Docs:
       throw new Error('Happo config not initialized');
     }
 
-    const reportResult = await makeRequest(
+    const reportResult = await makeHappoAPIRequest(
       {
         url: `${this.happoConfig.endpoint}/api/snap-requests/with-results`,
         method: 'POST',
