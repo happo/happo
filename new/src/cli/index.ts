@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import path from 'node:path';
 import { parseArgs } from 'node:util';
 
 import packageJson from '../../package.json' with { type: 'json' };
@@ -92,6 +93,13 @@ Examples:
 
 type Logger = Pick<Console, 'log' | 'error'>;
 
+function makeAbsolute(configFilePath: string): string {
+  if (configFilePath.startsWith('.')) {
+    return path.resolve(process.cwd(), configFilePath);
+  }
+  return configFilePath;
+}
+
 export async function main(
   rawArgs: Array<string> = process.argv,
   logger: Logger = console,
@@ -109,7 +117,7 @@ export async function main(
   }
 
   // Get config file path (use --config if provided, otherwise find default)
-  const configFilePath = args.values.config || findConfigFile();
+  const configFilePath = makeAbsolute(args.values.config || findConfigFile());
   const config = await loadConfigFile(configFilePath);
   const environment = await resolveEnvironment();
 

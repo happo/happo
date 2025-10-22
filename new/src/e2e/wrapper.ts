@@ -52,6 +52,7 @@ async function compareReports(
         project: happoConfig.project,
         notify: environment.notify,
         fallbackShas: environment.fallbackShas,
+        isAsync: true,
       },
     },
     { apiKey: happoConfig.apiKey, apiSecret: happoConfig.apiSecret, retryCount: 2 },

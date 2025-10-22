@@ -23,9 +23,9 @@
     "lint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
-    "test:playwright": "node --env-file-if-exists=.env.local src/cli/index.ts e2e -- playwright test",
+    "test:playwright": "node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.playwright.config.ts e2e -- playwright test",
     "test:cypress:open": "cypress open -C src/cypress/__cypress__/cypress.config.ts",
-    "test:cypress": "node --env-file-if-exists=.env.local src/cli/index.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
+    "test:cypress": "node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.cypress.config.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
     "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p ${PORT:-6007}",
     "tsc": "tsc --build tsconfig.json"
   },
