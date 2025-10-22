@@ -7,8 +7,13 @@ import packageJson from '../../package.json' with { type: 'json' };
 import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import runWithWrapper, { finalizeAll } from '../e2e/wrapper.ts';
+import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
+import cancelJob from '../network/cancelJob.ts';
+import createAsyncComparison from '../network/createAsyncComparison.ts';
+import createAsyncReport from '../network/createAsyncReport.ts';
+import startJob from '../network/startJob.ts';
 
 function parseDashdashCommandParts(
   rawArgs: Array<string>,
@@ -130,7 +135,7 @@ export async function main(
 
 async function handleDefaultCommand(
   config: ConfigWithDefaults,
-  environment: Awaited<ReturnType<typeof resolveEnvironment>>,
+  environment: EnvironmentResult,
   logger: Logger,
 ): Promise<void> {
   // Tell Happo that we are about to run a job
@@ -139,8 +144,9 @@ async function handleDefaultCommand(
   try {
     // Prepare the payload for the job. This includes collecting assets and uploading them.
     const payload = await preparePayload(config, environment, logger);
+
     // Create the snap requests for the job.
-    const requestIds = await createSnapRequests(
+    const snapRequestIds = await createSnapRequests(
       payload,
       config,
       environment,
@@ -149,20 +155,25 @@ async function handleDefaultCommand(
 
     // Put together a report from the snap requests.
     const asyncReport = await createAsyncReport(
-      requestIds,
+      snapRequestIds,
       config,
       environment,
       logger,
     );
 
     // Create an async comparison.
-    const asyncComparison = await createAsyncComparison(config, environment, logger);
+    const asyncComparison = await createAsyncComparison(
+      false,
+      config,
+      environment,
+      logger,
+    );
 
     logger.log(`[HAPPO] Async report URL: ${asyncReport.url}`);
-    logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.url}`);
+    logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
   } catch (e) {
     logger.error(e instanceof Error ? e.message : String(e), e);
-    await cancelJob(config, environment, logger);
+    await cancelJob('failure', config, environment, logger);
     process.exitCode = 1;
     return;
   }

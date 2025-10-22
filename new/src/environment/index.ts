@@ -6,8 +6,12 @@ interface GitHubEvent {
   pull_request?: {
     html_url: string;
     title: string;
-    base: { sha: string };
-    head: { sha: string };
+    base: {
+      sha: string;
+    };
+    head: {
+      sha: string;
+    };
   };
   head_commit?: {
     url: string;
@@ -26,6 +30,7 @@ interface GitHubEvent {
 export interface EnvironmentResult {
   link: string | undefined;
   message: string | undefined;
+  author: string | undefined;
   beforeSha: string | undefined;
   afterSha: string;
   nonce: string | undefined;
@@ -162,6 +167,31 @@ async function resolveLink(
   return undefined;
 }
 
+async function resolveAuthorEmail(
+  env: Record<string, string | undefined>,
+): Promise<string | undefined> {
+  const { GITHUB_EVENT_PATH, HAPPO_AUTHOR } = env;
+
+  if (HAPPO_AUTHOR) {
+    return HAPPO_AUTHOR;
+  }
+
+  if (GITHUB_EVENT_PATH) {
+    // const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
+    // TODO: do something with the github event
+  }
+
+  const res = spawnSync('git', ['show', '-s', '--format=%ae'], {
+    encoding: 'utf8',
+  });
+
+  if (res.status !== 0) {
+    return undefined;
+  }
+
+  return res.stdout.trim();
+}
+
 async function resolveMessage(
   env: Record<string, string | undefined>,
   afterSha: string,
@@ -181,13 +211,17 @@ async function resolveMessage(
   const res = spawnSync('git', ['log', '-1', '--pretty=%s', afterSha], {
     encoding: 'utf8',
   });
+
   if (res.status !== 0) {
     return undefined;
   }
+
   const message = res.stdout.split('\n')[0];
+
   if (!message) {
     return undefined;
   }
+
   return message;
 }
 
@@ -472,13 +506,19 @@ export default async function resolveEnvironment(
     typeof afterSha === 'string' ? afterSha : afterSha.headShaWithLocalChanges;
 
   // Resolve the before SHA with the true HEAD SHA
-  const beforeSha = await resolveBeforeSha(env, realAfterSha);
-  const result = {
-    link: await resolveLink(env),
+  const [beforeSha, link, author, message] = await Promise.all([
+    resolveBeforeSha(env, realAfterSha),
+    resolveLink(env),
+    resolveAuthorEmail(env),
 
     // Resolve message with the SHA that includes local changes
-    message: await resolveMessage(env, afterShaWithLocalChanges),
+    resolveMessage(env, afterShaWithLocalChanges),
+  ]);
 
+  const result = {
+    link,
+    author,
+    message,
     beforeSha,
     afterSha: afterShaWithLocalChanges,
     nonce: env.HAPPO_NONCE,
@@ -486,9 +526,11 @@ export default async function resolveEnvironment(
     notify: env.HAPPO_NOTIFY,
     fallbackShas: resolveFallbackShas(env, beforeSha),
   };
+
   if (debugMode) {
     console.log('[HAPPO] Raw environment', getRawEnv(env));
     console.log('[HAPPO] Resolved environment', result);
   }
+
   return result;
 }
