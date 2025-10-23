@@ -49,6 +49,8 @@ beforeEach(async () => {
       };
     `,
   });
+
+  makeHappoAPIRequestMock.mock.resetCalls();
 });
 
 afterEach(() => {
@@ -333,6 +335,19 @@ describe('main', () => {
             (cancelRequest.arguments[0]?.body as { message: string })?.message,
             'cypress run failed',
           );
+        });
+
+        it('does not cancel the Happo job when the command fails and allowFailures is true', async () => {
+          tmpfs.writeFile(
+            'happo.config.ts',
+            `export default { integrationType: 'cypress', apiKey: 'test-key', apiSecret: 'test-secret', allowFailures: true };`,
+          );
+          await main(
+            ['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
+            logger,
+          );
+          assert.notStrictEqual(process.exitCode, 0);
+          assert(makeHappoAPIRequestMock.mock.callCount() === 0);
         });
       });
     });
