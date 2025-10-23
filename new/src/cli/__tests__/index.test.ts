@@ -342,7 +342,7 @@ describe('main', () => {
         it('does not cancel the Happo job when the command fails and allowFailures is true', async () => {
           tmpfs.writeFile(
             'happo.config.ts',
-            `export default { integration: { type: 'cypress' }, apiKey: 'test-key', apiSecret: 'test-secret', allowFailures: true };`,
+            `export default { integration: { type: 'cypress', allowFailures: true }, apiKey: 'test-key', apiSecret: 'test-secret' };`,
           );
           await main(
             ['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
