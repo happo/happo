@@ -5,10 +5,9 @@ import type { ConfigWithDefaults } from '../config/index.ts';
 import resolveEnvironment, { type EnvironmentResult } from '../environment/index.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
+import startServer, { type ServerInfo } from '../network/startServer.ts';
 
 let allRequestIds: Set<number>;
-
-export const DEFAULT_PORT = '5339';
 
 interface CompareResult {
   statusImageUrl: string;
@@ -240,11 +239,10 @@ async function finalizeHappoReport(
   }
 }
 
-function startServer(
-  port: string,
+function startE2EServer(
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
   happoConfig: ConfigWithDefaults,
-): Promise<() => Promise<void>> {
+): Promise<ServerInfo> {
   function requestHandler(req: http.IncomingMessage, res: http.ServerResponse) {
     const bodyParts: Array<string> = [];
     req.on('data', (chunk: Buffer) => {
@@ -276,22 +274,7 @@ function startServer(
       res.end('');
     });
   }
-  const server = http.createServer(requestHandler);
-  return new Promise<() => Promise<void>>((resolve) => {
-    server.listen(port, () => {
-      async function closeServer() {
-        await new Promise<void>((res, rej) => {
-          server.close((err) => {
-            if (err) rej(err);
-            else {
-              res();
-            }
-          });
-        });
-      }
-      resolve(closeServer);
-    });
-  });
+  return startServer(requestHandler);
 }
 
 /**
@@ -309,14 +292,13 @@ export default async function runWithWrapper(
   dashdashCommandParts: Array<string>,
   happoConfig: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
-  port: string = DEFAULT_PORT,
   allowFailures: boolean,
   logger: Logger,
   configFilePath: string,
 ): Promise<number> {
   allRequestIds = new Set<number>();
-  const closeServer = await startServer(port, environment, happoConfig);
-  logger.log(`[HAPPO] Listening on port ${port}`);
+  const e2eServer = await startE2EServer(environment, happoConfig);
+  logger.log(`[HAPPO] Listening on port ${e2eServer.port}`);
 
   try {
     const exitCode = await new Promise<number>((resolve, reject) => {
@@ -324,7 +306,7 @@ export default async function runWithWrapper(
         stdio: 'inherit',
         env: {
           ...process.env,
-          HAPPO_E2E_PORT: port,
+          HAPPO_E2E_PORT: e2eServer.port.toString(),
           HAPPO_CONFIG_FILE: configFilePath,
         },
         shell: process.platform == 'win32',
@@ -372,6 +354,6 @@ export default async function runWithWrapper(
     return exitCode;
   } finally {
     allRequestIds.clear();
-    await closeServer();
+    await e2eServer.close();
   }
 }

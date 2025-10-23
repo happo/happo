@@ -82,8 +82,8 @@ describe('main', () => {
       assert.strictEqual(logger.log.mock.callCount(), 1);
       const helpText = logger.log.mock.calls[0]?.arguments[0];
       assert.ok(helpText.includes('Happo 1.0.0'));
-      assert.ok(helpText.includes('Usage: happo [command]'));
-      assert.ok(helpText.includes('e2e'));
+      assert.ok(helpText.includes('Usage: happo [options]'));
+      assert.ok(helpText.includes('finalize'));
       assert.ok(helpText.includes('test'));
       assert.ok(helpText.includes('version'));
     });
@@ -185,20 +185,9 @@ describe('main', () => {
       assert.strictEqual(process.exitCode, 1);
     });
 
-    describe('e2e command', () => {
+    describe('dashdash command', () => {
       it('fails when no dashdash is provided', async () => {
-        await main(['npx', 'happo', 'e2e'], logger);
-
-        assert(logger.error.mock.callCount() >= 1);
-        assert.match(
-          logger.error.mock.calls[0]?.arguments[0],
-          /Missing command for e2e action/,
-        );
-        assert.strictEqual(process.exitCode, 1);
-      });
-
-      it('fails when no command is provided', async () => {
-        await main(['npx', 'happo', 'e2e', '--'], logger);
+        await main(['npx', 'happo', '--'], logger);
 
         assert(logger.error.mock.callCount() >= 1);
         assert.match(
@@ -210,16 +199,7 @@ describe('main', () => {
 
       it('runs command when provided', async () => {
         await main(
-          [
-            'npx',
-            'happo',
-            'e2e',
-            '--e2ePort',
-            process.env.HAPPO_E2E_PORT || '5345',
-            '--',
-            'touch',
-            tmpfs.fullPath('happy-to-be-here.txt'),
-          ],
+          ['npx', 'happo', '--', 'touch', tmpfs.fullPath('happy-to-be-here.txt')],
           logger,
         );
 
@@ -236,7 +216,7 @@ describe('main', () => {
             integrationType: 'storybook',
           };`,
         );
-        await main(['npx', 'happo', 'e2e', '--', 'echo', 'hello'], logger);
+        await main(['npx', 'happo', '--', 'echo', 'hello'], logger);
         assert.strictEqual(process.exitCode, 1);
         assert(logger.error.mock.callCount() >= 1);
         const errorMessage = logger.error.mock.calls[0]?.arguments[0];
@@ -262,9 +242,6 @@ describe('main', () => {
           [
             'npx',
             'happo',
-            'e2e',
-            '--e2ePort',
-            process.env.HAPPO_E2E_PORT || '5345',
             '--config',
             tmpfs.fullPath('my-happo-config.ts'),
             '--',
@@ -285,16 +262,7 @@ describe('main', () => {
 
       it('exits with the exit code of the command', async () => {
         await main(
-          [
-            'npx',
-            'happo',
-            'e2e',
-            '--e2ePort',
-            process.env.HAPPO_E2E_PORT || '5345',
-            '--',
-            'ls',
-            tmpfs.fullPath('non-existent.txt'),
-          ],
+          ['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
           logger,
         );
 
@@ -305,7 +273,7 @@ describe('main', () => {
       });
 
       it('fails to finalize when HAPPO_NONCE is not set', async () => {
-        await main(['npx', 'happo', 'e2e', 'finalize'], logger);
+        await main(['npx', 'happo', 'finalize'], logger);
         assert.equal(process.exitCode, 1);
         assert(logger.error.mock.callCount() >= 1);
         assert.match(
@@ -325,7 +293,7 @@ describe('main', () => {
         );
 
         it('can finalize a report', async () => {
-          await main(['npx', 'happo', 'e2e', 'finalize'], logger);
+          await main(['npx', 'happo', 'finalize'], logger);
           if (process.exitCode !== 0) {
             console.log('process.exitCode', process.exitCode);
             console.log('logger.log.mock.calls', logger.log.mock.calls);
@@ -347,7 +315,7 @@ describe('main', () => {
 
         it('cancels the Happo job when the command fails', async () => {
           await main(
-            ['npx', 'happo', 'e2e', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
+            ['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
             logger,
           );
           assert.notStrictEqual(process.exitCode, 0);

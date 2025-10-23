@@ -1,17 +1,15 @@
 import http from 'node:http';
 
-import handler from 'serve-handler';
-
 export interface ServerInfo {
   close: () => Promise<void>;
   port: number;
 }
 
-export default function startServer(publicDir: string): Promise<ServerInfo> {
+export default function startServer(
+  requestHandler: (req: http.IncomingMessage, res: http.ServerResponse) => void,
+): Promise<ServerInfo> {
   return new Promise((resolve) => {
-    const server = http.createServer((req, res) => {
-      return handler(req, res, { public: publicDir });
-    });
+    const server = http.createServer(requestHandler);
     server.listen(0, () => {
       const address = server.address();
       if (!address || typeof address === 'string') {

@@ -6,17 +6,16 @@ import { parseArgs } from 'node:util';
 import packageJson from '../../package.json' with { type: 'json' };
 import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
-import runWithWrapper, {
-  DEFAULT_PORT as DEFAULT_E2E_PORT,
-  finalizeAll,
-} from '../e2e/wrapper.ts';
+import runWithWrapper, { finalizeAll } from '../e2e/wrapper.ts';
 import resolveEnvironment from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 
-function parseDashdashCommandParts(rawArgs: Array<string>): Array<string> {
+function parseDashdashCommandParts(
+  rawArgs: Array<string>,
+): Array<string> | undefined {
   const dashdashIndex = rawArgs.indexOf('--');
   if (dashdashIndex === -1) {
-    return [];
+    return undefined;
   }
   return rawArgs.slice(dashdashIndex + 1);
 }
@@ -41,17 +40,12 @@ function parseRawArgs(rawArgs: Array<string>) {
         short: 'c',
       },
 
-      e2eAllowFailures: {
+      allowFailures: {
         type: 'boolean',
         default: false,
       },
 
-      e2ePort: {
-        type: 'string',
-        default: DEFAULT_E2E_PORT,
-      },
-
-      e2eSkippedExamples: {
+      skippedExamples: {
         type: 'string',
       },
     },
@@ -66,30 +60,29 @@ function parseRawArgs(rawArgs: Array<string>) {
 }
 
 const helpText = `Happo ${packageJson.version}
-Usage: happo [command]
+Usage: happo [options]
 
 Commands:
-  <default> Run happo tests
-  e2e       Set up happo wrapper for Cypress and Playwright
+  <default>    Run happo tests
+  finalize     Finalize happo report for Cypress/Playwright tests running in parallel
 
 Options:
   --config   Path to happo config file
   --version  Show version number
   --help     Show help text
 
-Specific to e2e command:
-  --e2eAllowFailures      Allow failures for e2e tests (default: false)
-  --e2ePort               Port to listen on for e2e tests (default: ${DEFAULT_E2E_PORT})
-  --e2eSkippedExamples    List of skipped examples as JSON
+When running Cypress/Playwright tests using the \`happo -- [command] ...\` wrapper, you can use the following options:
+  --allowFailures      Allow failures for Cypress/Playwright tests (default: false)
+  --skippedExamples    List of skipped examples as JSON
 
 Examples:
   happo
   happo --config path/to/happo.config.ts
   happo --version
   happo --help
-  happo e2e -- playwright test
-  happo e2e finalize
-  happo e2e --e2eAllowFailures -- cypress run
+  happo -- playwright test
+  happo finalize
+  happo --allowFailures -- cypress run
   `;
 
 function makeAbsolute(configFilePath: string): string {
@@ -123,34 +116,31 @@ export async function main(
   // Handle positional arguments (commands)
   const command = args.positionals[0];
 
-  switch (command) {
-    case 'e2e': {
-      await handleE2ECommand(
-        config,
-        environment,
-        args.positionals,
-        args.dashdashCommandParts,
-        args.values.e2eAllowFailures,
-        args.values.e2ePort,
-        configFilePath,
-        logger,
-      );
-      break;
-    }
-
-    case undefined: {
-      // Default command - run happo tests
-      await handleDefaultCommand(config, environment, logger);
-      break;
-    }
-
-    default: {
-      logger.error(`Unknown command: ${command}\n`);
-      logger.error(helpText);
-      process.exitCode = 1;
-      return;
-    }
+  if (args.dashdashCommandParts) {
+    await handleE2ECommand(
+      config,
+      environment,
+      args.dashdashCommandParts,
+      args.values.allowFailures,
+      configFilePath,
+      logger,
+    );
+    return;
   }
+
+  if (command === 'finalize') {
+    await handleFinalizeCommand(config, environment, logger);
+    return;
+  }
+
+  if (command === undefined) {
+    await handleDefaultCommand(config, environment, logger);
+    return;
+  }
+
+  logger.error(`Unknown command: ${command}\n`);
+  logger.error(helpText);
+  process.exitCode = 1;
 }
 
 async function handleDefaultCommand(
@@ -164,15 +154,33 @@ async function handleDefaultCommand(
   // TODO: Implement actual test running logic
 }
 
+async function handleFinalizeCommand(
+  config: ConfigWithDefaults,
+  environment: Awaited<ReturnType<typeof resolveEnvironment>>,
+  logger: Logger,
+): Promise<void> {
+  logger.log('Finalizing happo report...');
+  logger.log('Config:', config);
+  logger.log('Environment:', environment);
+
+  try {
+    await finalizeAll({ happoConfig: config, environment, logger });
+  } catch (e) {
+    logger.error(e instanceof Error ? e.message : String(e), e);
+    process.exitCode = 1;
+    return;
+  }
+  process.exitCode = 0;
+  return;
+}
+
 const E2E_INTEGRATION_TYPES = ['cypress', 'playwright'];
 
 async function handleE2ECommand(
   config: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
-  positionals: Array<string>,
   dashdashCommandParts: Array<string>,
-  e2eAllowFailures: boolean,
-  e2ePort: string,
+  allowFailures: boolean,
   configFilePath: string,
   logger: Logger,
 ): Promise<void> {
@@ -181,17 +189,6 @@ async function handleE2ECommand(
       `Unsupported integration type used for e2e command: ${config.integrationType}. Supported integration types for e2e are: ${E2E_INTEGRATION_TYPES.join(', ')}`,
     );
     process.exitCode = 1;
-    return;
-  }
-  if (positionals[1] === 'finalize') {
-    try {
-      await finalizeAll({ happoConfig: config, environment, logger });
-    } catch (e) {
-      logger.error(e instanceof Error ? e.message : String(e), e);
-      process.exitCode = 1;
-      return;
-    }
-    process.exitCode = 0;
     return;
   }
 
@@ -206,15 +203,13 @@ async function handleE2ECommand(
   logger.log('Config:', config);
   logger.log('Environment:', environment);
   logger.log('Dashdash command parts:', dashdashCommandParts);
-  logger.log('E2E allow failures:', e2eAllowFailures);
-  logger.log('E2E port:', e2ePort);
+  logger.log('Allow failures:', allowFailures);
 
   const exitCode = await runWithWrapper(
     dashdashCommandParts,
     config,
     environment,
-    e2ePort,
-    e2eAllowFailures,
+    allowFailures,
     logger,
     configFilePath,
   );

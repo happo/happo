@@ -1,11 +1,10 @@
-import type { ServerInfo } from '../../test-utils/startServer.ts';
-import startServer from '../../test-utils/startServer.ts';
+import startTestServer from '../../test-utils/startTestServer.ts';
 import { expect, test } from './fixture.ts';
 
-let serverInfo: ServerInfo;
+let serverInfo: Awaited<ReturnType<typeof startTestServer>>;
 
 test.beforeAll(async () => {
-  serverInfo = await startServer('./src/playwright/__playwright__/fixtures');
+  serverInfo = await startTestServer('./src/playwright/__playwright__/fixtures');
 });
 
 test.afterAll(async () => {
