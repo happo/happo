@@ -6,13 +6,13 @@ import Logger, { logTag } from '../utils/Logger.ts';
 import uploadAssets from './uploadAssets.ts';
 
 async function generateStaticPackage(config: ConfigWithDefaults): Promise<string> {
-  if (config.integrationType === 'static') {
+  if (config.integration.type === 'static') {
     throw new Error('Not implemented');
   }
-  if (config.integrationType === 'storybook') {
+  if (config.integration.type === 'storybook') {
     return generateStorybookStaticPackage();
   }
-  throw new Error(`Unsupported integration type: ${config.integrationType}`);
+  throw new Error(`Unsupported integration type: ${config.integration.type}`);
 }
 
 export default async function prepareSnapRequests(

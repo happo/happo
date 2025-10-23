@@ -5,7 +5,9 @@ import baseConfig from './happo.config.ts';
 const config: Config = defineConfig({
   ...baseConfig,
   project: 'playwright',
-  integrationType: 'playwright',
+  integration: {
+    type: 'playwright',
+  },
 });
 
 export default config;

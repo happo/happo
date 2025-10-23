@@ -5,7 +5,9 @@ import baseConfig from './happo.config.ts';
 const config: Config = defineConfig({
   ...baseConfig,
   project: 'cypress',
-  integrationType: 'cypress',
+  integration: {
+    type: 'cypress',
+  },
 });
 
 export default config;

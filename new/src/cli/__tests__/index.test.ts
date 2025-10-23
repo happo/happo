@@ -46,7 +46,7 @@ beforeEach(async () => {
   tmpfs.mock({
     'happo.config.ts': `
       export default {
-        integrationType: 'cypress',
+        integration: { type: 'cypress' },
         apiKey: 'test-key',
         apiSecret: 'test-secret',
         targets: {
@@ -110,7 +110,7 @@ describe('main', () => {
       tmpfs.writeFile(
         'custom.config.ts',
         `export default {
-        integrationType: 'cypress',
+        integration: { type: 'cypress' },
         apiKey: 'custom-key',
         apiSecret: 'custom-secret',
         targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
@@ -129,7 +129,7 @@ describe('main', () => {
       tmpfs.writeFile(
         'custom.config.ts',
         `export default {
-        integrationType: 'cypress',
+        integration: { type: 'cypress' },
         apiKey: 'custom-key',
         apiSecret: 'custom-secret',
         targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
@@ -215,7 +215,9 @@ describe('main', () => {
         tmpfs.writeFile(
           'happo.config.ts',
           `export default {
-            integrationType: 'storybook',
+            integration: {
+              type: 'storybook',
+            },
           };`,
         );
         await main(['npx', 'happo', '--', 'echo', 'hello'], logger);
@@ -232,7 +234,7 @@ describe('main', () => {
       it('passes along an environment variable for loading the happo config', async () => {
         tmpfs.writeFile(
           'my-happo-config.ts',
-          "export default { integrationType: 'cypress', apiKey: 'test-key', apiSecret: 'test-secret' };",
+          "export default { integration: { type: 'cypress' }, apiKey: 'test-key', apiSecret: 'test-secret' };",
         );
         tmpfs.writeFile(
           'overwrite-happo-config.js',
@@ -340,7 +342,7 @@ describe('main', () => {
         it('does not cancel the Happo job when the command fails and allowFailures is true', async () => {
           tmpfs.writeFile(
             'happo.config.ts',
-            `export default { integrationType: 'cypress', apiKey: 'test-key', apiSecret: 'test-secret', allowFailures: true };`,
+            `export default { integration: { type: 'cypress' }, apiKey: 'test-key', apiSecret: 'test-secret', allowFailures: true };`,
           );
           await main(
             ['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')],

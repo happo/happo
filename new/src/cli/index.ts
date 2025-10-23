@@ -198,9 +198,9 @@ async function handleE2ECommand(
   configFilePath: string,
   logger: Logger,
 ): Promise<void> {
-  if (!E2E_INTEGRATION_TYPES.includes(config.integrationType)) {
+  if (!E2E_INTEGRATION_TYPES.includes(config.integration.type)) {
     logger.error(
-      `Unsupported integration type used for e2e command: ${config.integrationType}. Supported integration types for e2e are: ${E2E_INTEGRATION_TYPES.join(', ')}`,
+      `Unsupported integration type used for e2e command: ${config.integration.type}. Supported integration types for e2e are: ${E2E_INTEGRATION_TYPES.join(', ')}`,
     );
     process.exitCode = 1;
     return;
