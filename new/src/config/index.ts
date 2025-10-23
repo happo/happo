@@ -69,6 +69,11 @@ export interface Config {
    * Pages to screenshot. Only used for the 'pages' integration type.
    */
   pages?: Array<Page>;
+
+  /**
+   * Boolean to indicate whether a failed Playwright/Cypress test should also fail the Happo job
+   */
+  allowFailures?: boolean;
 }
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';

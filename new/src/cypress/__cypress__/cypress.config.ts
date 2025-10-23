@@ -3,7 +3,7 @@ import path from 'node:path';
 import { defineConfig } from 'cypress';
 
 import happoTask from '../../cypress/task.ts';
-import startServer from '../../test-utils/startServer.ts';
+import startServer from '../../test-utils/startTestServer.ts';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 

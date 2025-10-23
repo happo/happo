@@ -14,6 +14,7 @@ const config: Config = defineConfig(
     ignores: [
       '**/test-assets/**',
       '.out/**',
+      '.happo-out/**',
       'coverage/**',
       'dist/**',
       'playwright-report/**',
