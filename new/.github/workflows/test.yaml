@@ -37,6 +37,14 @@ jobs:
       - uses: ./.github/actions/setup-cypress
       - run: pnpm test:cypress
 
+  storybook:
+    runs-on: ubuntu-latest
+    name: Test (Storybook)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - run: pnpm test:storybook
+
   playwright:
     runs-on: ubuntu-latest
     name: Test (Playwright)
