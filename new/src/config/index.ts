@@ -16,7 +16,7 @@ interface Page {
   title: string;
 }
 
-interface StorybookOptions {
+export interface StorybookOptions {
   type: 'storybook';
   /**
    * The directory containing the Storybook configuration

@@ -27,6 +27,7 @@
     "test:cypress:open": "cypress open -C src/cypress/__cypress__/cypress.config.ts",
     "test:cypress": "node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.cypress.config.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
     "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p ${PORT:-6007}",
+    "test:storybook": "node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.storybook.config.ts",
     "tsc": "tsc --build tsconfig.json"
   },
   "keywords": [],
