@@ -10,7 +10,7 @@ describe('defineConfig', () => {
       apiKey: 'test-api-key',
       apiSecret: 'test-api-secret',
 
-      integrationType: 'cypress',
+      integration: { type: 'cypress' },
       targets: {},
     };
 

@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 
 import { imageSize } from 'image-size';
@@ -16,12 +15,13 @@ import resolveEnvironment from '../environment/index.ts';
 import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.ts';
 import fetchWithRetry from '../network/fetchWithRetry.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
+import uploadAssets from '../network/uploadAssets.ts';
+import createHash from '../utils/createHash.ts';
 import convertBase64FileToReal from './convertBase64FileToReal.ts';
 import type { AssetUrl } from './createAssetPackage.ts';
 import createAssetPackage from './createAssetPackage.ts';
 import makeAbsolute from './makeAbsolute.ts';
 import makeExternalUrlsAbsolute from './makeExternalUrlsAbsolute.ts';
-import uploadAssets from './uploadAssets.ts';
 
 // Type definitions
 interface Snapshot {
@@ -524,7 +524,7 @@ Docs:
     });
   }
 
-  async processSnapRequestIds(allRequestIds: Array<string>): Promise<void> {
+  async processSnapRequestIds(allRequestIds: Array<number>): Promise<void> {
     this.assertHappoConfig();
 
     const { HAPPO_E2E_PORT } = process.env;
@@ -634,7 +634,7 @@ Docs:
       ? await fs.promises.readFile(pathToFile, { encoding: 'binary' })
       : pathOrBuffer;
 
-    const hash = crypto.createHash('md5').update(buffer).digest('hex');
+    const hash = await createHash(buffer);
 
     const uploadUrlResult = await makeHappoAPIRequest(
       {
@@ -699,7 +699,7 @@ Docs:
       : String(uploadResult.url);
   }
 
-  async uploadLocalSnapshots(): Promise<string> {
+  async uploadLocalSnapshots(): Promise<number> {
     if (!this.happoConfig) {
       throw new Error('Happo config not initialized');
     }
@@ -722,9 +722,11 @@ Docs:
       throw new Error('No requestId in reportResult');
     }
 
-    return typeof reportResult.requestId === 'string'
-      ? reportResult.requestId
-      : String(reportResult.requestId);
+    if (typeof reportResult.requestId !== 'number') {
+      throw new TypeError('requestId is not a number');
+    }
+
+    return reportResult.requestId;
   }
 
   async registerBase64ImageChunk({

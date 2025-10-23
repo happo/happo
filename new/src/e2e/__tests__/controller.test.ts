@@ -29,7 +29,7 @@ before(async () => {
       return;
     }
 
-    res.end(JSON.stringify({ requestId: `request-id-${requestId++}` }));
+    res.end(JSON.stringify({ requestId: requestId++ }));
   });
 
   server.listen(port);
@@ -37,7 +37,7 @@ before(async () => {
   // Create a mock happo.js file
   const mockHappoConfigContents = `
   export default {
-    integrationType: 'e2e',
+    integration: { type: 'playwright' },
     apiKey: '${TEST_API_KEY}',
     apiSecret: '${TEST_API_SECRET}',
     targets: {
@@ -68,7 +68,7 @@ describe('Controller', () => {
     await controller.init();
     assert.strictEqual(controller.config?.apiKey, TEST_API_KEY);
     assert.strictEqual(controller.config?.apiSecret, TEST_API_SECRET);
-    assert.strictEqual(controller.config?.integrationType, 'e2e');
+    assert.strictEqual(controller.config?.integration.type, 'playwright');
     assert.deepStrictEqual(controller.snapshotsList, []);
     assert.deepStrictEqual(controller.assetUrls, []);
     assert.deepStrictEqual(controller.cssBlocks, []);

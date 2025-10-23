@@ -39,6 +39,11 @@ export async function loadConfigFile(
       },
     };
   }
+  if (!config.default.integration) {
+    config.default.integration = {
+      type: 'storybook',
+    };
+  }
   const allTargets = Object.values(config.default.targets);
   for (const target of allTargets as Array<TargetWithDefaults>) {
     target.viewport = target.viewport || '1024x768';
@@ -46,7 +51,6 @@ export async function loadConfigFile(
   return {
     endpoint: 'https://happo.io',
     githubApiUrl: 'https://api.github.com',
-    integrationType: 'storybook',
     targets: allTargets,
     ...config.default,
   };

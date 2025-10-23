@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import http from 'node:http';
 
-import type { ConfigWithDefaults } from '../config/index.ts';
+import type { ConfigWithDefaults, E2EOptions } from '../config/index.ts';
 import resolveEnvironment, { type EnvironmentResult } from '../environment/index.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
@@ -277,6 +277,14 @@ function startE2EServer(
   return startServer(requestHandler);
 }
 
+function assertE2EIntegration(
+  integration: NonNullable<ConfigWithDefaults['integration']>,
+): asserts integration is E2EOptions {
+  if (integration.type !== 'cypress' && integration.type !== 'playwright') {
+    throw new Error(`Unsupported integration type: ${integration.type}`);
+  }
+}
+
 /**
  * Runs a command with the wrapper and returns the exit code.
  *
@@ -314,8 +322,10 @@ export default async function runWithWrapper(
         return reject(e);
       });
 
+      const e2eIntegration = happoConfig.integration;
+      assertE2EIntegration(e2eIntegration);
       child.on('close', async (code: number) => {
-        if (code === 0 || happoConfig.allowFailures) {
+        if (code === 0 || e2eIntegration.allowFailures) {
           try {
             await finalizeHappoReport(happoConfig, environment, logger);
           } catch (e) {
@@ -336,7 +346,7 @@ export default async function runWithWrapper(
                   status: 'failure',
                   project: happoConfig.project,
                   link: environment.link,
-                  message: `${happoConfig.integrationType} run failed`,
+                  message: `${e2eIntegration.type} run failed`,
                 },
               },
               { ...happoConfig, retryCount: 3 },

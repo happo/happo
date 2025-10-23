@@ -16,6 +16,58 @@ interface Page {
   title: string;
 }
 
+export interface StorybookOptions {
+  type: 'storybook';
+  /**
+   * The directory containing the Storybook configuration
+   */
+  configDir?: string;
+
+  /**
+   * The directory to output the static Storybook package to
+   */
+  outputDir?: string;
+
+  /**
+   * Whether to use a prebuilt Storybook package. If you use this option, make
+   * sure that files are built to the outputDir.
+   */
+  usePrebuiltPackage?: boolean;
+}
+
+interface CypressOptions {
+  type: 'cypress';
+
+  /**
+   * Whether to allow failures.
+   */
+  allowFailures?: boolean;
+}
+
+interface PlaywrightOptions {
+  type: 'playwright';
+
+  /**
+   * Whether to allow failures.
+   */
+  allowFailures?: boolean;
+}
+
+interface StaticOptions {
+  type: 'static';
+}
+
+interface PagesOptions {
+  type: 'pages';
+
+  /**
+   * A list of pages to screenshot.
+   */
+  pages: Array<Page>;
+}
+
+export type E2EOptions = CypressOptions | PlaywrightOptions;
+
 export interface Config {
   /**
    * Key used to authenticate with the Happo API. Never store this in plain
@@ -63,17 +115,12 @@ export interface Config {
    *
    * - 'pages': Use a list of pages to generate snapshots
    */
-  integrationType: 'storybook' | 'cypress' | 'playwright' | 'static' | 'pages';
-
-  /**
-   * Pages to screenshot. Only used for the 'pages' integration type.
-   */
-  pages?: Array<Page>;
-
-  /**
-   * Boolean to indicate whether a failed Playwright/Cypress test should also fail the Happo job
-   */
-  allowFailures?: boolean;
+  integration?:
+    | StorybookOptions
+    | CypressOptions
+    | PlaywrightOptions
+    | StaticOptions
+    | PagesOptions;
 }
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';
@@ -222,7 +269,7 @@ export interface TargetWithDefaults extends BaseTarget {
 }
 
 export interface ConfigWithDefaults extends Config {
-  integrationType: NonNullable<Config['integrationType']>;
+  integration: NonNullable<Config['integration']>;
   endpoint: NonNullable<Config['endpoint']>;
   githubApiUrl: NonNullable<Config['githubApiUrl']>;
   targets: Record<string, TargetWithDefaults>;

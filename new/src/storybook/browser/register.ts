@@ -109,13 +109,19 @@ async function waitForWaitFor(
 }
 
 /**
- * Type safe function to check if a value is not null
+ * Type safe function to check if a value is defined
  *
  * @example
- * const filtered = values.filter(isNotNull);
+ * const filtered = values.filter(isDefined);
  */
-function isNotNull<T>(value: T): value is NonNullable<T> {
-  return value !== null;
+function isDefined<T>(value: T): value is NonNullable<T> {
+  if (value === undefined) {
+    return false;
+  }
+  if (value === null) {
+    return false;
+  }
+  return true;
 }
 
 async function getStoryStore(startTime = time.originalDateNow()) {
@@ -190,7 +196,7 @@ async function getExamples(): Promise<Array<Example>> {
         themes,
       };
     })
-    .filter(isNotNull)
+    .filter(isDefined)
     .reduce<Array<Example>>((result, { themes, ...rest }) => {
       if (themes) {
         for (const theme of themes) {

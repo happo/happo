@@ -7,8 +7,14 @@ import packageJson from '../../package.json' with { type: 'json' };
 import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import runWithWrapper, { finalizeAll } from '../e2e/wrapper.ts';
+import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
+import cancelJob from '../network/cancelJob.ts';
+import createAsyncComparison from '../network/createAsyncComparison.ts';
+import createAsyncReport from '../network/createAsyncReport.ts';
+import prepareSnapRequests from '../network/prepareSnapRequests.ts';
+import startJob from '../network/startJob.ts';
 
 function parseDashdashCommandParts(
   rawArgs: Array<string>,
@@ -130,13 +136,37 @@ export async function main(
 
 async function handleDefaultCommand(
   config: ConfigWithDefaults,
-  environment: Awaited<ReturnType<typeof resolveEnvironment>>,
+  environment: EnvironmentResult,
   logger: Logger,
 ): Promise<void> {
   logger.log('Running happo tests...');
-  logger.log('Config:', config);
-  logger.log('Environment:', environment);
-  // TODO: Implement actual test running logic
+  // Tell Happo that we are about to run a job
+  await startJob(config, environment, logger);
+
+  try {
+    // Prepare the snap requests for the job. This includes bundling static
+    // assets and uploading them.
+    const snapRequestIds = await prepareSnapRequests(config);
+
+    // Put together a report from the snap requests.
+    const asyncReport = await createAsyncReport(
+      snapRequestIds,
+      config,
+      environment,
+      logger,
+    );
+
+    // Create an async comparison.
+    const asyncComparison = await createAsyncComparison(config, environment, logger);
+
+    logger.log(`[HAPPO] Async report URL: ${asyncReport.url}`);
+    logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
+  } catch (e) {
+    logger.error(e instanceof Error ? e.message : String(e), e);
+    await cancelJob('failure', config, environment, logger);
+    process.exitCode = 1;
+    return;
+  }
 }
 
 async function handleFinalizeCommand(
@@ -168,9 +198,9 @@ async function handleE2ECommand(
   configFilePath: string,
   logger: Logger,
 ): Promise<void> {
-  if (!E2E_INTEGRATION_TYPES.includes(config.integrationType)) {
+  if (!E2E_INTEGRATION_TYPES.includes(config.integration.type)) {
     logger.error(
-      `Unsupported integration type used for e2e command: ${config.integrationType}. Supported integration types for e2e are: ${E2E_INTEGRATION_TYPES.join(', ')}`,
+      `Unsupported integration type used for e2e command: ${config.integration.type}. Supported integration types for e2e are: ${E2E_INTEGRATION_TYPES.join(', ')}`,
     );
     process.exitCode = 1;
     return;

@@ -5,7 +5,8 @@ const config: Config = defineConfig({
   apiKey: process.env.HAPPO_API_KEY ?? '',
   apiSecret: process.env.HAPPO_API_SECRET ?? '',
 
-  integrationType: 'storybook',
+  integration: { type: 'storybook' },
+
   targets: {
     chrome: {
       browserType: 'chrome',

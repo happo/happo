@@ -4,9 +4,10 @@ import baseConfig from './happo.config.ts';
 
 const config: Config = defineConfig({
   ...baseConfig,
-  project: 'cypress',
+  project: 'storybook',
   integration: {
-    type: 'cypress',
+    type: 'storybook',
+    configDir: 'src/storybook/__tests__/storybook-app',
   },
 });
 

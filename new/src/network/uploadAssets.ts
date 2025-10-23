@@ -1,9 +1,8 @@
 import retry from 'async-retry';
 
-import makeHappoAPIRequest, {
-  ErrorWithStatusCode,
-} from '../network/makeHappoAPIRequest.ts';
 import { logTag } from '../utils/Logger.ts';
+import { ErrorWithStatusCode } from './fetchWithRetry.ts';
+import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
 
 // Type definitions
 interface Logger {

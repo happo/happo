@@ -99,7 +99,7 @@ function buildStorybook({
   });
 }
 
-export default function happoStorybookPlugin({
+export default async function generateStorybookStaticPackage({
   configDir = '.storybook',
   staticDir,
   outputDir = '.out',
@@ -111,54 +111,44 @@ export default function happoStorybookPlugin({
   outputDir?: string;
   usePrebuiltPackage?: boolean;
   skip?: SkipItems | (() => Promise<SkipItems>) | undefined;
-} = {}) {
-  return {
-    generateStaticPackage: async (): Promise<{ path: string }> => {
-      if (!usePrebuiltPackage) {
-        await buildStorybook({ configDir, staticDir, outputDir });
-      }
+} = {}): Promise<string> {
+  if (!usePrebuiltPackage) {
+    await buildStorybook({ configDir, staticDir, outputDir });
+  }
 
-      const iframePath = path.join(outputDir, 'iframe.html');
-      if (!fs.existsSync(iframePath)) {
-        throw new Error(
-          'Failed to build static storybook package (missing iframe.html)',
-        );
-      }
+  const iframePath = path.join(outputDir, 'iframe.html');
+  if (!fs.existsSync(iframePath)) {
+    throw new Error(
+      'Failed to build static storybook package (missing iframe.html)',
+    );
+  }
 
-      try {
-        const skipped =
-          typeof skip === 'function'
-            ? await skip()
-            : Array.isArray(skip)
-              ? skip
-              : [];
+  try {
+    const skipped =
+      typeof skip === 'function' ? await skip() : Array.isArray(skip) ? skip : [];
 
-        assertSkippedIsSkipItems(skipped);
+    assertSkippedIsSkipItems(skipped);
 
-        const iframeContent = fs.readFileSync(iframePath, 'utf8');
+    const iframeContent = fs.readFileSync(iframePath, 'utf8');
 
-        fs.writeFileSync(
-          iframePath,
-          iframeContent.replace(
-            '<head>',
-            `<head>
+    fs.writeFileSync(
+      iframePath,
+      iframeContent.replace(
+        '<head>',
+        `<head>
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <script type="text/javascript">window.__IS_HAPPO_RUN = true;</script>
             <script type="text/javascript">window.happoSkipped = ${JSON.stringify(
               skipped,
             )};</script>
           `,
-          ),
-        );
+      ),
+    );
 
-        // Tell happo where the files are located.
-        return {
-          path: outputDir,
-        };
-      } catch (e) {
-        console.error(e);
-        throw e;
-      }
-    },
-  };
+    // Tell happo where the files are located.
+    return outputDir;
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
 }

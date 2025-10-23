@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
+import type { RequestAttributes } from '../../network/makeHappoAPIRequest.ts';
 import type makeHappoAPIRequest from '../../network/makeHappoAPIRequest.ts';
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import withOverrides from '../../test-utils/withOverrides.ts';
@@ -15,10 +16,15 @@ interface Logger {
 let logger: Logger;
 let main: (argv: Array<string>, logger: Logger) => Promise<void>;
 const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
-  async () => ({
-    statusCode: 200,
-    body: { success: true },
-  }),
+  async (request: RequestAttributes) => {
+    if (request.url.includes('/api/jobs')) {
+      return { id: 99, url: 'https://happo.io/api/jobs/99' };
+    }
+    if (request.url.includes('/api/snap-requests')) {
+      return { requestId: 123 };
+    }
+    return {};
+  },
 );
 
 // mock makeHappoAPIRequest.ts *before* importing ../index.ts
@@ -40,7 +46,7 @@ beforeEach(async () => {
   tmpfs.mock({
     'happo.config.ts': `
       export default {
-        integrationType: 'cypress',
+        integration: { type: 'cypress' },
         apiKey: 'test-key',
         apiSecret: 'test-secret',
         targets: {
@@ -104,7 +110,7 @@ describe('main', () => {
       tmpfs.writeFile(
         'custom.config.ts',
         `export default {
-        integrationType: 'cypress',
+        integration: { type: 'cypress' },
         apiKey: 'custom-key',
         apiSecret: 'custom-secret',
         targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
@@ -116,7 +122,6 @@ describe('main', () => {
         logger,
       );
 
-      assert.ok(logger.log.mock.callCount() >= 3);
       assert.equal(logger.log.mock.calls[0]?.arguments[0], 'Running happo tests...');
     });
 
@@ -124,7 +129,7 @@ describe('main', () => {
       tmpfs.writeFile(
         'custom.config.ts',
         `export default {
-        integrationType: 'cypress',
+        integration: { type: 'cypress' },
         apiKey: 'custom-key',
         apiSecret: 'custom-secret',
         targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
@@ -133,7 +138,6 @@ describe('main', () => {
 
       await main(['npx', 'happo', '-c', tmpfs.fullPath('custom.config.ts')], logger);
 
-      assert.ok(logger.log.mock.callCount() >= 3);
       assert.strictEqual(
         logger.log.mock.calls[0]?.arguments[0],
         'Running happo tests...',
@@ -143,7 +147,6 @@ describe('main', () => {
     it('uses default config file when no --config flag', async () => {
       await main(['npx', 'happo'], logger);
 
-      assert.ok(logger.log.mock.callCount() >= 3);
       assert.strictEqual(
         logger.log.mock.calls[0]?.arguments[0],
         'Running happo tests...',
@@ -166,13 +169,10 @@ describe('main', () => {
     it('runs default command when no positional args', async () => {
       await main(['npx', 'happo'], logger);
 
-      assert.ok(logger.log.mock.callCount() >= 3);
       assert.strictEqual(
         logger.log.mock.calls[0]?.arguments[0],
         'Running happo tests...',
       );
-      assert.strictEqual(logger.log.mock.calls[1]?.arguments[0], 'Config:');
-      assert.strictEqual(logger.log.mock.calls[2]?.arguments[0], 'Environment:');
     });
 
     it('shows error for unknown command', async () => {
@@ -215,7 +215,9 @@ describe('main', () => {
         tmpfs.writeFile(
           'happo.config.ts',
           `export default {
-            integrationType: 'storybook',
+            integration: {
+              type: 'storybook',
+            },
           };`,
         );
         await main(['npx', 'happo', '--', 'echo', 'hello'], logger);
@@ -232,7 +234,7 @@ describe('main', () => {
       it('passes along an environment variable for loading the happo config', async () => {
         tmpfs.writeFile(
           'my-happo-config.ts',
-          "export default { integrationType: 'cypress', apiKey: 'test-key', apiSecret: 'test-secret' };",
+          "export default { integration: { type: 'cypress' }, apiKey: 'test-key', apiSecret: 'test-secret' };",
         );
         tmpfs.writeFile(
           'overwrite-happo-config.js',
@@ -340,7 +342,7 @@ describe('main', () => {
         it('does not cancel the Happo job when the command fails and allowFailures is true', async () => {
           tmpfs.writeFile(
             'happo.config.ts',
-            `export default { integrationType: 'cypress', apiKey: 'test-key', apiSecret: 'test-secret', allowFailures: true };`,
+            `export default { integration: { type: 'cypress', allowFailures: true }, apiKey: 'test-key', apiSecret: 'test-secret' };`,
           );
           await main(
             ['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
