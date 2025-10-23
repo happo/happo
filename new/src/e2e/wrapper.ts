@@ -284,7 +284,6 @@ function startE2EServer(
  * @param happoConfig The Happo config
  * @param environment The environment
  * @param port The port to listen on
- * @param allowFailures Whether to allow failures
  * @param logger The logger
  * @returns The exit code of the command
  */
@@ -292,7 +291,6 @@ export default async function runWithWrapper(
   dashdashCommandParts: Array<string>,
   happoConfig: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
-  allowFailures: boolean,
   logger: Logger,
   configFilePath: string,
 ): Promise<number> {
@@ -317,7 +315,7 @@ export default async function runWithWrapper(
       });
 
       child.on('close', async (code: number) => {
-        if (code === 0 || allowFailures) {
+        if (code === 0 || happoConfig.allowFailures) {
           try {
             await finalizeHappoReport(happoConfig, environment, logger);
           } catch (e) {

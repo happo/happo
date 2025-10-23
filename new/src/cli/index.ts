@@ -39,15 +39,6 @@ function parseRawArgs(rawArgs: Array<string>) {
         type: 'string',
         short: 'c',
       },
-
-      allowFailures: {
-        type: 'boolean',
-        default: false,
-      },
-
-      skippedExamples: {
-        type: 'string',
-      },
     },
 
     allowPositionals: true,
@@ -71,10 +62,6 @@ Options:
   --version  Show version number
   --help     Show help text
 
-When running Cypress/Playwright tests using the \`happo -- [command] ...\` wrapper, you can use the following options:
-  --allowFailures      Allow failures for Cypress/Playwright tests (default: false)
-  --skippedExamples    List of skipped examples as JSON
-
 Examples:
   happo
   happo --config path/to/happo.config.ts
@@ -82,7 +69,6 @@ Examples:
   happo --help
   happo -- playwright test
   happo finalize
-  happo --allowFailures -- cypress run
   `;
 
 function makeAbsolute(configFilePath: string): string {
@@ -121,7 +107,6 @@ export async function main(
       config,
       environment,
       args.dashdashCommandParts,
-      args.values.allowFailures,
       configFilePath,
       logger,
     );
@@ -180,7 +165,6 @@ async function handleE2ECommand(
   config: ConfigWithDefaults,
   environment: Awaited<ReturnType<typeof resolveEnvironment>>,
   dashdashCommandParts: Array<string>,
-  allowFailures: boolean,
   configFilePath: string,
   logger: Logger,
 ): Promise<void> {
@@ -203,13 +187,11 @@ async function handleE2ECommand(
   logger.log('Config:', config);
   logger.log('Environment:', environment);
   logger.log('Dashdash command parts:', dashdashCommandParts);
-  logger.log('Allow failures:', allowFailures);
 
   const exitCode = await runWithWrapper(
     dashdashCommandParts,
     config,
     environment,
-    allowFailures,
     logger,
     configFilePath,
   );
