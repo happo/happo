@@ -283,16 +283,6 @@ function assertE2EIntegration(
   if (integration.type !== 'cypress' && integration.type !== 'playwright') {
     throw new Error(`Unsupported integration type: ${integration.type}`);
   }
-  if (!('allowFailures' in integration)) {
-    throw new Error(
-      `Integration type ${integration.type} does not support allowFailures`,
-    );
-  }
-  if (typeof integration.allowFailures !== 'boolean') {
-    throw new TypeError(
-      `Integration type ${integration.type} has invalid allowFailures`,
-    );
-  }
 }
 
 /**
