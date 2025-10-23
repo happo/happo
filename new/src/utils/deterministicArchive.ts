@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Readable, Writable } from 'node:stream';
@@ -6,6 +5,7 @@ import { Readable, Writable } from 'node:stream';
 import type { EntryData } from 'archiver';
 import archiver from 'archiver';
 
+import createHash from './createHash.ts';
 import validateArchive from './validateArchive.ts';
 
 // We're setting the creation date to the same for all files so that the zip
@@ -131,7 +131,7 @@ export default async function deterministicArchive(
     stream.on('finish', () => {
       validateArchive(archive.pointer(), entries);
       const buffer = Buffer.from(data);
-      const hash = crypto.createHash('md5').update(buffer).digest('hex');
+      const hash = createHash(buffer);
 
       resolve({ buffer, hash });
     });

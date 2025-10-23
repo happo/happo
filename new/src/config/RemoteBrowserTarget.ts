@@ -1,5 +1,5 @@
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
-import createHash from './createHash.ts';
+import createHash from '../utils/createHash.ts';
 import type { TargetWithDefaults } from './index.ts';
 
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
@@ -137,12 +137,12 @@ export default class RemoteBrowserTarget {
     endpoint,
     pages,
     targetName,
-  }: ExecuteParams): Promise<Array<string>> {
+  }: ExecuteParams): Promise<Array<number>> {
     const boundMakeRequest = async ({
       slice,
       chunk,
       pageSlice,
-    }: BoundMakeRequestParams) => {
+    }: BoundMakeRequestParams): Promise<number> => {
       const payloadString = JSON.stringify({
         viewport: this.viewport,
         maxHeight: this.maxHeight,
@@ -194,16 +194,20 @@ export default class RemoteBrowserTarget {
         throw new Error('No requestId in requestResult');
       }
 
-      return { requestId: String(requestResult.requestId) };
+      if (typeof requestResult.requestId !== 'number') {
+        throw new TypeError('requestId is not a number');
+      }
+
+      return requestResult.requestId;
     };
 
-    const requestIds: Array<string> = [];
+    const requestIds: Array<number> = [];
 
     if (staticPackage) {
       for (let i = 0; i < this.chunks; i += 1) {
         // We `await` here inside the loop to avoid POSTing all payloads to the
         // server at the same time (thus reducing load a little).
-        const { requestId } = await boundMakeRequest({
+        const requestId = await boundMakeRequest({
           chunk: { index: i, total: this.chunks },
         });
         requestIds.push(requestId);
@@ -212,7 +216,7 @@ export default class RemoteBrowserTarget {
       for (const pageSlice of getPageSlices(pages, this.chunks)) {
         // We `await` here inside the loop to avoid POSTing all payloads to the
         // server at the same time (thus reducing load a little).
-        const { requestId } = await boundMakeRequest({
+        const requestId = await boundMakeRequest({
           pageSlice,
         });
         requestIds.push(requestId);
@@ -227,7 +231,7 @@ export default class RemoteBrowserTarget {
 
         // We `await` here inside the loop to avoid POSTing all payloads to the
         // server at the same time (thus reducing load a little).
-        const { requestId } = await boundMakeRequest({
+        const requestId = await boundMakeRequest({
           slice,
         });
         requestIds.push(requestId);

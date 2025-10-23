@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
+import type { RequestAttributes } from '../../network/makeHappoAPIRequest.ts';
 import type makeHappoAPIRequest from '../../network/makeHappoAPIRequest.ts';
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import withOverrides from '../../test-utils/withOverrides.ts';
@@ -15,10 +16,15 @@ interface Logger {
 let logger: Logger;
 let main: (argv: Array<string>, logger: Logger) => Promise<void>;
 const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
-  async () => ({
-    statusCode: 200,
-    body: { success: true },
-  }),
+  async (request: RequestAttributes) => {
+    if (request.url.includes('/api/jobs')) {
+      return { id: 99, url: 'https://happo.io/api/jobs/99' };
+    }
+    if (request.url.includes('/api/snap-requests')) {
+      return { requestId: 123 };
+    }
+    return {};
+  },
 );
 
 // mock makeHappoAPIRequest.ts *before* importing ../index.ts

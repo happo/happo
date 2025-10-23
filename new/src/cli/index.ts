@@ -13,6 +13,7 @@ import type { Logger } from '../isomorphic/types.ts';
 import cancelJob from '../network/cancelJob.ts';
 import createAsyncComparison from '../network/createAsyncComparison.ts';
 import createAsyncReport from '../network/createAsyncReport.ts';
+import prepareSnapRequests from '../network/prepareSnapRequests.ts';
 import startJob from '../network/startJob.ts';
 
 function parseDashdashCommandParts(
@@ -142,16 +143,9 @@ async function handleDefaultCommand(
   await startJob(config, environment, logger);
 
   try {
-    // Prepare the payload for the job. This includes collecting assets and uploading them.
-    const payload = await preparePayload(config, environment, logger);
-
-    // Create the snap requests for the job.
-    const snapRequestIds = await createSnapRequests(
-      payload,
-      config,
-      environment,
-      logger,
-    );
+    // Prepare the snap requests for the job. This includes bundling static
+    // assets and uploading them.
+    const snapRequestIds = await prepareSnapRequests(config);
 
     // Put together a report from the snap requests.
     const asyncReport = await createAsyncReport(
