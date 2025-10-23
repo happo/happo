@@ -30,7 +30,6 @@ function assertResultIsCreateAsyncComparisonResult(
 }
 
 export default async function createAsyncComparison(
-  skipStatusPost = false,
   { apiKey, apiSecret, endpoint, project }: ConfigWithDefaults,
   {
     beforeSha,
@@ -52,7 +51,6 @@ export default async function createAsyncComparison(
         message,
         author,
         project,
-        skipStatusPost,
         isAsync: true,
         notify,
         fallbackShas,

@@ -157,12 +157,7 @@ async function handleDefaultCommand(
     );
 
     // Create an async comparison.
-    const asyncComparison = await createAsyncComparison(
-      false,
-      config,
-      environment,
-      logger,
-    );
+    const asyncComparison = await createAsyncComparison(config, environment, logger);
 
     logger.log(`[HAPPO] Async report URL: ${asyncReport.url}`);
     logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
