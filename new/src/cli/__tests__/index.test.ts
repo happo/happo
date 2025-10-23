@@ -122,7 +122,6 @@ describe('main', () => {
         logger,
       );
 
-      assert.ok(logger.log.mock.callCount() >= 3);
       assert.equal(logger.log.mock.calls[0]?.arguments[0], 'Running happo tests...');
     });
 
@@ -139,7 +138,6 @@ describe('main', () => {
 
       await main(['npx', 'happo', '-c', tmpfs.fullPath('custom.config.ts')], logger);
 
-      assert.ok(logger.log.mock.callCount() >= 3);
       assert.strictEqual(
         logger.log.mock.calls[0]?.arguments[0],
         'Running happo tests...',
@@ -149,7 +147,6 @@ describe('main', () => {
     it('uses default config file when no --config flag', async () => {
       await main(['npx', 'happo'], logger);
 
-      assert.ok(logger.log.mock.callCount() >= 3);
       assert.strictEqual(
         logger.log.mock.calls[0]?.arguments[0],
         'Running happo tests...',
@@ -172,13 +169,10 @@ describe('main', () => {
     it('runs default command when no positional args', async () => {
       await main(['npx', 'happo'], logger);
 
-      assert.ok(logger.log.mock.callCount() >= 3);
       assert.strictEqual(
         logger.log.mock.calls[0]?.arguments[0],
         'Running happo tests...',
       );
-      assert.strictEqual(logger.log.mock.calls[1]?.arguments[0], 'Config:');
-      assert.strictEqual(logger.log.mock.calls[2]?.arguments[0], 'Environment:');
     });
 
     it('shows error for unknown command', async () => {

@@ -139,6 +139,7 @@ async function handleDefaultCommand(
   environment: EnvironmentResult,
   logger: Logger,
 ): Promise<void> {
+  logger.log('Running happo tests...');
   // Tell Happo that we are about to run a job
   await startJob(config, environment, logger);
 

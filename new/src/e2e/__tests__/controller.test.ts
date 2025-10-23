@@ -29,7 +29,7 @@ before(async () => {
       return;
     }
 
-    res.end(JSON.stringify({ requestId: `request-id-${requestId++}` }));
+    res.end(JSON.stringify({ requestId: requestId++ }));
   });
 
   server.listen(port);
