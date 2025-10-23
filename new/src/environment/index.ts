@@ -40,13 +40,10 @@ export interface EnvironmentResult {
 }
 
 const envKeys: ReadonlyArray<string> = [
-  'BASE_BRANCH',
-  'CHANGE_URL',
   'CIRCLE_PROJECT_REPONAME',
   'CIRCLE_PROJECT_USERNAME',
   'CIRCLE_SHA1',
   'CI_PULL_REQUEST',
-  'CURRENT_SHA',
   'GITHUB_BASE',
   'HAPPO_BASE_BRANCH',
   'HAPPO_CHANGE_URL',
@@ -56,7 +53,6 @@ const envKeys: ReadonlyArray<string> = [
   'HAPPO_PREVIOUS_SHA',
   'HAPPO_FALLBACK_SHAS',
   'HAPPO_FALLBACK_SHAS_COUNT',
-  'PREVIOUS_SHA',
   'TRAVIS_COMMIT',
   'TRAVIS_PULL_REQUEST',
   'TRAVIS_PULL_REQUEST_SHA',
@@ -87,7 +83,6 @@ async function resolveLink(
   env: Record<string, string | undefined>,
 ): Promise<string | undefined> {
   const {
-    CHANGE_URL,
     HAPPO_CHANGE_URL,
     CI_PULL_REQUEST,
     HAPPO_GITHUB_BASE,
@@ -107,12 +102,7 @@ async function resolveLink(
   } = env;
 
   if (HAPPO_CHANGE_URL) {
-    // new happo env
     return HAPPO_CHANGE_URL;
-  }
-  if (CHANGE_URL) {
-    // legacy happo env
-    return CHANGE_URL;
   }
   if (CI_PULL_REQUEST) {
     // Circle CI
@@ -267,7 +257,6 @@ async function resolveBeforeSha(
   const {
     HAPPO_PREVIOUS_SHA,
     HAPPO_BEFORE_SHA_TAG_MATCHER,
-    PREVIOUS_SHA,
     HAPPO_BASE_BRANCH,
     TRAVIS_COMMIT_RANGE,
     GITHUB_EVENT_PATH,
@@ -279,10 +268,6 @@ async function resolveBeforeSha(
 
   if (HAPPO_PREVIOUS_SHA) {
     return HAPPO_PREVIOUS_SHA;
-  }
-
-  if (PREVIOUS_SHA) {
-    return PREVIOUS_SHA;
   }
 
   if (HAPPO_BEFORE_SHA_TAG_MATCHER) {
@@ -403,7 +388,6 @@ async function resolveAfterSha(
 ): Promise<string | { headSha: string; headShaWithLocalChanges: string }> {
   const {
     HAPPO_CURRENT_SHA,
-    CURRENT_SHA,
     CIRCLE_SHA1,
     TRAVIS_PULL_REQUEST_SHA,
     TRAVIS_COMMIT,
@@ -413,11 +397,7 @@ async function resolveAfterSha(
     SYSTEM_PULLREQUEST_SOURCEBRANCH,
   } = env;
   const sha =
-    HAPPO_CURRENT_SHA ||
-    CURRENT_SHA ||
-    CIRCLE_SHA1 ||
-    TRAVIS_PULL_REQUEST_SHA ||
-    TRAVIS_COMMIT;
+    HAPPO_CURRENT_SHA || CIRCLE_SHA1 || TRAVIS_PULL_REQUEST_SHA || TRAVIS_COMMIT;
   if (sha) {
     return sha;
   }

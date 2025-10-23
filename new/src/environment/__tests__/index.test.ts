@@ -346,6 +346,7 @@ describe('resolveEnvironment', () => {
       HAPPO_PREVIOUS_SHA: 'hhhggg',
       HAPPO_CHANGE_URL: 'link://link',
       HAPPO_NOTIFY: 'foo@bar.com,bar@foo.com',
+      HAPPO_MESSAGE: 'This is a change',
     };
 
     let result = await resolveEnvironment(happoEnv);
@@ -353,19 +354,6 @@ describe('resolveEnvironment', () => {
     assert.equal(result.beforeSha, 'hhhggg');
     assert.equal(result.link, 'link://link');
     assert.equal(result.notify, 'foo@bar.com,bar@foo.com');
-    assert.ok(result.message !== undefined);
-
-    // Try with legacy overrides
-    result = await resolveEnvironment({
-      CURRENT_SHA: 'foobar',
-      PREVIOUS_SHA: 'barfo',
-      CHANGE_URL: 'url://link',
-      HAPPO_MESSAGE: 'This is a change',
-    });
-
-    assert.equal(result.afterSha, 'foobar');
-    assert.equal(result.beforeSha, 'barfo');
-    assert.equal(result.link, 'url://link');
     assert.equal(result.message, 'This is a change');
 
     // Try overriding base branch
