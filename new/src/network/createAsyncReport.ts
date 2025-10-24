@@ -26,26 +26,23 @@ function assertResultIsCreateAsyncReportResult(
 
 export default async function createAsyncReport(
   snapRequestIds: Array<number>,
-  { apiKey, apiSecret, endpoint, project }: ConfigWithDefaults,
+  config: ConfigWithDefaults,
   { afterSha, link, message }: EnvironmentResult,
   logger: Logger,
 ): Promise<CreateAsyncReportResult> {
   const result = await makeHappoAPIRequest(
     {
-      url: `${endpoint}/api/async-reports/${afterSha}`,
+      path: `/api/async-reports/${afterSha}`,
       method: 'POST',
       body: {
         requestIds: snapRequestIds,
         link,
         message,
-        project,
+        project: config.project,
       },
     },
-    {
-      apiKey,
-      apiSecret,
-      retryCount: 3,
-    },
+    config,
+    { retryCount: 3 },
     logger,
   );
 

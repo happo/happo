@@ -1,30 +1,37 @@
 import { SignJWT } from 'jose';
 
+import type { ConfigWithDefaults } from '../config/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from './fetchWithRetry.ts';
+
 export { ErrorWithStatusCode } from './fetchWithRetry.ts';
 
 type FormDataValue = string | File | undefined;
 
 export interface RequestAttributes {
-  url: string;
-  method?: string;
+  /**
+   * The path to the API endpoint
+   *
+   * @example
+   * '/api/snap-requests/with-results'
+   */
+  path?: `/api/${string}`;
+
+  /**
+   * The URL to fetch
+   *
+   * Prefer using the `path` property instead. If both are provided, the `path`
+   * property will be used.
+   */
+  url?: string;
+
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   formData?: Record<string, FormDataValue>;
   body?: unknown;
-  [key: string]: unknown;
+  json?: boolean;
 }
 
 export interface MakeHappoAPIRequestOptions {
-  /**
-   * Happo API key
-   */
-  apiKey: string;
-
-  /**
-   * Happo API secret
-   */
-  apiSecret: string;
-
   /**
    * The timeout in milliseconds
    * @default 60_000
@@ -58,10 +65,9 @@ async function signRequest(apiKey: string, apiSecret: string): Promise<string> {
 }
 
 export default async function makeHappoAPIRequest(
-  { url, method = 'GET', formData, body }: RequestAttributes,
+  { url, path, method = 'GET', formData, body }: RequestAttributes,
+  { apiKey, apiSecret, endpoint }: ConfigWithDefaults,
   {
-    apiKey,
-    apiSecret,
     retryCount = 0,
     timeout = 60_000,
     retryMinTimeout = 1000,
@@ -69,6 +75,14 @@ export default async function makeHappoAPIRequest(
   }: MakeHappoAPIRequestOptions,
   logger: Logger = console,
 ): Promise<object | null> {
+  const fetchURL = path ? new URL(path, endpoint) : url;
+
+  if (!fetchURL) {
+    throw new Error(
+      'No fetch URL provided. Either `path` (preferred) or `url` must be provided.',
+    );
+  }
+
   const signed = await signRequest(apiKey, apiSecret);
 
   const headers = {
@@ -76,7 +90,7 @@ export default async function makeHappoAPIRequest(
   };
 
   const response = await fetchWithRetry(
-    url,
+    fetchURL,
     {
       method,
       headers,

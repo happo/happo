@@ -42,7 +42,7 @@ async function compareReports(
 ) {
   const compareResult = await makeHappoAPIRequest(
     {
-      url: `${happoConfig.endpoint}/api/reports/${sha1}/compare/${sha2}`,
+      path: `/api/reports/${sha1}/compare/${sha2}`,
       method: 'POST',
       json: true,
       body: {
@@ -54,7 +54,8 @@ async function compareReports(
         isAsync: true,
       },
     },
-    { apiKey: happoConfig.apiKey, apiSecret: happoConfig.apiSecret, retryCount: 2 },
+    happoConfig,
+    { retryCount: 2 },
   );
   assertCompareResult(compareResult);
   return compareResult;
@@ -68,7 +69,7 @@ async function postAsyncReport(
   const { afterSha, nonce, link, message } = environment;
   return await makeHappoAPIRequest(
     {
-      url: `${happoConfig.endpoint}/api/async-reports/${afterSha}`,
+      path: `/api/async-reports/${afterSha}`,
       method: 'POST',
       json: true,
       body: {
@@ -79,7 +80,8 @@ async function postAsyncReport(
         message,
       },
     },
-    { ...happoConfig, retryCount: 2 },
+    happoConfig,
+    { retryCount: 2 },
   );
 }
 
@@ -132,12 +134,13 @@ export async function finalizeAll({
 
   await makeHappoAPIRequest(
     {
-      url: `${happoConfig.endpoint}/api/async-reports/${afterSha}/finalize`,
+      path: `/api/async-reports/${afterSha}/finalize`,
       method: 'POST',
       json: true,
       body,
     },
-    { ...happoConfig, retryCount: 3 },
+    happoConfig,
+    { retryCount: 3 },
   );
 
   if (beforeSha && beforeSha !== afterSha) {
@@ -186,7 +189,7 @@ async function finalizeHappoReport(
   if (beforeSha) {
     const jobResult = await makeHappoAPIRequest(
       {
-        url: `${happoConfig.endpoint}/api/jobs/${beforeSha}/${afterSha}`,
+        path: `/api/jobs/${beforeSha}/${afterSha}`,
         method: 'POST',
         json: true,
         body: {
@@ -195,7 +198,8 @@ async function finalizeHappoReport(
           message,
         },
       },
-      { ...happoConfig, retryCount: 2 },
+      happoConfig,
+      { retryCount: 2 },
     );
 
     if (!jobResult) {
@@ -339,7 +343,7 @@ export default async function runWithWrapper(
           try {
             await makeHappoAPIRequest(
               {
-                url: `${happoConfig.endpoint}/api/jobs/${environment.beforeSha}/${environment.afterSha}/cancel`,
+                path: `/api/jobs/${environment.beforeSha}/${environment.afterSha}/cancel`,
                 method: 'POST',
                 json: true,
                 body: {
@@ -349,7 +353,8 @@ export default async function runWithWrapper(
                   message: `${e2eIntegration.type} run failed`,
                 },
               },
-              { ...happoConfig, retryCount: 3 },
+              happoConfig,
+              { retryCount: 3 },
             );
           } catch (e) {
             logger.error('Failed to cancel Happo job', e);

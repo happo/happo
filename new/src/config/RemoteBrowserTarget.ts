@@ -1,6 +1,6 @@
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import createHash from '../utils/createHash.ts';
-import type { TargetWithDefaults } from './index.ts';
+import type { ConfigWithDefaults, TargetWithDefaults } from './index.ts';
 
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
 
@@ -40,9 +40,6 @@ interface ExecuteParams {
   assetsPackage?: unknown;
   staticPackage?: unknown;
   snapPayloads?: Array<unknown>;
-  apiKey: string;
-  apiSecret: string;
-  endpoint: string;
   pages?: Array<Page>;
   targetName?: string;
 }
@@ -127,17 +124,17 @@ export default class RemoteBrowserTarget {
     this.otherOptions = otherOptions;
   }
 
-  async execute({
-    globalCSS,
-    assetsPackage,
-    staticPackage,
-    snapPayloads,
-    apiKey,
-    apiSecret,
-    endpoint,
-    pages,
-    targetName,
-  }: ExecuteParams): Promise<Array<number>> {
+  async execute(
+    {
+      globalCSS,
+      assetsPackage,
+      staticPackage,
+      snapPayloads,
+      pages,
+      targetName,
+    }: ExecuteParams,
+    config: ConfigWithDefaults,
+  ): Promise<Array<number>> {
     const boundMakeRequest = async ({
       slice,
       chunk,
@@ -178,12 +175,13 @@ export default class RemoteBrowserTarget {
 
       const requestResult = await makeHappoAPIRequest(
         {
-          url: `${endpoint}/api/snap-requests?payloadHash=${payloadHash}`,
+          path: `/api/snap-requests?payloadHash=${payloadHash}`,
           method: 'POST',
           json: true,
           formData,
         },
-        { apiKey, apiSecret, retryCount: 5 },
+        config,
+        { retryCount: 5 },
       );
 
       if (!requestResult) {

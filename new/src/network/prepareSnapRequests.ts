@@ -34,14 +34,14 @@ export default async function prepareSnapRequests(
   const staticPackageDir = await generateStaticPackage(config);
 
   const { buffer, hash } = await deterministicArchive([staticPackageDir]);
-  const staticPackagePath = await uploadAssets(buffer, {
-    hash,
-    endpoint: config.endpoint,
-    apiSecret: config.apiSecret,
-    apiKey: config.apiKey,
-    logger,
-    project: config.project,
-  });
+  const staticPackagePath = await uploadAssets(
+    buffer,
+    {
+      hash,
+      logger,
+    },
+    config,
+  );
   const targetNames = Object.keys(config.targets);
   const tl = targetNames.length;
   logger.info(
@@ -61,13 +61,13 @@ export default async function prepareSnapRequests(
         config.targets[name].browserType,
         config.targets[name],
       );
-      const snapRequestIds = await target.execute({
-        targetName: name,
-        staticPackage: staticPackagePath,
-        apiKey: config.apiKey,
-        apiSecret: config.apiSecret,
-        endpoint: config.endpoint,
-      });
+      const snapRequestIds = await target.execute(
+        {
+          targetName: name,
+          staticPackage: staticPackagePath,
+        },
+        config,
+      );
       logger.start(`  - ${logTag(config.project)}${name}`, { startTime });
       logger.success();
       results.push(...snapRequestIds);

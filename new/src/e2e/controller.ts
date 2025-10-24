@@ -266,13 +266,14 @@ Docs:
       throw new Error('Missing `endpoint` in Happo config');
     }
 
-    const assetsPath = await uploadAssets(buffer, {
-      hash,
-      endpoint: this.happoConfig.endpoint,
-      apiKey: this.happoConfig.apiKey,
-      apiSecret: this.happoConfig.apiSecret,
-      logger: console,
-    });
+    const assetsPath = await uploadAssets(
+      buffer,
+      {
+        hash,
+        logger: console,
+      },
+      this.happoConfig,
+    );
 
     return assetsPath;
   }
@@ -370,15 +371,15 @@ Docs:
 
       const target = this.happoConfig.targets[name];
       const remoteTarget = new RemoteBrowserTarget(target.browserType, target);
-      const requestIds = await remoteTarget.execute({
-        targetName: name,
-        endpoint: this.happoConfig.endpoint,
-        globalCSS,
-        assetsPackage: assetsPath,
-        snapPayloads: snapshotsForTarget,
-        apiKey: this.happoConfig.apiKey,
-        apiSecret: this.happoConfig.apiSecret,
-      });
+      const requestIds = await remoteTarget.execute(
+        {
+          targetName: name,
+          globalCSS,
+          assetsPackage: assetsPath,
+          snapPayloads: snapshotsForTarget,
+        },
+        this.happoConfig,
+      );
       if (this.happoDebug) {
         console.log(
           `[HAPPO] Snap-request(s) for target=${name} created with ID(s)=${requestIds.join(
@@ -547,12 +548,13 @@ Docs:
       const { afterSha } = environment;
       const reportResult = await makeHappoAPIRequest(
         {
-          url: `${this.happoConfig.endpoint}/api/async-reports/${afterSha}`,
+          path: `/api/async-reports/${afterSha}`,
           method: 'POST',
           json: true,
           body: { requestIds: allRequestIds, project: this.happoConfig.project },
         },
-        { ...this.happoConfig, retryCount: 3 },
+        this.happoConfig,
+        { retryCount: 3 },
       );
 
       if (!reportResult) {
@@ -638,11 +640,12 @@ Docs:
 
     const uploadUrlResult = await makeHappoAPIRequest(
       {
-        url: `${this.happoConfig.endpoint}/api/images/${hash}/upload-url`,
+        path: `/api/images/${hash}/upload-url`,
         method: 'GET',
         json: true,
       },
-      { ...this.happoConfig, retryCount: 2 },
+      this.happoConfig,
+      { retryCount: 2 },
     );
 
     if (!uploadUrlResult) {
@@ -679,7 +682,8 @@ Docs:
           file: new File([buffer], 'image.png', { type: 'image/png' }),
         },
       },
-      { ...this.happoConfig, retryCount: 2 },
+      this.happoConfig,
+      { retryCount: 2 },
     );
 
     if (!uploadResult) {
@@ -706,12 +710,13 @@ Docs:
 
     const reportResult = await makeHappoAPIRequest(
       {
-        url: `${this.happoConfig.endpoint}/api/snap-requests/with-results`,
+        path: '/api/snap-requests/with-results',
         method: 'POST',
         json: true,
         body: { snaps: this.localSnapshots },
       },
-      { ...this.happoConfig, retryCount: 3 },
+      this.happoConfig,
+      { retryCount: 3 },
     );
 
     if (!reportResult) {
