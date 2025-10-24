@@ -1,9 +1,17 @@
+import type { SkipItems } from '../storybook/isomorphic/types.ts';
+
 export interface StorybookIntegration {
   type: 'storybook';
+
   /**
    * The directory containing the Storybook configuration
    */
   configDir?: string;
+
+  /**
+   * The directory containing the static files to serve
+   */
+  staticDir?: string;
 
   /**
    * The directory to output the static Storybook package to
@@ -15,6 +23,14 @@ export interface StorybookIntegration {
    * sure that files are built to the outputDir.
    */
   usePrebuiltPackage?: boolean;
+
+  /**
+   * Items to skip when generating snapshots.
+   *
+   * Can be an async function that resolves to an array of `{component,
+   * variant}`, or an array of `{component, variant}`.
+   */
+  skip?: SkipItems | (() => Promise<SkipItems>) | undefined;
 }
 
 interface CypressIntegration {
@@ -37,7 +53,7 @@ interface PlaywrightIntegration {
 
 export type E2EIntegration = CypressIntegration | PlaywrightIntegration;
 
-export interface StaticIntegration {
+interface StaticIntegration {
   type: 'static';
 
   /**
