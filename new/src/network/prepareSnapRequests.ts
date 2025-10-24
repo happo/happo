@@ -1,4 +1,8 @@
-import type { ConfigWithDefaults, StorybookOptions } from '../config/index.ts';
+import type {
+  ConfigWithDefaults,
+  StaticOptions,
+  StorybookOptions,
+} from '../config/index.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
 import generateStorybookStaticPackage from '../storybook/index.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
@@ -15,9 +19,21 @@ function assertStorybookIntegration(
   }
 }
 
+function assertStaticIntegration(
+  integration: NonNullable<ConfigWithDefaults['integration']>,
+): asserts integration is StaticOptions {
+  if (integration.type !== 'static') {
+    throw new Error(
+      `Integration type ${integration.type} is not a static integration`,
+    );
+  }
+}
+
 async function generateStaticPackage(config: ConfigWithDefaults): Promise<string> {
   if (config.integration.type === 'static') {
-    throw new Error('Not implemented');
+    const staticIntegration = config.integration;
+    assertStaticIntegration(staticIntegration);
+    return staticIntegration.generateStaticPackage();
   }
   if (config.integration.type === 'storybook') {
     const sbIntegration = config.integration;
