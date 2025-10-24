@@ -12,26 +12,23 @@ type Status = 'failure' | 'success';
  */
 export default async function cancelJob(
   status: Status,
-  { apiKey, apiSecret, endpoint, project }: ConfigWithDefaults,
+  config: ConfigWithDefaults,
   { beforeSha, afterSha, link, message }: EnvironmentResult,
   logger: Logger,
 ): Promise<void> {
   await makeHappoAPIRequest(
     {
-      url: `${endpoint}/api/jobs/${beforeSha}/${afterSha}/cancel`,
+      path: `/api/jobs/${beforeSha}/${afterSha}/cancel`,
       method: 'POST',
       body: {
         link,
         message,
-        project,
+        project: config.project,
         status,
       },
     },
-    {
-      apiKey,
-      apiSecret,
-      retryCount: 5,
-    },
+    config,
+    { retryCount: 5 },
     logger,
   );
 }

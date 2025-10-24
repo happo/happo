@@ -68,7 +68,7 @@ const defaultHeaders = {
 };
 
 export default async function fetchWithRetry(
-  url: string,
+  url: string | URL,
   {
     method = 'GET',
     headers = {},

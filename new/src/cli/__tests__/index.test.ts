@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
+import type { ConfigWithDefaults } from '../../config/index.ts';
 import type { RequestAttributes } from '../../network/makeHappoAPIRequest.ts';
 import type makeHappoAPIRequest from '../../network/makeHappoAPIRequest.ts';
 import * as tmpfs from '../../test-utils/tmpfs.ts';
@@ -16,13 +17,22 @@ interface Logger {
 let logger: Logger;
 let main: (argv: Array<string>, logger: Logger) => Promise<void>;
 const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
-  async (request: RequestAttributes) => {
-    if (request.url.includes('/api/jobs')) {
+  async (request: RequestAttributes, config: ConfigWithDefaults) => {
+    const { url, path } = request;
+    const fetchURL = path ? `${config.endpoint}${path}` : url;
+    if (!fetchURL) {
+      throw new Error(
+        'No fetch URL provided. Either `path` (preferred) or `url` must be provided.',
+      );
+    }
+
+    if (fetchURL.includes('/api/jobs')) {
       return { id: 99, url: 'https://happo.io/api/jobs/99' };
     }
-    if (request.url.includes('/api/snap-requests')) {
+    if (fetchURL.includes('/api/snap-requests')) {
       return { requestId: 123 };
     }
+
     return {};
   },
 );
@@ -330,8 +340,12 @@ describe('main', () => {
             throw new Error('No cancel request found');
           }
           assert.strictEqual(
-            cancelRequest.arguments[0]?.url,
-            'https://happo.io/api/jobs/foobar/barfoo/cancel',
+            cancelRequest.arguments[1]?.endpoint,
+            'https://happo.io',
+          );
+          assert.strictEqual(
+            cancelRequest.arguments[0]?.path,
+            '/api/jobs/foobar/barfoo/cancel',
           );
           assert.strictEqual(
             (cancelRequest.arguments[0]?.body as { message: string })?.message,

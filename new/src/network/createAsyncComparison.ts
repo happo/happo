@@ -35,7 +35,7 @@ function assertResultIsCreateAsyncComparisonResult(
  * @see https://happo.io/docs/api#compareReports
  */
 export default async function createAsyncComparison(
-  { apiKey, apiSecret, endpoint, project }: ConfigWithDefaults,
+  config: ConfigWithDefaults,
   {
     beforeSha,
     afterSha,
@@ -49,23 +49,20 @@ export default async function createAsyncComparison(
 ): Promise<CreateAsyncComparisonResult> {
   const result = await makeHappoAPIRequest(
     {
-      url: `${endpoint}/api/reports/${beforeSha}/compare/${afterSha}`,
+      path: `/api/reports/${beforeSha}/compare/${afterSha}`,
       method: 'POST',
       body: {
         link,
         message,
         author,
-        project,
+        project: config.project,
         isAsync: true,
         notify,
         fallbackShas,
       },
     },
-    {
-      apiKey,
-      apiSecret,
-      retryCount: 3,
-    },
+    config,
+    { retryCount: 3 },
     logger,
   );
 

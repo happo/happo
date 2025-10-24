@@ -1,5 +1,6 @@
 import retry from 'async-retry';
 
+import type { ConfigWithDefaults } from '../config/index.ts';
 import { logTag } from '../utils/Logger.ts';
 import { ErrorWithStatusCode } from './fetchWithRetry.ts';
 import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
@@ -12,11 +13,7 @@ interface Logger {
 
 interface UploadAssetsOptions {
   hash: string;
-  endpoint: string;
-  apiKey: string;
-  apiSecret: string;
   logger: Logger;
-  project?: string | undefined;
 }
 
 /**
@@ -26,17 +23,21 @@ interface UploadAssetsOptions {
  */
 async function uploadAssetsThroughHappo(
   buffer: Buffer<ArrayBuffer>,
-  { hash, endpoint, apiKey, apiSecret, logger, project }: UploadAssetsOptions,
+  { hash, logger }: UploadAssetsOptions,
+  config: ConfigWithDefaults,
 ): Promise<string> {
+  const { project } = config;
+
   try {
     // Check if the assets already exist. If so, we don't have to upload them.
     const assetsDataRes = await makeHappoAPIRequest(
       {
-        url: `${endpoint}/api/snap-requests/assets-data/${hash}`,
+        path: `/api/snap-requests/assets-data/${hash}`,
         method: 'GET',
         json: true,
       },
-      { apiKey, apiSecret },
+      config,
+      { retryCount: 2 },
     );
 
     if (!assetsDataRes) {
@@ -76,14 +77,15 @@ async function uploadAssetsThroughHappo(
 
   const assetsRes = await makeHappoAPIRequest(
     {
-      url: `${endpoint}/api/snap-requests/assets/${hash}`,
+      path: `/api/snap-requests/assets/${hash}`,
       method: 'POST',
       json: true,
       formData: {
         payload: new File([buffer], 'payload.zip', { type: 'application/zip' }),
       },
     },
-    { apiKey, apiSecret, retryCount: 2 },
+    config,
+    { retryCount: 2 },
   );
 
   if (!assetsRes) {
@@ -106,16 +108,20 @@ async function uploadAssetsThroughHappo(
  */
 async function uploadAssetsWithSignedUrl(
   buffer: Buffer<ArrayBuffer>,
-  { hash, endpoint, apiKey, apiSecret, logger, project }: UploadAssetsOptions,
+  { hash, logger }: UploadAssetsOptions,
+  config: ConfigWithDefaults,
 ): Promise<string> {
+  const { project } = config;
+
   // First we need to get the signed URL from Happo.
   const signedUrlRes = await makeHappoAPIRequest(
     {
-      url: `${endpoint}/api/snap-requests/assets/${hash}/signed-url`,
+      path: `/api/snap-requests/assets/${hash}/signed-url`,
       method: 'GET',
       json: true,
     },
-    { apiKey, apiSecret, retryCount: 3 },
+    config,
+    { retryCount: 3 },
   );
 
   if (!signedUrlRes) {
@@ -181,11 +187,12 @@ async function uploadAssetsWithSignedUrl(
   // Finally, we need to tell Happo that we've uploaded the assets.
   const finalizeRes = await makeHappoAPIRequest(
     {
-      url: `${endpoint}/api/snap-requests/assets/${hash}/signed-url/finalize`,
+      path: `/api/snap-requests/assets/${hash}/signed-url/finalize`,
       method: 'POST',
       json: true,
     },
-    { apiKey, apiSecret, retryCount: 3 },
+    config,
+    { retryCount: 3 },
   );
 
   if (!finalizeRes) {
@@ -204,10 +211,11 @@ async function uploadAssetsWithSignedUrl(
 export default async function uploadAssets(
   buffer: Buffer<ArrayBuffer>,
   options: UploadAssetsOptions,
+  config: ConfigWithDefaults,
 ): Promise<string> {
   if (process.env.HAPPO_SIGNED_URL) {
-    return uploadAssetsWithSignedUrl(buffer, options);
+    return uploadAssetsWithSignedUrl(buffer, options, config);
   }
 
-  return uploadAssetsThroughHappo(buffer, options);
+  return uploadAssetsThroughHappo(buffer, options, config);
 }

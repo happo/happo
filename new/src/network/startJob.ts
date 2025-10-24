@@ -30,25 +30,22 @@ function assertResultIsStartJobResult(
  * @see https://happo.io/docs/api#createJob
  */
 export default async function startJob(
-  { apiKey, apiSecret, endpoint, project }: ConfigWithDefaults,
+  config: ConfigWithDefaults,
   { beforeSha, afterSha, link, message }: EnvironmentResult,
   logger: Logger,
 ): Promise<StartJobResult> {
   const result = await makeHappoAPIRequest(
     {
-      url: `${endpoint}/api/jobs/${beforeSha}/${afterSha}`,
+      path: `/api/jobs/${beforeSha}/${afterSha}`,
       method: 'POST',
       body: {
         link,
         message,
-        project,
+        project: config.project,
       },
     },
-    {
-      apiKey,
-      apiSecret,
-      retryCount: 5,
-    },
+    config,
+    { retryCount: 5 },
     logger,
   );
 
