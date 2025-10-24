@@ -1,7 +1,11 @@
 import type { Channel } from 'storybook/internal/channels';
 import type { StoryStore } from 'storybook/internal/preview-api';
 
-import type { InitConfig, NextExampleResult } from '../../isomorphic/types.ts';
+import type {
+  InitConfig,
+  NextExampleResult,
+  WindowHappo,
+} from '../../isomorphic/types.ts';
 import type { SkipItems } from '../isomorphic/types.ts';
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
 
@@ -48,7 +52,7 @@ interface Example {
   variant: string;
   storyId: string;
   delay: number;
-  waitForContent: () => boolean;
+  waitForContent: string | undefined;
   waitFor: () => boolean;
   beforeScreenshot: HookFunction;
   afterScreenshot: HookFunction;
@@ -254,7 +258,7 @@ function filterExamples(all: Array<Example>): Array<Example> {
   return all;
 }
 
-globalThis.happo = globalThis.happo || {};
+globalThis.happo = globalThis.happo || ({} as WindowHappo);
 
 globalThis.happo.init = (config: InitConfig) => {
   initConfig = config;

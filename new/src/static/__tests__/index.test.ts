@@ -1,11 +1,51 @@
 import assert from 'node:assert';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import happoStatic, { type ExtendedWindow } from '../index.ts';
+import type { WindowWithHappo } from '../../isomorphic/types.ts';
+import type { WindowHappo } from '../../isomorphic/types.ts';
+import happoStatic from '../index.ts';
 
-let win: ExtendedWindow;
+interface WindowWithHappoRequired extends WindowWithHappo {
+  happo: WindowHappo;
+}
+
+interface HappoStatic extends WindowHappo {
+  init: Required<WindowHappo>['init'];
+  nextExample: Required<WindowHappo>['nextExample'];
+}
+
+function assertWindowHasHappo(
+  win: WindowWithHappo,
+): asserts win is WindowWithHappoRequired {
+  if (!win.happo) {
+    throw new Error('window.happo is not defined');
+  }
+  if (typeof win.happo !== 'object') {
+    throw new TypeError('window.happo is not an object');
+  }
+}
+
+function assertHappoStaticIsInitialized(
+  happo: WindowHappo,
+): asserts happo is HappoStatic {
+  if (!happo.init) {
+    throw new TypeError('happo.init is not defined');
+  }
+  if (typeof happo.init !== 'function') {
+    throw new TypeError('happo.init is not a function');
+  }
+
+  if (!happo.nextExample) {
+    throw new TypeError('happo.nextExample is not defined');
+  }
+  if (typeof happo.nextExample !== 'function') {
+    throw new TypeError('happo.nextExample is not a function');
+  }
+}
+
+let win: WindowWithHappo;
 beforeEach(() => {
-  win = {} as ExtendedWindow;
+  win = {} as Window;
 });
 
 afterEach(() => {
@@ -37,9 +77,8 @@ describe('when happo.init is called with only option', () => {
       },
     });
 
-    if (!win.happo) {
-      throw new Error('win.happo is not initialized');
-    }
+    assertWindowHasHappo(win);
+    assertHappoStaticIsInitialized(win.happo);
     win.happo.init({
       targetName: 'test',
       only: { component: 'Hello', variant: 'blue' },
@@ -79,9 +118,8 @@ describe('when happo.init is called with chunk option', () => {
       },
     });
 
-    if (!win.happo) {
-      throw new Error('win.happo is not initialized');
-    }
+    assertWindowHasHappo(win);
+    assertHappoStaticIsInitialized(win.happo);
     win.happo.init({ targetName: 'test', chunk: { total: 3, index: 2 } });
     const example = await win.happo.nextExample();
     assert.strictEqual(example?.component, 'Hello');
@@ -104,9 +142,8 @@ it('can iterate over registered examples', async () => {
     render: () => {},
   });
 
-  if (!win.happo) {
-    throw new Error('win.happo is not initialized');
-  }
+  assertWindowHasHappo(win);
+  assertHappoStaticIsInitialized(win.happo);
   const example = await win.happo.nextExample();
   assert.strictEqual(example?.component, 'Foo');
   assert.strictEqual(example?.variant, 'default');
@@ -125,9 +162,8 @@ it('passes along properties from the example', async () => {
     waitForContent: 'what?',
     render: () => {},
   });
-  if (!win.happo) {
-    throw new Error('win.happo is not initialized');
-  }
+  assertWindowHasHappo(win);
+  assertHappoStaticIsInitialized(win.happo);
   const example = await win.happo.nextExample();
   assert.strictEqual(example?.component, 'Foo');
   assert.strictEqual(example?.variant, 'default');

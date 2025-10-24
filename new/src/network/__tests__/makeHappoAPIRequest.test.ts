@@ -125,6 +125,7 @@ beforeEach(() => {
     project: 'test',
     integration: {
       type: 'static',
+      generateStaticPackage: async () => './static',
     },
     endpoint: 'http://localhost:8990',
     apiKey: 'foo',

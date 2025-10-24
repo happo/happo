@@ -1,42 +1,23 @@
-interface NextExampleResult {
-  component: string;
-  variant: string;
+import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
+
+interface HappoStaticExample extends NextExampleResult {
+  component: Required<NextExampleResult>['component'];
+  variant: Required<NextExampleResult>['variant'];
+  render: Required<NextExampleResult>['render'];
   targets?: Array<string>;
-  waitForContent?: string;
 }
 
-interface Example extends NextExampleResult {
-  render: () => Promise<void> | void;
-}
-
-let examples: Array<Example> = [];
+let examples: Array<HappoStaticExample> = [];
 let currentIndex = 0;
 
-interface InitParams {
-  targetName: string;
-  chunk?: { index: number; total: number };
-  only?: { component: string; variant: string };
-}
-
-interface HappoStatic {
-  init: (win?: ExtendedWindow) => void;
-  registerExample: (example: Example) => void;
-  reset: () => void;
-}
-
-export interface ExtendedWindow extends Window {
-  happo?: {
-    init: (params: InitParams) => void;
-    nextExample: () => Promise<NextExampleResult | undefined>;
-  };
-}
-
-const happoStatic: HappoStatic = {
-  init(win: ExtendedWindow = globalThis.window as ExtendedWindow) {
+const happoStatic = {
+  init(win: WindowWithHappo = globalThis.window): void {
     win.happo = {
       ...win.happo,
-      init: ({ targetName, chunk, only }: InitParams) => {
+
+      init: ({ targetName, chunk, only }) => {
         currentIndex = 0;
+
         if (only) {
           examples = examples.filter(
             (e) => e.component === only.component && e.variant === only.variant,
@@ -47,35 +28,45 @@ const happoStatic: HappoStatic = {
           const endIndex = startIndex + examplesPerChunk;
           examples = examples.slice(startIndex, endIndex);
         }
-        examples = examples.filter((e) => {
-          if (!e.targets || !Array.isArray(e.targets)) {
-            // This story hasn't been filtered for specific targets
-            return true;
-          }
-          return e.targets.includes(targetName);
-        });
+
+        if (targetName) {
+          examples = examples.filter((example) => {
+            if (!example.targets || !Array.isArray(example.targets)) {
+              // This story hasn't been filtered for specific targets
+              return true;
+            }
+
+            return example.targets.includes(targetName);
+          });
+        }
       },
 
       nextExample: async () => {
-        const e = examples[currentIndex];
-        if (!e) {
+        const example = examples[currentIndex];
+
+        if (!example) {
           // we're done
           return;
         }
-        await e.render();
+
+        if (example.render) {
+          await example.render();
+        }
         currentIndex++;
+
         const clone = {
-          component: e.component,
-          variant: e.variant,
-          targets: e.targets,
-          waitForContent: e.waitForContent,
-        } as Omit<Example, 'render'>;
+          component: example.component,
+          variant: example.variant,
+          targets: example.targets,
+          waitForContent: example.waitForContent,
+        };
+
         return clone;
       },
     };
   },
 
-  registerExample(props: Example) {
+  registerExample(props: HappoStaticExample): void {
     if (!props.component) {
       throw new Error('Missing `component` property');
     }
@@ -100,10 +91,11 @@ const happoStatic: HappoStatic = {
     if (rendType !== 'function') {
       throw new Error(`Property \`render\` must be a function. Got "${rendType}".`);
     }
+
     examples.push(props);
   },
 
-  reset() {
+  reset(): void {
     examples = [];
     currentIndex = 0;
   },
