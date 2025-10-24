@@ -28,6 +28,18 @@ jobs:
         run: node -e "console.log(JSON.stringify(Object.fromEntries(Object.entries(process.env).sort()), null, 2))"
       - run: pnpm test --coverage
 
+  orchestrate-happo:
+    runs-on: ubuntu-latest
+    name: Orchestrate Happo Job
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/orchestrate-happo
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          happo-api-key: ${{ secrets.HAPPO_API_KEY }}
+          happo-api-secret: ${{ secrets.HAPPO_API_SECRET }}
+          projects: 'cypress,storybook,playwright,static'
+
   cypress:
     runs-on: ubuntu-latest
     name: Cypress
