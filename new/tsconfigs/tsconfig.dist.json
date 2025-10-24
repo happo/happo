@@ -17,12 +17,13 @@
 
   "exclude": [
     "../**/*.test.ts",
-    "../**/__playwright__/**",
     "../**/__cypress__/**",
+    "../**/__playwright__/**",
     "../**/__tests__/**",
     "../src/**/browser/**",
-    "../src/**/isomorphic/**",
     "../src/**/cypress/**",
+    "../src/**/isomorphic/**",
+    "../src/static/**",
     "../src/test-utils/**"
   ]
 }

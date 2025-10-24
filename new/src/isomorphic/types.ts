@@ -46,16 +46,21 @@ export interface DOMSnapshotResult {
 }
 
 export interface NextExampleResult {
-  component: string;
-  variant: string;
+  component?: string;
+  variant?: string;
   skipped?: boolean;
-  waitForContent?: () => boolean;
+  waitForContent?: string | undefined;
+  render?: () => Promise<void> | void;
 }
 
 export type WindowHappo = {
-  takeDOMSnapshot?: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
   init?: (config: InitConfig) => void;
   nextExample?: () => Promise<NextExampleResult | undefined>;
+  takeDOMSnapshot?: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
 };
+
+export interface WindowWithHappo extends Window {
+  happo?: WindowHappo | undefined;
+}
 
 export type Logger = Pick<Console, 'log' | 'error'>;

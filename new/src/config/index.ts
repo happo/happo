@@ -53,8 +53,16 @@ interface PlaywrightOptions {
   allowFailures?: boolean;
 }
 
-interface StaticOptions {
+export interface StaticOptions {
   type: 'static';
+
+  /**
+   * An async function that generates a static package. Returns the path to the
+   * folder containing the static files. You can use a prebuilt package (simply
+   * point to the output directory of the Storybook build) or build the package
+   * yourself.
+   */
+  generateStaticPackage: () => Promise<string>;
 }
 
 interface PagesOptions {
