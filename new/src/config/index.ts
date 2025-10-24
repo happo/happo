@@ -1,22 +1,4 @@
-interface Page {
-  /**
-   * URL of the page to screenshot
-   *
-   * Note: The URLs to the website need to be publicly available, otherwise
-   * Happo workers won't be able to access the pages.
-   */
-  url: string;
-
-  /**
-   * Title of the page to screenshot
-   *
-   * This is used as the "component" identifier in Happo reports, so ensure
-   * it is unique for each page.
-   */
-  title: string;
-}
-
-export interface StorybookOptions {
+export interface StorybookIntegration {
   type: 'storybook';
   /**
    * The directory containing the Storybook configuration
@@ -35,7 +17,7 @@ export interface StorybookOptions {
   usePrebuiltPackage?: boolean;
 }
 
-interface CypressOptions {
+interface CypressIntegration {
   type: 'cypress';
 
   /**
@@ -44,7 +26,7 @@ interface CypressOptions {
   allowFailures?: boolean;
 }
 
-interface PlaywrightOptions {
+interface PlaywrightIntegration {
   type: 'playwright';
 
   /**
@@ -53,7 +35,9 @@ interface PlaywrightOptions {
   allowFailures?: boolean;
 }
 
-export interface StaticOptions {
+export type E2EIntegration = CypressIntegration | PlaywrightIntegration;
+
+export interface StaticIntegration {
   type: 'static';
 
   /**
@@ -65,7 +49,25 @@ export interface StaticOptions {
   generateStaticPackage: () => Promise<string>;
 }
 
-interface PagesOptions {
+interface Page {
+  /**
+   * URL of the page to screenshot
+   *
+   * Note: The URLs to the website need to be publicly available, otherwise
+   * Happo workers won't be able to access the pages.
+   */
+  url: string;
+
+  /**
+   * Title of the page to screenshot
+   *
+   * This is used as the "component" identifier in Happo reports, so ensure
+   * it is unique for each page.
+   */
+  title: string;
+}
+
+interface PagesIntegration {
   type: 'pages';
 
   /**
@@ -73,8 +75,6 @@ interface PagesOptions {
    */
   pages: Array<Page>;
 }
-
-export type E2EOptions = CypressOptions | PlaywrightOptions;
 
 export interface Config {
   /**
@@ -124,11 +124,11 @@ export interface Config {
    * - 'pages': Use a list of pages to generate snapshots
    */
   integration?:
-    | StorybookOptions
-    | CypressOptions
-    | PlaywrightOptions
-    | StaticOptions
-    | PagesOptions;
+    | StorybookIntegration
+    | CypressIntegration
+    | PlaywrightIntegration
+    | StaticIntegration
+    | PagesIntegration;
 }
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';

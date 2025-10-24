@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import http from 'node:http';
 
-import type { ConfigWithDefaults, E2EOptions } from '../config/index.ts';
+import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
 import resolveEnvironment, { type EnvironmentResult } from '../environment/index.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
@@ -283,7 +283,7 @@ function startE2EServer(
 
 function assertE2EIntegration(
   integration: NonNullable<ConfigWithDefaults['integration']>,
-): asserts integration is E2EOptions {
+): asserts integration is E2EIntegration {
   if (integration.type !== 'cypress' && integration.type !== 'playwright') {
     throw new Error(`Unsupported integration type: ${integration.type}`);
   }

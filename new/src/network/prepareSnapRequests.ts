@@ -1,7 +1,7 @@
 import type {
   ConfigWithDefaults,
-  StaticOptions,
-  StorybookOptions,
+  StaticIntegration,
+  StorybookIntegration,
 } from '../config/index.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
 import generateStorybookStaticPackage from '../storybook/index.ts';
@@ -11,7 +11,7 @@ import uploadAssets from './uploadAssets.ts';
 
 function assertStorybookIntegration(
   integration: NonNullable<ConfigWithDefaults['integration']>,
-): asserts integration is StorybookOptions {
+): asserts integration is StorybookIntegration {
   if (integration.type !== 'storybook') {
     throw new Error(
       `Integration type ${integration.type} is not a storybook integration`,
@@ -21,7 +21,7 @@ function assertStorybookIntegration(
 
 function assertStaticIntegration(
   integration: NonNullable<ConfigWithDefaults['integration']>,
-): asserts integration is StaticOptions {
+): asserts integration is StaticIntegration {
   if (integration.type !== 'static') {
     throw new Error(
       `Integration type ${integration.type} is not a static integration`,
