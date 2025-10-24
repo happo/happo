@@ -116,7 +116,7 @@ describe('exec', () => {
     it('throws an error if the command fails', () => {
       assert.throws(
         () => tmpfs.exec('false'),
-        new Error('Command `false` failed: '),
+        new Error('Command `false` failed:\n\nstderr:\n'),
       );
     });
 

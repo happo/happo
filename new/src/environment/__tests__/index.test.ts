@@ -9,28 +9,28 @@ import resolveEnvironment from '../index.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function commitNewFile(fileName: string, fileContents: string) {
+  tmpfs.writeFile(fileName, fileContents);
+  tmpfs.exec('git', ['add', fileName]);
+  tmpfs.exec('git', ['commit', '-m', `Add ${fileName}`]);
+}
+
 function initGitRepo() {
   const origin = tmpfs.fullPath('.git');
   tmpfs.exec('git', ['remote', 'add', 'origin', origin]);
 
   // Make a second commit in the main branch
-  tmpfs.writeFile('another-file.txt', 'I like pizza');
-  tmpfs.exec('git', ['add', 'another-file.txt']);
-  tmpfs.exec('git', ['commit', '-m', 'Add another file']);
+  commitNewFile('another-file.txt', 'I like pizza');
 
   const beforeSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
 
   const branch = 'resolve-env-test-branch';
 
   tmpfs.exec('git', ['checkout', '-b', branch]);
-  tmpfs.writeFile('new-branch-file.txt', 'I love pizza!');
-  tmpfs.exec('git', ['add', 'new-branch-file.txt']);
-  tmpfs.exec('git', ['commit', '-m', 'Add new branch file']);
+  commitNewFile('new-branch-file.txt', 'I love pizza!');
 
   const afterSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
 
-  // Fetch the origin branch at the end to ensure it is up to date with all of
-  // the commits in here.
   tmpfs.exec('git', ['fetch', 'origin']);
 
   return { origin, beforeSha, afterSha, branch };
@@ -38,9 +38,7 @@ function initGitRepo() {
 
 function makeNewBranchAndCommit(fileContents: string) {
   tmpfs.exec('git', ['checkout', '-b', 'some-new-branch']);
-  tmpfs.writeFile('new-branch-file.txt', fileContents);
-  tmpfs.exec('git', ['add', 'new-branch-file.txt']);
-  tmpfs.exec('git', ['commit', '-m', 'Add new branch file']);
+  commitNewFile('new-branch-file.txt', fileContents);
 }
 
 beforeEach(() => {
@@ -63,7 +61,7 @@ describe('resolveEnvironment', () => {
     const beforeSha = tmpfs.exec('git', ['rev-parse', 'main']).trim();
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
-    assert.equal(result.message, 'Add new branch file');
+    assert.equal(result.message, 'Add new-branch-file.txt');
 
     // Make a local change
     tmpfs.writeFile('not-checked-in.txt', 'Pizza is good!');
