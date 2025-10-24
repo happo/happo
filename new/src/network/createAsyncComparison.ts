@@ -29,6 +29,11 @@ function assertResultIsCreateAsyncComparisonResult(
   }
 }
 
+/**
+ * Create an async comparison between two SHAs
+ *
+ * @see https://happo.io/docs/api#compareReports
+ */
 export default async function createAsyncComparison(
   { apiKey, apiSecret, endpoint, project }: ConfigWithDefaults,
   {
