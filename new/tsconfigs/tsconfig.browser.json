@@ -17,6 +17,6 @@
     }
   ],
 
-  "include": ["../src/**/browser/**/*.ts", "../src/**/static/**/*.ts"],
+  "include": ["../src/**/browser/**/*.ts", "../src/static/**/*.ts"],
   "exclude": ["../**/__tests__/**", "../**/__playwright__/**", "../**/*.test.ts"]
 }
