@@ -12,6 +12,34 @@
     ".": {
       "types": "./types/config/index.d.ts",
       "default": "./src/config/index.ts"
+    },
+    "./storybook/register": {
+      "types": "./types/storybook/browser/register.d.ts",
+      "default": "./src/storybook/browser/register.ts"
+    },
+    "./storybook/addon": {
+      "types": "./types/storybook/browser/addon.d.ts",
+      "default": "./src/storybook/browser/addon.ts"
+    },
+    "./storybook/preset": {
+      "types": "./types/storybook/preset.d.ts",
+      "default": "./src/storybook/preset.ts"
+    },
+    "./cypress": {
+      "types": "./types/cypress/index.d.ts",
+      "default": "./src/cypress/index.ts"
+    },
+    "./cypress/task": {
+      "types": "./types/cypress/task.d.ts",
+      "default": "./src/cypress/task.ts"
+    },
+    "./playwright": {
+      "types": "./types/playwright/index.d.ts",
+      "default": "./src/playwright/index.ts"
+    },
+    "./static": {
+      "types": "./types/static/index.d.ts",
+      "default": "./src/static/index.ts"
     }
   },
   "scripts": {
