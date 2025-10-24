@@ -159,11 +159,14 @@ export function exec(command: string, args?: Array<string>): string {
 
   const result = spawnSync(command, args, {
     cwd: tempDir,
+    encoding: 'utf8',
+    timeout: 30_000, // 30 second timeout
+    stdio: ['pipe', 'pipe', 'pipe'],
   });
 
   if (result.status !== 0) {
     throw new Error(
-      `Command \`${[command, ...(args ?? [])].join(' ')}\` failed: ${result.stderr}`,
+      `Command \`${[command, ...(args ?? [])].join(' ')}\` failed:\n${result.stdout}\nstderr:\n${result.stderr}`,
     );
   }
 
@@ -186,10 +189,11 @@ export function exec(command: string, args?: Array<string>): string {
 export function gitInit(): void {
   assertMocked('gitInit');
 
-  exec('git', ['init']);
-  exec('git', ['config', 'user.name', 'Test User']);
-  exec('git', ['config', 'user.email', 'test@example.com']);
-  exec('git', ['branch', '-M', 'main']);
+  exec('git', ['init', '--initial-branch=main']);
+
+  exec('git', ['config', 'user.name', 'Test User', '--local']);
+  exec('git', ['config', 'user.email', 'test@example.com', '--local']);
+
   exec('git', ['add', '.']);
   exec('git', ['commit', '-m', 'Initial commit', '--allow-empty']);
 }
