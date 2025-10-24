@@ -30,16 +30,24 @@ jobs:
 
   cypress:
     runs-on: ubuntu-latest
-    name: Test (Cypress)
+    name: Cypress
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-env
       - uses: ./.github/actions/setup-cypress
       - run: pnpm test:cypress
 
+  static:
+    runs-on: ubuntu-latest
+    name: Happo Static
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - run: pnpm test:static
+
   storybook:
     runs-on: ubuntu-latest
-    name: Test (Storybook)
+    name: Storybook
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-env
@@ -47,7 +55,7 @@ jobs:
 
   playwright:
     runs-on: ubuntu-latest
-    name: Test (Playwright)
+    name: Playwright
     steps:
       - uses: actions/checkout@v4
         with:

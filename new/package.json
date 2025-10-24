@@ -17,9 +17,10 @@
   "scripts": {
     "all": "node ./scripts/allchecks.ts",
     "build": "tsc --build --pretty",
+    "build:static": "esbuild src/static/__happo__/index.ts --bundle --format=iife --global-name=happoStatic --outfile=tmp/happo-static/bundle.js --platform=browser --target=esnext && cp src/static/__happo__/iframe.html tmp/happo-static/",
     "build:browser": "esbuild src/browser/main.ts --bundle --format=iife --global-name=happo --outfile=dist/browser/main.bundle.js --platform=browser --target=esnext",
     "build:watch": "tsc --build --watch",
-    "clean": "rm -rf dist tmp/tsc types",
+    "clean": "rm -rf dist tmp/tsc types tmp/happo-static",
     "lint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
@@ -28,6 +29,7 @@
     "test:cypress": "node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.cypress.config.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
     "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p ${PORT:-6007}",
     "test:storybook": "node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.storybook.config.ts",
+    "test:static": "pnpm build:static && node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.static.config.ts",
     "tsc": "tsc --build tsconfig.json"
   },
   "keywords": [],
