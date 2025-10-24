@@ -1,46 +1,22 @@
-import type {
-  ConfigWithDefaults,
-  StaticIntegration,
-  StorybookIntegration,
-} from '../config/index.ts';
+import type { ConfigWithDefaults } from '../config/index.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
 import generateStorybookStaticPackage from '../storybook/index.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
 import uploadAssets from './uploadAssets.ts';
 
-function assertStorybookIntegration(
-  integration: NonNullable<ConfigWithDefaults['integration']>,
-): asserts integration is StorybookIntegration {
-  if (integration.type !== 'storybook') {
-    throw new Error(
-      `Integration type ${integration.type} is not a storybook integration`,
-    );
+async function generateStaticPackage({
+  integration,
+}: ConfigWithDefaults): Promise<string> {
+  if (integration.type === 'static') {
+    return await integration.generateStaticPackage();
   }
-}
 
-function assertStaticIntegration(
-  integration: NonNullable<ConfigWithDefaults['integration']>,
-): asserts integration is StaticIntegration {
-  if (integration.type !== 'static') {
-    throw new Error(
-      `Integration type ${integration.type} is not a static integration`,
-    );
+  if (integration.type === 'storybook') {
+    return await generateStorybookStaticPackage(integration);
   }
-}
 
-async function generateStaticPackage(config: ConfigWithDefaults): Promise<string> {
-  if (config.integration.type === 'static') {
-    const staticIntegration = config.integration;
-    assertStaticIntegration(staticIntegration);
-    return staticIntegration.generateStaticPackage();
-  }
-  if (config.integration.type === 'storybook') {
-    const sbIntegration = config.integration;
-    assertStorybookIntegration(sbIntegration);
-    return generateStorybookStaticPackage(sbIntegration);
-  }
-  throw new Error(`Unsupported integration type: ${config.integration.type}`);
+  throw new Error(`Unsupported integration type: ${integration.type}`);
 }
 
 export default async function prepareSnapRequests(

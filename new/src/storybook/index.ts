@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import type { StorybookIntegration } from '../config/index.ts';
 import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
 import type { SkipItems } from './isomorphic/types.ts';
@@ -105,13 +106,7 @@ export default async function generateStorybookStaticPackage({
   outputDir = '.out',
   usePrebuiltPackage = false,
   skip,
-}: {
-  configDir?: string;
-  staticDir?: string;
-  outputDir?: string;
-  usePrebuiltPackage?: boolean;
-  skip?: SkipItems | (() => Promise<SkipItems>) | undefined;
-} = {}): Promise<string> {
+}: Omit<StorybookIntegration, 'type'>): Promise<string> {
   if (!usePrebuiltPackage) {
     await buildStorybook({ configDir, staticDir, outputDir });
   }
