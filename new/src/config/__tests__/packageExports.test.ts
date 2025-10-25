@@ -71,7 +71,10 @@ describe('package.json exports', () => {
       { default: string; types: string }
     >;
 
-    for (const [exportPath, exportConfig] of Object.entries(exports)) {
+    const entries = Object.entries(exports);
+    assert.ok(entries.length > 0, 'Should have at least one export');
+
+    for (const [exportPath, exportConfig] of entries) {
       if ('types' in exportConfig) {
         const typesPath = path.resolve(rootDir, exportConfig.types);
         assert.ok(

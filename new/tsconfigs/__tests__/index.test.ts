@@ -29,7 +29,7 @@ function getAllTsconfigs() {
     .map((file) => file.slice(rootDir.length + 1));
 }
 
-function tsconfiglistFiles(tsconfigPath: string): Array<string> {
+function readAndParseTsconfig(tsconfigPath: string): ts.ParsedCommandLine {
   // 1. Read the raw JSON from tsconfig
   const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
 
@@ -51,8 +51,19 @@ function tsconfiglistFiles(tsconfigPath: string): Array<string> {
     configDir,
   );
 
-  // 3. Return the resolved file list
+  return parsedConfig;
+}
+
+function tsconfigListFiles(tsconfigPath: string): Array<string> {
+  const parsedConfig = readAndParseTsconfig(tsconfigPath);
   return parsedConfig.fileNames;
+}
+
+function isTSConfigForPublishedCode(tsconfigPath: string): boolean {
+  return (
+    !tsconfigPath.includes('tsconfig.tests.') &&
+    !tsconfigPath.includes('tsconfig.other.')
+  );
 }
 
 describe('getAllTsConfigs', () => {
@@ -81,7 +92,7 @@ describe('tsconfigs', () => {
   it('do have overlapping includes', () => {
     const tsconfigs = getAllTsconfigs();
     const tsconfigFiles = new Map(
-      tsconfigs.map((tsconfig) => [tsconfig, new Set(tsconfiglistFiles(tsconfig))]),
+      tsconfigs.map((tsconfig) => [tsconfig, new Set(tsconfigListFiles(tsconfig))]),
     );
 
     for (const [tsconfigFile, files] of tsconfigFiles) {
@@ -104,7 +115,7 @@ describe('tsconfigs', () => {
   it('covers all TypeScript files', () => {
     const tsconfigs = getAllTsconfigs();
     const filesCoveredByTsconfigs = new Set(
-      tsconfigs.flatMap((tsconfig) => tsconfiglistFiles(tsconfig)),
+      tsconfigs.flatMap((tsconfig) => tsconfigListFiles(tsconfig)),
     );
 
     const extensions = ['ts', 'tsx', 'mts', 'cts'];
@@ -132,7 +143,7 @@ describe('tsconfigs', () => {
   it('does not include unexpected files', () => {
     const tsconfigs = getAllTsconfigs();
     const filesCoveredByTsconfigs = new Map(
-      tsconfigs.map((tsconfig) => [tsconfig, new Set(tsconfiglistFiles(tsconfig))]),
+      tsconfigs.map((tsconfig) => [tsconfig, new Set(tsconfigListFiles(tsconfig))]),
     );
 
     const bannedDirectories = [
@@ -154,6 +165,44 @@ describe('tsconfigs', () => {
           );
         }
       }
+    }
+  });
+
+  it('does not allow published code to depend on non-published code', () => {
+    const tsconfigs = getAllTsconfigs();
+
+    for (const tsconfig of tsconfigs) {
+      if (isTSConfigForPublishedCode(tsconfig)) {
+        const parsedConfig = readAndParseTsconfig(tsconfig);
+
+        if (!parsedConfig.projectReferences) {
+          continue;
+        }
+
+        for (const projectReference of parsedConfig.projectReferences) {
+          assert.ok(
+            isTSConfigForPublishedCode(projectReference.path),
+            `${tsconfig} is published code but depends on ${projectReference.path} which is not published code`,
+          );
+        }
+      }
+    }
+  });
+
+  it('outputs declaration files for published code to types directory, everything else to tmp/tsc directory', () => {
+    const tsconfigs = getAllTsconfigs();
+
+    for (const tsconfig of tsconfigs) {
+      if (tsconfig.endsWith('/tsconfig.base.json')) {
+        continue;
+      }
+
+      const parsedConfig = readAndParseTsconfig(tsconfig);
+      assert.strictEqual(
+        parsedConfig.options.declarationDir,
+        isTSConfigForPublishedCode(tsconfig) ? 'types' : 'tmp/tsc',
+        `${tsconfig} outputs declaration files to ${parsedConfig.options.declarationDir}`,
+      );
     }
   });
 });
