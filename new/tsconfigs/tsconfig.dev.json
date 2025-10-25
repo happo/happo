@@ -3,7 +3,7 @@
 
   "compilerOptions": {
     "rootDir": "../",
-    "tsBuildInfoFile": "../tmp/tsc/tsconfig.other.tsbuildinfo"
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.dev.tsbuildinfo"
   },
 
   "references": [
