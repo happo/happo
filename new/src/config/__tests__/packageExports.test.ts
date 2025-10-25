@@ -3,11 +3,120 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 
+import ts from 'typescript';
+
 import packageJson from '../../../package.json' with { type: 'json' };
 
 function findRootDir() {
   const packageJsonPath = path.resolve(import.meta.dirname, '../../../package.json');
   return path.dirname(packageJsonPath);
+}
+
+const parsedTsConfigCache = new Map<string, ts.ParsedCommandLine>();
+
+function parseTsConfig(tsConfigPath: string): ts.ParsedCommandLine {
+  if (parsedTsConfigCache.has(tsConfigPath)) {
+    return parsedTsConfigCache.get(tsConfigPath)!;
+  }
+
+  const configFile = ts.readConfigFile(tsConfigPath, ts.sys.readFile);
+  if (configFile.error) {
+    throw new Error(
+      `Failed to read config: ${ts.formatDiagnostic(configFile.error, ts.createCompilerHost({}))}`,
+    );
+  }
+
+  const parsedCommandLine = ts.parseJsonConfigFileContent(
+    configFile.config,
+    ts.sys,
+    path.dirname(tsConfigPath),
+  );
+
+  parsedTsConfigCache.set(tsConfigPath, parsedCommandLine);
+  return parsedCommandLine;
+}
+
+function collectAllTsConfigs(tsConfigPath: string): Set<string> {
+  const parsedCommandLine = parseTsConfig(tsConfigPath);
+
+  const tsConfigs = new Set<string>();
+  tsConfigs.add(tsConfigPath);
+
+  // Recursively collect project references
+  if (parsedCommandLine.projectReferences) {
+    for (const projectRef of parsedCommandLine.projectReferences) {
+      const projectPath = path.resolve(path.dirname(tsConfigPath), projectRef.path);
+      const subConfigs = collectAllTsConfigs(projectPath);
+      for (const config of subConfigs) {
+        tsConfigs.add(config);
+      }
+    }
+  }
+
+  return tsConfigs;
+}
+
+function getAllOutputFilesFromTsConfig(
+  tsConfigPath: string,
+  rootDir: string,
+): Array<string> {
+  // First pass: collect all unique tsconfig files
+  const allTsConfigs = collectAllTsConfigs(tsConfigPath);
+
+  const allOutputFiles: Set<string> = new Set();
+
+  // Process each tsconfig's files directly using the parsed config.
+  // This is much faster than creating a program for each tsconfig.
+  for (const configPath of allTsConfigs) {
+    const parsedCommandLine = parseTsConfig(configPath);
+    const options = parsedCommandLine.options;
+    const outDir = options.outDir || '.';
+    const declarationDir = options.declarationDir || outDir;
+
+    // Use the fileNames directly from the parsed config
+    for (const sourceFileName of parsedCommandLine.fileNames) {
+      // Skip declaration files (they don't generate new declarations)
+      if (sourceFileName.endsWith('.d.ts')) {
+        continue;
+      }
+
+      const relativeSourcePath = path.relative(
+        options.rootDir || path.dirname(configPath),
+        sourceFileName,
+      );
+      const sourceWithoutExt = relativeSourcePath.replace(/\.ts$/, '');
+
+      if (options.declaration) {
+        const declarationPath = path.join(
+          declarationDir,
+          `${sourceWithoutExt}.d.ts`,
+        );
+
+        const relativeDeclarationPath = path.relative(
+          rootDir,
+          path.resolve(path.dirname(configPath), declarationPath),
+        );
+
+        allOutputFiles.add(relativeDeclarationPath);
+      }
+
+      if (options.declarationMap) {
+        const declarationMapPath = path.join(
+          declarationDir,
+          `${sourceWithoutExt}.d.ts.map`,
+        );
+
+        const relativeDeclarationMapPath = path.relative(
+          rootDir,
+          path.resolve(path.dirname(configPath), declarationMapPath),
+        );
+
+        allOutputFiles.add(relativeDeclarationMapPath);
+      }
+    }
+  }
+
+  return Array.from(allOutputFiles);
 }
 
 describe('package.json exports', () => {
@@ -65,7 +174,13 @@ describe('package.json exports', () => {
     }
   });
 
-  it('has existing type definition files for all exports', () => {
+  it('has a type definition file for all exports', () => {
+    const mainTsConfigPath = path.resolve(rootDir, 'tsconfig.json');
+    const outputFiles = getAllOutputFilesFromTsConfig(mainTsConfigPath, rootDir);
+    const typesFilesSet = new Set(
+      outputFiles.filter((file) => file.startsWith('types/')),
+    );
+
     const exports = packageJson.exports as Record<
       string,
       { default: string; types: string }
@@ -75,13 +190,18 @@ describe('package.json exports', () => {
     assert.ok(entries.length > 0, 'Should have at least one export');
 
     for (const [exportPath, exportConfig] of entries) {
-      if ('types' in exportConfig) {
-        const typesPath = path.resolve(rootDir, exportConfig.types);
-        assert.ok(
-          fs.existsSync(typesPath),
-          `Type definition file for export "${exportPath}" should exist: ${exportConfig.types}`,
-        );
-      }
+      assert.ok(
+        exportConfig.types,
+        `Export "${exportPath}" should have a types field`,
+      );
+
+      const expectedTypesFile = path.resolve(rootDir, exportConfig.types);
+      const relativePath = path.relative(rootDir, expectedTypesFile);
+
+      assert.ok(
+        typesFilesSet.has(relativePath),
+        `Type definition file for export "${exportPath}" (${exportConfig.types}) should be generated to the types directory by TypeScript`,
+      );
     }
   });
 
