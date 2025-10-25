@@ -62,7 +62,7 @@ function tsconfigListFiles(tsconfigPath: string): Array<string> {
 function isTSConfigForPublishedCode(tsconfigPath: string): boolean {
   return (
     !tsconfigPath.includes('tsconfig.tests.') &&
-    !tsconfigPath.includes('tsconfig.other.')
+    !tsconfigPath.includes('tsconfig.dev.')
   );
 }
 
