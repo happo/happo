@@ -5,7 +5,7 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "outDir": "../dist",
-    "declarationDir": "../types",
+    "declarationDir": "../dist",
     "tsBuildInfoFile": "../tmp/tsc/tsconfig.browser.tsbuildinfo",
     "lib": ["dom", "dom.iterable", "esnext"],
     "types": []

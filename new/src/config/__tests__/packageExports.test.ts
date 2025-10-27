@@ -1,7 +1,8 @@
 import assert from 'node:assert';
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { describe, it } from 'node:test';
+import { before, describe, it } from 'node:test';
 
 import ts from 'typescript';
 
@@ -157,28 +158,34 @@ describe('package.json exports', () => {
     }
   });
 
-  it('has existing source files for all exports', () => {
-    const exports = packageJson.exports as Record<
-      string,
-      { default: string; types: string }
-    >;
+  describe('after build:dist', () => {
+    before(() => {
+      execSync('pnpm clean && pnpm build:dist');
+    });
 
-    for (const [exportPath, exportConfig] of Object.entries(exports)) {
-      if ('default' in exportConfig) {
-        const sourcePath = path.resolve(rootDir, exportConfig.default);
-        assert.ok(
-          fs.existsSync(sourcePath),
-          `Source file for export "${exportPath}" should exist: ${exportConfig.default}`,
-        );
+    it('has a built file for each export', () => {
+      const exports = packageJson.exports as Record<
+        string,
+        { default: string; types: string }
+      >;
+
+      for (const [exportPath, exportConfig] of Object.entries(exports)) {
+        if ('default' in exportConfig) {
+          const sourcePath = path.resolve(rootDir, exportConfig.default);
+          assert.ok(
+            fs.existsSync(sourcePath),
+            `Source file for export "${exportPath}" should exist: ${exportConfig.default} at ${sourcePath}`,
+          );
+        }
       }
-    }
+    });
   });
 
   it('has a type definition file for all exports', () => {
     const mainTsConfigPath = path.resolve(rootDir, 'tsconfig.json');
     const outputFiles = getAllOutputFilesFromTsConfig(mainTsConfigPath, rootDir);
     const typesFilesSet = new Set(
-      outputFiles.filter((file) => file.startsWith('types/')),
+      outputFiles.filter((file) => file.endsWith('.d.ts')),
     );
 
     const exports = packageJson.exports as Record<
@@ -200,7 +207,7 @@ describe('package.json exports', () => {
 
       assert.ok(
         typesFilesSet.has(relativePath),
-        `Type definition file for export "${exportPath}" (${exportConfig.types}) should be generated to the types directory by TypeScript`,
+        `Type definition file for export "${exportPath}" (${exportConfig.types}) should be generated to the dist directory by TypeScript`,
       );
     }
   });
@@ -231,8 +238,8 @@ describe('package.json exports', () => {
         const sourcePath = exportConfig.default;
         // Source files should have .ts extension
         assert.ok(
-          sourcePath.endsWith('.ts'),
-          `Source file "${sourcePath}" should have .ts extension`,
+          sourcePath.endsWith('.js'),
+          `Source file "${sourcePath}" should have .js extension`,
         );
       }
 

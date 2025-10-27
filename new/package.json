@@ -10,61 +10,69 @@
   "bugs": "https://github.com/happo/happo/issues",
   "homepage": "https://happo.io",
   "bin": {
-    "happo": "src/cli/index.ts"
+    "happo": "/dist/cli/index.js"
   },
   "type": "module",
-  "main": "./src/config/index.ts",
-  "types": "./types/config/index.d.ts",
+  "main": "./dist/config/index.js",
+  "types": "./dist/config/index.d.ts",
   "exports": {
     ".": {
-      "types": "./types/config/index.d.ts",
-      "default": "./src/config/index.ts"
-    },
-    "./storybook/register": {
-      "types": "./types/storybook/browser/register.d.ts",
-      "default": "./src/storybook/browser/register.ts"
-    },
-    "./storybook/addon": {
-      "types": "./types/storybook/browser/addon.d.ts",
-      "default": "./src/storybook/browser/addon.ts"
-    },
-    "./storybook/preset": {
-      "types": "./types/storybook/preset.d.ts",
-      "default": "./src/storybook/preset.ts"
+      "types": "./dist/config/index.d.ts",
+      "default": "./dist/config/index.js"
     },
     "./cypress": {
-      "types": "./types/cypress/index.d.ts",
-      "default": "./src/cypress/index.ts"
+      "types": "./dist/cypress/index.d.ts",
+      "default": "./dist/cypress/index.js"
     },
     "./cypress/task": {
-      "types": "./types/cypress/task.d.ts",
-      "default": "./src/cypress/task.ts"
+      "types": "./dist/cypress/task.d.ts",
+      "default": "./dist/cypress/task.js"
     },
     "./playwright": {
-      "types": "./types/playwright/index.d.ts",
-      "default": "./src/playwright/index.ts"
+      "types": "./dist/playwright/index.d.ts",
+      "default": "./dist/playwright/index.js"
     },
     "./static": {
-      "types": "./types/static/index.d.ts",
-      "default": "./src/static/index.ts"
+      "types": "./dist/static/index.d.ts",
+      "default": "./dist/static/index.js"
+    },
+    "./storybook/addon": {
+      "types": "./dist/storybook/browser/addon.d.ts",
+      "default": "./dist/storybook/browser/addon.js"
+    },
+    "./storybook/decorator": {
+      "types": "./dist/storybook/browser/addon.d.ts",
+      "default": "./dist/storybook/browser/addon.js"
+    },
+    "./storybook/preset": {
+      "types": "./dist/storybook/preset.d.ts",
+      "default": "./dist/storybook/preset.js"
+    },
+    "./storybook/register": {
+      "types": "./dist/storybook/browser/register.d.ts",
+      "default": "./dist/storybook/browser/register.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "all": "node ./scripts/allchecks.ts",
-    "build": "tsc --build --pretty",
+    "build": "pnpm build:types && pnpm build:dist",
+    "build:dist": "./scripts/build.ts",
+    "build:types": "pnpm tsc --pretty",
     "build:static": "esbuild src/static/__happo__/index.ts --bundle --format=iife --global-name=happoStatic --outfile=tmp/happo-static/bundle.js --platform=browser --target=esnext && cp src/static/__happo__/iframe.html tmp/happo-static/",
-    "build:browser": "esbuild src/browser/main.ts --bundle --format=iife --global-name=happo --outfile=dist/browser/main.bundle.js --platform=browser --target=esnext",
     "build:watch": "tsc --build --watch",
-    "clean": "rm -rf dist tmp/tsc types tmp/happo-static",
+    "clean": "rm -rf dist tmp/tsc tmp/happo-static",
     "lint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
-    "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
-    "test:playwright": "node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.playwright.config.ts e2e -- playwright test",
-    "test:cypress:open": "cypress open -C src/cypress/__cypress__/cypress.config.ts",
-    "test:cypress": "node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.cypress.config.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
     "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p ${PORT:-6007}",
-    "test:storybook": "node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.storybook.config.ts",
-    "test:static": "pnpm build:static && node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.static.config.ts",
+    "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
+    "test:cypress": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.cypress.config.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
+    "test:cypress:open": "cypress open -C src/cypress/__cypress__/cypress.config.ts",
+    "test:playwright": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.playwright.config.ts e2e -- playwright test",
+    "test:static": "pnpm build:dist && pnpm build:static && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.static.config.ts",
+    "test:storybook": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.storybook.config.ts",
     "tsc": "tsc --build tsconfig.json"
   },
   "browserslist": {

@@ -189,7 +189,7 @@ describe('tsconfigs', () => {
     }
   });
 
-  it('outputs declaration files for published code to types directory, everything else to tmp/tsc directory', () => {
+  it('outputs declaration files for published code to dist directory, everything else to tmp/tsc directory', () => {
     const tsconfigs = getAllTsconfigs();
 
     for (const tsconfig of tsconfigs) {
@@ -200,7 +200,7 @@ describe('tsconfigs', () => {
       const parsedConfig = readAndParseTsconfig(tsconfig);
       assert.strictEqual(
         parsedConfig.options.declarationDir,
-        isTSConfigForPublishedCode(tsconfig) ? 'types' : 'tmp/tsc',
+        isTSConfigForPublishedCode(tsconfig) ? 'dist' : 'tmp/tsc',
         `${tsconfig} outputs declaration files to ${parsedConfig.options.declarationDir}`,
       );
     }

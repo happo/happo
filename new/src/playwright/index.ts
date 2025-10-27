@@ -1,4 +1,5 @@
 /* eslint-disable no-empty-pattern */
+import fs from 'node:fs';
 import path from 'node:path';
 
 import type {
@@ -16,8 +17,12 @@ import Controller from '../e2e/controller.ts';
 
 const pathToBrowserBuild = path.resolve(
   import.meta.dirname,
-  '../../dist/browser/main.bundle.js',
+  '../../dist/browser/main.js',
 );
+
+if (!fs.existsSync(pathToBrowserBuild)) {
+  throw new Error(`Browser build not found at ${pathToBrowserBuild}.`);
+}
 
 const controller = new Controller();
 

@@ -16,6 +16,8 @@
 
     "sourceMap": true,
     "declaration": true,
+
+    // https://www.typescriptlang.org/tsconfig/#declarationMap
     "declarationMap": true,
 
     "noUncheckedIndexedAccess": true,

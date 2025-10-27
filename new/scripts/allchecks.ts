@@ -55,63 +55,22 @@ async function runCommand(
   });
 }
 
-async function runSequentialCommands(
-  command: string,
-  argsList: Array<Array<string>>,
-  name: string,
-  env: Record<string, string> = {},
-): Promise<TaskResult> {
-  const startTime = Date.now();
-  const combinedOutput: Array<string> = [];
-  const combinedError: Array<string> = [];
-  let exitCode = 0;
-
-  for (const args of argsList) {
-    const result = await runCommand(
-      command,
-      args,
-      `${name} (${args.join(' ')})`,
-      env,
-    );
-    combinedOutput.push(result.output);
-    combinedError.push(result.error);
-
-    if (result.exitCode !== 0) {
-      exitCode = result.exitCode;
-      break; // Stop on first failure
-    }
-  }
-
-  const duration = Date.now() - startTime;
-
-  return {
-    name,
-    exitCode,
-    output: combinedOutput.join(''),
-    error: combinedError.join(''),
-    duration,
-  };
-}
-
 async function main() {
   // Use different ports for parallel test runs to avoid EADDRINUSE
   const testE2ePort = 5345;
   const playwrightE2ePort = testE2ePort + 1;
 
+  await runCommand('pnpm', ['clean'], 'clean');
+
   const parallelTasks = [
     runCommand('pnpm', ['lint'], 'lint'),
-    runSequentialCommands('pnpm', [['clean'], ['build']], 'build'),
+    runCommand('pnpm', ['build:types'], 'build:types'),
     runCommand('pnpm', ['test'], 'test', {
       HAPPO_E2E_PORT: testE2ePort.toString(),
     }),
-    runSequentialCommands(
-      'pnpm',
-      [['build:browser'], ['test:playwright']],
-      'test:playwright',
-      {
-        HAPPO_E2E_PORT: playwrightE2ePort.toString(),
-      },
-    ),
+    runCommand('pnpm', ['test:playwright'], 'test:playwright', {
+      HAPPO_E2E_PORT: playwrightE2ePort.toString(),
+    }),
   ];
 
   console.log(`Running ${parallelTasks.length} tasks in parallel...`);

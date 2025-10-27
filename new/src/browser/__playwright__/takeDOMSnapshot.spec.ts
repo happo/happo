@@ -18,7 +18,7 @@ async function setupPage(page: Page): Promise<void> {
     console.log(`Browser console [${msg.type()}]:`, msg.text());
   });
   await page.addInitScript({
-    path: './dist/browser/main.bundle.js',
+    path: './dist/browser/main.js',
   });
 }
 

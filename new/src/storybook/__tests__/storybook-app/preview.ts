@@ -1,7 +1,10 @@
 import type { Decorator } from '@storybook/react-webpack5';
 
-import happoDecorator from '../../browser/decorator.ts';
-import { setRenderTimeoutMs, setThemeSwitcher } from '../../browser/register.ts';
+import happoDecorator from '../../../../dist/storybook/browser/decorator.js';
+import {
+  setRenderTimeoutMs,
+  setThemeSwitcher,
+} from '../../../../dist/storybook/browser/register.js';
 
 setThemeSwitcher(async (theme) => {
   // Make sure that it can be async
