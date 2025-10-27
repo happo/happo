@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+
+  "compilerOptions": {
+    "rootDir": "../",
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.dev.tsbuildinfo"
+  },
+
+  "references": [
+    {
+      "path": "./tsconfig.dist.json"
+    }
+  ],
+
+  "include": ["../*.ts", "../scripts/**/*.ts"],
+  "exclude": [
+    "../src/**/*.ts",
+    "../**/__tests__/**",
+    "../**/__playwright__/**",
+    "../src/**/cypress/**",
+    "../**/*.test.ts"
+  ]
+}

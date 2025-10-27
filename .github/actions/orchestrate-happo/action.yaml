@@ -1,0 +1,85 @@
+name: Orchestrate Happo Job
+
+inputs:
+  github-token:
+    description: 'GitHub token'
+    required: true
+  happo-api-key:
+    description: 'Happo API key'
+    required: true
+  happo-api-secret:
+    description: 'Happo API secret'
+    required: true
+  projects:
+    description: 'Projects to test (comma separated list)'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Orchestrate Happo Job
+      shell: bash
+      run: |
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          # Verify that the GitHub token works
+          curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token ${{ inputs.github-token }}" \
+            "https://api.github.com/repos/${{ github.repository }}" \
+            | grep -q "200" || { echo "❌ GitHub token invalid or missing required permissions!"; exit 1; }
+
+          # Fetch merge base
+          PREVIOUS_SHA=$(curl -s \
+            -H "Authorization: token ${{ inputs.github-token }}" \
+            "https://api.github.com/repos/${{ github.repository }}/compare/main...${{ github.event.pull_request.head.sha }}" \
+            | jq -r '.merge_base_commit.sha')
+
+          # Get PR number
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          
+          # Get PR title
+          PR_TITLE_RESPONSE=$(curl -s \
+            -H "Authorization: token ${{ inputs.github-token }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUMBER}")
+
+          echo "PR title response: ${PR_TITLE_RESPONSE}"
+
+          PR_TITLE=$(echo $PR_TITLE_RESPONSE | jq -r '.title')
+
+          LINK="${{ github.event.pull_request.html_url }}"
+          MESSAGE="$PR_TITLE"
+          CURRENT_SHA="${{ github.event.pull_request.head.sha }}"
+        else
+          # No PR, use commit URL and message
+          COMMIT_MESSAGE=$(curl -s \
+            -H "Authorization: token ${{ inputs.github-token }}" \
+            "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.event.after }}" \
+            | jq -r '.commit.message' | head -n 1)
+
+          PREVIOUS_SHA="${{ github.event.after }}"
+          LINK="https://github.com/${{ github.repository }}/commit/${{ github.event.after }}"
+          MESSAGE="$COMMIT_MESSAGE"
+          CURRENT_SHA="${{ github.event.after }}"
+        fi
+
+        DATA=$(
+          jq -n \
+            --arg projects "${{ inputs.projects }}" \
+            --arg link "${LINK}" \
+            --arg message "${MESSAGE}" \
+            '{projects: ($projects | split(",")), link: $link, message: $message}'
+        )
+
+        echo "Previous SHA: ${PREVIOUS_SHA}"
+        echo "Current SHA: ${CURRENT_SHA}"
+        echo "Pull request number: ${PR_NUMBER:-N/A}"
+        echo "Link: ${LINK}"
+        echo "Message: ${MESSAGE}"
+        echo "Projects: ${{ inputs.projects }}"
+        echo "Data: ${DATA}"
+
+        # Call Happo
+        curl --header "Content-Type: application/json" \
+          --request POST \
+          --data "${DATA}" \
+          -u "${{ inputs.happo-api-key }}:${{ inputs.happo-api-secret }}" \
+          "https://happo.io/api/jobs/${PREVIOUS_SHA}/${CURRENT_SHA}/orchestrate"

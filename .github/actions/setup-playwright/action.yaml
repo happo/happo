@@ -1,0 +1,24 @@
+name: Setup Playwright
+description: Setup Playwright with caching
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get Playwright version
+      shell: bash
+      run: |
+        PLAYWRIGHT_VERSION=$(pnpm ls @playwright/test --depth=0 --json | jq -r '.[0].devDependencies["@playwright/test"].version')
+        echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION"
+        echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
+
+    - name: Cache playwright binaries
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: |
+          ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
+    - run: pnpm exec playwright install chromium
+      shell: bash
+      if: steps.playwright-cache.outputs.cache-hit != 'true'

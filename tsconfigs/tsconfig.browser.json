@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "outDir": "../dist",
+    "declarationDir": "../dist",
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.browser.tsbuildinfo",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": []
+  },
+
+  "references": [
+    {
+      "path": "./tsconfig.isomorphic.json"
+    }
+  ],
+
+  "include": ["../src/**/browser/**/*.ts", "../src/static/**/*.ts"],
+  "exclude": ["../**/__tests__/**", "../**/__playwright__/**", "../**/*.test.ts"]
+}

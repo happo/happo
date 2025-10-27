@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
+    "target": "esnext",
+    "types": ["node"],
+    "lib": ["esnext"],
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+
+    "rootDir": "../src",
+    "declarationDir": "../tmp/tsc",
+    "outDir": "../tmp/tsc",
+
+    "sourceMap": true,
+    "declaration": true,
+
+    // https://www.typescriptlang.org/tsconfig/#declarationMap
+    "declarationMap": true,
+
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedDeclarations": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+  }
+}
