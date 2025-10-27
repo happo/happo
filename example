@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-cd ./packages/happo-example-project
-./node_modules/happo/bin/happo "$@"
-cd - &> /dev/null

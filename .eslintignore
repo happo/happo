@@ -1,6 +1,0 @@
-packages/happo-example-project/
-**/*.bundle.*
-**/*.worker.*
-packages/*/lib/
-packages/*/node_modules/
-node_modules
