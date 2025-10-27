@@ -74,7 +74,6 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-env
       - uses: ./.github/actions/setup-playwright
-      - run: pnpm build:browser
       - run: pnpm test:playwright
 
   typescript:

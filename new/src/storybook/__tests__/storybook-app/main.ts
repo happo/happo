@@ -5,7 +5,7 @@ const result: StorybookConfig = {
   stories: ['./**/*.stories.ts'],
   staticDirs: ['./public'],
 
-  addons: ['storybook/actions', '../../preset.ts'],
+  addons: ['storybook/actions', '../../../../dist/storybook/preset.js'],
 
   framework: {
     name: '@storybook/react-webpack5',

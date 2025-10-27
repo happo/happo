@@ -3,18 +3,18 @@
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
-import packageJson from '../../package.json' with { type: 'json' };
 import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
-import runWithWrapper, { finalizeAll } from '../e2e/wrapper.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
-import cancelJob from '../network/cancelJob.ts';
-import createAsyncComparison from '../network/createAsyncComparison.ts';
-import createAsyncReport from '../network/createAsyncReport.ts';
-import prepareSnapRequests from '../network/prepareSnapRequests.ts';
-import startJob from '../network/startJob.ts';
+
+async function getVersion() {
+  const packageJson = await import('../../package.json', {
+    with: { type: 'json' },
+  });
+  return packageJson.default.version;
+}
 
 function parseDashdashCommandParts(
   rawArgs: Array<string>,
@@ -56,7 +56,7 @@ function parseRawArgs(rawArgs: Array<string>) {
   };
 }
 
-const helpText = `Happo ${packageJson.version}
+const helpText = `Happo ${await getVersion()}
 Usage: happo [options]
 
 Commands:
@@ -91,7 +91,7 @@ export async function main(
   const args = parseRawArgs(rawArgs.slice(2));
   // Handle --version flag
   if (args.values.version) {
-    logger.log(packageJson.version);
+    logger.log(await getVersion());
     return;
   }
 
@@ -140,6 +140,15 @@ async function handleDefaultCommand(
   logger: Logger,
 ): Promise<void> {
   logger.log('Running happo tests...');
+
+  const [startJob, createAsyncComparison, createAsyncReport, prepareSnapRequests] =
+    await Promise.all([
+      (await import('../network/startJob.ts')).default,
+      (await import('../network/createAsyncComparison.ts')).default,
+      (await import('../network/createAsyncReport.ts')).default,
+      (await import('../network/prepareSnapRequests.ts')).default,
+    ]);
+
   // Tell Happo that we are about to run a job
   await startJob(config, environment, logger);
 
@@ -163,6 +172,7 @@ async function handleDefaultCommand(
     logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
   } catch (e) {
     logger.error(e instanceof Error ? e.message : String(e), e);
+    const cancelJob = (await import('../network/cancelJob.ts')).default;
     await cancelJob('failure', config, environment, logger);
     process.exitCode = 1;
     return;
@@ -179,6 +189,7 @@ async function handleFinalizeCommand(
   logger.log('Environment:', environment);
 
   try {
+    const finalizeAll = (await import('../e2e/wrapper.ts')).finalizeAll;
     await finalizeAll({ happoConfig: config, environment, logger });
   } catch (e) {
     logger.error(e instanceof Error ? e.message : String(e), e);
@@ -218,6 +229,7 @@ async function handleE2ECommand(
   logger.log('Environment:', environment);
   logger.log('Dashdash command parts:', dashdashCommandParts);
 
+  const runWithWrapper = (await import('../e2e/wrapper.ts')).default;
   const exitCode = await runWithWrapper(
     dashdashCommandParts,
     config,
