@@ -10,7 +10,7 @@ export default function Button({ children }: ButtonProps): ReactNode {
     'button',
     {
       style: {
-        fontSize: '1.5em',
+        fontSize: '2em',
         textAlign: 'center',
         color: 'palevioletred',
       },
