@@ -1,7 +1,11 @@
 {
   "name": "happo",
-  "version": "1.0.0",
-  "description": "",
+  "version": "5.0.0",
+  "description": "Visual regression testing and accessibility testing",
+  "license": "MIT",
+  "repository": "https://github.com/happo/happo",
+  "bugs": "https://github.com/happo/happo/issues",
+  "homepage": "https://happo.io",
   "bin": {
     "happo": "./src/cli/index.ts"
   },
@@ -60,9 +64,6 @@
     "test:static": "pnpm build:static && node --env-file-if-exists=.env.local src/cli/index.ts -c ./happoconfigs/happo.static.config.ts",
     "tsc": "tsc --build tsconfig.json"
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
   "browserslist": {
     "node": [
       "node 22"
@@ -137,5 +138,19 @@
     "p-all": "^5.0.1",
     "srcset": "^5.0.2",
     "supports-color": "^10.2.2"
+  },
+  "keywords": [
+    "accessibility",
+    "cypress",
+    "playwright",
+    "regression",
+    "storybook",
+    "testing",
+    "ui",
+    "visual regression",
+    "visual"
+  ],
+  "engines": {
+    "node": ">=22"
   }
 }

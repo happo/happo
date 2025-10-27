@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import type { Mock } from 'node:test';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
+import packageJson from '../../../package.json' with { type: 'json' };
 import type { ConfigWithDefaults } from '../../config/index.ts';
 import type { RequestAttributes } from '../../network/makeHappoAPIRequest.ts';
 import type makeHappoAPIRequest from '../../network/makeHappoAPIRequest.ts';
@@ -82,14 +83,20 @@ describe('main', () => {
       await main(['npx', 'happo', '--version'], logger);
 
       assert.strictEqual(logger.log.mock.callCount(), 1);
-      assert.strictEqual(logger.log.mock.calls[0]?.arguments[0], '1.0.0');
+      assert.strictEqual(
+        logger.log.mock.calls[0]?.arguments[0],
+        packageJson.version,
+      );
     });
 
     it('shows version with -v flag', async () => {
       await main(['npx', 'happo', '-v'], logger);
 
       assert.strictEqual(logger.log.mock.callCount(), 1);
-      assert.strictEqual(logger.log.mock.calls[0]?.arguments[0], '1.0.0');
+      assert.strictEqual(
+        logger.log.mock.calls[0]?.arguments[0],
+        packageJson.version,
+      );
     });
   });
 
@@ -99,7 +106,7 @@ describe('main', () => {
 
       assert.strictEqual(logger.log.mock.callCount(), 1);
       const helpText = logger.log.mock.calls[0]?.arguments[0];
-      assert.ok(helpText.includes('Happo 1.0.0'));
+      assert.ok(helpText.includes(`Happo ${packageJson.version}`));
       assert.ok(helpText.includes('Usage: happo [options]'));
       assert.ok(helpText.includes('finalize'));
       assert.ok(helpText.includes('test'));
@@ -111,7 +118,7 @@ describe('main', () => {
 
       assert.strictEqual(logger.log.mock.callCount(), 1);
       const helpText = logger.log.mock.calls[0]?.arguments[0];
-      assert.ok(helpText.includes('Happo 1.0.0'));
+      assert.ok(helpText.includes(`Happo ${packageJson.version}`));
     });
   });
 
@@ -193,7 +200,11 @@ describe('main', () => {
         logger.error.mock.calls[0]?.arguments[0],
         'Unknown command: unknown-command\n',
       );
-      assert.ok(logger.error.mock.calls[1]?.arguments[0].includes('Happo 1.0.0'));
+      assert.ok(
+        logger.error.mock.calls[1]?.arguments[0].includes(
+          `Happo ${packageJson.version}`,
+        ),
+      );
       assert.strictEqual(process.exitCode, 1);
     });
 
