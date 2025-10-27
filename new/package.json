@@ -10,7 +10,7 @@
   "bugs": "https://github.com/happo/happo/issues",
   "homepage": "https://happo.io",
   "bin": {
-    "happo": "/dist/cli/index.js"
+    "happo": "dist/cli/index.js"
   },
   "type": "module",
   "main": "./dist/config/index.js",
