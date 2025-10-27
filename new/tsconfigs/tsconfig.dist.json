@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.base.json",
+
+  "compilerOptions": {
+    "outDir": "../dist",
+    "declarationDir": "../dist",
+    "tsBuildInfoFile": "../tmp/tsc/tconfig.dist.tsbuildinfo"
+  },
+
+  "references": [
+    {
+      "path": "./tsconfig.isomorphic.json"
+    }
+  ],
+
+  "include": ["../src/**/*.ts"],
+
+  "exclude": [
+    "../**/*.test.ts",
+    "../**/__cypress__/**",
+    "../**/__playwright__/**",
+    "../**/__tests__/**",
+    "../src/**/browser/**",
+    "../src/**/cypress/**",
+    "../src/**/isomorphic/**",
+    "../src/static/**",
+    "../src/test-utils/**"
+  ]
+}

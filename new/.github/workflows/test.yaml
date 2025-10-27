@@ -1,0 +1,93 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FORCE_COLOR: 1
+  HAPPO_API_KEY: ${{ secrets.HAPPO_API_KEY }}
+  HAPPO_API_SECRET: ${{ secrets.HAPPO_API_SECRET }}
+  PNPM_STORE_DIR: ./.cache/pnpm
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test (Node ${{ matrix.node-version }})
+    strategy:
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Log environment variables
+        run: node -e "console.log(JSON.stringify(Object.fromEntries(Object.entries(process.env).sort()), null, 2))"
+      - run: pnpm test --coverage
+
+  orchestrate-happo:
+    runs-on: ubuntu-latest
+    name: Orchestrate Happo Job
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/orchestrate-happo
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          happo-api-key: ${{ secrets.HAPPO_API_KEY }}
+          happo-api-secret: ${{ secrets.HAPPO_API_SECRET }}
+          projects: 'cypress,storybook,playwright,static'
+
+  cypress:
+    runs-on: ubuntu-latest
+    name: Cypress
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - uses: ./.github/actions/setup-cypress
+      - run: pnpm test:cypress
+
+  static:
+    runs-on: ubuntu-latest
+    name: Happo Static
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - run: pnpm test:static
+
+  storybook:
+    runs-on: ubuntu-latest
+    name: Storybook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - run: pnpm test:storybook
+
+  playwright:
+    runs-on: ubuntu-latest
+    name: Playwright
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-env
+      - uses: ./.github/actions/setup-playwright
+      - run: pnpm test:playwright
+
+  typescript:
+    runs-on: ubuntu-latest
+    name: TypeScript
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - run: pnpm tsc
+
+  eslint:
+    runs-on: ubuntu-latest
+    name: ESLint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - run: pnpm lint

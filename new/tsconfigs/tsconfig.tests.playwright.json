@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+
+  "compilerOptions": {
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.tests.playwright.tsbuildinfo",
+    "lib": ["dom", "dom.iterable", "esnext"]
+  },
+
+  "references": [
+    {
+      "path": "./tsconfig.browser.json"
+    },
+    {
+      "path": "./tsconfig.dist.json"
+    },
+    {
+      "path": "./tsconfig.tests.node.json"
+    }
+  ],
+
+  "include": ["../src/**/__playwright__/**/*.ts"]
+}

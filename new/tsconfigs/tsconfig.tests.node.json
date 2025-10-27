@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.base.json",
+
+  "compilerOptions": {
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.tests.node.tsbuildinfo",
+    "types": ["node"]
+  },
+
+  "references": [
+    {
+      "path": "./tsconfig.browser.json"
+    },
+    {
+      "path": "./tsconfig.dist.json"
+    },
+    {
+      "path": "./tsconfig.isomorphic.json"
+    }
+  ],
+
+  "include": [
+    "../src/**/*.test.ts",
+    "../src/**/__tests__/**/*.ts",
+    "../src/test-utils/**/*.ts"
+  ]
+}

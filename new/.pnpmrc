@@ -1,0 +1,30 @@
+# pnpm configuration file
+# See https://pnpm.io/npmrc for more options
+
+# Use hard links when possible (faster installs)
+link-workspace-packages=true
+
+# Hoist dependencies to reduce node_modules size
+hoist-pattern[]=*
+
+# Don't hoist these packages (keep them in their original location)
+public-hoist-pattern[]=*eslint*
+public-hoist-pattern[]=*prettier*
+
+# Enable strict peer dependencies
+strict-peer-dependencies=false
+
+# Auto install peer dependencies
+auto-install-peers=true
+
+# Use exact versions for new dependencies
+save-exact=true
+
+# Enable pnpm audit
+audit-level=moderate
+
+# Set registry (uncomment and modify if needed)
+# registry=https://registry.npmjs.org/
+
+# Enable pnpm dedupe
+dedupe-peer-dependents=true

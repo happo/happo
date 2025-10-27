@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+
+  "compilerOptions": {
+    "outDir": "../dist",
+    "declarationDir": "../dist",
+    "tsBuildInfoFile": "../tmp/tsc/tsconfig.cypress.tsbuildinfo",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["cypress", "node"]
+  },
+
+  "references": [
+    {
+      "path": "./tsconfig.browser.json"
+    },
+    {
+      "path": "./tsconfig.dist.json"
+    }
+  ],
+
+  "include": ["../src/cypress/**/*.ts"],
+  "exclude": ["../src/**/__cypress__/**/*.ts"]
+}
