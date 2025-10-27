@@ -3,11 +3,14 @@
   "version": "5.0.0",
   "description": "Visual regression testing and accessibility testing",
   "license": "MIT",
-  "repository": "https://github.com/happo/happo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/happo/happo.git"
+  },
   "bugs": "https://github.com/happo/happo/issues",
   "homepage": "https://happo.io",
   "bin": {
-    "happo": "./src/cli/index.ts"
+    "happo": "src/cli/index.ts"
   },
   "type": "module",
   "main": "./src/config/index.ts",
