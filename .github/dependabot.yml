@@ -7,6 +7,11 @@ updates:
     schedule:
       interval: daily
     groups:
+      patches-and-minors:
+        update-types:
+          - 'patch'
+          - 'minor'
+
       eslint:
         patterns:
           - 'eslint'
