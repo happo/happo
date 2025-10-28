@@ -106,7 +106,7 @@
     "@storybook/builder-vite": "^9.1.16",
     "@storybook/react-vite": "^9.1.16",
     "@types/adm-zip": "^0.5.7",
-    "@types/archiver": "^6.0.3",
+    "@types/archiver": "^7.0.0",
     "@types/async-retry": "^1.4.9",
     "@types/base64-stream": "^1.0.5",
     "@types/jsdom": "^27.0.0",
