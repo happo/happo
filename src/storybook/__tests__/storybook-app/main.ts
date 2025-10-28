@@ -1,5 +1,4 @@
-import type { StorybookConfig } from '@storybook/react-webpack5';
-import type { Configuration } from 'webpack';
+import type { StorybookConfig } from '@storybook/react-vite';
 
 const result: StorybookConfig = {
   stories: ['./**/*.stories.ts'],
@@ -8,9 +7,10 @@ const result: StorybookConfig = {
   addons: ['storybook/actions', '../../../../dist/storybook/preset.js'],
 
   framework: {
-    name: '@storybook/react-webpack5',
+    name: '@storybook/react-vite',
     options: {},
   },
+
   typescript: {
     check: false,
     reactDocgen: 'react-docgen-typescript',
@@ -19,39 +19,6 @@ const result: StorybookConfig = {
       propFilter: (prop) =>
         prop.parent ? !/node_modules/.test(prop.parent.fileName) : true,
     },
-  },
-  webpackFinal: async (config: Configuration) => {
-    // Ensure TypeScript files are handled properly
-    config.module = config.module || {};
-    config.module.rules = config.module.rules || [];
-
-    // Add TypeScript rule if not already present
-    const hasTypeScriptRule = config.module.rules.some((rule) => {
-      if (!rule) {
-        return false;
-      }
-      if (typeof rule !== 'object') {
-        return false;
-      }
-      return rule && rule.test && rule.test.toString().includes('tsx?');
-    });
-
-    if (!hasTypeScriptRule) {
-      config.module.rules.push({
-        test: /\.tsx?$/,
-        use: [
-          {
-            loader: 'ts-loader',
-            options: {
-              transpileOnly: true,
-            },
-          },
-        ],
-        exclude: /node_modules/,
-      });
-    }
-
-    return config;
   },
 };
 
