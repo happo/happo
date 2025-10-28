@@ -400,6 +400,7 @@ export class MD5 {
     const s = this._state;
 
     return {
+      // eslint-disable-next-line unicorn/prefer-code-point
       buffer: String.fromCharCode.apply(null, Array.from(this._buffer8)),
       buflen: this._bufferLength,
       length: this._dataLength,
