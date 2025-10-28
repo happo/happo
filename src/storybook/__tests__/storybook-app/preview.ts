@@ -1,4 +1,4 @@
-import type { Decorator } from '@storybook/react-webpack5';
+import type { Decorator } from '@storybook/react-vite';
 
 import happoDecorator from '../../../../dist/storybook/browser/decorator.js';
 import {
