@@ -78,7 +78,8 @@ runs:
         echo "Data: ${DATA}"
 
         # Call Happo
-        curl --header "Content-Type: application/json" \
+        curl --fail --silent --show-error \
+          --header "Content-Type: application/json" \
           --request POST \
           --data "${DATA}" \
           -u "${{ inputs.happo-api-key }}:${{ inputs.happo-api-secret }}" \
