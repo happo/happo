@@ -41,8 +41,8 @@
       "default": "./dist/storybook/browser/addon.js"
     },
     "./storybook/decorator": {
-      "types": "./dist/storybook/browser/addon.d.ts",
-      "default": "./dist/storybook/browser/addon.js"
+      "types": "./dist/storybook/browser/decorator.d.ts",
+      "default": "./dist/storybook/browser/decorator.js"
     },
     "./storybook/preset": {
       "types": "./dist/storybook/preset.d.ts",
