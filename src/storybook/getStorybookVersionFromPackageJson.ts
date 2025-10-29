@@ -21,7 +21,7 @@ export default function getStorybookVersionFromPackageJson(
 
   if (storybookPackage) {
     const storybookVersion = combinedDependencies[storybookPackage];
-    const majorVersion = Number.parseInt(storybookVersion.match(/\d/)[0], 10);
+    const majorVersion = Number.parseInt(storybookVersion.match(/\d+/)[0], 10);
     return majorVersion;
   } else {
     throw new Error('Storybook is not listed as a dependency in package.json');

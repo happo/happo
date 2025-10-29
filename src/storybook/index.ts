@@ -30,7 +30,7 @@ function resolveBuildCommandParts() {
 
   if (version < 9) {
     throw new Error(
-      `Storybook v${version} is not supported. Please upgrade to v9 or later, or downgrade happo-plugin-storybook to an earlier version.`,
+      `Storybook v${version} is not supported. Please update storybook to v9 or later.`,
     );
   }
 
