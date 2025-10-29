@@ -263,6 +263,15 @@ interface BaseTarget {
    * with Happo, you may also want to use the `applyPseudoClasses` option.
    */
   allowPointerEvents?: boolean;
+
+  /**
+   * Set `freezeAnimations: 'last-frame'` to freeze the animations at the last
+   * frame. This is the default behavior.
+   *
+   * Set `freezeAnimations: 'first-frame'` to freeze the animations at the first
+   * frame.
+   */
+  freezeAnimations?: 'last-frame' | 'first-frame';
 }
 
 interface MobileSafariTarget extends BaseTarget {

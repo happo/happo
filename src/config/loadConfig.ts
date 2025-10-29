@@ -47,6 +47,7 @@ export async function loadConfigFile(
   const allTargets = Object.values(config.default.targets);
   for (const target of allTargets as Array<TargetWithDefaults>) {
     target.viewport = target.viewport || '1024x768';
+    target.freezeAnimations = target.freezeAnimations || 'last-frame';
   }
   return {
     endpoint: 'https://happo.io',
