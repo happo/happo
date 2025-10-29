@@ -15,10 +15,11 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: Test (Node ${{ matrix.node-version }})
     strategy:
       matrix:
         node-version: [22, 24]
+
+    name: Test (Node ${{ matrix.node-version }})
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-env
@@ -38,7 +39,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           happo-api-key: ${{ secrets.HAPPO_API_KEY }}
           happo-api-secret: ${{ secrets.HAPPO_API_SECRET }}
-          projects: 'cypress,storybook,playwright,static'
+          projects: 'cypress,storybook-v9,storybook-v10,playwright,static'
 
   cypress:
     runs-on: ubuntu-latest
@@ -59,11 +60,23 @@ jobs:
 
   storybook:
     runs-on: ubuntu-latest
-    name: Storybook
+    strategy:
+      matrix:
+        include:
+          - version: 9
+            dependencies: 'storybook@9 @storybook/builder-vite@9 @storybook/react-vite@9'
+          - version: 10
+            dependencies: ''
+
+    name: Storybook v${{ matrix.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-env
+      - if: matrix.dependencies != ''
+        run: pnpm add -D ${{ matrix.dependencies }}
       - run: pnpm test:storybook
+        env:
+          HAPPO_STORYBOOK_VERSION: ${{ matrix.version }}
 
   playwright:
     runs-on: ubuntu-latest
