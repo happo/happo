@@ -291,6 +291,13 @@ interface DesktopTarget extends BaseTarget {
    * when rendering the UI.
    */
   prefersReducedMotion?: boolean;
+
+  /**
+   * Add additional headers to the outgoing requests from the browser. This is
+   * useful if you for instance need to tell a CDN that the request originates
+   * from a Happo run.
+   */
+  outgoingRequestHeaders?: Array<{ name: string; value: string }>;
 }
 
 export type Target = MobileSafariTarget | DesktopTarget;
