@@ -44,8 +44,6 @@ interface ExecuteParams {
   targetName?: string;
 }
 
-const MIN_INTERNET_EXPLORER_WIDTH = 400;
-
 function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
   const extendsPages: Record<string, PageSlice> = {};
   const rawPages: Array<Page> = [];
@@ -103,17 +101,6 @@ export default class RemoteBrowserTarget {
     if (!viewportMatch) {
       throw new Error(
         `Invalid viewport "${viewport}". Here's an example of a valid one: "1024x768".`,
-      );
-    }
-
-    const [, width] = viewportMatch;
-
-    if (
-      browserName === 'edge' &&
-      Number.parseInt(width!, 10) < MIN_INTERNET_EXPLORER_WIDTH
-    ) {
-      throw new Error(
-        `Invalid viewport width for the "edge" target (you provided ${width}). Smallest width it can handle is ${MIN_INTERNET_EXPLORER_WIDTH}.`,
       );
     }
 
