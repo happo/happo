@@ -128,20 +128,19 @@ async function uploadAssetsWithSignedUrl(
     throw new Error('Failed to get signed URL');
   }
 
-  if (!('path' in signedUrlRes)) {
-    throw new Error('Signed URL response is missing path');
-  }
+  if ('path' in signedUrlRes) {
+    // If the asset has already been uploaded the response will have a path and
+    // we can return it now.
+    const { path: signedUrlPath } = signedUrlRes;
 
-  const { path: signedUrlPath } = signedUrlRes;
-
-  // If the asset has already been uploaded, we can return the path now.
-  if (signedUrlPath) {
     logger.info(`${logTag(project)}Reusing existing assets at ${signedUrlPath}`);
     return typeof signedUrlPath === 'string' ? signedUrlPath : String(signedUrlPath);
   }
 
   if (!('signedUrl' in signedUrlRes)) {
-    throw new Error('Signed URL response is missing signedUrl');
+    throw new Error(
+      `Signed URL response does not have path or signedUrl. Response: ${JSON.stringify(signedUrlRes, null, 2)}`,
+    );
   }
 
   const { signedUrl } = signedUrlRes;
