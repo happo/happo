@@ -24,7 +24,10 @@ before(async () => {
     // Set proper headers
     res.setHeader('Content-Type', 'application/json');
 
-    if (req.url?.startsWith('/api/snap-requests/assets-data/')) {
+    if (
+      req.url?.startsWith('/api/snap-requests/assets/') &&
+      req.url?.endsWith('/signed-url')
+    ) {
       res.end(JSON.stringify({ path: '/path/to/asset', uploadedAt: '2021-01-01' }));
       return;
     }
