@@ -2,7 +2,6 @@ import retry from 'async-retry';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
 import { logTag } from '../utils/Logger.ts';
-import { ErrorWithStatusCode } from './fetchWithRetry.ts';
 import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
 
 // Type definitions
@@ -16,102 +15,13 @@ interface UploadAssetsOptions {
   logger: Logger;
 }
 
-/**
- * Uploads assets via Happo's API
- *
- * @returns The URL of the uploaded assets
- */
-async function uploadAssetsThroughHappo(
+export default async function uploadAssets(
   buffer: Buffer<ArrayBuffer>,
-  { hash, logger }: UploadAssetsOptions,
+  options: UploadAssetsOptions,
   config: ConfigWithDefaults,
 ): Promise<string> {
   const { project } = config;
-
-  try {
-    // Check if the assets already exist. If so, we don't have to upload them.
-    const assetsDataRes = await makeHappoAPIRequest(
-      {
-        path: `/api/snap-requests/assets-data/${hash}`,
-        method: 'GET',
-        json: true,
-      },
-      config,
-      { retryCount: 2 },
-    );
-
-    if (!assetsDataRes) {
-      throw new Error('Failed to get assets data');
-    }
-
-    if (!('path' in assetsDataRes)) {
-      throw new Error('Asset data response is missing path');
-    }
-
-    if (!('uploadedAt' in assetsDataRes)) {
-      throw new Error('Asset data response is missing uploadedAt');
-    }
-
-    const { path: uploadedPath, uploadedAt } = assetsDataRes;
-
-    logger.info(
-      `${logTag(project)}Reusing existing assets at ${
-        uploadedPath
-      } (previously uploaded on ${uploadedAt})`,
-    );
-
-    return typeof uploadedPath === 'string' ? uploadedPath : String(uploadedPath);
-  } catch (error) {
-    const err = error instanceof Error ? error : new Error(String(error));
-
-    if (err instanceof ErrorWithStatusCode && err.statusCode !== 404) {
-      logger.warn(
-        `${logTag(
-          project,
-        )}Assuming assets don't exist since we got error response: ${
-          err.statusCode
-        } - ${err.message} - ${err.stack}`,
-      );
-    }
-  }
-
-  const assetsRes = await makeHappoAPIRequest(
-    {
-      path: `/api/snap-requests/assets/${hash}`,
-      method: 'POST',
-      json: true,
-      formData: {
-        payload: new File([buffer], 'payload.zip', { type: 'application/zip' }),
-      },
-    },
-    config,
-    { retryCount: 2 },
-  );
-
-  if (!assetsRes) {
-    throw new Error('Failed to get assets data');
-  }
-
-  if (!('path' in assetsRes)) {
-    throw new Error('Asset data response is missing path');
-  }
-
-  const { path: assetsPath } = assetsRes;
-
-  return typeof assetsPath === 'string' ? assetsPath : String(assetsPath);
-}
-
-/**
- * Uploads assets via signed URL
- *
- * @returns The URL of the uploaded assets
- */
-async function uploadAssetsWithSignedUrl(
-  buffer: Buffer<ArrayBuffer>,
-  { hash, logger }: UploadAssetsOptions,
-  config: ConfigWithDefaults,
-): Promise<string> {
-  const { project } = config;
+  const { hash, logger } = options;
 
   // First we need to get the signed URL from Happo.
   const signedUrlRes = await makeHappoAPIRequest(
@@ -205,16 +115,4 @@ async function uploadAssetsWithSignedUrl(
   const { path: finalizedPath } = finalizeRes;
 
   return typeof finalizedPath === 'string' ? finalizedPath : String(finalizedPath);
-}
-
-export default async function uploadAssets(
-  buffer: Buffer<ArrayBuffer>,
-  options: UploadAssetsOptions,
-  config: ConfigWithDefaults,
-): Promise<string> {
-  if (process.env.HAPPO_SIGNED_URL) {
-    return uploadAssetsWithSignedUrl(buffer, options, config);
-  }
-
-  return uploadAssetsThroughHappo(buffer, options, config);
 }
