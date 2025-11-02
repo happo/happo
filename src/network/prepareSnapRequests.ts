@@ -42,11 +42,27 @@ async function generateStaticPackage({
   throw new Error(`Unsupported integration type: ${integration.type}`);
 }
 
+async function validateStaticPackage(staticPackageDir: string): Promise<void> {
+  const iframePath = path.join(staticPackageDir, 'iframe.html');
+  try {
+    await fs.promises.stat(iframePath);
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      throw new Error(
+        `Could not find iframe.html in static package at ${iframePath}`,
+      );
+    }
+    throw error;
+  }
+}
+
 export default async function prepareSnapRequests(
   config: ConfigWithDefaults,
 ): Promise<Array<number>> {
   const logger = new Logger();
   const staticPackageDir = await generateStaticPackage(config);
+
+  await validateStaticPackage(staticPackageDir);
 
   const { buffer, hash } = await deterministicArchive([staticPackageDir]);
   const staticPackagePath = await uploadAssets(
