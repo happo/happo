@@ -227,16 +227,15 @@ describe('main', () => {
     describe('static integration', () => {
       beforeEach(async () => {
         tmpfs.writeFile(
-          'happo-static/iframe.html',
-          '<!doctype html><html lang="en"><head><meta charset="utf-8" /><script src="/bundle.js"></script></head><body></body></html>',
-        );
-        tmpfs.writeFile(
           'happo.config.ts',
           `
           export default {
             integration: { 
               type: 'static',
-              generateStaticPackage: async () => '${tmpfs.getTempDir()}/happo-static',
+              generateStaticPackage: async () => ({
+                rootDir: '${tmpfs.getTempDir()}/happo-static',
+                entryPoint: 'bundle.js',
+              }),
             },
             apiKey: 'test-key',
             apiSecret: 'test-secret',
@@ -245,26 +244,43 @@ describe('main', () => {
         );
       });
 
-      it('succeeds when iframe.html is found', async () => {
+      it('succeeds when a custom iframe.html file does not exist', async () => {
         await main(['npx', 'happo'], logger);
         assert.ok(!process.exitCode || process.exitCode === 0);
         assert(logger.log.mock.callCount() >= 1);
       });
 
-      describe('when iframe.html is not found', () => {
+      it('generates a iframe.html file when it does not exist', async () => {
+        await main(['npx', 'happo'], logger);
+        assert(fs.existsSync(tmpfs.fullPath('happo-static/iframe.html')));
+        const iframeContent = fs.readFileSync(
+          tmpfs.fullPath('happo-static/iframe.html'),
+          'utf8',
+        );
+        assert.ok(iframeContent.includes('<script src="bundle.js"></script>'));
+        assert.ok(iframeContent.includes('<body>'));
+        assert.ok(iframeContent.includes('</body>'));
+      });
+
+      describe('when custom iframe.html file is provided', () => {
         beforeEach(async () => {
-          fs.rmSync(tmpfs.fullPath('happo-static/iframe.html'), { force: true });
+          tmpfs.writeFile(
+            'happo-static/iframe.html',
+            '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><script src="/bundle.js"></script></head><body>CUSTOM IFRAME HTML</body></html>',
+          );
         });
 
-        it('fails with a validation error message', async () => {
+        it('succeeds when custom iframe.html file is provided', async () => {
           await main(['npx', 'happo'], logger);
-          assert.strictEqual(process.exitCode, 1);
-          assert(logger.error.mock.callCount() >= 1);
-          assert.match(
-            logger.error.mock.calls[0]?.arguments[0],
-            new RegExp(
-              `Could not find iframe.html in static package at .*${tmpfs.getTempDir()}/happo-static/iframe.html`,
-            ),
+          assert.ok(!process.exitCode || process.exitCode === 0);
+          assert(logger.log.mock.callCount() >= 1);
+        });
+
+        it('does not clobber the custom iframe.html file', async () => {
+          await main(['npx', 'happo'], logger);
+          assert.strictEqual(
+            fs.readFileSync(tmpfs.fullPath('happo-static/iframe.html'), 'utf8'),
+            '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><script src="/bundle.js"></script></head><body>CUSTOM IFRAME HTML</body></html>',
           );
         });
       });
