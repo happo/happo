@@ -61,7 +61,7 @@
     "build": "pnpm build:types && pnpm build:dist",
     "build:dist": "./scripts/build.ts",
     "build:types": "pnpm tsc --pretty",
-    "build:static": "esbuild src/static/__happo__/index.ts --bundle --format=iife --global-name=happoStatic --outfile=tmp/happo-static/bundle.js --platform=browser --target=esnext && cp src/static/__happo__/iframe.html tmp/happo-static/",
+    "build:static": "esbuild src/static/__happo__/index.ts --bundle --format=iife --global-name=happoStatic --outfile=tmp/happo-static/bundle.js --platform=browser --target=esnext",
     "build:watch": "tsc --build --watch",
     "clean": "rm -rf dist tmp/tsc tmp/happo-static",
     "lint": "eslint .",

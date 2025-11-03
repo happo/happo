@@ -57,12 +57,14 @@ interface StaticIntegration {
   type: 'static';
 
   /**
-   * An async function that generates a static package. Returns the path to the
-   * folder containing the static files. You can use a prebuilt package (simply
-   * point to the output directory of the Storybook build) or build the package
-   * yourself.
+   * An async function that generates a static package. Returns an object with
+   * the path to the folder containing the static files and the path to the
+   * entry point file relative to the root directory.
+   *
+   * @example
+   * { rootDir: 'dist/static', entryPoint: 'index.js' }
    */
-  generateStaticPackage: () => Promise<string>;
+  generateStaticPackage: () => Promise<{ rootDir: string; entryPoint: string }>;
 }
 
 interface Page {
