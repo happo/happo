@@ -247,7 +247,7 @@ describe('resolveEnvironment', () => {
     );
     result = await resolveEnvironment(githubEnv);
     assert.equal(result.afterSha, currentSha);
-    assert.equal(result.beforeSha, undefined);
+    assert.equal(result.beforeSha, currentSha);
     assert.equal(
       result.link,
       `https://github.com/octo-org/octo-repo/commit/${currentSha}`,
@@ -362,7 +362,7 @@ describe('resolveEnvironment', () => {
     });
 
     assert.equal(result.afterSha, currentSha);
-    assert.ok(result.beforeSha === undefined);
+    assert.equal(result.beforeSha, currentSha);
     assert.equal(result.link, 'link://link');
     assert.ok(result.message !== undefined);
 
