@@ -8,11 +8,31 @@ import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
 import uploadAssets from './uploadAssets.ts';
 
-async function createIframeHtml(rootDir: string, entryPoint: string): Promise<void> {
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await fs.promises.stat(path);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
+async function createIframeHTML(
+  rootDir: string,
+  entryPoint: string,
+  logger: Logger,
+): Promise<void> {
   const iframePath = path.join(rootDir, 'iframe.html');
-  if (fs.existsSync(iframePath)) {
+
+  if (await fileExists(iframePath)) {
+    logger.info(`Using existing iframe.html at '${iframePath}'`);
     return;
   }
+
   const iframeContent = `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -23,15 +43,18 @@ async function createIframeHtml(rootDir: string, entryPoint: string): Promise<vo
     <script src="${entryPoint}"></script>
   </body>
 </html>`;
-  fs.writeFileSync(iframePath, iframeContent);
+
+  await fs.promises.mkdir(rootDir, { recursive: true });
+  await fs.promises.writeFile(iframePath, iframeContent);
 }
 
-async function generateStaticPackage({
-  integration,
-}: ConfigWithDefaults): Promise<string> {
+async function generateStaticPackage(
+  { integration }: ConfigWithDefaults,
+  logger: Logger,
+): Promise<string> {
   if (integration.type === 'static') {
     const { rootDir, entryPoint } = await integration.generateStaticPackage();
-    await createIframeHtml(rootDir, entryPoint);
+    await createIframeHTML(rootDir, entryPoint, logger);
     return rootDir;
   }
 
@@ -42,11 +65,23 @@ async function generateStaticPackage({
   throw new Error(`Unsupported integration type: ${integration.type}`);
 }
 
+async function validateStaticPackage(staticPackageDir: string): Promise<void> {
+  const iframePath = path.join(staticPackageDir, 'iframe.html');
+
+  if (!(await fileExists(iframePath))) {
+    throw new Error(
+      `Could not find iframe.html in static package at '${iframePath}'`,
+    );
+  }
+}
+
 export default async function prepareSnapRequests(
   config: ConfigWithDefaults,
 ): Promise<Array<number>> {
   const logger = new Logger();
-  const staticPackageDir = await generateStaticPackage(config);
+  const staticPackageDir = await generateStaticPackage(config, logger);
+
+  await validateStaticPackage(staticPackageDir);
 
   const { buffer, hash } = await deterministicArchive([staticPackageDir]);
   const staticPackagePath = await uploadAssets(
