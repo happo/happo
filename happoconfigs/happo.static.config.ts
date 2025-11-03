@@ -7,7 +7,10 @@ const config: Config = defineConfig({
   project: 'static',
   integration: {
     type: 'static',
-    generateStaticPackage: async () => './tmp/happo-static',
+    generateStaticPackage: async () => ({
+      rootDir: './tmp/happo-static',
+      entryPoint: 'bundle.js',
+    }),
   },
 });
 

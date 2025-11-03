@@ -125,7 +125,10 @@ beforeEach(() => {
     project: 'test',
     integration: {
       type: 'static',
-      generateStaticPackage: async () => './static',
+      generateStaticPackage: async () => ({
+        rootDir: './static',
+        entryPoint: 'index.js',
+      }),
     },
     endpoint: 'http://localhost:8990',
     apiKey: 'foo',

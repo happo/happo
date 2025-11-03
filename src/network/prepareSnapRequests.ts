@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import type { ConfigWithDefaults } from '../config/index.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
 import generateStorybookStaticPackage from '../storybook/index.ts';
@@ -5,11 +8,31 @@ import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
 import uploadAssets from './uploadAssets.ts';
 
+async function createIframeHtml(rootDir: string, entryPoint: string): Promise<void> {
+  const iframePath = path.join(rootDir, 'iframe.html');
+  if (fs.existsSync(iframePath)) {
+    return;
+  }
+  const iframeContent = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Happo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <script src="${entryPoint}"></script>
+  </body>
+</html>`;
+  fs.writeFileSync(iframePath, iframeContent);
+}
+
 async function generateStaticPackage({
   integration,
 }: ConfigWithDefaults): Promise<string> {
   if (integration.type === 'static') {
-    return await integration.generateStaticPackage();
+    const { rootDir, entryPoint } = await integration.generateStaticPackage();
+    await createIframeHtml(rootDir, entryPoint);
+    return rootDir;
   }
 
   if (integration.type === 'storybook') {
