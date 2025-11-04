@@ -18,7 +18,6 @@ For comprehensive documentation, visit [docs.happo.io](https://docs.happo.io).
 - **Flexible Configuration**: Support for multiple configuration file formats
 - **TypeScript Support**: Built with TypeScript and provides full type definitions
 - **ES Modules**: Uses modern ES modules for better tree-shaking and performance
-- **Cross-Platform**: Works on all major operating systems
 
 ## 📦 Installation
 
@@ -66,7 +65,7 @@ Run Happo using the CLI:
 npx happo
 ```
 
-The CLI will automatically find your configuration file and execute the visual regression tests.
+The CLI will automatically find your configuration file and run the visual regression test suite.
 
 ## 🔧 Configuration Options
 
@@ -84,8 +83,9 @@ The library automatically detects configuration files in the following order:
 ### Key Configuration Properties
 
 - **`apiKey`** & **`apiSecret`**: Authentication credentials for happo.io
-- **`targets`**: Browser configurations for testing
-- **`project`**: Optional project name for multi-project accounts
+- **`integration`**: Set up the integration type
+- **`targets`**: Target configurations, including regular browsers and accessibility targets
+- **`project`**: Optional project name
 
 ### Browser Targets
 
@@ -97,16 +97,9 @@ Supported browser types:
 Each target supports advanced options like:
 
 - Viewport sizing
-- Maximum height/width
+- Maximum dimensions
 - Color scheme preferences
-
-## 🧪 Testing
-
-This project uses Node.js built-in test runner:
-
-```bash
-npm test
-```
+- Settings for silencing animations
 
 ## 🤝 Contributing
 
@@ -117,7 +110,7 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 1. Clone the repository
 2. Install dependencies: `pnpm install`
 3. Build the project: `pnpm build`
-4. Run tests: `pnpm test` and `pnpm test:playwright`
+4. Run all tests and checks: `pnpm all`
 
 To run the tests you will need a `.env.local` file with some keys. Use
 `env.example` as a starting point.
