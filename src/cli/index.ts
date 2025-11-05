@@ -166,10 +166,15 @@ async function handleDefaultCommand(
     );
 
     // Create an async comparison.
-    const asyncComparison = await createAsyncComparison(config, environment, logger);
-
     logger.log(`[HAPPO] Async report URL: ${asyncReport.url}`);
-    logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
+    if (environment.beforeSha !== environment.afterSha) {
+      const asyncComparison = await createAsyncComparison(
+        config,
+        environment,
+        logger,
+      );
+      logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
+    }
   } catch (e) {
     logger.error(e instanceof Error ? e.message : String(e), e);
     const cancelJob = (await import('../network/cancelJob.ts')).default;

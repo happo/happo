@@ -47,6 +47,12 @@ export default async function createAsyncComparison(
   }: EnvironmentResult,
   logger: Logger,
 ): Promise<CreateAsyncComparisonResult> {
+  if (beforeSha === afterSha) {
+    throw new Error(
+      `Cannot create an async comparison between the same SHA (beforeSha=${beforeSha}, afterSha=${afterSha})`,
+    );
+  }
+
   const result = await makeHappoAPIRequest(
     {
       path: `/api/reports/${beforeSha}/compare/${afterSha}`,

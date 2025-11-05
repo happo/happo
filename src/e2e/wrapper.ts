@@ -3,63 +3,12 @@ import http from 'node:http';
 
 import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
 import resolveEnvironment, { type EnvironmentResult } from '../environment/index.ts';
+import createAsyncComparison from '../network/createAsyncComparison.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
 import startServer, { type ServerInfo } from '../network/startServer.ts';
 
 let allRequestIds: Set<number>;
-
-interface CompareResult {
-  statusImageUrl: string;
-  compareUrl: string;
-}
-
-function assertCompareResult(
-  compareResult: unknown,
-): asserts compareResult is CompareResult {
-  if (typeof compareResult !== 'object' || compareResult === null) {
-    throw new Error('Compare report response is not an object');
-  }
-  if (
-    !('statusImageUrl' in compareResult) ||
-    typeof compareResult.statusImageUrl !== 'string'
-  ) {
-    throw new Error('Compare report response has invalid statusImageUrl');
-  }
-  if (
-    !('compareUrl' in compareResult) ||
-    typeof compareResult.compareUrl !== 'string'
-  ) {
-    throw new Error('Compare report response has invalid compareUrl');
-  }
-}
-
-async function compareReports(
-  sha1: string,
-  sha2: string,
-  happoConfig: ConfigWithDefaults,
-  environment: Awaited<ReturnType<typeof resolveEnvironment>>,
-) {
-  const compareResult = await makeHappoAPIRequest(
-    {
-      path: `/api/reports/${sha1}/compare/${sha2}`,
-      method: 'POST',
-      json: true,
-      body: {
-        link: environment.link,
-        message: environment.message,
-        project: happoConfig.project,
-        notify: environment.notify,
-        fallbackShas: environment.fallbackShas,
-        isAsync: true,
-      },
-    },
-    happoConfig,
-    { retryCount: 2 },
-  );
-  assertCompareResult(compareResult);
-  return compareResult;
-}
 
 async function postAsyncReport(
   requestIds: Array<number>,
@@ -106,7 +55,7 @@ export async function finalizeAll({
   skippedExamplesJSON,
   logger,
 }: FinalizeAllOptions): Promise<void> {
-  const { beforeSha, afterSha, nonce } = environment;
+  const { afterSha, nonce } = environment;
 
   if (!nonce) {
     throw new Error('[HAPPO] Missing HAPPO_NONCE environment variable');
@@ -131,7 +80,6 @@ export async function finalizeAll({
       throw e;
     }
   }
-
   await makeHappoAPIRequest(
     {
       path: `/api/async-reports/${afterSha}/finalize`,
@@ -143,12 +91,11 @@ export async function finalizeAll({
     { retryCount: 3 },
   );
 
-  if (beforeSha && beforeSha !== afterSha) {
-    const compareResult = await compareReports(
-      beforeSha,
-      afterSha,
+  if (environment.beforeSha !== environment.afterSha) {
+    const compareResult = await createAsyncComparison(
       happoConfig,
       environment,
+      logger,
     );
 
     if (environment.link && process.env.HAPPO_GITHUB_TOKEN) {
@@ -186,61 +133,51 @@ async function finalizeHappoReport(
 
   const { beforeSha, afterSha, link, message, nonce } = environment;
 
-  if (beforeSha) {
-    const jobResult = await makeHappoAPIRequest(
-      {
-        path: `/api/jobs/${beforeSha}/${afterSha}`,
-        method: 'POST',
-        json: true,
-        body: {
-          project: happoConfig.project,
-          link,
-          message,
-        },
+  const jobResult = await makeHappoAPIRequest(
+    {
+      path: `/api/jobs/${beforeSha}/${afterSha}`,
+      method: 'POST',
+      json: true,
+      body: {
+        project: happoConfig.project,
+        link,
+        message,
       },
+    },
+    happoConfig,
+    { retryCount: 2 },
+  );
+
+  if (!jobResult) {
+    throw new Error('Failed to create Happo job');
+  }
+
+  if (!('url' in jobResult) || typeof jobResult.url !== 'string') {
+    throw new Error('Job result is missing url');
+  }
+
+  if (!nonce) {
+    // If there is a nonce, the comparison will happen when the finalize
+    // command is called.
+    const compareResult = await createAsyncComparison(
       happoConfig,
-      { retryCount: 2 },
+      environment,
+      logger,
     );
 
-    if (!jobResult) {
-      throw new Error('Failed to create Happo job');
+    if (compareResult && environment.link && process.env.HAPPO_GITHUB_TOKEN) {
+      // HAPPO_GITHUB_TOKEN is set which means that we should post
+      // a comment to the PR.
+      // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
+      await postGitHubComment({
+        link: environment.link,
+        statusImageUrl: compareResult.statusImageUrl,
+        compareUrl: compareResult.compareUrl,
+        githubApiUrl: happoConfig.githubApiUrl,
+      });
     }
-
-    if (beforeSha !== afterSha && !nonce) {
-      // If the SHAs match, there is no comparison to make. This is likely
-      // running on the default branch and we are done at this point.
-      // If there is a nonce, the comparison will happen when the finalize
-      // command is called.
-      const compareResult = await compareReports(
-        beforeSha,
-        afterSha,
-        happoConfig,
-        environment,
-      );
-
-      if (environment.link && process.env.HAPPO_GITHUB_TOKEN) {
-        // HAPPO_GITHUB_TOKEN is set which means that we should post
-        // a comment to the PR.
-        // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
-        await postGitHubComment({
-          link: environment.link,
-          statusImageUrl: compareResult.statusImageUrl,
-          compareUrl: compareResult.compareUrl,
-          githubApiUrl: happoConfig.githubApiUrl,
-        });
-      }
-    }
-
-    if (!('url' in jobResult) || typeof jobResult.url !== 'string') {
-      throw new Error('Job result is missing url');
-    }
-    logger.log(`[HAPPO] ${jobResult.url}`);
-  } else {
-    if (!('url' in reportResult) || typeof reportResult.url !== 'string') {
-      throw new Error('Report result is missing url');
-    }
-    logger.log(`[HAPPO] ${reportResult.url}`);
   }
+  logger.log(`[HAPPO] ${jobResult.url}`);
 }
 
 function startE2EServer(
@@ -336,7 +273,7 @@ export default async function runWithWrapper(
             logger.error('Failed to finalize Happo report', e);
             return reject(e);
           }
-        } else if (environment.beforeSha) {
+        } else {
           logger.error(
             'Command failed with exit code ${code}. Cancelling Happo job.',
           );

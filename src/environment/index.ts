@@ -31,7 +31,7 @@ export interface EnvironmentResult {
   link: string | undefined;
   message: string | undefined;
   author: string | undefined;
-  beforeSha: string | undefined;
+  beforeSha: string;
   afterSha: string;
   nonce: string | undefined;
   debugMode: boolean;
@@ -495,16 +495,18 @@ export default async function resolveEnvironment(
     resolveMessage(env, afterShaWithLocalChanges),
   ]);
 
+  const nonNullBeforeSha = beforeSha || afterShaWithLocalChanges;
+
   const result = {
     link,
     author,
     message,
-    beforeSha,
+    beforeSha: nonNullBeforeSha,
     afterSha: afterShaWithLocalChanges,
     nonce: env.HAPPO_NONCE,
     debugMode,
     notify: env.HAPPO_NOTIFY,
-    fallbackShas: resolveFallbackShas(env, beforeSha),
+    fallbackShas: resolveFallbackShas(env, nonNullBeforeSha),
   };
 
   if (debugMode) {
