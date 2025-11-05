@@ -109,7 +109,7 @@ export default async function prepareSnapRequests(
         throw new Error(`Target ${name} not found in config`);
       }
       const target = new RemoteBrowserTarget(
-        config.targets[name].browserType,
+        config.targets[name].type,
         config.targets[name],
       );
       const snapRequestIds = await target.execute(

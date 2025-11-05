@@ -48,7 +48,7 @@ interface LocalSnapshot {
 interface DynamicTarget {
   name: string;
   viewport: `${number}x${number}`;
-  browserType: BrowserType;
+  type: BrowserType;
 }
 
 interface CSSBlock {
@@ -370,7 +370,7 @@ Docs:
       }
 
       const target = this.happoConfig.targets[name];
-      const remoteTarget = new RemoteBrowserTarget(target.browserType, target);
+      const remoteTarget = new RemoteBrowserTarget(target.type, target);
       const requestIds = await remoteTarget.execute(
         {
           targetName: name,
@@ -596,7 +596,7 @@ Docs:
         typeof target === 'object' &&
         target.name &&
         target.viewport &&
-        target.browserType
+        target.type
       ) {
         if (!this.happoConfig) {
           throw new Error('Happo config not initialized');
@@ -608,7 +608,7 @@ Docs:
           const targetName = target.name;
           const constructedTarget: TargetWithDefaults = {
             viewport: target.viewport,
-            browserType: target.browserType,
+            type: target.type,
             __dynamic: true,
           };
           // add dynamic target
