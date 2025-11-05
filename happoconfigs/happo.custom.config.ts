@@ -4,11 +4,11 @@ import baseConfig from './happo.config.ts';
 
 const config: Config = defineConfig({
   ...baseConfig,
-  project: 'static',
+  project: 'custom',
   integration: {
-    type: 'static',
-    generateStaticPackage: async () => ({
-      rootDir: './tmp/happo-static',
+    type: 'custom',
+    build: async () => ({
+      rootDir: './tmp/happo-custom',
       entryPoint: 'bundle.js',
     }),
   },

@@ -37,8 +37,13 @@ export interface CSSBlock {
 
 interface ExecuteParams {
   globalCSS?: string | Array<CSSBlock>;
-  assetsPackage?: unknown;
-  staticPackage?: unknown;
+
+  /** Path to the assets package */
+  assetsPackage?: string;
+
+  /** Path to the static package */
+  staticPackage?: string;
+
   snapPayloads?: Array<unknown>;
   pages?: Array<Page>;
   targetName?: string;

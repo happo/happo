@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
-import generateStorybookStaticPackage from '../storybook/index.ts';
+import buildStorybookPackage from '../storybook/index.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
 import uploadAssets from './uploadAssets.ts';
@@ -49,25 +49,25 @@ async function createIframeHTML(
   await fs.promises.writeFile(iframePath, iframeContent);
 }
 
-async function generateStaticPackage(
+async function buildPackage(
   { integration }: ConfigWithDefaults,
   logger: Logger,
 ): Promise<string> {
-  if (integration.type === 'static') {
-    const { rootDir, entryPoint } = await integration.generateStaticPackage();
+  if (integration.type === 'custom') {
+    const { rootDir, entryPoint } = await integration.build();
     await createIframeHTML(rootDir, entryPoint, logger);
     return rootDir;
   }
 
   if (integration.type === 'storybook') {
-    return await generateStorybookStaticPackage(integration);
+    return await buildStorybookPackage(integration);
   }
 
   throw new Error(`Unsupported integration type: ${integration.type}`);
 }
 
-async function validateStaticPackage(staticPackageDir: string): Promise<void> {
-  const iframePath = path.join(staticPackageDir, 'iframe.html');
+async function validatePackage(packageDir: string): Promise<void> {
+  const iframePath = path.join(packageDir, 'iframe.html');
 
   if (!(await fileExists(iframePath))) {
     throw new Error(
@@ -80,12 +80,12 @@ export default async function prepareSnapRequests(
   config: ConfigWithDefaults,
 ): Promise<Array<number>> {
   const logger = new Logger();
-  const staticPackageDir = await generateStaticPackage(config, logger);
+  const packageDir = await buildPackage(config, logger);
 
-  await validateStaticPackage(staticPackageDir);
+  await validatePackage(packageDir);
 
-  const { buffer, hash } = await deterministicArchive([staticPackageDir]);
-  const staticPackagePath = await uploadAssets(
+  const { buffer, hash } = await deterministicArchive([packageDir]);
+  const packagePath = await uploadAssets(
     buffer,
     {
       hash,
@@ -115,7 +115,7 @@ export default async function prepareSnapRequests(
       const snapRequestIds = await target.execute(
         {
           targetName: name,
-          staticPackage: staticPackagePath,
+          staticPackage: packagePath,
         },
         config,
       );

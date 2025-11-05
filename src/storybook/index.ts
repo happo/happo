@@ -100,7 +100,7 @@ function buildStorybook({
   });
 }
 
-export default async function generateStorybookStaticPackage({
+export default async function buildStorybookPackage({
   configDir = '.storybook',
   staticDir,
   outputDir = '.out',

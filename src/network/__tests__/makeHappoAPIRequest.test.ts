@@ -124,9 +124,9 @@ beforeEach(() => {
     targets: {},
     project: 'test',
     integration: {
-      type: 'static',
-      generateStaticPackage: async () => ({
-        rootDir: './static',
+      type: 'custom',
+      build: async () => ({
+        rootDir: './custom',
         entryPoint: 'index.js',
       }),
     },

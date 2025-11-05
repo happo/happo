@@ -224,16 +224,16 @@ describe('main', () => {
       assert.strictEqual(process.exitCode, 1);
     });
 
-    describe('static integration', () => {
+    describe('custom integration', () => {
       beforeEach(async () => {
         tmpfs.writeFile(
           'happo.config.ts',
           `
           export default {
             integration: { 
-              type: 'static',
-              generateStaticPackage: async () => ({
-                rootDir: '${tmpfs.getTempDir()}/happo-static',
+              type: 'custom',
+              build: async () => ({
+                rootDir: '${tmpfs.getTempDir()}/happo-custom',
                 entryPoint: 'bundle.js',
               }),
             },
@@ -252,9 +252,9 @@ describe('main', () => {
 
       it('generates a iframe.html file when it does not exist', async () => {
         await main(['npx', 'happo'], logger);
-        assert(fs.existsSync(tmpfs.fullPath('happo-static/iframe.html')));
+        assert(fs.existsSync(tmpfs.fullPath('happo-custom/iframe.html')));
         const iframeContent = fs.readFileSync(
-          tmpfs.fullPath('happo-static/iframe.html'),
+          tmpfs.fullPath('happo-custom/iframe.html'),
           'utf8',
         );
         assert.ok(iframeContent.includes('<script src="bundle.js"></script>'));
@@ -265,7 +265,7 @@ describe('main', () => {
       describe('when custom iframe.html file is provided', () => {
         beforeEach(async () => {
           tmpfs.writeFile(
-            'happo-static/iframe.html',
+            'happo-custom/iframe.html',
             '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><script src="/bundle.js"></script></head><body>CUSTOM IFRAME HTML</body></html>',
           );
         });
@@ -279,7 +279,7 @@ describe('main', () => {
         it('does not clobber the custom iframe.html file', async () => {
           await main(['npx', 'happo'], logger);
           assert.strictEqual(
-            fs.readFileSync(tmpfs.fullPath('happo-static/iframe.html'), 'utf8'),
+            fs.readFileSync(tmpfs.fullPath('happo-custom/iframe.html'), 'utf8'),
             '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><script src="/bundle.js"></script></head><body>CUSTOM IFRAME HTML</body></html>',
           );
         });
