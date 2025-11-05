@@ -261,9 +261,6 @@ async function resolveBeforeSha(
     TRAVIS_COMMIT_RANGE,
     GITHUB_EVENT_PATH,
     SYSTEM_PULLREQUEST_TARGETBRANCH,
-
-    // legacy
-    BASE_BRANCH,
   } = env;
 
   if (HAPPO_PREVIOUS_SHA) {
@@ -301,8 +298,7 @@ async function resolveBeforeSha(
     ].join('/');
   }
 
-  const baseBranch =
-    HAPPO_BASE_BRANCH || BASE_BRANCH || baseAzureBranch || 'origin/main';
+  const baseBranch = HAPPO_BASE_BRANCH || baseAzureBranch || 'origin/main';
   const res = spawnSync('git', ['merge-base', baseBranch, afterSha], {
     encoding: 'utf8',
   });
