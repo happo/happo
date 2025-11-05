@@ -64,8 +64,8 @@ const DIST_CONFIGS: Array<EntryConfig> = [
   },
 
   {
-    entryPoints: ['src/static/index.ts'],
-    outdir: 'dist/static',
+    entryPoints: ['src/custom/index.ts'],
+    outdir: 'dist/custom',
     platform: 'node',
   },
 ];

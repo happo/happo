@@ -53,18 +53,18 @@ interface PlaywrightIntegration {
 
 export type E2EIntegration = CypressIntegration | PlaywrightIntegration;
 
-interface StaticIntegration {
-  type: 'static';
+interface CustomIntegration {
+  type: 'custom';
 
   /**
-   * An async function that generates a static package. Returns an object with
-   * the path to the folder containing the static files and the path to the
+   * An async function that generates a custom package. Returns an object with
+   * the path to the folder containing the custom files and the path to the
    * entry point file relative to the root directory.
    *
    * @example
-   * { rootDir: 'dist/static', entryPoint: 'index.js' }
+   * { rootDir: 'dist/custom', entryPoint: 'index.js' }
    */
-  generateStaticPackage: () => Promise<{ rootDir: string; entryPoint: string }>;
+  build: () => Promise<{ rootDir: string; entryPoint: string }>;
 }
 
 interface Page {
@@ -137,7 +137,7 @@ export interface Config {
    *
    * - 'storybook': Use Storybook to generate snapshots
    * - 'e2e': Use Playwright or Cypress to generate snapshots
-   * - 'static': Use a static JS bundle to generate snapshots
+   * - 'custom': Use a custom JS bundle to generate snapshots
    *
    * - 'pages': Use a list of pages to generate snapshots
    */
@@ -145,7 +145,7 @@ export interface Config {
     | StorybookIntegration
     | CypressIntegration
     | PlaywrightIntegration
-    | StaticIntegration
+    | CustomIntegration
     | PagesIntegration;
 }
 

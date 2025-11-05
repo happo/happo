@@ -23,7 +23,7 @@
     "../src/**/browser/**",
     "../src/**/cypress/**",
     "../src/**/isomorphic/**",
-    "../src/static/**",
+    "../src/custom/**",
     "../src/test-utils/**"
   ]
 }

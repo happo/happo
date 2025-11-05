@@ -32,9 +32,9 @@
       "types": "./dist/playwright/index.d.ts",
       "default": "./dist/playwright/index.js"
     },
-    "./static": {
-      "types": "./dist/static/index.d.ts",
-      "default": "./dist/static/index.js"
+    "./custom": {
+      "types": "./dist/custom/index.d.ts",
+      "default": "./dist/custom/index.js"
     },
     "./storybook/addon": {
       "types": "./dist/storybook/browser/addon.d.ts",
@@ -59,19 +59,19 @@
   "scripts": {
     "all": "node ./scripts/allchecks.ts",
     "build": "pnpm build:types && pnpm build:dist",
+    "build:custom": "esbuild src/custom/__happo__/index.ts --bundle --format=iife --global-name=happoCustom --outfile=tmp/happo-custom/bundle.js --platform=browser --target=esnext",
     "build:dist": "./scripts/build.ts",
     "build:types": "pnpm tsc --pretty",
-    "build:static": "esbuild src/static/__happo__/index.ts --bundle --format=iife --global-name=happoStatic --outfile=tmp/happo-static/bundle.js --platform=browser --target=esnext",
     "build:watch": "tsc --build --watch",
-    "clean": "rm -rf dist tmp/tsc tmp/happo-static",
+    "clean": "rm -rf dist tmp/tsc tmp/happo-custom",
     "lint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
     "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p ${PORT:-6007}",
     "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
+    "test:custom": "pnpm build:dist && pnpm build:custom && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.custom.config.ts",
     "test:cypress": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.cypress.config.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
     "test:cypress:open": "cypress open -C src/cypress/__cypress__/cypress.config.ts",
     "test:playwright": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.playwright.config.ts e2e -- playwright test",
-    "test:static": "pnpm build:dist && pnpm build:static && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.static.config.ts",
     "test:storybook": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.storybook.config.ts",
     "tsc": "tsc --build tsconfig.json"
   },

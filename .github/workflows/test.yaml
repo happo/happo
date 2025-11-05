@@ -39,7 +39,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           happo-api-key: ${{ secrets.HAPPO_API_KEY }}
           happo-api-secret: ${{ secrets.HAPPO_API_SECRET }}
-          projects: 'cypress,storybook-v9,storybook-v10,playwright,static'
+          projects: 'cypress,storybook-v9,storybook-v10,playwright,custom'
 
   cypress:
     runs-on: ubuntu-latest
@@ -50,13 +50,13 @@ jobs:
       - uses: ./.github/actions/setup-cypress
       - run: pnpm test:cypress
 
-  static:
+  custom:
     runs-on: ubuntu-latest
-    name: Happo Static
+    name: Happo Custom
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-env
-      - run: pnpm test:static
+      - run: pnpm test:custom
 
   storybook:
     runs-on: ubuntu-latest
