@@ -401,8 +401,6 @@ describe('resolveEnvironment', () => {
     const link = 'https://github.com/happo/happo/pull/123';
     const currentSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
     const happoEnv = {
-      HAPPO_CURRENT_SHA: currentSha,
-      HAPPO_PREVIOUS_SHA: 'hhhggg',
       HAPPO_NOTIFY: 'foo@bar.com,bar@foo.com',
     };
 
@@ -410,6 +408,8 @@ describe('resolveEnvironment', () => {
       {
         link,
         message: 'This is a change',
+        currentSha,
+        previousSha: 'hhhggg',
       },
       happoEnv,
     );
@@ -424,10 +424,10 @@ describe('resolveEnvironment', () => {
       {
         baseBranch: 'non-existing',
         link,
+        currentSha,
       },
       {
         ...happoEnv,
-        HAPPO_PREVIOUS_SHA: undefined,
       },
     );
 
@@ -440,6 +440,8 @@ describe('resolveEnvironment', () => {
     result = await resolveEnvironment(
       {
         link,
+        currentSha,
+        previousSha: 'hhhggg',
       },
       {
         ...happoEnv,
@@ -452,6 +454,8 @@ describe('resolveEnvironment', () => {
     result = await resolveEnvironment(
       {
         link,
+        currentSha,
+        previousSha: 'hhhggg',
       },
       {
         ...happoEnv,

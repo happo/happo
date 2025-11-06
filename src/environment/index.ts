@@ -29,6 +29,8 @@ interface GitHubEvent {
 
 interface CLIArgs {
   baseBranch?: string;
+  currentSha?: string;
+  previousSha?: string;
   message?: string;
   link?: string;
 }
@@ -51,10 +53,8 @@ const envKeys: ReadonlyArray<string> = [
   'CIRCLE_SHA1',
   'CI_PULL_REQUEST',
   'GITHUB_BASE',
-  'HAPPO_CURRENT_SHA',
   'HAPPO_DEBUG',
   'HAPPO_GITHUB_BASE',
-  'HAPPO_PREVIOUS_SHA',
   'HAPPO_FALLBACK_SHAS',
   'HAPPO_FALLBACK_SHAS_COUNT',
   'TRAVIS_COMMIT',
@@ -279,17 +279,16 @@ async function resolveBeforeSha(
   env: Record<string, string | undefined>,
   afterSha: string,
 ): Promise<string | undefined> {
+  if (cliArgs.previousSha) {
+    return cliArgs.previousSha;
+  }
+
   const {
-    HAPPO_PREVIOUS_SHA,
     HAPPO_BEFORE_SHA_TAG_MATCHER,
     TRAVIS_COMMIT_RANGE,
     GITHUB_EVENT_PATH,
     SYSTEM_PULLREQUEST_TARGETBRANCH,
   } = env;
-
-  if (HAPPO_PREVIOUS_SHA) {
-    return HAPPO_PREVIOUS_SHA;
-  }
 
   if (HAPPO_BEFORE_SHA_TAG_MATCHER) {
     const resolvedSha = resolveShaFromTagMatcher(HAPPO_BEFORE_SHA_TAG_MATCHER);
@@ -404,10 +403,14 @@ function getHeadShaWithLocalChanges(): {
 }
 
 async function resolveAfterSha(
+  cliArgs: CLIArgs,
   env: Record<string, string | undefined>,
 ): Promise<string | { headSha: string; headShaWithLocalChanges: string }> {
+  if (cliArgs.currentSha) {
+    return cliArgs.currentSha;
+  }
+
   const {
-    HAPPO_CURRENT_SHA,
     CIRCLE_SHA1,
     TRAVIS_PULL_REQUEST_SHA,
     TRAVIS_COMMIT,
@@ -416,11 +419,13 @@ async function resolveAfterSha(
     BUILD_SOURCEVERSION,
     SYSTEM_PULLREQUEST_SOURCEBRANCH,
   } = env;
-  const sha =
-    HAPPO_CURRENT_SHA || CIRCLE_SHA1 || TRAVIS_PULL_REQUEST_SHA || TRAVIS_COMMIT;
+
+  const sha = CIRCLE_SHA1 || TRAVIS_PULL_REQUEST_SHA || TRAVIS_COMMIT;
+
   if (sha) {
     return sha;
   }
+
   if (SYSTEM_PULLREQUEST_SOURCEBRANCH) {
     // azure pull request
     const rawBranchName = SYSTEM_PULLREQUEST_SOURCEBRANCH.split('/').toReversed()[0];
@@ -500,7 +505,7 @@ export default async function resolveEnvironment(
   env: Record<string, string | undefined> = process.env,
 ): Promise<EnvironmentResult> {
   const debugMode = !!env.HAPPO_DEBUG;
-  const afterSha = await resolveAfterSha(env);
+  const afterSha = await resolveAfterSha(cliArgs, env);
 
   const realAfterSha = typeof afterSha === 'string' ? afterSha : afterSha.headSha;
   const afterShaWithLocalChanges =

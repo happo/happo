@@ -57,6 +57,14 @@ function parseRawArgs(rawArgs: Array<string>) {
       message: {
         type: 'string',
       },
+
+      currentSha: {
+        type: 'string',
+      },
+
+      previousSha: {
+        type: 'string',
+      },
     },
 
     allowPositionals: true,
@@ -82,6 +90,8 @@ Options:
   --baseBranch <branch> Base branch to use for comparison (default: origin/main)
   --link <url>          URL to contextualize the comparison (default: auto-detected from CI environment)
   --message <message>   Message to associate with the comparison (default: auto-detected from CI environment)
+  --currentSha <sha>    Current SHA to use for comparison (default: auto-detected from CI environment)
+  --previousSha <sha>   Previous SHA to use for comparison (default: auto-detected from CI environment)
 
 Examples:
   happo
