@@ -390,13 +390,22 @@ describe('main', () => {
           () => process.env,
           () => ({
             HAPPO_NONCE: 'test-nonce',
-            HAPPO_PREVIOUS_SHA: 'test-sha',
-            HAPPO_CURRENT_SHA: 'test-sha',
           }),
         );
 
         it('can finalize a report', async () => {
-          await main(['npx', 'happo', 'finalize'], logger);
+          await main(
+            [
+              'npx',
+              'happo',
+              'finalize',
+              '--currentSha',
+              'test-sha',
+              '--previousSha',
+              'test-sha',
+            ],
+            logger,
+          );
           if (process.exitCode !== 0) {
             console.log('process.exitCode', process.exitCode);
             console.log('logger.log.mock.calls', logger.log.mock.calls);
@@ -410,15 +419,22 @@ describe('main', () => {
       describe('cancelling the Happo job', () => {
         withOverrides(
           () => process.env,
-          () => ({
-            HAPPO_PREVIOUS_SHA: 'foobar',
-            HAPPO_CURRENT_SHA: 'barfoo',
-          }),
+          () => ({}),
         );
 
         it('cancels the Happo job when the command fails', async () => {
           await main(
-            ['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
+            [
+              'npx',
+              'happo',
+              '--currentSha',
+              'barfoo',
+              '--previousSha',
+              'foobar',
+              '--',
+              'ls',
+              tmpfs.fullPath('non-existent.txt'),
+            ],
             logger,
           );
           assert.notStrictEqual(process.exitCode, 0);
