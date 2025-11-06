@@ -78,6 +78,10 @@ function parseRawArgs(rawArgs: Array<string>) {
         type: 'string',
       },
 
+      notify: {
+        type: 'string',
+      },
+
       githubBase: {
         type: 'string',
       },
@@ -112,6 +116,7 @@ Options:
   --beforeShaTagMatcher <matcher> git tag matcher to use for before SHA resolution
   --fallbackShas <shas> Space-, newline- or comma-separated list of fallback shas for compare calls (default: auto-detected from CI environment)
   --fallbackShasCount <count> Number of fallback shas to use for compare calls (default: 50)
+  --notify <emails>     One or more (comma-separated) email addresses to notify with results
   --githubBase <url>    GitHub base URL to use for comparison (default: GITHUB_SERVER_URL or 'https://github.com')
 
 Examples:
@@ -121,6 +126,7 @@ Examples:
   happo --baseBranch origin/long-lived-branch
   happo --link https://github.com/happo/happo/pull/123
   happo --message "Add new feature"
+  happo --notify me@example.com,you@example.com
 
   happo --version
   happo --help

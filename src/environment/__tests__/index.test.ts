@@ -406,9 +406,7 @@ describe('resolveEnvironment', () => {
     initGitRepo();
     const link = 'https://github.com/happo/happo/pull/123';
     const currentSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
-    const happoEnv = {
-      HAPPO_NOTIFY: 'foo@bar.com,bar@foo.com',
-    };
+    const happoEnv = {};
 
     let result = await resolveEnvironment(
       {
@@ -416,6 +414,7 @@ describe('resolveEnvironment', () => {
         message: 'This is a change',
         currentSha,
         previousSha: 'hhhggg',
+        notify: 'foo@bar.com,bar@foo.com',
       },
       happoEnv,
     );
