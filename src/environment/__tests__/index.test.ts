@@ -87,6 +87,19 @@ describe('resolveEnvironment', () => {
 
     // Message should be undefined because we are no longer on a single commit
     assert.equal(result3.message, undefined);
+
+    // Add all changes to the index
+    tmpfs.exec('git', ['add', '.']).trim();
+
+    const result4 = await resolveEnvironment({});
+
+    // After SHA should be different because of the local change
+    assert.notEqual(result4.afterSha, afterSha);
+    // Before SHA should be the same because we didn't change the branch
+    assert.equal(result4.beforeSha, beforeSha);
+
+    // Message should be undefined because we are no longer on a single commit
+    assert.equal(result4.message, undefined);
   });
 
   it('resolves the CircleCI environment', async () => {
