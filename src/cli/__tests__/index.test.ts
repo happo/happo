@@ -375,45 +375,38 @@ describe('main', () => {
         assert(logger.log.mock.callCount() >= 1);
       });
 
-      it('fails to finalize when HAPPO_NONCE is not set', async () => {
+      it('fails to finalize when --nonce is not set', async () => {
         await main(['npx', 'happo', 'finalize'], logger);
         assert.equal(process.exitCode, 1);
         assert(logger.error.mock.callCount() >= 1);
         assert.match(
           logger.error.mock.calls[0]?.arguments[0],
-          /Missing HAPPO_NONCE environment variable/,
+          /Missing --nonce argument/,
         );
       });
 
-      describe('with HAPPO_NONCE', () => {
-        withOverrides(
-          () => process.env,
-          () => ({
-            HAPPO_NONCE: 'test-nonce',
-          }),
+      it('can finalize a report when --nonce is set', async () => {
+        await main(
+          [
+            'npx',
+            'happo',
+            'finalize',
+            '--currentSha',
+            'test-sha',
+            '--previousSha',
+            'test-sha',
+            '--nonce',
+            'test-nonce',
+          ],
+          logger,
         );
-
-        it('can finalize a report', async () => {
-          await main(
-            [
-              'npx',
-              'happo',
-              'finalize',
-              '--currentSha',
-              'test-sha',
-              '--previousSha',
-              'test-sha',
-            ],
-            logger,
-          );
-          if (process.exitCode !== 0) {
-            console.log('process.exitCode', process.exitCode);
-            console.log('logger.log.mock.calls', logger.log.mock.calls);
-            console.log('logger.error.mock.calls', logger.error.mock.calls);
-          }
-          assert.equal(process.exitCode, 0);
-          assert(makeHappoAPIRequestMock.mock.callCount() > 0);
-        });
+        if (process.exitCode !== 0) {
+          console.log('process.exitCode', process.exitCode);
+          console.log('logger.log.mock.calls', logger.log.mock.calls);
+          console.log('logger.error.mock.calls', logger.error.mock.calls);
+        }
+        assert.equal(process.exitCode, 0);
+        assert(makeHappoAPIRequestMock.mock.callCount() > 0);
       });
 
       describe('cancelling the Happo job', () => {

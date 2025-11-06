@@ -39,6 +39,7 @@ interface CLIArgs {
   fallbackShas?: string;
   fallbackShasCount?: string;
   githubBase?: string;
+  nonce?: string;
 }
 
 export interface EnvironmentResult {
@@ -549,7 +550,7 @@ export default async function resolveEnvironment(
     message,
     beforeSha: nonNullBeforeSha,
     afterSha: afterShaWithLocalChanges,
-    nonce: env.HAPPO_NONCE,
+    nonce: cliArgs.nonce,
     debugMode,
     notify: cliArgs.notify,
     fallbackShas: resolveFallbackShas(cliArgs, nonNullBeforeSha),

@@ -82,6 +82,10 @@ function parseRawArgs(rawArgs: Array<string>) {
         type: 'string',
       },
 
+      nonce: {
+        type: 'string',
+      },
+
       githubBase: {
         type: 'string',
       },
@@ -118,6 +122,7 @@ Options:
   --fallbackShasCount <count> Number of fallback shas to use for compare calls (default: 50)
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
   --githubBase <url>    GitHub base URL to use for comparison (default: GITHUB_SERVER_URL or 'https://github.com')
+  --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
 
 Examples:
   happo
@@ -127,6 +132,7 @@ Examples:
   happo --link https://github.com/happo/happo/pull/123
   happo --message "Add new feature"
   happo --notify me@example.com,you@example.com
+  happo --nonce my-unique-nonce
 
   happo --version
   happo --help
@@ -134,6 +140,7 @@ Examples:
   happo -- playwright test
 
   happo finalize
+  happo finalize --nonce my-unique-nonce
   `;
 
 function makeAbsolute(configFilePath: string): string {
@@ -148,13 +155,15 @@ export async function main(
   logger: Logger = console,
 ): Promise<void> {
   const args = parseRawArgs(rawArgs.slice(2));
-  // Handle --version flag
+
   if (args.values.version) {
+    // --version
     logger.log(await getVersion());
     return;
   }
 
   if (args.values.help) {
+    // --help
     logger.log(helpText);
     return;
   }

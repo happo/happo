@@ -58,7 +58,7 @@ export async function finalizeAll({
   const { afterSha, nonce } = environment;
 
   if (!nonce) {
-    throw new Error('[HAPPO] Missing HAPPO_NONCE environment variable');
+    throw new Error('[HAPPO] Missing --nonce argument');
   }
 
   const body: {
