@@ -35,6 +35,7 @@ interface CLIArgs {
   link?: string;
   authorEmail?: string;
   beforeShaTagMatcher?: string;
+  notify?: string;
   fallbackShas?: string;
   fallbackShasCount?: string;
   githubBase?: string;
@@ -550,7 +551,7 @@ export default async function resolveEnvironment(
     afterSha: afterShaWithLocalChanges,
     nonce: env.HAPPO_NONCE,
     debugMode,
-    notify: env.HAPPO_NOTIFY,
+    notify: cliArgs.notify,
     fallbackShas: resolveFallbackShas(cliArgs, nonNullBeforeSha),
   };
 
