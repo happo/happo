@@ -327,7 +327,7 @@ function getHeadShaWithLocalChanges(): {
   }
 
   // Check for local changes
-  const diffRes = spawnSync('git', ['diff'], {
+  const diffRes = spawnSync('git', ['diff', 'HEAD'], {
     encoding: 'utf8',
   });
 
