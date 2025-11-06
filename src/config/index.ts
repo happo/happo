@@ -164,7 +164,7 @@ type DesktopBrowserType = 'chrome' | 'firefox' | 'edge' | 'safari' | 'accessibil
 export type BrowserType = MobileSafariBrowserType | DesktopBrowserType;
 
 interface BaseTarget {
-  browserType: BrowserType;
+  type: BrowserType;
 
   /**
    * Split the target into chunks to be run on multiple workers in parallel
@@ -287,11 +287,11 @@ interface BaseTarget {
 }
 
 interface MobileSafariTarget extends BaseTarget {
-  browserType: MobileSafariBrowserType;
+  type: MobileSafariBrowserType;
 }
 
 interface DesktopTarget extends BaseTarget {
-  browserType: DesktopBrowserType;
+  type: DesktopBrowserType;
 
   /**
    * Set the viewport size for the browser

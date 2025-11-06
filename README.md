@@ -43,15 +43,15 @@ export default defineConfig({
   apiSecret: process.env.HAPPO_API_SECRET!,
   targets: {
     'chrome-desktop': {
-      browserType: 'chrome',
+      type: 'chrome',
       viewport: '1280x720',
     },
     'firefox-desktop': {
-      browserType: 'firefox',
+      type: 'firefox',
       viewport: '1280x720',
     },
     'ios-safari': {
-      browserType: 'ios-safari',
+      type: 'ios-safari',
     },
   },
 });

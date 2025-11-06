@@ -77,7 +77,7 @@ beforeEach(async () => {
         apiKey: 'test-key',
         apiSecret: 'test-secret',
         targets: {
-          chrome: { browserType: 'chrome', viewport: '1024x768' },
+          chrome: { type: 'chrome', viewport: '1024x768' },
         },
       };
     `,
@@ -146,7 +146,7 @@ describe('main', () => {
         integration: { type: 'cypress' },
         apiKey: 'custom-key',
         apiSecret: 'custom-secret',
-        targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
+        targets: { firefox: { type: 'firefox', viewport: '800x600' } },
       };`,
       );
 
@@ -165,7 +165,7 @@ describe('main', () => {
         integration: { type: 'cypress' },
         apiKey: 'custom-key',
         apiSecret: 'custom-secret',
-        targets: { firefox: { browserType: 'firefox', viewport: '800x600' } },
+        targets: { firefox: { type: 'firefox', viewport: '800x600' } },
       };`,
       );
 

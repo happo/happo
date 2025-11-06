@@ -9,17 +9,17 @@ const config: Config = defineConfig({
 
   targets: {
     chrome: {
-      browserType: 'chrome',
+      type: 'chrome',
       viewport: '1024x768',
     },
 
     chromeSmall: {
-      browserType: 'chrome',
+      type: 'chrome',
       viewport: '375x667',
     },
 
     accessibility: {
-      browserType: 'accessibility',
+      type: 'accessibility',
       viewport: '375x667',
     },
   },

@@ -34,7 +34,7 @@ export async function loadConfigFile(
   if (!config.default.targets) {
     config.default.targets = {
       chrome: {
-        browserType: 'chrome',
+        type: 'chrome',
         viewport: '1024x768',
       },
     };
