@@ -7,7 +7,7 @@ import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
 import type { SkipItems } from './isomorphic/types.ts';
 
-const { HAPPO_DEBUG, HAPPO_STORYBOOK_BUILD_COMMAND } = process.env;
+const { HAPPO_DEBUG } = process.env;
 
 function assertSkippedIsSkipItems(skipped: unknown): asserts skipped is SkipItems {
   if (!Array.isArray(skipped)) {
@@ -22,10 +22,6 @@ function assertSkippedIsSkipItems(skipped: unknown): asserts skipped is SkipItem
 }
 
 function resolveBuildCommandParts() {
-  if (HAPPO_STORYBOOK_BUILD_COMMAND) {
-    return HAPPO_STORYBOOK_BUILD_COMMAND.split(' ');
-  }
-
   const version = getStorybookVersionFromPackageJson();
 
   if (version < 9) {
