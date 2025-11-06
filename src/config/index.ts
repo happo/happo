@@ -67,7 +67,7 @@ interface CustomIntegration {
   build: () => Promise<{ rootDir: string; entryPoint: string }>;
 }
 
-interface Page {
+export interface Page {
   /**
    * URL of the page to screenshot
    *
@@ -88,6 +88,11 @@ interface Page {
    * Wait for the content to appear on the page before taking the screenshot.
    */
   waitForContent?: string;
+
+  /**
+   * Wait for a condition to be true before taking the screenshot.
+   */
+  waitForSelector?: string;
 }
 
 interface PagesIntegration {

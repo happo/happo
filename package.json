@@ -73,6 +73,7 @@
     "test:cypress:open": "cypress open -C src/cypress/__cypress__/cypress.config.ts",
     "test:playwright": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.playwright.config.ts e2e -- playwright test",
     "test:storybook": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.storybook.config.ts",
+    "test:pages": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.pages.config.ts",
     "tsc": "tsc --build tsconfig.json"
   },
   "browserslist": {

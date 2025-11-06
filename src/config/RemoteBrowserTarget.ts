@@ -1,15 +1,8 @@
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import createHash from '../utils/createHash.ts';
-import type { ConfigWithDefaults, TargetWithDefaults } from './index.ts';
+import type { ConfigWithDefaults, Page, TargetWithDefaults } from './index.ts';
 
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
-
-interface Page {
-  url: string;
-  title: string;
-  extends?: string;
-  [key: string]: unknown;
-}
 
 /**
  * PageSlice is an array of pages with the extra extendsSha property.
@@ -35,7 +28,7 @@ export interface CSSBlock {
   css: string;
 }
 
-interface ExecuteParams {
+export interface ExecuteParams {
   globalCSS?: string | Array<CSSBlock>;
 
   /** Path to the assets package */
@@ -50,24 +43,12 @@ interface ExecuteParams {
 }
 
 function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
-  const extendsPages: Record<string, PageSlice> = {};
-  const rawPages: Array<Page> = [];
-
-  for (const page of pages) {
-    if (page.extends) {
-      extendsPages[page.extends] = extendsPages[page.extends] ?? [];
-      extendsPages[page.extends]!.push(page);
-    } else {
-      rawPages.push(page);
-    }
-  }
-
   const result: Array<PageSlice> = [];
 
   // First, split the raw pages into chunks
-  const pagesPerChunk = Math.ceil(rawPages.length / chunks);
+  const pagesPerChunk = Math.ceil(pages.length / chunks);
   for (let i = 0; i < chunks; i += 1) {
-    const pageSlice = rawPages.slice(
+    const pageSlice = pages.slice(
       i * pagesPerChunk,
       i * pagesPerChunk + pagesPerChunk,
     );
@@ -76,13 +57,6 @@ function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
       result.push(pageSlice);
     }
   }
-
-  // Then, add the extends pages to the result
-  for (const [sha, pageSlice] of Object.entries(extendsPages)) {
-    pageSlice.extendsSha = sha;
-    result.push(pageSlice);
-  }
-
   return result;
 }
 
