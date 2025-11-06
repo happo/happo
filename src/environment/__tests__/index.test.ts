@@ -412,8 +412,8 @@ describe('resolveEnvironment', () => {
       {
         link,
         message: 'This is a change',
-        currentSha,
-        previousSha: 'hhhggg',
+        afterSha: currentSha,
+        beforeSha: 'hhhggg',
         notify: 'foo@bar.com,bar@foo.com',
       },
       happoEnv,
@@ -429,7 +429,7 @@ describe('resolveEnvironment', () => {
       {
         baseBranch: 'non-existing',
         link,
-        currentSha,
+        afterSha: currentSha,
       },
       {
         ...happoEnv,
@@ -445,8 +445,8 @@ describe('resolveEnvironment', () => {
     result = await resolveEnvironment(
       {
         link,
-        currentSha,
-        previousSha: 'hhhggg',
+        afterSha: currentSha,
+        beforeSha: 'hhhggg',
         fallbackShas: '123456\n789012\n345678',
       },
       {
@@ -459,8 +459,8 @@ describe('resolveEnvironment', () => {
     result = await resolveEnvironment(
       {
         link,
-        currentSha,
-        previousSha: 'hhhggg',
+        afterSha: currentSha,
+        beforeSha: 'hhhggg',
         fallbackShas: '123456 789012 345678',
       },
       {
@@ -473,8 +473,8 @@ describe('resolveEnvironment', () => {
     result = await resolveEnvironment(
       {
         link,
-        currentSha,
-        previousSha: 'hhhggg',
+        afterSha: currentSha,
+        beforeSha: 'hhhggg',
         fallbackShas: '123456,789012,345678',
       },
       {

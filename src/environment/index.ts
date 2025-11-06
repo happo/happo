@@ -29,8 +29,8 @@ interface GitHubEvent {
 
 interface CLIArgs {
   baseBranch?: string;
-  currentSha?: string;
-  previousSha?: string;
+  afterSha?: string;
+  beforeSha?: string;
   message?: string;
   link?: string;
   authorEmail?: string;
@@ -294,8 +294,8 @@ async function resolveBeforeSha(
   env: Record<string, string | undefined>,
   afterSha: string,
 ): Promise<string | undefined> {
-  if (cliArgs.previousSha) {
-    return cliArgs.previousSha;
+  if (cliArgs.beforeSha) {
+    return cliArgs.beforeSha;
   }
 
   if (cliArgs.beforeShaTagMatcher) {
@@ -417,8 +417,8 @@ async function resolveAfterSha(
   cliArgs: CLIArgs,
   env: Record<string, string | undefined>,
 ): Promise<string | { headSha: string; headShaWithLocalChanges: string }> {
-  if (cliArgs.currentSha) {
-    return cliArgs.currentSha;
+  if (cliArgs.afterSha) {
+    return cliArgs.afterSha;
   }
 
   const {
