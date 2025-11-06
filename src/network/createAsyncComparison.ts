@@ -41,7 +41,7 @@ export default async function createAsyncComparison(
     afterSha,
     link,
     message,
-    author,
+    authorEmail,
     notify,
     fallbackShas,
   }: EnvironmentResult,
@@ -60,7 +60,7 @@ export default async function createAsyncComparison(
       body: {
         link,
         message,
-        author,
+        author: authorEmail,
         project: config.project,
         isAsync: true,
         notify,
