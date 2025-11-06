@@ -349,14 +349,16 @@ describe('resolveEnvironment', () => {
 
     // Try with a real commit sha in the repo
     result = await resolveEnvironment(
-      { githubBase: origin },
+      {
+        githubBase: origin,
+        fallbackShasCount: '5',
+      },
       {
         ...travisEnv,
         TRAVIS_PULL_REQUEST_SHA: undefined,
         TRAVIS_PULL_REQUEST: undefined,
         TRAVIS_COMMIT_RANGE: undefined,
         TRAVIS_COMMIT: afterSha,
-        HAPPO_FALLBACK_SHAS_COUNT: '5',
       },
     );
 
@@ -435,30 +437,44 @@ describe('resolveEnvironment', () => {
     assert.equal(result.link, 'https://github.com/happo/happo/pull/123');
     assert.ok(result.message !== undefined);
 
-    // Use provided HAPPO_FALLBACK_SHAS
+    // Use provided fallbackShas with newlines
     result = await resolveEnvironment(
       {
         link,
         currentSha,
         previousSha: 'hhhggg',
+        fallbackShas: '123456\n789012\n345678',
       },
       {
         ...happoEnv,
-        HAPPO_FALLBACK_SHAS: '123456\n789012\n345678',
       },
     );
     assert.deepStrictEqual(result.fallbackShas, ['123456', '789012', '345678']);
 
-    // Use provided HAPPO_FALLBACK_SHAS with commas
+    // Use provided fallbackShas with spaces
     result = await resolveEnvironment(
       {
         link,
         currentSha,
         previousSha: 'hhhggg',
+        fallbackShas: '123456 789012 345678',
       },
       {
         ...happoEnv,
-        HAPPO_FALLBACK_SHAS: '123456,789012,345678',
+      },
+    );
+    assert.deepStrictEqual(result.fallbackShas, ['123456', '789012', '345678']);
+
+    // Use provided fallbackShas with commas
+    result = await resolveEnvironment(
+      {
+        link,
+        currentSha,
+        previousSha: 'hhhggg',
+        fallbackShas: '123456,789012,345678',
+      },
+      {
+        ...happoEnv,
       },
     );
     assert.deepStrictEqual(result.fallbackShas, ['123456', '789012', '345678']);

@@ -33,6 +33,8 @@ interface CLIArgs {
   previousSha?: string;
   message?: string;
   link?: string;
+  fallbackShas?: string;
+  fallbackShasCount?: string;
   githubBase?: string;
 }
 
@@ -59,8 +61,6 @@ const envKeys: ReadonlyArray<string> = [
   'GITHUB_SERVER_URL',
   'GITHUB_SHA',
   'HAPPO_DEBUG',
-  'HAPPO_FALLBACK_SHAS',
-  'HAPPO_FALLBACK_SHAS_COUNT',
   'SYSTEM_PULLREQUEST_PULLREQUESTID',
   'SYSTEM_PULLREQUEST_SOURCEBRANCH',
   'SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI',
@@ -467,13 +467,21 @@ async function resolveAfterSha(
 }
 
 function resolveFallbackShas(
-  env: Record<string, string | undefined>,
+  cliArgs: CLIArgs,
   beforeSha: string | undefined,
 ): Array<string> | undefined {
-  const { HAPPO_FALLBACK_SHAS, HAPPO_FALLBACK_SHAS_COUNT = 50 } = env;
+  if (cliArgs.fallbackShas) {
+    return cliArgs.fallbackShas.split(/[,\s]+/).filter(Boolean);
+  }
 
-  if (HAPPO_FALLBACK_SHAS) {
-    return HAPPO_FALLBACK_SHAS.split(/[,\n]/);
+  const fallbackShasCount = cliArgs.fallbackShasCount
+    ? Number.parseInt(cliArgs.fallbackShasCount, 10)
+    : 50;
+
+  if (Number.isNaN(fallbackShasCount)) {
+    throw new TypeError(
+      `fallbackShasCount must be a number. Invalid value: '${cliArgs.fallbackShasCount}'`,
+    );
   }
 
   const res = spawnSync(
@@ -482,16 +490,18 @@ function resolveFallbackShas(
       'log',
       '--format=%H',
       '--first-parent',
-      `--max-count=${HAPPO_FALLBACK_SHAS_COUNT}`,
+      `--max-count=${fallbackShasCount}`,
       `${beforeSha}^`,
     ],
     {
       encoding: 'utf8',
     },
   );
+
   if (res.status !== 0) {
     return undefined;
   }
+
   return res.stdout.split('\n').filter(Boolean);
 }
 
@@ -537,7 +547,7 @@ export default async function resolveEnvironment(
     nonce: env.HAPPO_NONCE,
     debugMode,
     notify: env.HAPPO_NOTIFY,
-    fallbackShas: resolveFallbackShas(env, nonNullBeforeSha),
+    fallbackShas: resolveFallbackShas(cliArgs, nonNullBeforeSha),
   };
 
   if (debugMode) {
