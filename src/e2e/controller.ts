@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 
-import { imageSize } from 'image-size';
 import pAll from 'p-all';
 
 import type {
@@ -33,16 +32,6 @@ interface Snapshot {
   bodyElementAttrs?: Record<string, string> | undefined;
 }
 
-interface LocalSnapshot {
-  component: string;
-  variant: string;
-  targets?: Array<string> | undefined;
-  target?: string | undefined;
-  url: string;
-  width?: number | undefined;
-  height?: number | undefined;
-}
-
 interface DynamicTarget {
   name: string;
   viewport: `${number}x${number}`;
@@ -67,17 +56,6 @@ export interface SnapshotRegistrationParams {
   targets?: Array<string | DynamicTarget> | undefined;
   htmlElementAttrs?: Record<string, string> | undefined;
   bodyElementAttrs?: Record<string, string> | undefined;
-}
-
-interface LocalSnapshotRegistrationParams {
-  component: string;
-  variant: string;
-  targets?: Array<string> | undefined;
-  target?: string | undefined;
-  width?: number | undefined;
-  height?: number | undefined;
-  path?: string | undefined;
-  buffer?: Buffer<ArrayBuffer> | undefined;
 }
 
 interface TimeframeParams {
@@ -176,8 +154,6 @@ class Controller {
   private snapshots: Array<Snapshot> = [];
   private allCssBlocks: Array<CSSBlock> = [];
   private snapshotAssetUrls: Array<AssetUrl> = [];
-  private localSnapshots: Array<LocalSnapshot> = [];
-  // private localSnapshotImages: Record<string, any> = {};
   private happoDebug: boolean = false;
   protected happoConfig: ConfigWithDefaults | null = null;
 
@@ -210,8 +186,6 @@ class Controller {
     this.snapshots = [];
     this.allCssBlocks = [];
     this.snapshotAssetUrls = [];
-    this.localSnapshots = [];
-    // this.localSnapshotImages = {};
     this.happoDebug = false;
 
     const { HAPPO_E2E_PORT, HAPPO_DEBUG } = process.env;
@@ -281,16 +255,6 @@ Documentation:
     }
 
     this.assertHappoConfig();
-
-    if (this.localSnapshots.length) {
-      if (this.happoDebug) {
-        console.log(
-          `[HAPPO] Processing ${this.localSnapshots.length} local snapshots`,
-        );
-      }
-      await this.processSnapRequestIds([await this.uploadLocalSnapshots()]);
-      return;
-    }
 
     if (!this.snapshots.length) {
       if (this.happoDebug) {
@@ -433,35 +397,6 @@ Documentation:
 
       this.allCssBlocks.push(block);
     }
-  }
-
-  async registerLocalSnapshot({
-    component,
-    variant,
-    targets,
-    target,
-    width,
-    height,
-
-    // One of path, buffer is required
-    path,
-    buffer,
-  }: LocalSnapshotRegistrationParams): Promise<void> {
-    if (!width && !height && buffer) {
-      const dimensions = imageSize(buffer);
-      width = dimensions.width;
-      height = dimensions.height;
-    }
-
-    this.localSnapshots.push({
-      component,
-      variant,
-      targets,
-      target,
-      url: await this.uploadImage(path || buffer!),
-      width,
-      height,
-    });
   }
 
   removeSnapshotsMadeBetween({ start, end }: TimeframeParams): void {
@@ -670,37 +605,6 @@ Documentation:
     return typeof uploadResult.url === 'string'
       ? uploadResult.url
       : String(uploadResult.url);
-  }
-
-  async uploadLocalSnapshots(): Promise<number> {
-    if (!this.happoConfig) {
-      throw new Error('Happo config not initialized');
-    }
-
-    const reportResult = await makeHappoAPIRequest(
-      {
-        path: '/api/snap-requests/with-results',
-        method: 'POST',
-        json: true,
-        body: { snaps: this.localSnapshots },
-      },
-      this.happoConfig,
-      { retryCount: 3 },
-    );
-
-    if (!reportResult) {
-      throw new Error('No reportResult');
-    }
-
-    if (!('requestId' in reportResult)) {
-      throw new Error('No requestId in reportResult');
-    }
-
-    if (typeof reportResult.requestId !== 'number') {
-      throw new TypeError('requestId is not a number');
-    }
-
-    return reportResult.requestId;
   }
 
   async registerBase64ImageChunk({

@@ -45,7 +45,6 @@ Cypress.on('window:before:load', (win: Window) => {
 interface CypressConfig {
   responsiveInlinedCanvases: boolean;
   canvasChunkSize: number;
-  localSnapshots?: boolean;
 }
 
 let config: CypressConfig = {
