@@ -62,11 +62,11 @@ function parseRawArgs(rawArgs: Array<string>) {
         type: 'string',
       },
 
-      currentSha: {
+      afterSha: {
         type: 'string',
       },
 
-      previousSha: {
+      beforeSha: {
         type: 'string',
       },
 
@@ -115,9 +115,9 @@ Options:
   --link <url>          URL to contextualize the comparison (default: auto-detected from CI environment)
   --message <message>   Message to associate with the comparison (default: auto-detected from CI environment)
   --authorEmail <email> Email address of the author of the comparison (default: auto-detected from CI environment)
-  --currentSha <sha>    Current SHA to use for comparison (default: auto-detected from CI environment)
-  --previousSha <sha>   Previous SHA to use for comparison (default: auto-detected from CI environment)
-  --beforeShaTagMatcher <matcher> git tag matcher to use for before SHA resolution
+  --afterSha <sha>      "After" SHA to use for comparison (default: auto-detected from CI environment, or HEAD SHA if not set)
+  --beforeSha <sha>     "Before" SHA to use for comparison (default: auto-detected from CI environment)
+  --beforeShaTagMatcher <matcher> git tag matcher to use for "before" SHA resolution
   --fallbackShas <shas> Space-, newline- or comma-separated list of fallback shas for compare calls (default: auto-detected from CI environment)
   --fallbackShasCount <count> Number of fallback shas to use for compare calls (default: 50)
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
