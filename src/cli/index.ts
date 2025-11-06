@@ -66,6 +66,14 @@ function parseRawArgs(rawArgs: Array<string>) {
         type: 'string',
       },
 
+      fallbackShas: {
+        type: 'string',
+      },
+
+      fallbackShasCount: {
+        type: 'string',
+      },
+
       githubBase: {
         type: 'string',
       },
@@ -96,6 +104,8 @@ Options:
   --message <message>   Message to associate with the comparison (default: auto-detected from CI environment)
   --currentSha <sha>    Current SHA to use for comparison (default: auto-detected from CI environment)
   --previousSha <sha>   Previous SHA to use for comparison (default: auto-detected from CI environment)
+  --fallbackShas <shas> Space-, newline- or comma-separated list of fallback shas for compare calls (default: auto-detected from CI environment)
+  --fallbackShasCount <count> Number of fallback shas to use for compare calls (default: 50)
   --githubBase <url>    GitHub base URL to use for comparison (default: GITHUB_SERVER_URL or 'https://github.com')
 
 Examples:
