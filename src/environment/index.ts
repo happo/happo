@@ -33,6 +33,7 @@ interface CLIArgs {
   previousSha?: string;
   message?: string;
   link?: string;
+  githubBase?: string;
 }
 
 export interface EnvironmentResult {
@@ -48,26 +49,27 @@ export interface EnvironmentResult {
 }
 
 const envKeys: ReadonlyArray<string> = [
+  'BUILD_REPOSITORY_URI',
+  'BUILD_SOURCEVERSION',
   'CIRCLE_PROJECT_REPONAME',
   'CIRCLE_PROJECT_USERNAME',
   'CIRCLE_SHA1',
   'CI_PULL_REQUEST',
-  'GITHUB_BASE',
+  'GITHUB_EVENT_PATH',
+  'GITHUB_SERVER_URL',
+  'GITHUB_SHA',
   'HAPPO_DEBUG',
-  'HAPPO_GITHUB_BASE',
   'HAPPO_FALLBACK_SHAS',
   'HAPPO_FALLBACK_SHAS_COUNT',
+  'SYSTEM_PULLREQUEST_PULLREQUESTID',
+  'SYSTEM_PULLREQUEST_SOURCEBRANCH',
+  'SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI',
+  'SYSTEM_PULLREQUEST_TARGETBRANCH',
   'TRAVIS_COMMIT',
+  'TRAVIS_COMMIT_RANGE',
   'TRAVIS_PULL_REQUEST',
   'TRAVIS_PULL_REQUEST_SHA',
   'TRAVIS_REPO_SLUG',
-  'TRAVIS_COMMIT_RANGE',
-  'BUILD_SOURCEVERSION',
-  'BUILD_REPOSITORY_URI',
-  'SYSTEM_PULLREQUEST_PULLREQUESTID',
-  'SYSTEM_PULLREQUEST_SOURCEBRANCH',
-  'SYSTEM_PULLREQUEST_TARGETBRANCH',
-  'SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI',
 ];
 
 async function resolveGithubEvent(GITHUB_EVENT_PATH: string): Promise<GitHubEvent> {
@@ -109,21 +111,24 @@ async function resolveLink(
   }
 
   const {
-    CI_PULL_REQUEST,
-    HAPPO_GITHUB_BASE,
-    GITHUB_BASE,
-    TRAVIS_REPO_SLUG,
-    TRAVIS_PULL_REQUEST,
-    TRAVIS_COMMIT,
-    CIRCLE_PROJECT_USERNAME,
-    CIRCLE_PROJECT_REPONAME,
-    CIRCLE_SHA1,
-    GITHUB_EVENT_PATH,
-    GITHUB_SHA,
-    SYSTEM_PULLREQUEST_PULLREQUESTID,
-    SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI,
     BUILD_REPOSITORY_URI,
     BUILD_SOURCEVERSION,
+    CIRCLE_PROJECT_REPONAME,
+    CIRCLE_PROJECT_USERNAME,
+    CIRCLE_SHA1,
+    CI_PULL_REQUEST,
+
+    // https://docs.github.com/en/actions/reference/workflows-and-actions/variables#default-environment-variables
+    GITHUB_EVENT_PATH,
+    GITHUB_SERVER_URL,
+    GITHUB_SHA,
+
+    SYSTEM_PULLREQUEST_PULLREQUESTID,
+    SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI,
+
+    TRAVIS_COMMIT,
+    TRAVIS_PULL_REQUEST,
+    TRAVIS_REPO_SLUG,
   } = env;
 
   if (CI_PULL_REQUEST) {
@@ -162,7 +167,7 @@ async function resolveLink(
     );
   }
 
-  const githubBase = HAPPO_GITHUB_BASE || GITHUB_BASE || 'https://github.com';
+  const githubBase = cliArgs.githubBase || GITHUB_SERVER_URL || 'https://github.com';
 
   if (TRAVIS_REPO_SLUG && TRAVIS_PULL_REQUEST) {
     return `${githubBase}/${TRAVIS_REPO_SLUG}/pull/${TRAVIS_PULL_REQUEST}`;

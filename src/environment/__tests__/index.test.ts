@@ -334,7 +334,6 @@ describe('resolveEnvironment', () => {
     makeNewBranchAndCommit('Travis');
 
     const travisEnv = {
-      HAPPO_GITHUB_BASE: origin,
       TRAVIS_REPO_SLUG: 'owner/repo',
       TRAVIS_PULL_REQUEST: '12',
       TRAVIS_PULL_REQUEST_SHA: afterSha,
@@ -342,7 +341,7 @@ describe('resolveEnvironment', () => {
       TRAVIS_COMMIT: afterSha,
     };
 
-    let result = await resolveEnvironment({}, travisEnv);
+    let result = await resolveEnvironment({ githubBase: origin }, travisEnv);
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
     assert.equal(result.link, `${origin}/owner/repo/pull/12`);
@@ -350,7 +349,7 @@ describe('resolveEnvironment', () => {
 
     // Try with a real commit sha in the repo
     result = await resolveEnvironment(
-      {},
+      { githubBase: origin },
       {
         ...travisEnv,
         TRAVIS_PULL_REQUEST_SHA: undefined,
