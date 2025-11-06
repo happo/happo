@@ -83,6 +83,11 @@ interface Page {
    * it is unique for each page.
    */
   title: string;
+
+  /**
+   * Wait for the content to appear on the page before taking the screenshot.
+   */
+  waitForContent?: string;
 }
 
 interface PagesIntegration {
