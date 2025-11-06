@@ -33,6 +33,7 @@ interface CLIArgs {
   previousSha?: string;
   message?: string;
   link?: string;
+  authorEmail?: string;
   fallbackShas?: string;
   fallbackShasCount?: string;
   githubBase?: string;
@@ -41,7 +42,7 @@ interface CLIArgs {
 export interface EnvironmentResult {
   link: string | undefined;
   message: string | undefined;
-  author: string | undefined;
+  authorEmail: string | undefined;
   beforeSha: string;
   afterSha: string;
   nonce: string | undefined;
@@ -185,13 +186,14 @@ async function resolveLink(
 }
 
 async function resolveAuthorEmail(
+  cliArgs: CLIArgs,
   env: Record<string, string | undefined>,
 ): Promise<string | undefined> {
-  const { GITHUB_EVENT_PATH, HAPPO_AUTHOR } = env;
-
-  if (HAPPO_AUTHOR) {
-    return HAPPO_AUTHOR;
+  if (cliArgs.authorEmail) {
+    return cliArgs.authorEmail;
   }
+
+  const { GITHUB_EVENT_PATH } = env;
 
   if (GITHUB_EVENT_PATH) {
     // const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
@@ -527,10 +529,10 @@ export default async function resolveEnvironment(
     typeof afterSha === 'string' ? afterSha : afterSha.headShaWithLocalChanges;
 
   // Resolve the before SHA with the true HEAD SHA
-  const [beforeSha, link, author, message] = await Promise.all([
+  const [beforeSha, link, authorEmail, message] = await Promise.all([
     resolveBeforeSha(cliArgs, env, realAfterSha),
     resolveLink(cliArgs, env),
-    resolveAuthorEmail(env),
+    resolveAuthorEmail(cliArgs, env),
 
     // Resolve message with the SHA that includes local changes
     resolveMessage(cliArgs, env, afterShaWithLocalChanges),
@@ -540,7 +542,7 @@ export default async function resolveEnvironment(
 
   const result = {
     link,
-    author,
+    authorEmail,
     message,
     beforeSha: nonNullBeforeSha,
     afterSha: afterShaWithLocalChanges,

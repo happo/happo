@@ -58,6 +58,10 @@ function parseRawArgs(rawArgs: Array<string>) {
         type: 'string',
       },
 
+      authorEmail: {
+        type: 'string',
+      },
+
       currentSha: {
         type: 'string',
       },
@@ -102,6 +106,7 @@ Options:
   --baseBranch <branch> Base branch to use for comparison (default: 'origin/main')
   --link <url>          URL to contextualize the comparison (default: auto-detected from CI environment)
   --message <message>   Message to associate with the comparison (default: auto-detected from CI environment)
+  --authorEmail <email> Email address of the author of the comparison (default: auto-detected from CI environment)
   --currentSha <sha>    Current SHA to use for comparison (default: auto-detected from CI environment)
   --previousSha <sha>   Previous SHA to use for comparison (default: auto-detected from CI environment)
   --fallbackShas <shas> Space-, newline- or comma-separated list of fallback shas for compare calls (default: auto-detected from CI environment)
