@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 
+import type { ServerInfo } from '../../network/startServer.ts';
 import startTestServer from '../../test-utils/startTestServer.ts';
 import { test } from '../index.ts';
 
@@ -10,7 +11,7 @@ function assertError(error: unknown): asserts error is Error {
     );
   }
 }
-let serverInfo: Awaited<ReturnType<typeof startTestServer>>;
+let serverInfo: ServerInfo;
 
 test.beforeAll(async () => {
   serverInfo = await startTestServer('./src/playwright/__playwright__/fixtures');

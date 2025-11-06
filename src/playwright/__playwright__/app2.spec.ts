@@ -1,7 +1,8 @@
+import type { ServerInfo } from '../../network/startServer.ts';
 import startTestServer from '../../test-utils/startTestServer.ts';
 import { expect, test } from './fixture.ts';
 
-let serverInfo: Awaited<ReturnType<typeof startTestServer>>;
+let serverInfo: ServerInfo;
 
 test.beforeAll(async () => {
   serverInfo = await startTestServer('./src/playwright/__playwright__/fixtures');
