@@ -56,16 +56,29 @@ afterEach(() => {
 describe('resolveEnvironment', () => {
   it('resolves a local environment', async () => {
     initGitRepo();
-    const result = await resolveEnvironment({});
+    const result = await resolveEnvironment({}, {});
     const afterSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
     const beforeSha = tmpfs.exec('git', ['rev-parse', 'main']).trim();
-    assert.equal(result.afterSha, afterSha);
-    assert.equal(result.beforeSha, beforeSha);
-    assert.equal(result.message, 'Add new-branch-file.txt');
+
+    assert.equal(
+      result.afterSha,
+      afterSha,
+      'afterSha is not the same as the current HEAD sha',
+    );
+    assert.equal(
+      result.beforeSha,
+      beforeSha,
+      'beforeSha is not the same as the main branch sha',
+    );
+    assert.equal(
+      result.message,
+      'Add new-branch-file.txt',
+      'message is not the commit message of the new-branch-file.txt file',
+    );
 
     // Make a local change
     tmpfs.writeFile('not-checked-in.txt', 'Pizza is good!');
-    const result2 = await resolveEnvironment({});
+    const result2 = await resolveEnvironment({}, {});
 
     // After SHA should be different because of the local change
     assert.notEqual(result2.afterSha, afterSha);
@@ -77,7 +90,7 @@ describe('resolveEnvironment', () => {
 
     // Make another local change
     tmpfs.writeFile('not-checked-in.txt', 'Pizza is not good at all!');
-    const result3 = await resolveEnvironment({});
+    const result3 = await resolveEnvironment({}, {});
 
     // After SHA should be different because of the local change
     assert.notEqual(result3.afterSha, afterSha);
@@ -91,7 +104,7 @@ describe('resolveEnvironment', () => {
     // Add all changes to the index
     tmpfs.exec('git', ['add', '.']).trim();
 
-    const result4 = await resolveEnvironment({});
+    const result4 = await resolveEnvironment({}, {});
 
     // After SHA should be different because of the local change
     assert.notEqual(result4.afterSha, afterSha);
@@ -113,27 +126,33 @@ describe('resolveEnvironment', () => {
       CIRCLE_PROJECT_REPONAME: 'happo-view',
       CIRCLE_SHA1: afterSha,
     };
-    let result = await resolveEnvironment(circleEnv);
+    let result = await resolveEnvironment({}, circleEnv);
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
     assert.equal(result.link, `${origin}/pull/12`);
     assert.ok(result.message !== undefined);
 
     // Try with a real commit sha in the repo
-    result = await resolveEnvironment({
-      ...circleEnv,
-      CIRCLE_SHA1: afterSha,
-    });
+    result = await resolveEnvironment(
+      {},
+      {
+        ...circleEnv,
+        CIRCLE_SHA1: afterSha,
+      },
+    );
 
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.link, `${origin}/pull/12`);
     assert.ok(result.message !== undefined);
 
     // Try with a non-pr env
-    result = await resolveEnvironment({
-      ...circleEnv,
-      CI_PULL_REQUEST: undefined,
-    });
+    result = await resolveEnvironment(
+      {},
+      {
+        ...circleEnv,
+        CI_PULL_REQUEST: undefined,
+      },
+    );
 
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
@@ -160,7 +179,7 @@ describe('resolveEnvironment', () => {
       SYSTEM_PULLREQUEST_SOURCEBRANCH: `refs/head/${branch}`,
       SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: origin,
     };
-    let result = await resolveEnvironment(azureEnv);
+    let result = await resolveEnvironment({}, azureEnv);
 
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
@@ -168,13 +187,16 @@ describe('resolveEnvironment', () => {
     assert.ok(result.message !== undefined);
 
     // Try with a non-pr env
-    result = await resolveEnvironment({
-      ...azureEnv,
-      SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: undefined,
-      SYSTEM_PULLREQUEST_SOURCEBRANCH: undefined,
-      SYSTEM_PULLREQUEST_TARGETBRANCH: undefined,
-      SYSTEM_PULLREQUEST_PULLREQUESTID: undefined,
-    });
+    result = await resolveEnvironment(
+      {},
+      {
+        ...azureEnv,
+        SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: undefined,
+        SYSTEM_PULLREQUEST_SOURCEBRANCH: undefined,
+        SYSTEM_PULLREQUEST_TARGETBRANCH: undefined,
+        SYSTEM_PULLREQUEST_PULLREQUESTID: undefined,
+      },
+    );
 
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
@@ -205,16 +227,19 @@ describe('resolveEnvironment', () => {
       BUILD_REPOSITORY_URI: origin,
       HAPPO_BEFORE_SHA_TAG_MATCHER: 'happo-*',
     };
-    let result = await resolveEnvironment(azureEnv);
+    let result = await resolveEnvironment({}, azureEnv);
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, tagSha);
 
     // Try with a matcher that doesn't match anything. This should fall back to
     // the base branch.
-    result = await resolveEnvironment({
-      ...azureEnv,
-      HAPPO_BEFORE_SHA_TAG_MATCHER: 'happo-dobedoo-*',
-    });
+    result = await resolveEnvironment(
+      {},
+      {
+        ...azureEnv,
+        HAPPO_BEFORE_SHA_TAG_MATCHER: 'happo-dobedoo-*',
+      },
+    );
 
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
@@ -227,7 +252,7 @@ describe('resolveEnvironment', () => {
       GITHUB_SHA: currentSha,
       GITHUB_EVENT_PATH: path.resolve(__dirname, 'github_pull_request_event.json'),
     };
-    let result = await resolveEnvironment(githubEnv);
+    let result = await resolveEnvironment({}, githubEnv);
     assert.equal(result.afterSha, 'ec26c3e57ca3a959ca5aad62de7213c562f8c821');
     assert.equal(result.beforeSha, 'f95f852bd8fca8fcc58a9a2d6c842781e32a215e');
     assert.equal(result.link, 'https://github.com/Codertocat/Hello-World/pull/2');
@@ -247,7 +272,7 @@ describe('resolveEnvironment', () => {
     const eventPath = tmpfs.fullPath('github_push_event.json');
     fs.writeFileSync(eventPath, eventContentsWithChanges);
     githubEnv.GITHUB_EVENT_PATH = eventPath;
-    result = await resolveEnvironment(githubEnv);
+    result = await resolveEnvironment({}, githubEnv);
     assert.equal(result.afterSha, currentSha);
     assert.equal(result.beforeSha, '6113728f27ae82c7b1a177c8d03f9e96e0adf246');
     assert.equal(result.link, `https://github.com/foo/bar/commit/${currentSha}`);
@@ -258,7 +283,7 @@ describe('resolveEnvironment', () => {
       __dirname,
       'github_workflow_dispatch.json',
     );
-    result = await resolveEnvironment(githubEnv);
+    result = await resolveEnvironment({}, githubEnv);
     assert.equal(result.afterSha, currentSha);
     assert.equal(result.beforeSha, currentSha);
     assert.equal(
@@ -270,10 +295,13 @@ describe('resolveEnvironment', () => {
     // Try with a non-existing event path
     let caughtError: Error | undefined;
     try {
-      await resolveEnvironment({
-        ...githubEnv,
-        GITHUB_EVENT_PATH: 'non-existing-path',
-      });
+      await resolveEnvironment(
+        {},
+        {
+          ...githubEnv,
+          GITHUB_EVENT_PATH: 'non-existing-path',
+        },
+      );
     } catch (e) {
       caughtError = e instanceof Error ? e : new Error(String(e));
     }
@@ -291,7 +319,7 @@ describe('resolveEnvironment', () => {
       GITHUB_SHA: currentSha,
       GITHUB_EVENT_PATH: path.resolve(__dirname, 'github_merge_group_event.json'),
     };
-    const result = await resolveEnvironment(githubEnv);
+    const result = await resolveEnvironment({}, githubEnv);
     assert.equal(result.afterSha, 'ec26c3e57ca3a959ca5aad62de7213c562f8c821');
     assert.equal(result.beforeSha, 'f95f852bd8fca8fcc58a9a2d6c842781e32a215e');
     assert.equal(
@@ -314,21 +342,24 @@ describe('resolveEnvironment', () => {
       TRAVIS_COMMIT: afterSha,
     };
 
-    let result = await resolveEnvironment(travisEnv);
+    let result = await resolveEnvironment({}, travisEnv);
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
     assert.equal(result.link, `${origin}/owner/repo/pull/12`);
     assert.ok(result.message !== undefined);
 
     // Try with a real commit sha in the repo
-    result = await resolveEnvironment({
-      ...travisEnv,
-      TRAVIS_PULL_REQUEST_SHA: undefined,
-      TRAVIS_PULL_REQUEST: undefined,
-      TRAVIS_COMMIT_RANGE: undefined,
-      TRAVIS_COMMIT: afterSha,
-      HAPPO_FALLBACK_SHAS_COUNT: '5',
-    });
+    result = await resolveEnvironment(
+      {},
+      {
+        ...travisEnv,
+        TRAVIS_PULL_REQUEST_SHA: undefined,
+        TRAVIS_PULL_REQUEST: undefined,
+        TRAVIS_COMMIT_RANGE: undefined,
+        TRAVIS_COMMIT: afterSha,
+        HAPPO_FALLBACK_SHAS_COUNT: '5',
+      },
+    );
 
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.link, `${origin}/owner/repo/commit/${afterSha}`);
@@ -360,7 +391,7 @@ describe('resolveEnvironment', () => {
       HAPPO_MESSAGE: 'This is a change',
     };
 
-    let result = await resolveEnvironment(happoEnv);
+    let result = await resolveEnvironment({}, happoEnv);
     assert.equal(result.afterSha, currentSha);
     assert.equal(result.beforeSha, 'hhhggg');
     assert.equal(result.link, 'link://link');
@@ -368,11 +399,15 @@ describe('resolveEnvironment', () => {
     assert.equal(result.message, 'This is a change');
 
     // Try overriding base branch
-    result = await resolveEnvironment({
-      ...happoEnv,
-      HAPPO_BASE_BRANCH: 'non-existing',
-      HAPPO_PREVIOUS_SHA: undefined,
-    });
+    result = await resolveEnvironment(
+      {
+        baseBranch: 'non-existing',
+      },
+      {
+        ...happoEnv,
+        HAPPO_PREVIOUS_SHA: undefined,
+      },
+    );
 
     assert.equal(result.afterSha, currentSha);
     assert.equal(result.beforeSha, currentSha);
@@ -380,17 +415,23 @@ describe('resolveEnvironment', () => {
     assert.ok(result.message !== undefined);
 
     // Use provided HAPPO_FALLBACK_SHAS
-    result = await resolveEnvironment({
-      ...happoEnv,
-      HAPPO_FALLBACK_SHAS: '123456\n789012\n345678',
-    });
+    result = await resolveEnvironment(
+      {},
+      {
+        ...happoEnv,
+        HAPPO_FALLBACK_SHAS: '123456\n789012\n345678',
+      },
+    );
     assert.deepStrictEqual(result.fallbackShas, ['123456', '789012', '345678']);
 
     // Use provided HAPPO_FALLBACK_SHAS with commas
-    result = await resolveEnvironment({
-      ...happoEnv,
-      HAPPO_FALLBACK_SHAS: '123456,789012,345678',
-    });
+    result = await resolveEnvironment(
+      {},
+      {
+        ...happoEnv,
+        HAPPO_FALLBACK_SHAS: '123456,789012,345678',
+      },
+    );
     assert.deepStrictEqual(result.fallbackShas, ['123456', '789012', '345678']);
   });
 });

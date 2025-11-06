@@ -10,8 +10,6 @@ import type {
 } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
-// import type { Config } from '../config/index.ts';
-import resolveEnvironment from '../environment/index.ts';
 import findCSSAssetUrls from '../isomorphic/findCSSAssetUrls.ts';
 import fetchWithRetry from '../network/fetchWithRetry.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
@@ -216,20 +214,18 @@ class Controller {
     // this.localSnapshotImages = {};
     this.happoDebug = false;
 
-    const { HAPPO_E2E_PORT, HAPPO_ENABLED, HAPPO_DEBUG } = process.env;
+    const { HAPPO_E2E_PORT, HAPPO_DEBUG } = process.env;
 
     if (HAPPO_DEBUG) {
       this.happoDebug = true;
     }
 
-    if (!(HAPPO_E2E_PORT || HAPPO_ENABLED)) {
+    if (!HAPPO_E2E_PORT) {
       console.log(
         `
-[HAPPO] Happo is disabled. Here's how to enable it:
-  - Use the \`happo\` wrapper.
-  - Set \`HAPPO_ENABLED=true\`.
+[HAPPO] Happo is disabled. Enable it by using the \`happo\` command.
 
-Docs:
+Documentation:
   Playwright:     https://docs.happo.io/docs/playwright#usage
   Cypress (run):  https://docs.happo.io/docs/cypress#usage-with-cypress-run
   Cypress (open): https://docs.happo.io/docs/cypress#usage-with-cypress-open
@@ -527,50 +523,22 @@ Docs:
   }
 
   async processSnapRequestIds(allRequestIds: Array<number>): Promise<void> {
+    const { HAPPO_E2E_PORT } = process.env;
+    if (!HAPPO_E2E_PORT) {
+      // We are not running with `happo --` so there's no work to do here.
+      return;
+    }
+
     this.assertHappoConfig();
 
-    const { HAPPO_E2E_PORT } = process.env;
+    // We're running with `happo --`
+    const fetchRes = await fetch(`http://localhost:${HAPPO_E2E_PORT}/`, {
+      method: 'POST',
+      body: allRequestIds.join('\n'),
+    });
 
-    if (HAPPO_E2E_PORT) {
-      // We're running with `happo-cypress --`
-      const fetchRes = await fetch(`http://localhost:${HAPPO_E2E_PORT}/`, {
-        method: 'POST',
-        body: allRequestIds.join('\n'),
-      });
-
-      if (!fetchRes.ok) {
-        throw new Error('Failed to communicate with happo-e2e server');
-      }
-    } else {
-      // We're not running with `happo-e2e --`. We'll create a report
-      // despite the fact that it might not contain all the snapshots. This is
-      // still helpful when running e.g. `cypress open` locally.
-      const environment = await resolveEnvironment();
-      const { afterSha } = environment;
-      const reportResult = await makeHappoAPIRequest(
-        {
-          path: `/api/async-reports/${afterSha}`,
-          method: 'POST',
-          json: true,
-          body: { requestIds: allRequestIds, project: this.happoConfig.project },
-        },
-        this.happoConfig,
-        { retryCount: 3 },
-      );
-
-      if (!reportResult) {
-        console.error('[HAPPO] No reportResult');
-        return;
-      }
-
-      if (!('url' in reportResult)) {
-        console.error('[HAPPO] No url in reportResult');
-        return;
-      }
-
-      console.log(`[HAPPO] ${reportResult.url}`);
-
-      return;
+    if (!fetchRes.ok) {
+      throw new Error('Failed to communicate with happo-e2e server');
     }
   }
 

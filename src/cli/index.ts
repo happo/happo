@@ -45,6 +45,10 @@ function parseRawArgs(rawArgs: Array<string>) {
         type: 'string',
         short: 'c',
       },
+
+      baseBranch: {
+        type: 'string',
+      },
     },
 
     allowPositionals: true,
@@ -64,13 +68,15 @@ Commands:
   finalize     Finalize happo report for Cypress/Playwright tests running in parallel
 
 Options:
-  --config   Path to happo config file
-  --version  Show version number
-  --help     Show help text
+  --config              Path to happo config file
+  --version             Show version number
+  --help                Show help text
+  --baseBranch <branch> Base branch to use for comparison (default: origin/main)
 
 Examples:
   happo
   happo --config path/to/happo.config.ts
+  happo --baseBranch origin/long-lived-branch
   happo --version
   happo --help
   happo -- playwright test
@@ -103,7 +109,7 @@ export async function main(
   // Get config file path (use --config if provided, otherwise find default)
   const configFilePath = makeAbsolute(args.values.config || findConfigFile());
   const config = await loadConfigFile(configFilePath);
-  const environment = await resolveEnvironment();
+  const environment = await resolveEnvironment(args.values);
 
   // Handle positional arguments (commands)
   const command = args.positionals[0];

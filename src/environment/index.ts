@@ -45,7 +45,6 @@ const envKeys: ReadonlyArray<string> = [
   'CIRCLE_SHA1',
   'CI_PULL_REQUEST',
   'GITHUB_BASE',
-  'HAPPO_BASE_BRANCH',
   'HAPPO_CHANGE_URL',
   'HAPPO_CURRENT_SHA',
   'HAPPO_DEBUG',
@@ -251,13 +250,13 @@ function resolveShaFromTagMatcher(tagMatcher: string): string | undefined {
 }
 
 async function resolveBeforeSha(
+  cliArgs: CLIArgs,
   env: Record<string, string | undefined>,
   afterSha: string,
 ): Promise<string | undefined> {
   const {
     HAPPO_PREVIOUS_SHA,
     HAPPO_BEFORE_SHA_TAG_MATCHER,
-    HAPPO_BASE_BRANCH,
     TRAVIS_COMMIT_RANGE,
     GITHUB_EVENT_PATH,
     SYSTEM_PULLREQUEST_TARGETBRANCH,
@@ -298,7 +297,7 @@ async function resolveBeforeSha(
     ].join('/');
   }
 
-  const baseBranch = HAPPO_BASE_BRANCH || baseAzureBranch || 'origin/main';
+  const baseBranch = cliArgs.baseBranch || baseAzureBranch || 'origin/main';
   const res = spawnSync('git', ['merge-base', baseBranch, afterSha], {
     encoding: 'utf8',
   });
@@ -471,7 +470,12 @@ function getRawEnv(
   return res;
 }
 
+interface CLIArgs {
+  baseBranch?: string;
+}
+
 export default async function resolveEnvironment(
+  cliArgs: CLIArgs,
   env: Record<string, string | undefined> = process.env,
 ): Promise<EnvironmentResult> {
   const debugMode = !!env.HAPPO_DEBUG;
@@ -483,7 +487,7 @@ export default async function resolveEnvironment(
 
   // Resolve the before SHA with the true HEAD SHA
   const [beforeSha, link, author, message] = await Promise.all([
-    resolveBeforeSha(env, realAfterSha),
+    resolveBeforeSha(cliArgs, env, realAfterSha),
     resolveLink(env),
     resolveAuthorEmail(env),
 

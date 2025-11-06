@@ -15,7 +15,6 @@ const TEST_API_KEY = 'test-api-key';
 const TEST_API_SECRET = 'test-api-secret';
 
 before(async () => {
-  process.env.HAPPO_ENABLED = 'true';
   process.env.HAPPO_E2E_PORT = port.toString();
 
   let requestId = 0;
