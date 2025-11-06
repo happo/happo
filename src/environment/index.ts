@@ -29,6 +29,7 @@ interface GitHubEvent {
 
 interface CLIArgs {
   baseBranch?: string;
+  message?: string;
   link?: string;
 }
 
@@ -204,14 +205,16 @@ async function resolveAuthorEmail(
 }
 
 async function resolveMessage(
+  cliArgs: CLIArgs,
   env: Record<string, string | undefined>,
   afterSha: string,
 ): Promise<string | undefined> {
-  const { GITHUB_EVENT_PATH, HAPPO_MESSAGE } = env;
-
-  if (HAPPO_MESSAGE) {
-    return HAPPO_MESSAGE;
+  if (cliArgs.message) {
+    return cliArgs.message;
   }
+
+  const { GITHUB_EVENT_PATH } = env;
+
   if (GITHUB_EVENT_PATH) {
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
     if (ghEvent.pull_request) {
@@ -510,7 +513,7 @@ export default async function resolveEnvironment(
     resolveAuthorEmail(env),
 
     // Resolve message with the SHA that includes local changes
-    resolveMessage(env, afterShaWithLocalChanges),
+    resolveMessage(cliArgs, env, afterShaWithLocalChanges),
   ]);
 
   const nonNullBeforeSha = beforeSha || afterShaWithLocalChanges;

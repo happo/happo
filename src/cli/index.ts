@@ -53,6 +53,10 @@ function parseRawArgs(rawArgs: Array<string>) {
       link: {
         type: 'string',
       },
+
+      message: {
+        type: 'string',
+      },
     },
 
     allowPositionals: true,
@@ -77,6 +81,7 @@ Options:
   --help                Show help text
   --baseBranch <branch> Base branch to use for comparison (default: origin/main)
   --link <url>          URL to contextualize the comparison (default: auto-detected from CI environment)
+  --message <message>   Message to associate with the comparison (default: auto-detected from CI environment)
 
 Examples:
   happo
@@ -84,6 +89,7 @@ Examples:
   happo --config path/to/happo.config.ts
   happo --baseBranch origin/long-lived-branch
   happo --link https://github.com/happo/happo/pull/123
+  happo --message "Add new feature"
 
   happo --version
   happo --help

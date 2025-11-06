@@ -404,10 +404,15 @@ describe('resolveEnvironment', () => {
       HAPPO_CURRENT_SHA: currentSha,
       HAPPO_PREVIOUS_SHA: 'hhhggg',
       HAPPO_NOTIFY: 'foo@bar.com,bar@foo.com',
-      HAPPO_MESSAGE: 'This is a change',
     };
 
-    let result = await resolveEnvironment({ link }, happoEnv);
+    let result = await resolveEnvironment(
+      {
+        link,
+        message: 'This is a change',
+      },
+      happoEnv,
+    );
     assert.equal(result.afterSha, currentSha);
     assert.equal(result.beforeSha, 'hhhggg');
     assert.equal(result.link, 'https://github.com/happo/happo/pull/123');
