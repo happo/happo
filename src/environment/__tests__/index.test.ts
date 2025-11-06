@@ -225,19 +225,24 @@ describe('resolveEnvironment', () => {
     const azureEnv = {
       BUILD_SOURCEVERSION: afterSha,
       BUILD_REPOSITORY_URI: origin,
-      HAPPO_BEFORE_SHA_TAG_MATCHER: 'happo-*',
     };
-    let result = await resolveEnvironment({}, azureEnv);
+    let result = await resolveEnvironment(
+      {
+        beforeShaTagMatcher: 'happo-*',
+      },
+      azureEnv,
+    );
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, tagSha);
 
     // Try with a matcher that doesn't match anything. This should fall back to
     // the base branch.
     result = await resolveEnvironment(
-      {},
+      {
+        beforeShaTagMatcher: 'happo-dobedoo-*',
+      },
       {
         ...azureEnv,
-        HAPPO_BEFORE_SHA_TAG_MATCHER: 'happo-dobedoo-*',
       },
     );
 

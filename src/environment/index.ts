@@ -34,6 +34,7 @@ interface CLIArgs {
   message?: string;
   link?: string;
   authorEmail?: string;
+  beforeShaTagMatcher?: string;
   fallbackShas?: string;
   fallbackShasCount?: string;
   githubBase?: string;
@@ -254,15 +255,18 @@ function resolveShaFromTagMatcher(tagMatcher: string): string | undefined {
       encoding: 'utf8',
     },
   );
+
   if (res.status !== 0) {
     throw new Error(
-      `Failed to list git tags when matching against HAPPO_BEFORE_SHA_TAG_MATCHER. Error: ${res.stderr}`,
+      `Failed to list git tags when matching against --beforeShaTagMatcher '${tagMatcher}'. Error: ${res.stderr}`,
     );
   }
+
   const rawAllTags = res.stdout.trim();
   if (!rawAllTags.length) {
     return undefined;
   }
+
   const allTags = rawAllTags.split('\n');
   const tag = allTags.at(-1);
 
@@ -273,11 +277,13 @@ function resolveShaFromTagMatcher(tagMatcher: string): string | undefined {
   const commitRes = spawnSync('git', ['rev-list', '-n', '1', tag], {
     encoding: 'utf8',
   });
+
   if (commitRes.status !== 0) {
     throw new Error(
       `Failed to resolve commit sha from tag "${tag}". Error: ${res.stderr}`,
     );
   }
+
   return commitRes.stdout.trim();
 }
 
@@ -290,19 +296,15 @@ async function resolveBeforeSha(
     return cliArgs.previousSha;
   }
 
-  const {
-    HAPPO_BEFORE_SHA_TAG_MATCHER,
-    TRAVIS_COMMIT_RANGE,
-    GITHUB_EVENT_PATH,
-    SYSTEM_PULLREQUEST_TARGETBRANCH,
-  } = env;
-
-  if (HAPPO_BEFORE_SHA_TAG_MATCHER) {
-    const resolvedSha = resolveShaFromTagMatcher(HAPPO_BEFORE_SHA_TAG_MATCHER);
+  if (cliArgs.beforeShaTagMatcher) {
+    const resolvedSha = resolveShaFromTagMatcher(cliArgs.beforeShaTagMatcher);
     if (resolvedSha) {
       return resolvedSha;
     }
   }
+
+  const { TRAVIS_COMMIT_RANGE, GITHUB_EVENT_PATH, SYSTEM_PULLREQUEST_TARGETBRANCH } =
+    env;
 
   if (GITHUB_EVENT_PATH) {
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
