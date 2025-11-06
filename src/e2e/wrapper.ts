@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import http from 'node:http';
 
 import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
-import resolveEnvironment, { type EnvironmentResult } from '../environment/index.ts';
+import type { EnvironmentResult } from '../environment/index.ts';
 import createAsyncComparison from '../network/createAsyncComparison.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
@@ -44,7 +44,7 @@ type Logger = Pick<Console, 'log' | 'error'>;
 
 interface FinalizeAllOptions {
   happoConfig: ConfigWithDefaults;
-  environment: Awaited<ReturnType<typeof resolveEnvironment>>;
+  environment: EnvironmentResult;
   skippedExamplesJSON?: string;
   logger: Logger;
 }
@@ -181,7 +181,7 @@ async function finalizeHappoReport(
 }
 
 function startE2EServer(
-  environment: Awaited<ReturnType<typeof resolveEnvironment>>,
+  environment: EnvironmentResult,
   happoConfig: ConfigWithDefaults,
 ): Promise<ServerInfo> {
   function requestHandler(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -239,7 +239,7 @@ function assertE2EIntegration(
 export default async function runWithWrapper(
   dashdashCommandParts: Array<string>,
   happoConfig: ConfigWithDefaults,
-  environment: Awaited<ReturnType<typeof resolveEnvironment>>,
+  environment: EnvironmentResult,
   logger: Logger,
   configFilePath: string,
 ): Promise<number> {

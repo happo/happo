@@ -186,7 +186,7 @@ async function handleDefaultCommand(
 
 async function handleFinalizeCommand(
   config: ConfigWithDefaults,
-  environment: Awaited<ReturnType<typeof resolveEnvironment>>,
+  environment: EnvironmentResult,
   logger: Logger,
 ): Promise<void> {
   logger.log('Finalizing happo report...');
@@ -209,7 +209,7 @@ const E2E_INTEGRATION_TYPES = ['cypress', 'playwright'];
 
 async function handleE2ECommand(
   config: ConfigWithDefaults,
-  environment: Awaited<ReturnType<typeof resolveEnvironment>>,
+  environment: EnvironmentResult,
   dashdashCommandParts: Array<string>,
   configFilePath: string,
   logger: Logger,
