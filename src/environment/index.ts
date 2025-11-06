@@ -27,6 +27,11 @@ interface GitHubEvent {
   after?: string;
 }
 
+interface CLIArgs {
+  baseBranch?: string;
+  link?: string;
+}
+
 export interface EnvironmentResult {
   link: string | undefined;
   message: string | undefined;
@@ -45,7 +50,6 @@ const envKeys: ReadonlyArray<string> = [
   'CIRCLE_SHA1',
   'CI_PULL_REQUEST',
   'GITHUB_BASE',
-  'HAPPO_CHANGE_URL',
   'HAPPO_CURRENT_SHA',
   'HAPPO_DEBUG',
   'HAPPO_GITHUB_BASE',
@@ -79,10 +83,31 @@ async function resolveGithubEvent(GITHUB_EVENT_PATH: string): Promise<GitHubEven
 }
 
 async function resolveLink(
+  cliArgs: CLIArgs,
   env: Record<string, string | undefined>,
 ): Promise<string | undefined> {
+  if (cliArgs.link) {
+    // Validate the link
+    let parsed: URL;
+    try {
+      parsed = new URL(cliArgs.link);
+    } catch (e) {
+      throw new TypeError(
+        `link must be a valid http/https URL. Invalid URL: '${cliArgs.link}'`,
+        { cause: e },
+      );
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new TypeError(
+        `link must be a valid http/https URL. Invalid protocol: '${parsed.protocol}' (from '${cliArgs.link}')`,
+      );
+    }
+
+    return cliArgs.link;
+  }
+
   const {
-    HAPPO_CHANGE_URL,
     CI_PULL_REQUEST,
     HAPPO_GITHUB_BASE,
     GITHUB_BASE,
@@ -100,9 +125,6 @@ async function resolveLink(
     BUILD_SOURCEVERSION,
   } = env;
 
-  if (HAPPO_CHANGE_URL) {
-    return HAPPO_CHANGE_URL;
-  }
   if (CI_PULL_REQUEST) {
     // Circle CI
     return CI_PULL_REQUEST;
@@ -470,10 +492,6 @@ function getRawEnv(
   return res;
 }
 
-interface CLIArgs {
-  baseBranch?: string;
-}
-
 export default async function resolveEnvironment(
   cliArgs: CLIArgs,
   env: Record<string, string | undefined> = process.env,
@@ -488,7 +506,7 @@ export default async function resolveEnvironment(
   // Resolve the before SHA with the true HEAD SHA
   const [beforeSha, link, author, message] = await Promise.all([
     resolveBeforeSha(cliArgs, env, realAfterSha),
-    resolveLink(env),
+    resolveLink(cliArgs, env),
     resolveAuthorEmail(env),
 
     // Resolve message with the SHA that includes local changes
