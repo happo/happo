@@ -226,12 +226,13 @@ class Controller {
       console.log(
         `
 [HAPPO] Happo is disabled. Here's how to enable it:
-  - Use the \`happo-e2e\` wrapper.
+  - Use the \`happo\` wrapper.
   - Set \`HAPPO_ENABLED=true\`.
 
 Docs:
-  https://docs.happo.io/docs/cypress#usage-with-cypress-run
-  https://docs.happo.io/docs/cypress#usage-with-cypress-open
+  Playwright:     https://docs.happo.io/docs/playwright#usage
+  Cypress (run):  https://docs.happo.io/docs/cypress#usage-with-cypress-run
+  Cypress (open): https://docs.happo.io/docs/cypress#usage-with-cypress-open
       `.trim(),
       );
       return;
