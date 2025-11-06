@@ -380,21 +380,37 @@ describe('resolveEnvironment', () => {
     assert.ok(result.message !== undefined);
   });
 
+  it('rejects if the link is not a valid URL', async () => {
+    const link = 'not a url';
+
+    await assert.rejects(resolveEnvironment({ link }, {}), {
+      message: `link must be a valid http/https URL. Invalid URL: '${link}'`,
+    });
+  });
+
+  it('rejects if the link is not a valid http/https URL', async () => {
+    const link = 'link://link';
+
+    await assert.rejects(resolveEnvironment({ link }, {}), {
+      message: `link must be a valid http/https URL. Invalid protocol: 'link:' (from '${link}')`,
+    });
+  });
+
   it('resolves the happo environment', async () => {
     initGitRepo();
+    const link = 'https://github.com/happo/happo/pull/123';
     const currentSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
     const happoEnv = {
       HAPPO_CURRENT_SHA: currentSha,
       HAPPO_PREVIOUS_SHA: 'hhhggg',
-      HAPPO_CHANGE_URL: 'link://link',
       HAPPO_NOTIFY: 'foo@bar.com,bar@foo.com',
       HAPPO_MESSAGE: 'This is a change',
     };
 
-    let result = await resolveEnvironment({}, happoEnv);
+    let result = await resolveEnvironment({ link }, happoEnv);
     assert.equal(result.afterSha, currentSha);
     assert.equal(result.beforeSha, 'hhhggg');
-    assert.equal(result.link, 'link://link');
+    assert.equal(result.link, 'https://github.com/happo/happo/pull/123');
     assert.equal(result.notify, 'foo@bar.com,bar@foo.com');
     assert.equal(result.message, 'This is a change');
 
@@ -402,6 +418,7 @@ describe('resolveEnvironment', () => {
     result = await resolveEnvironment(
       {
         baseBranch: 'non-existing',
+        link,
       },
       {
         ...happoEnv,
@@ -411,12 +428,14 @@ describe('resolveEnvironment', () => {
 
     assert.equal(result.afterSha, currentSha);
     assert.equal(result.beforeSha, currentSha);
-    assert.equal(result.link, 'link://link');
+    assert.equal(result.link, 'https://github.com/happo/happo/pull/123');
     assert.ok(result.message !== undefined);
 
     // Use provided HAPPO_FALLBACK_SHAS
     result = await resolveEnvironment(
-      {},
+      {
+        link,
+      },
       {
         ...happoEnv,
         HAPPO_FALLBACK_SHAS: '123456\n789012\n345678',
@@ -426,7 +445,9 @@ describe('resolveEnvironment', () => {
 
     // Use provided HAPPO_FALLBACK_SHAS with commas
     result = await resolveEnvironment(
-      {},
+      {
+        link,
+      },
       {
         ...happoEnv,
         HAPPO_FALLBACK_SHAS: '123456,789012,345678',
