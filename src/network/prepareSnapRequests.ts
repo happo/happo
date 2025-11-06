@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
-import RemoteBrowserTarget from '../config/RemoteBrowserTarget.ts';
+import RemoteBrowserTarget, {
+  type ExecuteParams,
+} from '../config/RemoteBrowserTarget.ts';
 import buildStorybookPackage from '../storybook/index.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
@@ -76,16 +78,16 @@ async function validatePackage(packageDir: string): Promise<void> {
   }
 }
 
-export default async function prepareSnapRequests(
+async function preparePackage(
   config: ConfigWithDefaults,
-): Promise<Array<number>> {
-  const logger = new Logger();
+  logger: Logger,
+): Promise<string> {
   const packageDir = await buildPackage(config, logger);
 
   await validatePackage(packageDir);
 
   const { buffer, hash } = await deterministicArchive([packageDir]);
-  const packagePath = await uploadAssets(
+  return await uploadAssets(
     buffer,
     {
       hash,
@@ -93,6 +95,17 @@ export default async function prepareSnapRequests(
     },
     config,
   );
+}
+
+export default async function prepareSnapRequests(
+  config: ConfigWithDefaults,
+): Promise<Array<number>> {
+  const logger = new Logger();
+  const packagePath =
+    config.integration.type === 'pages'
+      ? null
+      : await preparePackage(config, logger);
+
   const targetNames = Object.keys(config.targets);
   const tl = targetNames.length;
   logger.info(
@@ -112,13 +125,16 @@ export default async function prepareSnapRequests(
         config.targets[name].browserType,
         config.targets[name],
       );
-      const snapRequestIds = await target.execute(
-        {
-          targetName: name,
-          staticPackage: packagePath,
-        },
-        config,
-      );
+      const targetParams: ExecuteParams = {
+        targetName: name,
+      };
+      if (packagePath) {
+        targetParams.staticPackage = packagePath;
+      }
+      if (config.integration.type === 'pages') {
+        targetParams.pages = config.integration.pages;
+      }
+      const snapRequestIds = await target.execute(targetParams, config);
       logger.start(`  - ${logTag(config.project)}${name}`, { startTime });
       logger.success();
       results.push(...snapRequestIds);
