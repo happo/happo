@@ -65,6 +65,10 @@ function parseRawArgs(rawArgs: Array<string>) {
       previousSha: {
         type: 'string',
       },
+
+      githubBase: {
+        type: 'string',
+      },
     },
 
     allowPositionals: true,
@@ -87,11 +91,12 @@ Options:
   --config              Path to happo config file
   --version             Show version number
   --help                Show help text
-  --baseBranch <branch> Base branch to use for comparison (default: origin/main)
+  --baseBranch <branch> Base branch to use for comparison (default: 'origin/main')
   --link <url>          URL to contextualize the comparison (default: auto-detected from CI environment)
   --message <message>   Message to associate with the comparison (default: auto-detected from CI environment)
   --currentSha <sha>    Current SHA to use for comparison (default: auto-detected from CI environment)
   --previousSha <sha>   Previous SHA to use for comparison (default: auto-detected from CI environment)
+  --githubBase <url>    GitHub base URL to use for comparison (default: GITHUB_SERVER_URL or 'https://github.com')
 
 Examples:
   happo
