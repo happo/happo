@@ -41,7 +41,7 @@ interface BaseE2EIntegration {
 
   /**
    * Whether to download and include all assets in the asset package. If false
-   * (default), only local assets will be included. WHen true, even external
+   * (default), only local assets will be included. When true, even external
    * assets will be included.
    */
   downloadAllAssets?: boolean;
