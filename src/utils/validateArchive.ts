@@ -1,13 +1,11 @@
-import type { EntryData } from 'archiver';
-
 /**
  * Validates that the archive was created successfully
- * @param pointer - The archive pointer (bytes written)
+ * @param totalBytes - The total bytes in the archive
  * @param entries - Array of archive entries
  */
 export default function validateArchive(
   totalBytes: number,
-  entries: Array<EntryData | { name: string; size: number }>,
+  entries: Array<{ name: string; size: number }>,
 ): void {
   const totalMegaBytes = Math.round(totalBytes / 1024 / 1024);
 
@@ -22,12 +20,7 @@ export default function validateArchive(
 
   const fileSizes = entries.map((entry) => ({
     name: entry.name,
-    size:
-      'stats' in entry && entry.stats
-        ? entry.stats.size
-        : 'size' in entry
-          ? entry.size
-          : 0,
+    size: entry.size || 0,
   }));
 
   for (const file of fileSizes.toSorted((a, b) => b.size - a.size).slice(0, 20)) {
