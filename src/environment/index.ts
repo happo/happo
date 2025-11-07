@@ -39,6 +39,7 @@ interface CLIArgs {
   fallbackShas?: string;
   fallbackShasCount?: string;
   nonce?: string;
+  githubToken?: string;
 }
 
 export interface EnvironmentResult {
@@ -51,6 +52,7 @@ export interface EnvironmentResult {
   debugMode: boolean;
   notify: string | undefined;
   fallbackShas: Array<string> | undefined;
+  githubToken: string | undefined;
 }
 
 const envKeys: ReadonlyArray<string> = [
@@ -561,6 +563,7 @@ export default async function resolveEnvironment(
     debugMode,
     notify: cliArgs.notify,
     fallbackShas: resolveFallbackShas(cliArgs, nonNullBeforeSha),
+    githubToken: cliArgs.githubToken,
   };
 
   if (debugMode) {
