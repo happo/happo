@@ -98,11 +98,12 @@ export async function finalizeAll({
       logger,
     );
 
-    if (environment.link && process.env.HAPPO_GITHUB_TOKEN) {
-      // HAPPO_GITHUB_TOKEN is set which means that we should post
+    if (environment.link && environment.githubToken && happoConfig.githubApiUrl) {
+      // githubToken and githubApiUrl are set which means that we should post
       // a comment to the PR.
       // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
       await postGitHubComment({
+        authToken: environment.githubToken,
         link: environment.link,
         statusImageUrl: compareResult.statusImageUrl,
         compareUrl: compareResult.compareUrl,
@@ -165,11 +166,17 @@ async function finalizeHappoReport(
       logger,
     );
 
-    if (compareResult && environment.link && process.env.HAPPO_GITHUB_TOKEN) {
-      // HAPPO_GITHUB_TOKEN is set which means that we should post
+    if (
+      compareResult &&
+      environment.link &&
+      environment.githubToken &&
+      happoConfig.githubApiUrl
+    ) {
+      // githubToken and githubApiUrl is set which means that we should post
       // a comment to the PR.
       // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
       await postGitHubComment({
+        authToken: environment.githubToken,
         link: environment.link,
         statusImageUrl: compareResult.statusImageUrl,
         compareUrl: compareResult.compareUrl,

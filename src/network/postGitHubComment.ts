@@ -3,7 +3,7 @@ import Logger from '../utils/Logger.ts';
 const REPO_URL_MATCHER = /https?:\/\/[^/]+\/([^/]+)\/([^/]+)\/pull\/([0-9]+)/;
 // https://github.com/lightstep/lightstep/pull/6555
 
-const { HAPPO_GITHUB_TOKEN, HAPPO_DELETE_OLD_COMMENTS, VERBOSE } = process.env;
+const { HAPPO_DELETE_OLD_COMMENTS, VERBOSE } = process.env;
 
 const HAPPO_COMMENT_MARKER = '<!-- happo-comment -->';
 
@@ -90,7 +90,7 @@ export default async function postGitHubComment({
   statusImageUrl,
   compareUrl,
   link,
-  authToken = HAPPO_GITHUB_TOKEN || '',
+  authToken,
   deleteOldComments = HAPPO_DELETE_OLD_COMMENTS === 'true',
 }: PostGitHubCommentOptions): Promise<boolean> {
   const matches = link.match(REPO_URL_MATCHER);

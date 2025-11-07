@@ -85,6 +85,10 @@ function parseRawArgs(rawArgs: Array<string>) {
       nonce: {
         type: 'string',
       },
+
+      githubToken: {
+        type: 'string',
+      },
     },
 
     allowPositionals: true,
@@ -118,6 +122,7 @@ Options:
   --fallbackShasCount <count> Number of fallback shas to use for compare calls (default: 50)
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
   --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
+  --githubToken <token> GitHub token to use for posting Happo statuses as comments. Use in combination with the \`githubApiUrl\` configuration option. (default: auto-detected from environment)
 
 Examples:
   happo
@@ -128,6 +133,7 @@ Examples:
   happo --message "Add new feature"
   happo --notify me@example.com,you@example.com
   happo --nonce my-unique-nonce
+  happo --githubToken {{ secrets.GITHUB_TOKEN }}
 
   happo --version
   happo --help

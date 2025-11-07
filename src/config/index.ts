@@ -133,7 +133,8 @@ export interface Config {
   project?: string;
 
   /**
-   * Used when you have the CI script configured to post Happo statuses as comments
+   * Use this to post Happo statuses as comments to your PR. This can be useful
+   * if the Happo server doesn't have access to your GitHub repository.
    *
    * The default is `'https://api.github.com'`. If you are using GitHub
    * Enterprise, enter the URL to your local GitHub API here, such as
@@ -141,6 +142,7 @@ export interface Config {
    * for the API to be located at `/api/v3`).
    */
   githubApiUrl?: string;
+
   /**
    * Browsers to use when generating snapshots
    */
