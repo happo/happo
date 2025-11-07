@@ -173,12 +173,11 @@ export default async function deterministicArchive(
   // Process in-memory content
   // Extract basename to match archiver's behavior with prefix: '' for content entries
   for (const file of contentToArchiveSorted) {
-    const zipEntryName = path.basename(file.name);
-    if (!seenFiles.has(zipEntryName)) {
+    if (!seenFiles.has(file.name)) {
       const data = await contentToUint8Array(file.content);
-      entryDataList.push({ name: zipEntryName, data });
-      entries.push({ name: zipEntryName, size: data.length });
-      seenFiles.add(zipEntryName);
+      entryDataList.push({ name: file.name, data });
+      entries.push({ name: file.name, size: data.length });
+      seenFiles.add(file.name);
     }
   }
 

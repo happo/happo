@@ -47,12 +47,12 @@ describe('createAssetPackage', () => {
     assert.deepEqual(
       entries,
       [
-        '8f037ef4cc4efb6ab6df9cc5d88f7898.jpg',
-        'a0f415163499472aab9e93339b832d12.html',
-        'countries-bg.jpeg',
+        '_external/8f037ef4cc4efb6ab6df9cc5d88f7898.jpg',
+        '_external/a0f415163499472aab9e93339b832d12.html',
+        'sub folder/countries-bg.jpeg',
       ].toSorted(),
     );
-    assert.equal(pkg.hash, '8472953951d24124cd75eacae93db788');
+    assert.equal(pkg.hash, '6bfbf5cafbb71da0dac6bf083bc26a57');
   });
 
   it('includes external assets when downloadAllAssets is true', async () => {
@@ -75,7 +75,10 @@ describe('createAssetPackage', () => {
     assert.equal(entries.length, 2);
     assert.deepEqual(
       entries,
-      ['83112e0c253721ddb1bcff1973e46dcb.png', 'countries-bg.jpeg'].toSorted(),
+      [
+        '_external/83112e0c253721ddb1bcff1973e46dcb.png',
+        'sub folder/countries-bg.jpeg',
+      ].toSorted(),
     );
   });
 });
