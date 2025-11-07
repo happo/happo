@@ -5,6 +5,7 @@ import pAll from 'p-all';
 import type {
   BrowserType,
   ConfigWithDefaults,
+  E2EIntegration,
   TargetWithDefaults,
 } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
@@ -68,6 +69,14 @@ interface Base64ChunkParams {
   src: string;
   isFirst: boolean;
   isLast: boolean;
+}
+
+function assertIntegrationIsE2E(
+  integration: NonNullable<ConfigWithDefaults['integration']>,
+): asserts integration is E2EIntegration {
+  if (integration.type !== 'cypress' && integration.type !== 'playwright') {
+    throw new Error(`Unsupported integration type: ${integration.type}`);
+  }
 }
 
 function dedupeSnapshots(snapshots: Array<Snapshot>): Array<Snapshot> {
@@ -276,7 +285,11 @@ Documentation:
     }
 
     const uniqueUrls = getUniqueUrls(allUrls);
-    const { buffer, hash } = await createAssetPackage(uniqueUrls);
+    assertIntegrationIsE2E(this.happoConfig.integration);
+    const downloadAllAssets = this.happoConfig.integration.downloadAllAssets;
+    const { buffer, hash } = await createAssetPackage(uniqueUrls, {
+      downloadAllAssets: downloadAllAssets ?? false,
+    });
 
     const assetsPath = await this.uploadAssetsIfNeeded({ buffer, hash });
 
