@@ -169,4 +169,89 @@ describe('loadConfigFile', () => {
     assert.strictEqual(config.apiKey, 'test-api-key');
     assert.strictEqual(config.apiSecret, 'test-api-secret');
   });
+
+  it('sets the default values for the targets', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+        };
+      `,
+    });
+
+    const config = await loadConfigFile(findConfigFile());
+
+    assert.ok(config);
+    assert.strictEqual(config.endpoint, 'https://happo.io');
+    assert.strictEqual(config.githubApiUrl, 'https://api.github.com');
+    assert.strictEqual(config.integration?.type, 'storybook');
+    assert.deepStrictEqual(config.targets, {
+      chrome: {
+        type: 'chrome',
+        viewport: '1024x768',
+        freezeAnimations: 'last-frame',
+        prefersReducedMotion: true,
+      },
+    });
+  });
+
+  it('does not clobber values with defaults', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          endpoint: 'https://test-endpoint.com',
+          githubApiUrl: 'https://test-github-api-url.com',
+
+          integration: {
+            type: 'cypress',
+          },
+
+          targets: {
+            chrome: {
+              type: 'chrome',
+              viewport: '800x600',
+              freezeAnimations: 'first-frame',
+              prefersReducedMotion: false,
+            },
+            safari: {
+              type: 'safari',
+            },
+            firefox: {
+              type: 'firefox',
+              viewport: '800x600',
+              freezeAnimations: 'first-frame',
+              prefersReducedMotion: false,
+            },
+          },
+        };
+      `,
+    });
+
+    const config = await loadConfigFile(findConfigFile());
+
+    assert.ok(config);
+    assert.strictEqual(config.endpoint, 'https://test-endpoint.com');
+    assert.strictEqual(config.githubApiUrl, 'https://test-github-api-url.com');
+    assert.strictEqual(config.integration?.type, 'cypress');
+
+    assert.deepStrictEqual(config.targets, {
+      chrome: {
+        type: 'chrome',
+        viewport: '800x600',
+        freezeAnimations: 'first-frame',
+        prefersReducedMotion: false,
+      },
+      safari: {
+        type: 'safari',
+        viewport: '1024x768',
+        freezeAnimations: 'last-frame',
+        prefersReducedMotion: true,
+      },
+      firefox: {
+        type: 'firefox',
+        viewport: '800x600',
+        freezeAnimations: 'first-frame',
+        prefersReducedMotion: false,
+      },
+    });
+  });
 });

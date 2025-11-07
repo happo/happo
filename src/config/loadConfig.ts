@@ -31,6 +31,7 @@ export async function loadConfigFile(
   configFilePath: string,
 ): Promise<ConfigWithDefaults> {
   const config = await import(configFilePath);
+
   if (!config.default.targets) {
     config.default.targets = {
       chrome: {
@@ -39,16 +40,20 @@ export async function loadConfigFile(
       },
     };
   }
+
   if (!config.default.integration) {
     config.default.integration = {
       type: 'storybook',
     };
   }
+
   const allTargets = Object.values(config.default.targets);
   for (const target of allTargets as Array<TargetWithDefaults>) {
     target.viewport = target.viewport || '1024x768';
     target.freezeAnimations = target.freezeAnimations || 'last-frame';
+    target.prefersReducedMotion = target.prefersReducedMotion ?? true;
   }
+
   return {
     endpoint: 'https://happo.io',
     githubApiUrl: 'https://api.github.com',

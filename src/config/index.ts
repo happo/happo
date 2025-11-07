@@ -303,8 +303,8 @@ interface DesktopTarget extends BaseTarget {
   viewport: `${number}x${number}`;
 
   /**
-   * Set `prefersReducedMotion: true` to make the browser prefer reduced motion
-   * when rendering the UI.
+   * By default, Happo makes the browser prefer reduced motion when rendering
+   * the UI. Set `prefersReducedMotion: false` to disable this behavior.
    */
   prefersReducedMotion?: boolean;
 
