@@ -33,22 +33,26 @@ export interface StorybookIntegration {
   skip?: SkipItems | (() => Promise<SkipItems>) | undefined;
 }
 
-interface CypressIntegration {
-  type: 'cypress';
-
+interface BaseE2EIntegration {
   /**
    * Whether to allow failures.
    */
   allowFailures?: boolean;
+
+  /**
+   * Whether to download and include all assets in the asset package. If false
+   * (default), only local assets will be included. When true, even external
+   * assets will be included.
+   */
+  downloadAllAssets?: boolean;
 }
 
-interface PlaywrightIntegration {
-  type: 'playwright';
+interface CypressIntegration extends BaseE2EIntegration {
+  type: 'cypress';
+}
 
-  /**
-   * Whether to allow failures.
-   */
-  allowFailures?: boolean;
+interface PlaywrightIntegration extends BaseE2EIntegration {
+  type: 'playwright';
 }
 
 export type E2EIntegration = CypressIntegration | PlaywrightIntegration;

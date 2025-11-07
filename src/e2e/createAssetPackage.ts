@@ -47,8 +47,9 @@ function getFileSuffixFromMimeType(mimeType = ''): string {
 
 export default async function createAssetPackage(
   urls: Array<AssetUrl>,
+  { downloadAllAssets }: { downloadAllAssets?: boolean },
 ): Promise<{ buffer: Buffer<ArrayBuffer>; hash: string }> {
-  const { HAPPO_DOWNLOAD_ALL, HAPPO_DEBUG } = process.env;
+  const { HAPPO_DEBUG } = process.env;
 
   if (HAPPO_DEBUG) {
     console.log(`[HAPPO] Creating asset package from urls`, urls);
@@ -68,7 +69,7 @@ export default async function createAssetPackage(
       const isExternalUrl = /^https?:/.test(url);
       const isLocalhost = /\/\/(localhost|127\.0\.0\.1)(:|\/)/.test(url);
 
-      if (!HAPPO_DOWNLOAD_ALL && isExternalUrl && !isLocalhost) {
+      if (!downloadAllAssets && isExternalUrl && !isLocalhost) {
         return;
       }
 
