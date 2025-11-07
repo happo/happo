@@ -38,7 +38,6 @@ interface CLIArgs {
   notify?: string;
   fallbackShas?: string;
   fallbackShasCount?: string;
-  githubBase?: string;
   nonce?: string;
 }
 
@@ -117,19 +116,23 @@ async function resolveLink(
   const {
     BUILD_REPOSITORY_URI,
     BUILD_SOURCEVERSION,
+
+    // https://circleci.com/docs/reference/variables/
     CIRCLE_PROJECT_REPONAME,
     CIRCLE_PROJECT_USERNAME,
+    CIRCLE_PULL_REQUEST,
     CIRCLE_SHA1,
+
     CI_PULL_REQUEST,
 
     // https://docs.github.com/en/actions/reference/workflows-and-actions/variables#default-environment-variables
     GITHUB_EVENT_PATH,
-    GITHUB_SERVER_URL,
     GITHUB_SHA,
 
     SYSTEM_PULLREQUEST_PULLREQUESTID,
     SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI,
 
+    // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
     TRAVIS_COMMIT,
     TRAVIS_PULL_REQUEST,
     TRAVIS_REPO_SLUG,
@@ -171,7 +174,7 @@ async function resolveLink(
     );
   }
 
-  const githubBase = cliArgs.githubBase || GITHUB_SERVER_URL || 'https://github.com';
+  const githubBase = 'https://github.com';
 
   if (TRAVIS_REPO_SLUG && TRAVIS_PULL_REQUEST) {
     return `${githubBase}/${TRAVIS_REPO_SLUG}/pull/${TRAVIS_PULL_REQUEST}`;
@@ -179,6 +182,10 @@ async function resolveLink(
 
   if (TRAVIS_REPO_SLUG && TRAVIS_COMMIT) {
     return `${githubBase}/${TRAVIS_REPO_SLUG}/commit/${TRAVIS_COMMIT}`;
+  }
+
+  if (CIRCLE_PULL_REQUEST) {
+    return CIRCLE_PULL_REQUEST;
   }
 
   if (CIRCLE_PROJECT_USERNAME && CIRCLE_PROJECT_REPONAME && CIRCLE_SHA1) {

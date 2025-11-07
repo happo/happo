@@ -116,12 +116,12 @@ describe('resolveEnvironment', () => {
   });
 
   it('resolves the CircleCI environment', async () => {
-    const { origin, beforeSha, afterSha } = initGitRepo();
+    const { beforeSha, afterSha } = initGitRepo();
 
     makeNewBranchAndCommit('CircleCI');
 
     const circleEnv = {
-      CI_PULL_REQUEST: `${origin}/pull/12`,
+      CI_PULL_REQUEST: 'https://github.com/happo/happo-view/pull/12',
       CIRCLE_PROJECT_USERNAME: 'happo',
       CIRCLE_PROJECT_REPONAME: 'happo-view',
       CIRCLE_SHA1: afterSha,
@@ -129,7 +129,19 @@ describe('resolveEnvironment', () => {
     let result = await resolveEnvironment({}, circleEnv);
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
-    assert.equal(result.link, `${origin}/pull/12`);
+    assert.equal(result.link, 'https://github.com/happo/happo-view/pull/12');
+    assert.ok(result.message !== undefined);
+
+    // Try with CIRCLE_PULL_REQUEST
+    result = await resolveEnvironment(
+      {},
+      {
+        CIRCLE_PULL_REQUEST: 'https://github.com/happo/happo-view/pull/1244',
+        CIRCLE_SHA1: afterSha,
+      },
+    );
+    assert.equal(result.afterSha, afterSha);
+    assert.equal(result.link, 'https://github.com/happo/happo-view/pull/1244');
     assert.ok(result.message !== undefined);
 
     // Try with a real commit sha in the repo
@@ -142,7 +154,7 @@ describe('resolveEnvironment', () => {
     );
 
     assert.equal(result.afterSha, afterSha);
-    assert.equal(result.link, `${origin}/pull/12`);
+    assert.equal(result.link, 'https://github.com/happo/happo-view/pull/12');
     assert.ok(result.message !== undefined);
 
     // Try with a non-pr env
@@ -334,7 +346,7 @@ describe('resolveEnvironment', () => {
   });
 
   it('resolves the Travis environment', async () => {
-    const { origin, beforeSha, afterSha } = initGitRepo();
+    const { beforeSha, afterSha } = initGitRepo();
 
     makeNewBranchAndCommit('Travis');
 
@@ -346,16 +358,15 @@ describe('resolveEnvironment', () => {
       TRAVIS_COMMIT: afterSha,
     };
 
-    let result = await resolveEnvironment({ githubBase: origin }, travisEnv);
+    let result = await resolveEnvironment({}, travisEnv);
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
-    assert.equal(result.link, `${origin}/owner/repo/pull/12`);
+    assert.equal(result.link, `https://github.com/owner/repo/pull/12`);
     assert.ok(result.message !== undefined);
 
     // Try with a real commit sha in the repo
     result = await resolveEnvironment(
       {
-        githubBase: origin,
         fallbackShasCount: '5',
       },
       {
@@ -368,7 +379,7 @@ describe('resolveEnvironment', () => {
     );
 
     assert.equal(result.afterSha, afterSha);
-    assert.equal(result.link, `${origin}/owner/repo/commit/${afterSha}`);
+    assert.equal(result.link, `https://github.com/owner/repo/commit/${afterSha}`);
 
     const fallbackShas = tmpfs
       .exec('git', [

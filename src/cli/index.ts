@@ -85,10 +85,6 @@ function parseRawArgs(rawArgs: Array<string>) {
       nonce: {
         type: 'string',
       },
-
-      githubBase: {
-        type: 'string',
-      },
     },
 
     allowPositionals: true,
@@ -121,7 +117,6 @@ Options:
   --fallbackShas <shas> Space-, newline- or comma-separated list of fallback shas for compare calls (default: auto-detected from CI environment)
   --fallbackShasCount <count> Number of fallback shas to use for compare calls (default: 50)
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
-  --githubBase <url>    GitHub base URL to use for comparison (default: GITHUB_SERVER_URL or 'https://github.com')
   --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
 
 Examples:
