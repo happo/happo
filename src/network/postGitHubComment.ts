@@ -3,7 +3,7 @@ import Logger from '../utils/Logger.ts';
 const REPO_URL_MATCHER = /https?:\/\/[^/]+\/([^/]+)\/([^/]+)\/pull\/([0-9]+)/;
 // https://github.com/lightstep/lightstep/pull/6555
 
-const { HAPPO_DELETE_OLD_COMMENTS, VERBOSE } = process.env;
+const { VERBOSE } = process.env;
 
 const HAPPO_COMMENT_MARKER = '<!-- happo-comment -->';
 
@@ -82,7 +82,6 @@ interface PostGitHubCommentOptions {
   compareUrl: string;
   link: string;
   authToken?: string | undefined;
-  deleteOldComments?: boolean | undefined;
 }
 
 export default async function postGitHubComment({
@@ -91,7 +90,6 @@ export default async function postGitHubComment({
   compareUrl,
   link,
   authToken,
-  deleteOldComments = HAPPO_DELETE_OLD_COMMENTS === 'true',
 }: PostGitHubCommentOptions): Promise<boolean> {
   const matches = link.match(REPO_URL_MATCHER);
   if (!matches) {
@@ -119,22 +117,16 @@ export default async function postGitHubComment({
 
   const authHeader = `Bearer ${authToken}`;
 
-  if (deleteOldComments) {
-    if (VERBOSE) {
-      console.log('Deleting existing happo comments...');
-    }
-    await deleteExistingComments(
-      normalizedGithubApiUrl,
-      owner,
-      repo,
-      prNumber,
-      authHeader,
-    );
-  } else if (VERBOSE) {
-    console.log(
-      'Skipping deletion of existing happo comments since HAPPO_DELETE_OLD_COMMENTS is not true.',
-    );
+  if (VERBOSE) {
+    console.log('Deleting existing happo comments...');
   }
+  await deleteExistingComments(
+    normalizedGithubApiUrl,
+    owner,
+    repo,
+    prNumber,
+    authHeader,
+  );
 
   const body = `${HAPPO_COMMENT_MARKER}\n[![Happo status](${statusImageUrl})](${compareUrl})`;
   const res = await fetch(
