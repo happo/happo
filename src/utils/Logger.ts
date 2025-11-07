@@ -1,22 +1,11 @@
-import supportsColor from 'supports-color';
+import { styleText } from 'node:util';
 
-// https://stackoverflow.com/questions/9781218/how-to-change-node-jss-console-font-color
-
-type ColorFunction = (str: string) => string;
 type PrintFunction = (str: string) => void;
 
-function withColorSupport(wrappedFunc: ColorFunction): ColorFunction {
-  if (supportsColor.stdout && supportsColor.stderr) {
-    return wrappedFunc;
-  }
-  return (msg: string) => msg;
-}
-const red = withColorSupport((str: string) => `\u001B[31m${str}\u001B[0m`);
-const green = withColorSupport((str: string) => `\u001B[32m${str}\u001B[0m`);
-const dim = withColorSupport((str: string) => `\u001B[90m${str}\u001B[0m`);
-const underline = withColorSupport(
-  (str: string) => `\u001B[36m\u001B[4m${str}\u001B[0m`,
-);
+const red = (str: string) => styleText('red', str);
+const green = (str: string) => styleText('green', str);
+const dim = (str: string) => styleText('dim', str);
+const underline = (str: string) => styleText('underline', str);
 
 export function logTag(project?: string): string {
   return project ? `[${project}] ` : '';
