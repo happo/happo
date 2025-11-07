@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 
-import AdmZip from 'adm-zip';
+import { unzipSync } from 'fflate';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import deterministicArchive from '../deterministicArchive.ts';
@@ -72,8 +72,8 @@ test('picks out the right files', async () => {
   ];
   const { buffer } = await deterministicArchive([tmpdir, ...publicFolders]);
 
-  const zip = new AdmZip(buffer);
-  const entryNames = new Set(zip.getEntries().map(({ entryName }) => entryName));
+  const zip = unzipSync(new Uint8Array(buffer));
+  const entryNames = new Set(Object.keys(zip));
 
   // Check that our test files are included
   assert(
@@ -102,10 +102,8 @@ test('does not include duplicate files', async () => {
   assert.deepStrictEqual(resultNormal.hash, resultWithPossibleDuplicates.hash);
   assert.deepStrictEqual(resultNormal.buffer, resultWithPossibleDuplicates.buffer);
 
-  const zip = new AdmZip(resultWithPossibleDuplicates.buffer);
-  const entries = zip
-    .getEntries()
-    .map(({ entryName }) => entryName)
+  const zip = unzipSync(new Uint8Array(resultWithPossibleDuplicates.buffer));
+  const entries = Object.keys(zip)
     // Filter out any system files that might be created
     .filter((entryName) => !entryName.includes('.DS_Store'));
 
@@ -126,19 +124,17 @@ test('can include in-memory content', async () => {
     [{ name: 'my-in-memory-file.txt', content }],
   );
 
-  const zip = new AdmZip(result.buffer);
-  const myFile = zip.getEntry('my-in-memory-file.txt');
+  const zip = unzipSync(new Uint8Array(result.buffer));
+  const myFile = zip['my-in-memory-file.txt'];
   assert(myFile, 'my-in-memory-file.txt should exist in the zip');
-  assert.strictEqual(myFile.getData().toString(), content);
+  assert.strictEqual(new TextDecoder().decode(myFile), content);
 });
 
 test('handles relative paths', async () => {
   const result = await deterministicArchive([testAssetsDir]);
-  const zip = new AdmZip(result.buffer);
+  const zip = unzipSync(new Uint8Array(result.buffer));
 
-  const entries = zip
-    .getEntries()
-    .map(({ entryName }) => entryName)
+  const entries = Object.keys(zip)
     // Filter out any system files that might be created
     .filter((entryName) => !entryName.includes('.DS_Store'));
 
@@ -148,11 +144,9 @@ test('handles relative paths', async () => {
 test('keeps folder structure when adding single files', async () => {
   const singleFilePath = path.join(tmpdir, 'subfolder', 'nested.txt');
   const result = await deterministicArchive([singleFilePath]);
-  const zip = new AdmZip(result.buffer);
+  const zip = unzipSync(new Uint8Array(result.buffer));
 
-  const entries = zip
-    .getEntries()
-    .map(({ entryName }) => entryName)
+  const entries = Object.keys(zip)
     // Filter out any system files that might be created
     .filter((entryName) => !entryName.includes('.DS_Store'));
 
@@ -162,11 +156,9 @@ test('keeps folder structure when adding single files', async () => {
 test('keeps folder structure when adding single files with absolute paths', async () => {
   const singleFilePath = path.join(tmpdir, 'subfolder', 'nested.txt');
   const result = await deterministicArchive([singleFilePath]);
-  const zip = new AdmZip(result.buffer);
+  const zip = unzipSync(new Uint8Array(result.buffer));
 
-  const entries = zip
-    .getEntries()
-    .map(({ entryName }) => entryName)
+  const entries = Object.keys(zip)
     // Filter out any system files that might be created
     .filter((entryName) => !entryName.includes('.DS_Store'));
 

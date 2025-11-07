@@ -1,16 +1,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { Readable, Writable } from 'node:stream';
+import { Readable } from 'node:stream';
 
-import type { EntryData } from 'archiver';
-import archiver from 'archiver';
+import type { Zippable } from 'fflate';
+import { zip } from 'fflate';
 
 import createHash from './createHash.ts';
 import validateArchive from './validateArchive.ts';
 
 // We're setting the creation date to the same for all files so that the zip
 // packages created for the same content ends up having the same fingerprint.
-const FILE_CREATION_DATE = new Date('Fri Feb 08 2019 13:31:55 GMT+0100 (CET)');
+// https://github.com/101arrowz/fflate/issues/219#issuecomment-2333945868
+const FILE_CREATION_DATE = new Date(2019, 1, 8, 13, 31, 55);
 
 // Type definitions
 interface FileEntry {
@@ -26,6 +27,11 @@ export interface ArchiveContentEntry {
 interface ArchiveResult {
   buffer: Buffer<ArrayBuffer>;
   hash: string;
+}
+
+interface ArchiveEntry {
+  name: string;
+  size: number;
 }
 
 /**
@@ -86,6 +92,41 @@ async function resolveFilesRecursive(
 }
 
 /**
+ * Converts a stream to a Uint8Array
+ */
+async function streamToUint8Array(
+  stream: fs.ReadStream | Readable,
+): Promise<Uint8Array> {
+  const chunks: Array<Uint8Array> = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
+  }
+  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+/**
+ * Converts content to Uint8Array
+ */
+async function contentToUint8Array(
+  content: string | Buffer | fs.ReadStream | Readable,
+): Promise<Uint8Array> {
+  if (typeof content === 'string') {
+    return new TextEncoder().encode(content);
+  }
+  if (Buffer.isBuffer(content)) {
+    return new Uint8Array(content);
+  }
+  return streamToUint8Array(content);
+}
+
+/**
  * Creates a deterministic archive of the given files
  *
  * @param dirsAndFiles - Array of directory and file paths to include
@@ -99,71 +140,76 @@ export default async function deterministicArchive(
   const uniqueDirsAndFiles = Array.from(new Set(dirsAndFiles));
 
   // Sort by name to make the output deterministic
+  // Use simple string comparison instead of localeCompare for cross-platform determinism
   const filesToArchiveSorted = (
     await resolveFilesRecursive(...uniqueDirsAndFiles)
-  ).toSorted((a, b) => a.name.localeCompare(b.name));
+  ).toSorted((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
   const contentToArchiveSorted = contentToArchive.toSorted((a, b) =>
-    a.name.localeCompare(b.name),
+    a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
   );
 
-  return new Promise<ArchiveResult>((resolve, reject) => {
-    const archive = archiver('zip', {
-      // Concurrency in the stat queue leads to non-deterministic output.
-      // https://github.com/archiverjs/node-archiver/issues/383#issuecomment-2253139948
-      statConcurrency: 1,
-      zlib: { level: 6 },
-    });
+  const seenFiles = new Set<string>();
+  const entries: Array<ArchiveEntry> = [];
 
-    const stream = new Writable();
-    const data: Array<number> = [];
+  // Collect all entries with their data first
+  interface EntryData {
+    name: string;
+    data: Uint8Array;
+  }
 
-    stream._write = (chunk: Buffer, _enc: string, done: () => void) => {
-      data.push(...chunk);
-      done();
-    };
+  const entryDataList: Array<EntryData> = [];
 
-    const entries: Array<EntryData> = [];
-    archive.on('entry', (entry) => {
-      entries.push(entry);
-    });
-
-    stream.on('finish', () => {
-      validateArchive(archive.pointer(), entries);
-      const buffer = Buffer.from(data);
-      const hash = createHash(buffer);
-
-      resolve({ buffer, hash });
-    });
-    archive.pipe(stream);
-
-    const seenFiles = new Set<string>();
-
-    // We can't use archive.directory() here because it is not deterministic.
-    // https://github.com/archiverjs/node-archiver/issues/383#issuecomment-2252938075
-    for (const file of filesToArchiveSorted) {
-      if (!seenFiles.has(file.name)) {
-        archive.append(file.stream, {
-          name: file.name,
-          prefix: '',
-          date: FILE_CREATION_DATE,
-        });
-        seenFiles.add(file.name);
-      }
+  // Process files from disk
+  for (const file of filesToArchiveSorted) {
+    if (!seenFiles.has(file.name)) {
+      const data = await streamToUint8Array(file.stream);
+      entryDataList.push({ name: file.name, data });
+      entries.push({ name: file.name, size: data.length });
+      seenFiles.add(file.name);
     }
+  }
 
-    for (const file of contentToArchiveSorted) {
-      if (!seenFiles.has(file.name)) {
-        archive.append(file.content, {
-          name: file.name,
-          prefix: '',
-          date: FILE_CREATION_DATE,
-        });
-        seenFiles.add(file.name);
-      }
+  // Process in-memory content
+  // Extract basename to match archiver's behavior with prefix: '' for content entries
+  for (const file of contentToArchiveSorted) {
+    const zipEntryName = path.basename(file.name);
+    if (!seenFiles.has(zipEntryName)) {
+      const data = await contentToUint8Array(file.content);
+      entryDataList.push({ name: zipEntryName, data });
+      entries.push({ name: zipEntryName, size: data.length });
+      seenFiles.add(zipEntryName);
     }
+  }
 
-    archive.on('error', reject);
-    archive.finalize();
+  // Sort all entries by name to ensure deterministic order
+  // Use simple string comparison instead of localeCompare for cross-platform determinism
+  entryDataList.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+
+  // Build zipData object in sorted order to ensure deterministic zip creation
+  const zipData: Zippable = {};
+  for (const entry of entryDataList) {
+    zipData[entry.name] = [
+      entry.data,
+      {
+        mtime: FILE_CREATION_DATE,
+        level: 6,
+      },
+    ];
+  }
+
+  const zipBuffer = await new Promise<Uint8Array>((resolve, reject) => {
+    zip(zipData, { level: 6 }, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
   });
+  const buffer = Buffer.from(zipBuffer);
+  validateArchive(buffer.length, entries);
+  const hash = createHash(buffer);
+
+  return { buffer, hash };
 }

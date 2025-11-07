@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import AdmZip from 'adm-zip';
+import { unzipSync } from 'fflate';
 
 import type { ServerInfo } from '../../network/startServer.ts';
 import startTestServer from '../../test-utils/startTestServer.ts';
@@ -41,18 +41,18 @@ describe('createAssetPackage', () => {
       { downloadAllAssets: false },
     );
 
-    const zip = new AdmZip(pkg.buffer);
-    const entries = zip.getEntries();
+    const zip = unzipSync(new Uint8Array(pkg.buffer));
+    const entries = Object.keys(zip).toSorted();
     assert.equal(entries.length, 3);
     assert.deepEqual(
-      entries.map((e) => e.name),
+      entries,
       [
         '8f037ef4cc4efb6ab6df9cc5d88f7898.jpg',
         'a0f415163499472aab9e93339b832d12.html',
         'countries-bg.jpeg',
-      ],
+      ].toSorted(),
     );
-    assert.equal(pkg.hash, '72e01703a28841a98e6f705150c0a06e');
+    assert.equal(pkg.hash, '8472953951d24124cd75eacae93db788');
   });
 
   it('includes external assets when downloadAllAssets is true', async () => {
@@ -70,12 +70,12 @@ describe('createAssetPackage', () => {
       { downloadAllAssets: true },
     );
 
-    const zip = new AdmZip(pkg.buffer);
-    const entries = zip.getEntries();
+    const zip = unzipSync(new Uint8Array(pkg.buffer));
+    const entries = Object.keys(zip).toSorted();
     assert.equal(entries.length, 2);
     assert.deepEqual(
-      entries.map((e) => e.name),
-      ['83112e0c253721ddb1bcff1973e46dcb.png', 'countries-bg.jpeg'],
+      entries,
+      ['83112e0c253721ddb1bcff1973e46dcb.png', 'countries-bg.jpeg'].toSorted(),
     );
   });
 });
