@@ -1,9 +1,5 @@
-import Logger from '../utils/Logger.ts';
-
 const REPO_URL_MATCHER = /https?:\/\/[^/]+\/([^/]+)\/([^/]+)\/pull\/([0-9]+)/;
 // https://github.com/lightstep/lightstep/pull/6555
-
-const { VERBOSE } = process.env;
 
 const HAPPO_COMMENT_MARKER = '<!-- happo-comment -->';
 
@@ -50,11 +46,9 @@ async function deleteExistingComments(
     return comment.body.startsWith(HAPPO_COMMENT_MARKER);
   });
 
-  if (VERBOSE) {
-    console.log(
-      `Found ${happoComments.length} happo comments to delete out of a total of ${comments.length} comments on the PR.`,
-    );
-  }
+  console.log(
+    `[HAPPO] Found ${happoComments.length} happo comments to delete out of a total of ${comments.length} comments on the PR.`,
+  );
 
   await Promise.all(
     happoComments.map(async (comment) => {
@@ -93,8 +87,8 @@ export default async function postGitHubComment({
 }: PostGitHubCommentOptions): Promise<boolean> {
   const matches = link.match(REPO_URL_MATCHER);
   if (!matches) {
-    new Logger().info(
-      `URL does not look like a github PR URL: ${link}. Skipping github comment posting...`,
+    console.log(
+      `[HAPPO] URL does not look like a github PR URL: ${link}. Skipping github comment posting...`,
     );
     return false;
   }
@@ -117,9 +111,7 @@ export default async function postGitHubComment({
 
   const authHeader = `Bearer ${authToken}`;
 
-  if (VERBOSE) {
-    console.log('Deleting existing happo comments...');
-  }
+  console.log('[HAPPO] Deleting existing happo comments...');
   await deleteExistingComments(
     normalizedGithubApiUrl,
     owner,
@@ -147,9 +139,10 @@ export default async function postGitHubComment({
     );
   }
 
-  if (VERBOSE) {
-    console.log('Posted github comment successfully. Response is', await res.json());
-  }
+  console.log(
+    `[HAPPO] Posted github comment successfully. Response is`,
+    await res.json(),
+  );
 
   return true;
 }
