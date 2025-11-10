@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+
 import { any as findAny } from 'empathic/find';
 
 import type { ConfigWithDefaults, TargetWithDefaults } from './index.ts';
@@ -30,6 +32,19 @@ export function findConfigFile(): string {
 export async function loadConfigFile(
   configFilePath: string,
 ): Promise<ConfigWithDefaults> {
+  try {
+    const stats = await fs.promises.stat(configFilePath);
+    if (!stats.isFile()) {
+      throw new Error(`Happo config file path is not a file: ${configFilePath}`);
+    }
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      throw new Error(`Happo config file could not be found: ${configFilePath}`);
+    }
+
+    throw error;
+  }
+
   const config = await import(configFilePath);
 
   if (!config.default.targets) {
