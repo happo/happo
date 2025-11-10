@@ -141,8 +141,8 @@
     "empathic": "^2.0.0",
     "fflate": "^0.8.2",
     "jose": "^6.1.0",
+    "limit-concur": "^4.0.0",
     "mime-types": "^3.0.1",
-    "p-all": "^5.0.1",
     "srcset": "^5.0.2"
   },
   "keywords": [

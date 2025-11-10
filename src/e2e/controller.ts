@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-import pAll from 'p-all';
+import limitConcur from 'limit-concur';
 
 import type {
   BrowserType,
@@ -156,7 +156,9 @@ async function downloadCSSContent(blocks: Array<CSSBlock>): Promise<void> {
     }
   });
 
-  await pAll(actions, { concurrency: 5 });
+  await Promise.all(
+    actions.map(limitConcur(5, (action: () => Promise<void>) => action())),
+  );
 }
 
 class Controller {
