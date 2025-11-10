@@ -61,11 +61,20 @@ describe('telemetry', () => {
     at funcName (file:///Users/username/repo/path/file.js:10:5)
     at bound (node:foo/bar:433:15)
     at funcName2 (file:///Users/username/repo/path/file2.js:20:10)
-    at funcName3 (file:///Users/username/repo/path/file3.js:30:15)`;
+    at funcName3 (file:///Users/username/repo/path/file3.js:30:15)
+    at new Foo (file:///Users/username/repo/path/subdir/foo.js:1:1)`;
 
       const frames = await parseFrames(stack, '/Users/username/repo');
 
       assert.deepStrictEqual(frames, [
+        {
+          function: 'new Foo',
+          raw_function: 'new Foo',
+          abs_path: 'path/subdir/foo.js',
+          filename: 'foo.js',
+          lineno: 1,
+          colno: 1,
+        },
         {
           function: 'funcName3',
           raw_function: 'funcName3',

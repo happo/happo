@@ -7,6 +7,15 @@ import { up as findPackage } from 'empathic/package';
 
 import pkg from '../../package.json' with { type: 'json' };
 
+/**
+ * Happo's PUBLIC DSN. Safe to ship.
+ */
+const SENTRY_DSN =
+  'https://3a495ff2101313edb024de73b005398f@o108341.ingest.us.sentry.io/4510341337645056';
+
+const MAX_STACK_FRAMES = 50;
+const MAX_FUNCTION_NAME_LENGTH = 120;
+
 type CI =
   | 'github'
   | 'circleci'
@@ -46,12 +55,6 @@ export type ReporterOptions = {
   maxPerMinute?: number; // default 10
   env?: string;
 };
-
-/**
- * Happo's PUBLIC DSN. Safe to ship.
- */
-const SENTRY_DSN =
-  'https://3a495ff2101313edb024de73b005398f@o108341.ingest.us.sentry.io/4510341337645056';
 
 export interface Reporter {
   captureException(e: unknown): Promise<void>;
@@ -391,13 +394,13 @@ export async function parseFrames(
   cwd: string = process.cwd(),
 ): Promise<Array<SentryFrame>> {
   // Node stack lines like: "    at func (file:///absolute/path/to/file.js:10:5)"
-  const stackLines = stack.split('\n').slice(0, 50);
+  const stackLines = stack.split('\n').slice(0, MAX_STACK_FRAMES);
 
   const frames = [];
 
   for (const stackLine of stackLines) {
     const match = stackLine.match(
-      /\s+at\s+(?<functionName>.*?)\s+\((?:file:\/\/)?(?<absPath>.+?):(?<lineno>\d+):(?<colno>\d+)\)?/,
+      /\s+at\s+(?<functionName>.*?)\s+\((?:file:\/\/)?(?<absPath>.+?):(?<lineno>\d+):(?<colno>\d+)\)/,
     );
 
     if (!match || !match.groups) {
@@ -415,10 +418,7 @@ export async function parseFrames(
       ? rawAbsPath
       : path.basename(rawAbsPath);
 
-    const functionName =
-      match.groups.functionName === 'new'
-        ? '<anonymous>'
-        : (match.groups.functionName ?? 'unknown');
+    const functionName = match.groups.functionName ?? '';
 
     const lineno = match.groups.lineno
       ? Number.parseInt(match.groups.lineno, 10)
@@ -430,7 +430,7 @@ export async function parseFrames(
 
     // https://develop.sentry.dev/sdk/data-model/event-payloads/stacktrace/#frame-attributes
     const frame: SentryFrame = {
-      function: functionName.slice(0, 120),
+      function: functionName.slice(0, MAX_FUNCTION_NAME_LENGTH),
       raw_function: functionName,
 
       abs_path: absPath,

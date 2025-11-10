@@ -154,13 +154,20 @@ function makeAbsolute(configFilePath: string): string {
 }
 
 function installErrorHandlers(reporter: Reporter, logger: Logger) {
-  const unhandledRejectionHandler = (error: Error) => {
-    reporter.captureException(error);
-    logger.error(error.stack || error.message || String(error));
+  const unhandledRejectionHandler: NodeJS.UnhandledRejectionListener = (reason) => {
+    if (reason instanceof Error) {
+      reporter.captureException(reason);
+      logger.error(reason.stack || reason.message || String(reason));
+    } else {
+      reporter.captureException(reason);
+      logger.error(`Unhandled rejection (non-Error value): ${String(reason)}`);
+    }
+
     process.exitCode = 1;
+    return;
   };
 
-  const uncaughtExceptionHandler = (error: Error) => {
+  const uncaughtExceptionHandler: NodeJS.UncaughtExceptionListener = (error) => {
     reporter.captureException(error);
     logger.error(error.stack || error.message || String(error));
     process.exitCode = 1;
