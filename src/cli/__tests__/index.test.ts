@@ -187,13 +187,16 @@ describe('main', () => {
     });
 
     it('fails when config file does not exist', async () => {
-      await assert.rejects(
-        () =>
-          main(
-            ['npx', 'happo', '--config', tmpfs.fullPath('non-existent.config.ts')],
-            logger,
-          ),
-        /Cannot find module .*non-existent.config.ts/,
+      await main(
+        ['npx', 'happo', '--config', tmpfs.fullPath('non-existent.config.ts')],
+        logger,
+      );
+
+      assert.strictEqual(process.exitCode, 1);
+      assert.strictEqual(logger.error.mock.callCount(), 1);
+      assert.strictEqual(
+        logger.error.mock.calls[0]?.arguments[0],
+        `Happo config file could not be found: ${tmpfs.fullPath('non-existent.config.ts')}`,
       );
     });
   });

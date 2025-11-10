@@ -8,6 +8,8 @@ import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
+import type { Reporter } from './telemetry.ts';
+import { createReporter } from './telemetry.ts';
 
 async function getVersion() {
   const packageJson = await import('../../package.json', {
@@ -151,56 +153,89 @@ function makeAbsolute(configFilePath: string): string {
   return configFilePath;
 }
 
+function installErrorHandlers(reporter: Reporter, logger: Logger) {
+  const unhandledRejectionHandler = (error: Error) => {
+    reporter.captureException(error);
+    logger.error(error.stack || error.message || String(error));
+    process.exitCode = 1;
+  };
+
+  const uncaughtExceptionHandler = (error: Error) => {
+    reporter.captureException(error);
+    logger.error(error.stack || error.message || String(error));
+    process.exitCode = 1;
+  };
+
+  process.on('unhandledRejection', unhandledRejectionHandler);
+  process.on('uncaughtException', uncaughtExceptionHandler);
+
+  return () => {
+    process.removeListener('unhandledRejection', unhandledRejectionHandler);
+    process.removeListener('uncaughtException', uncaughtExceptionHandler);
+  };
+}
+
 export async function main(
   rawArgs: Array<string> = process.argv,
   logger: Logger = console,
 ): Promise<void> {
-  const args = parseRawArgs(rawArgs.slice(2));
+  const reporter = createReporter();
+  const uninstallErrorHandlers = installErrorHandlers(reporter, logger);
 
-  if (args.values.version) {
-    // --version
-    logger.log(await getVersion());
-    return;
+  try {
+    const args = parseRawArgs(rawArgs.slice(2));
+
+    if (args.values.version) {
+      // --version
+      logger.log(await getVersion());
+      return;
+    }
+
+    if (args.values.help) {
+      // --help
+      logger.log(helpText);
+      return;
+    }
+
+    // Get config file path (use --config if provided, otherwise find default)
+    const configFilePath = makeAbsolute(args.values.config || findConfigFile());
+    const config = await loadConfigFile(configFilePath);
+    const environment = await resolveEnvironment(args.values);
+
+    // Handle positional arguments (commands)
+    const command = args.positionals[0];
+
+    if (args.dashdashCommandParts) {
+      await handleE2ECommand(
+        config,
+        environment,
+        args.dashdashCommandParts,
+        configFilePath,
+        logger,
+      );
+      return;
+    }
+
+    if (command === 'finalize') {
+      await handleFinalizeCommand(config, environment, logger);
+      return;
+    }
+
+    if (command === undefined) {
+      await handleDefaultCommand(config, environment, logger);
+      return;
+    }
+
+    logger.error(`Unknown command: ${command}\n`);
+    logger.error(helpText);
+    process.exitCode = 1;
+  } catch (error) {
+    await reporter.captureException(error);
+    logger.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  } finally {
+    uninstallErrorHandlers();
   }
-
-  if (args.values.help) {
-    // --help
-    logger.log(helpText);
-    return;
-  }
-
-  // Get config file path (use --config if provided, otherwise find default)
-  const configFilePath = makeAbsolute(args.values.config || findConfigFile());
-  const config = await loadConfigFile(configFilePath);
-  const environment = await resolveEnvironment(args.values);
-
-  // Handle positional arguments (commands)
-  const command = args.positionals[0];
-
-  if (args.dashdashCommandParts) {
-    await handleE2ECommand(
-      config,
-      environment,
-      args.dashdashCommandParts,
-      configFilePath,
-      logger,
-    );
-    return;
-  }
-
-  if (command === 'finalize') {
-    await handleFinalizeCommand(config, environment, logger);
-    return;
-  }
-
-  if (command === undefined) {
-    await handleDefaultCommand(config, environment, logger);
-    return;
-  }
-
-  logger.error(`Unknown command: ${command}\n`);
-  logger.error(helpText);
-  process.exitCode = 1;
 }
 
 async function handleDefaultCommand(
