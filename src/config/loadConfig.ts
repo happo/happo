@@ -29,6 +29,20 @@ export function findConfigFile(): string {
   return configFilePath;
 }
 
+function validateConfig(config: ConfigWithDefaults) {
+  if (!config.apiKey) {
+    throw new Error(
+      'Missing `apiKey` in your Happo config. Reference yours at https://happo.io/settings',
+    );
+  }
+
+  if (!config.apiSecret) {
+    throw new Error(
+      'Missing `apiSecret` in your Happo config. Reference yours at https://happo.io/settings',
+    );
+  }
+}
+
 export async function loadConfigFile(
   configFilePath: string,
 ): Promise<ConfigWithDefaults> {
@@ -69,10 +83,14 @@ export async function loadConfigFile(
     target.prefersReducedMotion = target.prefersReducedMotion ?? true;
   }
 
-  return {
+  const configWithDefaults = {
     endpoint: 'https://happo.io',
     githubApiUrl: 'https://api.github.com',
     targets: allTargets,
     ...config.default,
   };
+
+  validateConfig(configWithDefaults);
+
+  return configWithDefaults;
 }
