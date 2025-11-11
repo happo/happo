@@ -438,6 +438,7 @@ async function resolveAfterSha(
     GITHUB_SHA,
     BUILD_SOURCEVERSION,
     SYSTEM_PULLREQUEST_SOURCEBRANCH,
+    CI,
   } = env;
 
   const sha = CIRCLE_SHA1 || TRAVIS_PULL_REQUEST_SHA || TRAVIS_COMMIT;
@@ -478,7 +479,11 @@ async function resolveAfterSha(
       return GITHUB_SHA;
     }
   }
-  return getHeadShaWithLocalChanges();
+  const headShaWithLocalChanges = getHeadShaWithLocalChanges();
+  if (CI) {
+    return headShaWithLocalChanges.headSha;
+  }
+  return headShaWithLocalChanges;
 }
 
 function resolveFallbackShas(
