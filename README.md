@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-An open source library for integrating with [happo.io](https://happo.io) - a visual regression testing platform that helps you catch unintended visual changes in your applications.
+An open source library for integrating with [happo.io](https://happo.io) - a visual and accessibility regression testing platform that helps you catch unintended changes in your applications.
 
 ## ⚠️ Active Development
 
