@@ -88,6 +88,17 @@ describe('resolveEnvironment', () => {
     // Message should be undefined because we are no longer on a single commit
     assert.equal(result2.message, undefined);
 
+    // Rerun but set `process.env.CI` to `true` to simulate a CI environment
+    const result2InCI = await resolveEnvironment(
+      {},
+      {
+        CI: 'true',
+      },
+    );
+    assert.equal(result2InCI.afterSha, afterSha);
+    assert.equal(result2InCI.beforeSha, beforeSha);
+    assert.notEqual(result2InCI.message, undefined);
+
     // Make another local change
     tmpfs.writeFile('not-checked-in.txt', 'Pizza is not good at all!');
     const result3 = await resolveEnvironment({}, {});
