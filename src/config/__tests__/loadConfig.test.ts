@@ -153,6 +153,36 @@ describe('findConfigFile', () => {
 });
 
 describe('loadConfigFile', () => {
+  it('throws an error if the apiKey is missing', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          apiSecret: 'test-api-secret',
+        };
+      `,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile()),
+      /Missing `apiKey` in your Happo config/,
+    );
+  });
+
+  it('throws an error if the apiSecret is missing', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          apiKey: 'test-api-key',
+        };
+      `,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile()),
+      /Missing `apiSecret` in your Happo config/,
+    );
+  });
+
   it('loads the config file', async () => {
     tmpfs.mock({
       'happo.config.ts': `
@@ -174,6 +204,8 @@ describe('loadConfigFile', () => {
     tmpfs.mock({
       'happo.config.ts': `
         export default {
+          apiKey: 'test-api-key',
+          apiSecret: 'test-api-secret',
         };
       `,
     });
@@ -200,6 +232,8 @@ describe('loadConfigFile', () => {
         export default {
           endpoint: 'https://test-endpoint.com',
           githubApiUrl: 'https://test-github-api-url.com',
+          apiKey: 'test-api-key',
+          apiSecret: 'test-api-secret',
 
           integration: {
             type: 'cypress',

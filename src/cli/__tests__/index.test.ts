@@ -317,6 +317,9 @@ describe('main', () => {
         tmpfs.writeFile(
           'happo.config.ts',
           `export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+
             integration: {
               type: 'storybook',
             },
