@@ -1,7 +1,7 @@
 {
   "name": "happo",
   "version": "6.0.1",
-  "description": "Visual regression testing and accessibility testing",
+  "description": "Catch unexpected visual and accessibility changes and UI bugs",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -145,16 +145,35 @@
     "mime-types": "^3.0.1",
     "srcset": "^5.0.2"
   },
+  "storybook": {
+    "displayName": "Happo",
+    "icon": "https://happo.io/static/happo-hippo.png",
+    "supportedFrameworks": [
+      "angular",
+      "ember",
+      "html",
+      "preact",
+      "react",
+      "react-native",
+      "svelte",
+      "vue",
+      "web-components"
+    ],
+    "unsupportedFrameworks": []
+  },
   "keywords": [
+    "storybook-addon",
     "accessibility",
     "cypress",
     "playwright",
     "regression",
     "storybook",
+    "test",
     "testing",
     "ui",
-    "visual regression",
-    "visual"
+    "visual-regression",
+    "visual",
+    "vrt"
   ],
   "engines": {
     "node": ">=22"
