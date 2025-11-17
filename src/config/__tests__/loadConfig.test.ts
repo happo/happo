@@ -222,6 +222,7 @@ describe('loadConfigFile', () => {
         viewport: '1024x768',
         freezeAnimations: 'last-frame',
         prefersReducedMotion: true,
+        deviceScaleFactor: 2,
       },
     });
   });
@@ -245,6 +246,7 @@ describe('loadConfigFile', () => {
               viewport: '800x600',
               freezeAnimations: 'first-frame',
               prefersReducedMotion: false,
+              deviceScaleFactor: 1,
             },
             safari: {
               type: 'safari',
@@ -273,18 +275,21 @@ describe('loadConfigFile', () => {
         viewport: '800x600',
         freezeAnimations: 'first-frame',
         prefersReducedMotion: false,
+        deviceScaleFactor: 1,
       },
       safari: {
         type: 'safari',
         viewport: '1024x768',
         freezeAnimations: 'last-frame',
         prefersReducedMotion: true,
+        deviceScaleFactor: 2,
       },
       firefox: {
         type: 'firefox',
         viewport: '800x600',
         freezeAnimations: 'first-frame',
         prefersReducedMotion: false,
+        deviceScaleFactor: 2,
       },
     });
   });

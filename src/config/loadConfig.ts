@@ -81,6 +81,7 @@ export async function loadConfigFile(
     target.viewport = target.viewport || '1024x768';
     target.freezeAnimations = target.freezeAnimations || 'last-frame';
     target.prefersReducedMotion = target.prefersReducedMotion ?? true;
+    target.deviceScaleFactor = target.deviceScaleFactor ?? 2;
   }
 
   const configWithDefaults = {

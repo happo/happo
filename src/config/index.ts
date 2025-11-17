@@ -305,6 +305,13 @@ interface DesktopTarget extends BaseTarget {
   viewport: `${number}x${number}`;
 
   /**
+   * Set the device scale factor for the browser
+   *
+   * This defaults to 2.
+   */
+  deviceScaleFactor?: 1 | 2;
+
+  /**
    * By default, Happo makes the browser prefer reduced motion when rendering
    * the UI. Set `prefersReducedMotion: false` to disable this behavior.
    */
@@ -324,6 +331,7 @@ export interface TargetWithDefaults extends BaseTarget {
   viewport: `${number}x${number}`;
   __dynamic: boolean;
   prefersReducedMotion?: boolean;
+  deviceScaleFactor?: 1 | 2;
 }
 
 export interface ConfigWithDefaults extends Config {
