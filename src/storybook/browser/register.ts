@@ -38,7 +38,6 @@ const time = globalThis.happoTime || {
   originalSetTimeout: globalThis.setTimeout.bind(globalThis),
 };
 
-const ASYNC_TIMEOUT = 100;
 const STORY_STORE_TIMEOUT = 10_000;
 
 type HookFunction = ({
@@ -80,22 +79,6 @@ class ForcedHappoScreenshot extends Error {
     this.type = 'ForcedHappoScreenshot';
     this.step = stepLabel;
   }
-}
-
-async function waitForSomeContent(
-  elem: HTMLElement,
-  start = time.originalDateNow(),
-): Promise<string> {
-  const html = elem.innerHTML.trim();
-  const duration = time.originalDateNow() - start;
-
-  if (html === '' && duration < ASYNC_TIMEOUT) {
-    return new Promise((resolve) =>
-      time.originalSetTimeout(() => resolve(waitForSomeContent(elem, start)), 10),
-    );
-  }
-
-  return html;
 }
 
 async function waitForWaitFor(
@@ -443,13 +426,10 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       await themeSwitcher(theme, channel);
     }
 
-    await waitForSomeContent(rootElement);
-
     if (/sb-show-errordisplay/.test(document.body.className)) {
       // It's possible that the error is from unmounting the previous story. We
       // can try re-rendering in this case.
       channel.emit('forceReRender');
-      await waitForSomeContent(rootElement);
     }
 
     if (beforeScreenshot && typeof beforeScreenshot === 'function') {
