@@ -262,6 +262,8 @@ export default async function runWithWrapper(
           ...process.env,
           HAPPO_E2E_PORT: e2eServer.port.toString(),
           HAPPO_CONFIG_FILE: configFilePath,
+          HAPPO_API_KEY: happoConfig.apiKey,
+          HAPPO_API_SECRET: happoConfig.apiSecret,
         },
         shell: process.platform == 'win32',
       });
