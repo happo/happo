@@ -2,6 +2,8 @@ import fs from 'node:fs';
 
 import { any as findAny } from 'empathic/find';
 
+import type { EnvironmentResult } from '../environment/index.ts';
+import type { Logger } from '../isomorphic/types.ts';
 import type { ConfigWithDefaults, TargetWithDefaults } from './index.ts';
 
 const CONFIG_FILENAMES = [
@@ -12,6 +14,8 @@ const CONFIG_FILENAMES = [
   'happo.config.mts',
   'happo.config.cts',
 ];
+
+const DEFAULT_ENDPOINT = 'https://happo.io';
 
 export function findConfigFile(): string {
   if (process.env.HAPPO_CONFIG_FILE) {
@@ -29,22 +33,40 @@ export function findConfigFile(): string {
   return configFilePath;
 }
 
-function validateConfig(config: ConfigWithDefaults) {
-  if (!config.apiKey) {
+function assertIsPullRequestTokenResponse(
+  response: unknown,
+): asserts response is { secret: string } {
+  if (typeof response !== 'object' || response === null || !('secret' in response)) {
+    throw new TypeError('Unexpected pull request token response');
+  }
+}
+
+async function getPullRequestSecret(
+  endpoint: string,
+  prUrl: string,
+): Promise<string> {
+  const res = await fetch(`${endpoint}/api/pull-request-token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prUrl }),
+  });
+
+  if (!res || !res.ok) {
     throw new Error(
-      'Missing `apiKey` in your Happo config. Reference yours at https://happo.io/settings',
+      `Failed to get pull request secret: ${res.status} - ${await res.text()}`,
     );
   }
 
-  if (!config.apiSecret) {
-    throw new Error(
-      'Missing `apiSecret` in your Happo config. Reference yours at https://happo.io/settings',
-    );
-  }
+  const json = await res.json();
+  assertIsPullRequestTokenResponse(json);
+
+  return json.secret;
 }
 
 export async function loadConfigFile(
   configFilePath: string,
+  environment?: Pick<EnvironmentResult, 'link'>,
+  logger: Logger = console,
 ): Promise<ConfigWithDefaults> {
   try {
     const stats = await fs.promises.stat(configFilePath);
@@ -59,10 +81,50 @@ export async function loadConfigFile(
     throw error;
   }
 
-  const config = await import(configFilePath);
+  const config = (await import(configFilePath)).default;
 
-  if (!config.default.targets) {
-    config.default.targets = {
+  // We read these in here so that they can be passed along to the child process
+  // in e2e/wrapper.ts. This allows us to use pull-request authentication
+  // without having to make an additional HTTP request.
+  if (!config.apiKey && process.env.HAPPO_API_KEY) {
+    config.apiKey = process.env.HAPPO_API_KEY;
+  }
+  if (!config.apiSecret && process.env.HAPPO_API_SECRET) {
+    config.apiSecret = process.env.HAPPO_API_SECRET;
+  }
+
+  if (!config.apiKey || !config.apiSecret) {
+    const missing = [
+      config.apiKey ? null : 'apiKey',
+      config.apiSecret ? null : 'apiSecret',
+    ]
+      .filter(Boolean)
+      .map((key) => `\`${key}\``)
+      .join(' and ');
+
+    if (!environment?.link) {
+      throw new Error(
+        `Missing ${missing} in your Happo config. Reference yours at https://happo.io/settings`,
+      );
+    }
+
+    try {
+      // Reassign API tokens to temporary ones provided for the PR
+      logger.log(
+        `Missing ${missing} in Happo config. Falling back to pull-request authentication.`,
+      );
+      config.apiKey = environment.link;
+      config.apiSecret = await getPullRequestSecret(
+        config.endpoint || DEFAULT_ENDPOINT,
+        environment.link,
+      );
+    } catch (e) {
+      throw new Error('Failed to obtain temporary pull-request token', { cause: e });
+    }
+  }
+
+  if (!config.targets) {
+    config.targets = {
       chrome: {
         type: 'chrome',
         viewport: '1024x768',
@@ -70,13 +132,13 @@ export async function loadConfigFile(
     };
   }
 
-  if (!config.default.integration) {
-    config.default.integration = {
+  if (!config.integration) {
+    config.integration = {
       type: 'storybook',
     };
   }
 
-  const allTargets = Object.values(config.default.targets);
+  const allTargets = Object.values(config.targets);
   for (const target of allTargets as Array<TargetWithDefaults>) {
     target.viewport = target.viewport || '1024x768';
     target.freezeAnimations = target.freezeAnimations || 'last-frame';
@@ -84,13 +146,11 @@ export async function loadConfigFile(
   }
 
   const configWithDefaults = {
-    endpoint: 'https://happo.io',
+    endpoint: DEFAULT_ENDPOINT,
     githubApiUrl: 'https://api.github.com',
     targets: allTargets,
-    ...config.default,
+    ...config,
   };
-
-  validateConfig(configWithDefaults);
 
   return configWithDefaults;
 }

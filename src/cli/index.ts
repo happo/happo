@@ -204,10 +204,11 @@ export async function main(
       return;
     }
 
+    const environment = await resolveEnvironment(args.values);
+
     // Get config file path (use --config if provided, otherwise find default)
     const configFilePath = makeAbsolute(args.values.config || findConfigFile());
-    const config = await loadConfigFile(configFilePath);
-    const environment = await resolveEnvironment(args.values);
+    const config = await loadConfigFile(configFilePath, environment, logger);
 
     // Handle positional arguments (commands)
     const command = args.positionals[0];

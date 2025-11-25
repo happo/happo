@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import http from 'node:http';
 import { afterEach, describe, it } from 'node:test';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
@@ -6,9 +7,49 @@ import { findConfigFile, loadConfigFile } from '../loadConfig.ts';
 
 const originalEnv = { ...process.env };
 
+async function startPullRequestTokenServer(secret: string): Promise<{
+  server: http.Server;
+  port: number;
+  close: () => Promise<void>;
+}> {
+  const server = http.createServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/api/pull-request-token') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ secret }));
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  });
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, () => resolve());
+  });
+
+  const address = server.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('Failed to get server port');
+  }
+  const port = address.port;
+
+  return {
+    server,
+    port,
+    close: async () => {
+      await new Promise<void>((resolve) => {
+        server.close(() => resolve());
+      });
+    },
+  };
+}
+
 afterEach(() => {
   tmpfs.restore();
-  process.env = { ...originalEnv };
+  process.env = {
+    ...originalEnv,
+  };
+  delete process.env.HAPPO_API_KEY;
+  delete process.env.HAPPO_API_SECRET;
 });
 
 describe('findConfigFile', () => {
@@ -163,7 +204,7 @@ describe('loadConfigFile', () => {
     });
 
     await assert.rejects(
-      loadConfigFile(findConfigFile()),
+      loadConfigFile(findConfigFile(), { link: undefined }),
       /Missing `apiKey` in your Happo config/,
     );
   });
@@ -178,8 +219,134 @@ describe('loadConfigFile', () => {
     });
 
     await assert.rejects(
-      loadConfigFile(findConfigFile()),
+      loadConfigFile(findConfigFile(), { link: undefined }),
       /Missing `apiSecret` in your Happo config/,
+    );
+  });
+
+  it('uses the HAPPO_API_KEY environment variable if it is set', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          apiSecret: 'test-api-secret',
+        };
+      `,
+    });
+
+    process.env.HAPPO_API_KEY = 'test-api-key';
+    const config = await loadConfigFile(findConfigFile(), { link: undefined });
+    assert.ok(config);
+    assert.strictEqual(config.apiKey, 'test-api-key');
+    assert.strictEqual(config.apiSecret, 'test-api-secret');
+  });
+
+  it('uses the HAPPO_API_SECRET environment variable if it is set', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          apiKey: 'test-api-key',
+        };
+      `,
+    });
+
+    process.env.HAPPO_API_SECRET = 'test-api-secret';
+    const config = await loadConfigFile(findConfigFile(), { link: undefined });
+    assert.ok(config);
+    assert.strictEqual(config.apiKey, 'test-api-key');
+    assert.strictEqual(config.apiSecret, 'test-api-secret');
+  });
+
+  it('uses pull-request authentication from the environment link if the apiKey and apiSecret are missing', async () => {
+    const testSecret = 'test-pull-request-secret';
+    const { port, close } = await startPullRequestTokenServer(testSecret);
+
+    try {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            endpoint: 'http://localhost:${port}',
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: 'https://github.com/happo/happo/pull/123',
+      });
+
+      assert.ok(config);
+      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(config.apiSecret, testSecret);
+    } finally {
+      await close();
+    }
+  });
+
+  it('uses pull-request authentication from the environment link if the apiKey is missing', async () => {
+    const testSecret = 'test-pull-request-secret';
+    const { port, close } = await startPullRequestTokenServer(testSecret);
+
+    try {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            endpoint: 'http://localhost:${port}',
+            apiSecret: 'test-api-secret',
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: 'https://github.com/happo/happo/pull/123',
+      });
+
+      assert.ok(config);
+      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(config.apiSecret, testSecret);
+    } finally {
+      await close();
+    }
+  });
+
+  it('uses pull-request authentication from the environment link if the apiSecret is missing', async () => {
+    const testSecret = 'test-pull-request-secret';
+    const { port, close } = await startPullRequestTokenServer(testSecret);
+
+    try {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            endpoint: 'http://localhost:${port}',
+            apiKey: 'test-api-key',
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: 'https://github.com/happo/happo/pull/123',
+      });
+
+      assert.ok(config);
+      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(config.apiSecret, testSecret);
+    } finally {
+      await close();
+    }
+  });
+
+  it('rejects with an error if the pull-request authentication fails', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          endpoint: 'http://localhost:123456',
+        };
+      `,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile(), {
+        link: 'https://github.com/happo/happo/pull/123',
+      }),
+      /Failed to obtain temporary pull-request token/,
     );
   });
 
@@ -193,7 +360,9 @@ describe('loadConfigFile', () => {
       `,
     });
 
-    const config = await loadConfigFile(findConfigFile());
+    const config = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+    });
 
     assert.ok(config);
     assert.strictEqual(config.apiKey, 'test-api-key');
@@ -210,7 +379,9 @@ describe('loadConfigFile', () => {
       `,
     });
 
-    const config = await loadConfigFile(findConfigFile());
+    const config = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+    });
 
     assert.ok(config);
     assert.strictEqual(config.endpoint, 'https://happo.io');
@@ -260,7 +431,9 @@ describe('loadConfigFile', () => {
       `,
     });
 
-    const config = await loadConfigFile(findConfigFile());
+    const config = await loadConfigFile(findConfigFile(), {
+      link: 'https://github.com/happo/happo/pull/123',
+    });
 
     assert.ok(config);
     assert.strictEqual(config.endpoint, 'https://test-endpoint.com');
