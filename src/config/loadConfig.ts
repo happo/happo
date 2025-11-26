@@ -4,6 +4,7 @@ import { any as findAny } from 'empathic/find';
 
 import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
+import fetchWithRetry from '../network/fetchWithRetry.ts';
 import type { ConfigWithDefaults, TargetWithDefaults } from './index.ts';
 
 const CONFIG_FILENAMES = [
@@ -44,12 +45,18 @@ function assertIsPullRequestTokenResponse(
 async function getPullRequestSecret(
   endpoint: string,
   prUrl: string,
+  logger: Logger,
 ): Promise<string> {
-  const res = await fetch(`${endpoint}/api/pull-request-token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prUrl }),
-  });
+  const url = new URL('/api/pull-request-token', endpoint);
+  const res = await fetchWithRetry(
+    url,
+    {
+      method: 'POST',
+      body: { prUrl },
+      retryCount: 3,
+    },
+    logger,
+  );
 
   if (!res || !res.ok) {
     throw new Error(
@@ -117,6 +124,7 @@ export async function loadConfigFile(
       config.apiSecret = await getPullRequestSecret(
         config.endpoint || DEFAULT_ENDPOINT,
         environment.link,
+        logger,
       );
     } catch (e) {
       throw new Error('Failed to obtain temporary pull-request token', { cause: e });

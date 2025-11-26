@@ -1,21 +1,33 @@
 import assert from 'node:assert';
 import http from 'node:http';
-import { afterEach, describe, it } from 'node:test';
+import { afterEach, describe, it, mock } from 'node:test';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import { findConfigFile, loadConfigFile } from '../loadConfig.ts';
 
 const originalEnv = { ...process.env };
 
-async function startPullRequestTokenServer(secret: string): Promise<{
+async function startPullRequestTokenServer(
+  responses: Array<{ status: number; body: unknown }>,
+): Promise<{
   server: http.Server;
   port: number;
   close: () => Promise<void>;
 }> {
+  let requestCount = 0;
   const server = http.createServer((req, res) => {
     if (req.method === 'POST' && req.url === '/api/pull-request-token') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ secret }));
+      // Use the last response if no response is found for the current request
+      const response = responses[requestCount] || responses.at(-1);
+
+      if (!response) {
+        throw new Error('No response found');
+      }
+
+      requestCount++;
+
+      res.writeHead(response.status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(response.body));
     } else {
       res.writeHead(404);
       res.end();
@@ -258,7 +270,9 @@ describe('loadConfigFile', () => {
 
   it('uses pull-request authentication from the environment link if the apiKey and apiSecret are missing', async () => {
     const testSecret = 'test-pull-request-secret';
-    const { port, close } = await startPullRequestTokenServer(testSecret);
+    const { port, close } = await startPullRequestTokenServer([
+      { status: 200, body: { secret: testSecret } },
+    ]);
 
     try {
       tmpfs.mock({
@@ -281,9 +295,48 @@ describe('loadConfigFile', () => {
     }
   });
 
+  it('retries pull-request authentication requests that fail initially', async () => {
+    const testSecret = 'test-pull-request-secret';
+    const { port, close } = await startPullRequestTokenServer([
+      { status: 500, body: { error: 'Internal Server Error' } },
+      { status: 200, body: { secret: testSecret } },
+    ]);
+
+    try {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            endpoint: 'http://localhost:${port}',
+          };
+        `,
+      });
+
+      const logger = {
+        log: mock.fn(),
+        error: mock.fn(),
+      };
+      const config = await loadConfigFile(
+        findConfigFile(),
+        {
+          link: 'https://github.com/happo/happo/pull/123',
+        },
+        logger,
+      );
+
+      assert.ok(config);
+      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(config.apiSecret, testSecret);
+      assert.match(logger.error.mock.calls[0]?.arguments[0], /Retrying/);
+    } finally {
+      await close();
+    }
+  });
+
   it('uses pull-request authentication from the environment link if the apiKey is missing', async () => {
     const testSecret = 'test-pull-request-secret';
-    const { port, close } = await startPullRequestTokenServer(testSecret);
+    const { port, close } = await startPullRequestTokenServer([
+      { status: 200, body: { secret: testSecret } },
+    ]);
 
     try {
       tmpfs.mock({
@@ -309,7 +362,9 @@ describe('loadConfigFile', () => {
 
   it('uses pull-request authentication from the environment link if the apiSecret is missing', async () => {
     const testSecret = 'test-pull-request-secret';
-    const { port, close } = await startPullRequestTokenServer(testSecret);
+    const { port, close } = await startPullRequestTokenServer([
+      { status: 200, body: { secret: testSecret } },
+    ]);
 
     try {
       tmpfs.mock({
