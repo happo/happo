@@ -24,7 +24,7 @@ const DIST_CONFIGS: Array<EntryConfig> = [
   },
 
   {
-    entryPoints: ['src/cli/index.ts'],
+    entryPoints: ['src/cli/main.ts'],
     outdir: 'dist/cli',
     platform: 'node',
   },
