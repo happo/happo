@@ -10,7 +10,7 @@
   "bugs": "https://github.com/happo/happo/issues",
   "homepage": "https://happo.io",
   "bin": {
-    "happo": "dist/cli/index.js"
+    "happo": "dist/cli/main.js"
   },
   "type": "module",
   "main": "./dist/config/index.js",
@@ -68,12 +68,12 @@
     "prepublishOnly": "pnpm clean && pnpm build",
     "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p ${PORT:-6007}",
     "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
-    "test:custom": "pnpm build:dist && pnpm build:custom && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.custom.config.ts",
-    "test:cypress": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.cypress.config.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
+    "test:custom": "pnpm build:dist && pnpm build:custom && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.custom.config.ts",
+    "test:cypress": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.cypress.config.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
     "test:cypress:open": "cypress open -C src/cypress/__cypress__/cypress.config.ts",
-    "test:playwright": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.playwright.config.ts e2e -- playwright test",
-    "test:storybook": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.storybook.config.ts",
-    "test:pages": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/index.js -c ./happoconfigs/happo.pages.config.ts",
+    "test:playwright": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.playwright.config.ts e2e -- playwright test",
+    "test:storybook": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.storybook.config.ts",
+    "test:pages": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.pages.config.ts",
     "tsc": "tsc --build tsconfig.json"
   },
   "browserslist": {

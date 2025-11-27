@@ -356,7 +356,3 @@ async function handleE2ECommand(
   );
   process.exitCode = exitCode;
 }
-
-if (import.meta.main) {
-  await main();
-}
