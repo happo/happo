@@ -54,7 +54,7 @@ export interface NextExampleResult {
 }
 
 export type WindowHappo = {
-  init?: (config: InitConfig) => void;
+  init?: (config: InitConfig) => Promise<void> | void;
   nextExample?: () => Promise<NextExampleResult | undefined>;
   takeDOMSnapshot?: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
 };

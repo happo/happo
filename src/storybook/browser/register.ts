@@ -209,9 +209,10 @@ async function getExamples(): Promise<Array<Example>> {
     });
 }
 
-let initConfig: InitConfig = {};
-
-function filterExamples(all: Array<Example>): Array<Example> {
+function filterExamples(
+  all: Array<Example>,
+  initConfig: InitConfig,
+): Array<Example> {
   const { chunk, targetName, only } = initConfig;
 
   if (chunk) {
@@ -243,8 +244,8 @@ function filterExamples(all: Array<Example>): Array<Example> {
 
 globalThis.happo = globalThis.happo || ({} as WindowHappo);
 
-globalThis.happo.init = (config: InitConfig) => {
-  initConfig = config;
+globalThis.happo.init = async (config: InitConfig) => {
+  examples = filterExamples(await getExamples(), config);
 };
 
 interface Story {
@@ -345,7 +346,9 @@ function assertHTMLElement(element: Element | null): asserts element is HTMLElem
 
 globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> => {
   if (!examples) {
-    examples = filterExamples(await getExamples());
+    throw new Error(
+      'Missing examples. Make sure to call the init function before calling nextExample.',
+    );
   }
 
   if (currentIndex >= examples.length) {
