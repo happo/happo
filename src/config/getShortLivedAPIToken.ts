@@ -132,7 +132,6 @@ export default async function getShortLivedAPIToken(
 
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not found');
-    return rejectCallback(new Error('Not found'));
   });
 
   const callbackUrl = `http://localhost:${serverInfo.port}/callback`;
