@@ -53,6 +53,7 @@ export interface EnvironmentResult {
   notify: string | undefined;
   fallbackShas: Array<string> | undefined;
   githubToken: string | undefined;
+  ci: boolean;
 }
 
 const envKeys: ReadonlyArray<string> = [
@@ -569,6 +570,7 @@ export default async function resolveEnvironment(
     notify: cliArgs.notify,
     fallbackShas: resolveFallbackShas(cliArgs, nonNullBeforeSha),
     githubToken: cliArgs.githubToken,
+    ci: !!env.CI,
   };
 
   if (debugMode) {
