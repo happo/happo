@@ -85,7 +85,10 @@ export default async function getShortLivedAPIToken(
   endpoint: string,
   logger: Logger,
 ): Promise<{ key: string; secret: string } | null> {
-  // Prompt user to press Enter
+  if (!process.stdin.isTTY) {
+    return null;
+  }
+  // Prompt user to press Enter only if in an interactive terminal
   await promptUser('Press <Enter> to authenticate in the browser');
 
   // Set up promise to wait for callback
