@@ -18,7 +18,7 @@ export const Demo: Story = {
   play: async ({ args, canvasElement, step }) => {
     if (!canvasElement || !step) return;
     const canvas = within(canvasElement);
-    await new Promise((r) => setTimeout(r, 3000));
+    await new Promise((r) => setTimeout(r, 200));
 
     await step('clicked', async () => {
       console.log(args);
