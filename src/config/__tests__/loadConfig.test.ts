@@ -399,6 +399,10 @@ describe('loadConfigFile', () => {
   });
 
   it('rejects with an error if the pull-request authentication fails', async () => {
+    const logger = {
+      log: mock.fn(),
+      error: mock.fn(),
+    };
     tmpfs.mock({
       'happo.config.ts': `
         export default {
@@ -408,10 +412,18 @@ describe('loadConfigFile', () => {
     });
 
     await assert.rejects(
-      loadConfigFile(findConfigFile(), {
-        link: 'https://github.com/happo/happo/pull/123',
-        ci: false,
-      }),
+      loadConfigFile(
+        findConfigFile(),
+        {
+          link: 'https://github.com/happo/happo/pull/123',
+          ci: false,
+        },
+        logger,
+      ),
+      /Missing `apiKey` and `apiSecret` in your Happo config/,
+    );
+    assert.match(
+      logger.log.mock.calls[1]?.arguments[0],
       /Failed to obtain temporary pull-request token/,
     );
   });
