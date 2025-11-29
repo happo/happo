@@ -1,29 +1,7 @@
-import { exec } from 'node:child_process';
-import { createInterface } from 'node:readline';
-import { promisify } from 'node:util';
-
 import type { Logger } from '../isomorphic/types.ts';
 import startServer from '../network/startServer.ts';
-
-const execAsync = promisify(exec);
-
-function openBrowser(url: string): Promise<void> {
-  const platform = process.platform;
-  let command: string;
-
-  if (platform === 'darwin') {
-    command = `open "${url}"`;
-  } else if (platform === 'win32') {
-    command = `start "" "${url}"`;
-  } else {
-    // Linux and others
-    command = `xdg-open "${url}"`;
-  }
-
-  return execAsync(command).then(() => {
-    // Ignore errors - browser might not open, but that's okay
-  });
-}
+import openBrowser from './openBrowser.ts';
+import promptUser from './promptUser.ts';
 
 function createHTML({ title, body }: { title: string; body: string }): string {
   return `<!DOCTYPE html>
@@ -65,20 +43,6 @@ function createHTML({ title, body }: { title: string; body: string }): string {
       </main>
     </body>
   </html>`;
-}
-
-function promptUser(message: string): Promise<void> {
-  return new Promise((resolve) => {
-    const rl = createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    rl.question(message, () => {
-      rl.close();
-      resolve();
-    });
-  });
 }
 
 export default async function getShortLivedAPIToken(
