@@ -10,6 +10,9 @@ function createHTML({ title, body }: { title: string; body: string }): string {
       <title>${title}</title>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
+      <script type="text/javascript">
+        window.history.replaceState({}, '', '/callback');
+      </script>
       <style>
         body {
           box-sizing: border-box;
