@@ -3,46 +3,23 @@ import startServer from '../network/startServer.ts';
 import openBrowser from './openBrowser.ts';
 import promptUser from './promptUser.ts';
 
-function createHTML({ title, body }: { title: string; body: string }): string {
+function createHTML(endpoint: string, phase: string): string {
   return `<!DOCTYPE html>
   <html lang="en">
     <head>
-      <title>${title}</title>
+      <title>Happo CLI Authentication</title>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <script type="text/javascript">
-        window.history.replaceState({}, '', '/callback');
+        const message = { type: 'happo-cli-auth', payload: { phase: '${phase}' } };
+        // Use the exact origin of the parent page
+        window.parent.postMessage(message, '${endpoint}'); 
       </script>
-      <style>
-        body {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-          font-family: sans-serif;
-          background-color: #ffffff;
-          color: #333333;
-        }
-        main {
-          font-family: sans-serif;
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 50px 20px;
-          text-align: center;
-        }
-        
-        @media (prefers-color-scheme: dark) {
-          body {
-            background-color: #121212;
-            color: #ffffff;
-          }
-        }
-        
-      </style>
     </head>
     <body>
       <main>
-        <h1>${title}</h1> 
-        <p>${body}</p>
+        <h1>Happo CLI Authentication</h1> 
+        <p>Authentication successful!</p>
       </main>
     </body>
   </html>`;
@@ -76,27 +53,24 @@ export default async function getShortLivedAPIToken(
     if (url.pathname === '/callback') {
       const key = url.searchParams.get('key');
       const secret = url.searchParams.get('secret');
+      const ping = url.searchParams.get('ping');
+
+      if (ping) {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(createHTML(endpoint, 'auth'));
+        return;
+      }
 
       if (key && secret) {
         // Send success response
         res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(
-          createHTML({
-            title: 'Authentication successful!',
-            body: 'You can close this window.',
-          }),
-        );
+        res.end(createHTML(endpoint, 'done'));
 
         // Resolve the promise with token and secret
         return resolveCallback({ key, secret });
       }
       res.writeHead(400, { 'Content-Type': 'text/html' });
-      res.end(
-        createHTML({
-          title: 'Authentication failed',
-          body: 'Missing key or secret.',
-        }),
-      );
+      res.end('Bad request');
       return rejectCallback(new Error('Missing key or secret in callback'));
     }
 
