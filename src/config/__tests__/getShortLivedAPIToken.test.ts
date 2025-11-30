@@ -148,6 +148,8 @@ describe('getShortLivedAPIToken', () => {
     assert.ok(callbackUrlMatch, 'callbackUrl should be in the authUrl');
     assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
     const callbackUrl = decodeURIComponent(callbackUrlMatch[1]);
+    const pingResponse = await fetch(`${callbackUrl}?ping=true`);
+    assert.strictEqual(pingResponse.status, 200);
     const response = await fetch(
       `${callbackUrl}?key=${testKey}&secret=${testSecret}`,
     );
