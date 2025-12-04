@@ -48,14 +48,15 @@ function DataFetchComponent(): ReactNode {
   const [xhr, setXhr] = useState(false);
   const [fetch, setFetch] = useState(false);
   useEffect(() => {
+    const apiUrl = 'https://api.restful-api.dev/objects';
     const xhr = new XMLHttpRequest();
     xhr.addEventListener('load', async () => {
       setXhr(true);
-      await globalThis.fetch('https://reqres.in/api/users?page=2');
-      await globalThis.fetch('https://reqres.in/api/users?page=3');
+      await globalThis.fetch(`${apiUrl}/2`);
+      await globalThis.fetch(`${apiUrl}/3`);
       setFetch(true);
     });
-    xhr.open('GET', 'https://reqres.in/api/users?page=1', true);
+    xhr.open('GET', `${apiUrl}/1`, true);
     xhr.send();
   }, []);
   if (!xhr || !fetch) {
