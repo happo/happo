@@ -117,8 +117,8 @@ describe('getShortLivedAPIToken', () => {
 
   it('resolves with key and secret when user presses Enter and callback is called', async () => {
     const endpoint = 'https://happo.io';
-    const testKey = 'test-api-key';
-    const testSecret = 'test-api-secret';
+    const testKey = 'aaaaaaaaaaaaaaaaaaaaa';
+    const testSecret = 'ccccccccccccccccccccccccccccccccccc';
 
     // Make promptUser resolve to simulate user pressing Enter
     mockPromptUser.shouldReject = false;
@@ -185,6 +185,74 @@ describe('getShortLivedAPIToken', () => {
     const callbackUrl = decodeURIComponent(callbackUrlMatch[1]);
 
     const response = await fetch(`${callbackUrl}?wrong=param`);
+    assert.strictEqual(response.status, 400);
+
+    const result = await promise;
+    assert.strictEqual(
+      logger.error.mock.calls[0]?.arguments[0],
+      'Failed to authenticate: Missing key or secret in callback',
+    );
+    assert.strictEqual(result, null);
+  });
+
+  it('fails if key is invalid', async () => {
+    const endpoint = 'https://happo.io';
+
+    // Make promptUser resolve to simulate user pressing Enter
+    mockPromptUser.shouldReject = false;
+
+    // Start the function
+    const promise = getShortLivedAPIToken(endpoint, logger);
+
+    // Wait for the server to start and openBrowser to be called
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Get the callback URL from openBrowser call
+    assert.strictEqual(mockOpenBrowser.mock.callCount(), 1);
+    const authUrl = mockOpenBrowser.mock.calls[0]?.arguments[0] as string;
+    const callbackUrlMatch = authUrl.match(/callbackUrl=([^&]+)/);
+    assert.ok(callbackUrlMatch);
+    assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
+
+    const callbackUrl = decodeURIComponent(callbackUrlMatch[1]);
+
+    const response = await fetch(
+      `${callbackUrl}?key=thisisnotavalidkey&secret=ccccccccccccccccccccccccccccccccccccccccccccc`,
+    );
+    assert.strictEqual(response.status, 400);
+
+    const result = await promise;
+    assert.strictEqual(
+      logger.error.mock.calls[0]?.arguments[0],
+      'Failed to authenticate: Missing key or secret in callback',
+    );
+    assert.strictEqual(result, null);
+  });
+
+  it('fails if secret is invalid', async () => {
+    const endpoint = 'https://happo.io';
+
+    // Make promptUser resolve to simulate user pressing Enter
+    mockPromptUser.shouldReject = false;
+
+    // Start the function
+    const promise = getShortLivedAPIToken(endpoint, logger);
+
+    // Wait for the server to start and openBrowser to be called
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Get the callback URL from openBrowser call
+    assert.strictEqual(mockOpenBrowser.mock.callCount(), 1);
+    const authUrl = mockOpenBrowser.mock.calls[0]?.arguments[0] as string;
+    const callbackUrlMatch = authUrl.match(/callbackUrl=([^&]+)/);
+    assert.ok(callbackUrlMatch);
+    assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
+
+    const callbackUrl = decodeURIComponent(callbackUrlMatch[1]);
+
+    const response = await fetch(
+      `${callbackUrl}?key=ddddddddddddddddd&secret=notavalidsecretbutitslongenough`,
+    );
     assert.strictEqual(response.status, 400);
 
     const result = await promise;

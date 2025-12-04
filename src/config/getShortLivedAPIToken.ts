@@ -3,6 +3,8 @@ import startServer from '../network/startServer.ts';
 import openBrowser from './openBrowser.ts';
 import promptUser from './promptUser.ts';
 
+const VALID_HEX_REGEX = /^[0-9a-fA-F]+$/;
+
 function createHTML(endpoint: string, phase: string): string {
   return `<!DOCTYPE html>
   <html lang="en">
@@ -23,6 +25,33 @@ function createHTML(endpoint: string, phase: string): string {
       </main>
     </body>
   </html>`;
+}
+
+function validateKeyAndSecret(args: {
+  key: string | null;
+  secret: string | null;
+}): args is { key: string; secret: string } {
+  const { key, secret } = args;
+  if (!key) {
+    return false;
+  }
+  if (!secret) {
+    return false;
+  }
+  if (key.length < 10 || key.length > 64) {
+    return false;
+  }
+  if (secret.length < 20 || secret.length > 256) {
+    return false;
+  }
+  // validate that key and secret are valid hex strings
+  if (!VALID_HEX_REGEX.test(key)) {
+    return false;
+  }
+  if (!VALID_HEX_REGEX.test(secret)) {
+    return false;
+  }
+  return true;
 }
 
 export default async function getShortLivedAPIToken(
@@ -51,8 +80,10 @@ export default async function getShortLivedAPIToken(
     const url = new URL(req.url ?? '', `http://localhost:${serverInfo.port}`);
 
     if (url.pathname === '/callback') {
-      const key = url.searchParams.get('key');
-      const secret = url.searchParams.get('secret');
+      const token = {
+        key: url.searchParams.get('key'),
+        secret: url.searchParams.get('secret'),
+      };
       const ping = url.searchParams.get('ping');
 
       if (ping) {
@@ -60,14 +91,13 @@ export default async function getShortLivedAPIToken(
         res.end(createHTML(endpoint, 'auth'));
         return;
       }
-
-      if (key && secret) {
+      if (validateKeyAndSecret(token)) {
         // Send success response
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(createHTML(endpoint, 'done'));
 
         // Resolve the promise with token and secret
-        return resolveCallback({ key, secret });
+        return resolveCallback(token);
       }
       res.writeHead(400, { 'Content-Type': 'text/html' });
       res.end('Bad request');
