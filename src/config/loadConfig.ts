@@ -92,7 +92,6 @@ async function getFallbackApiToken(
       logger.log(
         `Failed to obtain temporary pull-request token for URL: ${environment.link}`,
       );
-      return undefined;
     }
   }
 

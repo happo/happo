@@ -113,6 +113,7 @@ export default async function getShortLivedAPIToken(
 
   try {
     // Open browser
+    console.log(`Opening URL: ${authUrl}`);
     await openBrowser(authUrl);
     const result = await callbackPromise;
     return result;
