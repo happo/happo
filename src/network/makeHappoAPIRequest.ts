@@ -104,6 +104,10 @@ export default async function makeHappoAPIRequest(
     logger,
   );
 
+  if (response.status === 204) {
+    return null;
+  }
+
   // We expect API responses to be JSON, so let's parse it as JSON here for
   // convenience.
   const result = await response.json();
