@@ -206,6 +206,23 @@ describe('findConfigFile', () => {
 });
 
 describe('loadConfigFile', () => {
+  it('throws a helpful error if the config file is using an extension that is not supported by this version of Node.js', async () => {
+    tmpfs.mock({
+      // We run our tests in versions we support, so let's just use a totally
+      // different extension here for this test. This wouldn't normally happen
+      // because it wouldn't be found by findConfigFile.
+      'happo.config.py': '',
+    });
+
+    await assert.rejects(
+      loadConfigFile(tmpfs.fullPath('happo.config.py'), {
+        link: undefined,
+        ci: false,
+      }),
+      /Your Happo config file \S+ is using an extension that is not supported by this version of Node.js \(\.py\)/,
+    );
+  });
+
   it('throws an error if the apiKey is missing', async () => {
     tmpfs.mock({
       'happo.config.ts': `
