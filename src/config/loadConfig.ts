@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import path from 'node:path';
 
 import { any as findAny } from 'empathic/find';
 
@@ -120,7 +121,27 @@ export async function loadConfigFile(
     throw error;
   }
 
-  const config = (await import(configFilePath)).default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: change this to unknown and add type assertions
+  let config: any;
+  try {
+    config = (await import(configFilePath)).default;
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'ERR_UNKNOWN_FILE_EXTENSION'
+    ) {
+      // Older versions of Node don't support .ts files natively, so let's throw
+      // a more helpful error message.
+      const extension = path.extname(configFilePath);
+      throw new TypeError(
+        `Your Happo config file ${configFilePath} is using an extension that is not supported by this version of Node.js (${extension}). Please use a newer version of Node.js (22.18.0+, 23.6.0+, or 24+).`,
+        { cause: error },
+      );
+    }
+
+    throw error;
+  }
 
   // We read these in here so that they can be passed along to the child process
   // in e2e/wrapper.ts. This allows us to use pull-request authentication
