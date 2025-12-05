@@ -66,6 +66,9 @@ before(async () => {
           result: 'Hello world!',
         }),
       );
+    } else if (req.url === '/no-content') {
+      res.writeHead(204);
+      res.end();
     } else if (
       req.url === '/form-data' ||
       (req.url === '/form-data-failure-retry' && errorTries > 2)
@@ -229,6 +232,12 @@ it('can retry uploading form data with buffers', async () => {
       ],
     },
   });
+});
+
+it('returns null for 204 No Content responses', async () => {
+  props.url = 'http://localhost:8990/no-content';
+  const response = await makeHappoAPIRequest(props, config, options, logger);
+  assert.strictEqual(response, null);
 });
 
 describe('when the request fails twice and then succeeds', () => {
