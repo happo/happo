@@ -5,6 +5,7 @@ import { any as findAny } from 'empathic/find';
 import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from '../network/fetchWithRetry.ts';
+import getShortLivedAPIToken from './getShortLivedAPIToken.ts';
 import type { ConfigWithDefaults, TargetWithDefaults } from './index.ts';
 
 const CONFIG_FILENAMES = [
@@ -70,9 +71,40 @@ async function getPullRequestSecret(
   return json.secret;
 }
 
+async function getFallbackApiToken(
+  endpoint: string,
+  environment: Pick<EnvironmentResult, 'link' | 'ci'> | undefined,
+  logger: Logger,
+): Promise<{ key: string; secret: string } | undefined> {
+  if (environment?.link) {
+    try {
+      // Fetch pull request auth
+      const pullRequestSecret = await getPullRequestSecret(
+        endpoint,
+        environment.link,
+        logger,
+      );
+      return {
+        key: environment.link,
+        secret: pullRequestSecret,
+      };
+    } catch {
+      logger.log(
+        `Failed to obtain temporary pull-request token for URL: ${environment.link}`,
+      );
+    }
+  }
+
+  if (!environment?.ci) {
+    const shortLivedApiToken = await getShortLivedAPIToken(endpoint, logger);
+    return shortLivedApiToken ?? undefined;
+  }
+  return undefined;
+}
+
 export async function loadConfigFile(
   configFilePath: string,
-  environment?: Pick<EnvironmentResult, 'link'>,
+  environment?: Pick<EnvironmentResult, 'link' | 'ci'>,
   logger: Logger = console,
 ): Promise<ConfigWithDefaults> {
   try {
@@ -109,26 +141,21 @@ export async function loadConfigFile(
       .map((key) => `\`${key}\``)
       .join(' and ');
 
-    if (!environment?.link) {
+    logger.log(
+      `Missing ${missing} in Happo config. Attempting alternative authentication.`,
+    );
+    const fallbackApiToken = await getFallbackApiToken(
+      config.endpoint || DEFAULT_ENDPOINT,
+      environment,
+      logger,
+    );
+    if (!fallbackApiToken) {
       throw new Error(
         `Missing ${missing} in your Happo config. Reference yours at https://happo.io/settings`,
       );
     }
-
-    try {
-      // Reassign API tokens to temporary ones provided for the PR
-      logger.log(
-        `Missing ${missing} in Happo config. Falling back to pull-request authentication.`,
-      );
-      config.apiKey = environment.link;
-      config.apiSecret = await getPullRequestSecret(
-        config.endpoint || DEFAULT_ENDPOINT,
-        environment.link,
-        logger,
-      );
-    } catch (e) {
-      throw new Error('Failed to obtain temporary pull-request token', { cause: e });
-    }
+    config.apiKey = fallbackApiToken.key;
+    config.apiSecret = fallbackApiToken.secret;
   }
 
   if (!config.targets) {

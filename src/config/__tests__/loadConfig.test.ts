@@ -216,7 +216,7 @@ describe('loadConfigFile', () => {
     });
 
     await assert.rejects(
-      loadConfigFile(findConfigFile(), { link: undefined }),
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
       /Missing `apiKey` in your Happo config/,
     );
   });
@@ -231,7 +231,7 @@ describe('loadConfigFile', () => {
     });
 
     await assert.rejects(
-      loadConfigFile(findConfigFile(), { link: undefined }),
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
       /Missing `apiSecret` in your Happo config/,
     );
   });
@@ -246,7 +246,10 @@ describe('loadConfigFile', () => {
     });
 
     process.env.HAPPO_API_KEY = 'test-api-key';
-    const config = await loadConfigFile(findConfigFile(), { link: undefined });
+    const config = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+      ci: false,
+    });
     assert.ok(config);
     assert.strictEqual(config.apiKey, 'test-api-key');
     assert.strictEqual(config.apiSecret, 'test-api-secret');
@@ -262,7 +265,10 @@ describe('loadConfigFile', () => {
     });
 
     process.env.HAPPO_API_SECRET = 'test-api-secret';
-    const config = await loadConfigFile(findConfigFile(), { link: undefined });
+    const config = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+      ci: false,
+    });
     assert.ok(config);
     assert.strictEqual(config.apiKey, 'test-api-key');
     assert.strictEqual(config.apiSecret, 'test-api-secret');
@@ -285,6 +291,7 @@ describe('loadConfigFile', () => {
 
       const config = await loadConfigFile(findConfigFile(), {
         link: 'https://github.com/happo/happo/pull/123',
+        ci: false,
       });
 
       assert.ok(config);
@@ -319,6 +326,7 @@ describe('loadConfigFile', () => {
         findConfigFile(),
         {
           link: 'https://github.com/happo/happo/pull/123',
+          ci: false,
         },
         logger,
       );
@@ -350,6 +358,7 @@ describe('loadConfigFile', () => {
 
       const config = await loadConfigFile(findConfigFile(), {
         link: 'https://github.com/happo/happo/pull/123',
+        ci: false,
       });
 
       assert.ok(config);
@@ -378,6 +387,7 @@ describe('loadConfigFile', () => {
 
       const config = await loadConfigFile(findConfigFile(), {
         link: 'https://github.com/happo/happo/pull/123',
+        ci: false,
       });
 
       assert.ok(config);
@@ -389,6 +399,10 @@ describe('loadConfigFile', () => {
   });
 
   it('rejects with an error if the pull-request authentication fails', async () => {
+    const logger = {
+      log: mock.fn(),
+      error: mock.fn(),
+    };
     tmpfs.mock({
       'happo.config.ts': `
         export default {
@@ -398,9 +412,18 @@ describe('loadConfigFile', () => {
     });
 
     await assert.rejects(
-      loadConfigFile(findConfigFile(), {
-        link: 'https://github.com/happo/happo/pull/123',
-      }),
+      loadConfigFile(
+        findConfigFile(),
+        {
+          link: 'https://github.com/happo/happo/pull/123',
+          ci: false,
+        },
+        logger,
+      ),
+      /Missing `apiKey` and `apiSecret` in your Happo config/,
+    );
+    assert.match(
+      logger.log.mock.calls[1]?.arguments[0],
       /Failed to obtain temporary pull-request token/,
     );
   });
@@ -417,6 +440,7 @@ describe('loadConfigFile', () => {
 
     const config = await loadConfigFile(findConfigFile(), {
       link: undefined,
+      ci: false,
     });
 
     assert.ok(config);
@@ -436,6 +460,7 @@ describe('loadConfigFile', () => {
 
     const config = await loadConfigFile(findConfigFile(), {
       link: undefined,
+      ci: false,
     });
 
     assert.ok(config);
@@ -488,6 +513,7 @@ describe('loadConfigFile', () => {
 
     const config = await loadConfigFile(findConfigFile(), {
       link: 'https://github.com/happo/happo/pull/123',
+      ci: false,
     });
 
     assert.ok(config);

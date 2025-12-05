@@ -113,13 +113,13 @@ export interface Config {
    * Key used to authenticate with the Happo API. Never store this in plain
    * text.
    */
-  apiKey: string;
+  apiKey?: string;
 
   /**
    * Secret used to authenticate with the Happo API. Never store this in plain
    * text.
    */
-  apiSecret: string;
+  apiSecret?: string;
 
   /**
    * The endpoint to use for the happo run. Defaults to `https://happo.io`
@@ -327,6 +327,8 @@ export interface TargetWithDefaults extends BaseTarget {
 }
 
 export interface ConfigWithDefaults extends Config {
+  apiKey: NonNullable<Config['apiKey']>;
+  apiSecret: NonNullable<Config['apiSecret']>;
   integration: NonNullable<Config['integration']>;
   endpoint: NonNullable<Config['endpoint']>;
   githubApiUrl: NonNullable<Config['githubApiUrl']>;
