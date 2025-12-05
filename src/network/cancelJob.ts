@@ -13,8 +13,9 @@ type Status = 'failure' | 'success';
  */
 export default async function cancelJob(
   status: Status,
+  message: string,
   config: ConfigWithDefaults,
-  { beforeSha, afterSha, link, message }: EnvironmentResult,
+  { beforeSha, afterSha, link }: EnvironmentResult,
   logger: Logger,
 ): Promise<void> {
   try {
