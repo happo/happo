@@ -288,9 +288,10 @@ async function handleDefaultCommand(
       logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
     }
   } catch (e) {
-    logger.error(e instanceof Error ? e.message : String(e), e);
+    const message = e instanceof Error ? e.message : String(e);
+    logger.error(`${config.integration.type} run failed: ${message}`, e);
     const cancelJob = (await import('../network/cancelJob.ts')).default;
-    await cancelJob('failure', config, environment, logger);
+    await cancelJob('failure', message, config, environment, logger);
     process.exitCode = 1;
     return;
   }
