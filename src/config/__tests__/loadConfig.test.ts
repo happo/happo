@@ -223,6 +223,94 @@ describe('loadConfigFile', () => {
     );
   });
 
+  it('throws a helpful error if the config file exports undefined', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `export default undefined;`,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+      /Your Happo config file \S+ must have a default export that is an object, got: undefined/,
+    );
+  });
+
+  it('throws a helpful error if the config file exports null', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `export default null;`,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+      /Your Happo config file \S+ must have a default export that is an object, got: null/,
+    );
+  });
+
+  it('throws a helpful error if the config file exports an array', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `export default [];`,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+      /Your Happo config file \S+ must have a default export that is an object, got: array/,
+    );
+  });
+
+  it('throws a helpful error if the config file exports a boolean', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `export default true;`,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+      /Your Happo config file \S+ must have a default export that is an object, got: boolean/,
+    );
+  });
+
+  it('throws a helpful error if the config file exports a number', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `export default 42;`,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+      /Your Happo config file \S+ must have a default export that is an object, got: number/,
+    );
+  });
+
+  it('throws a helpful error if the config file exports a string', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `export default 'test-string';`,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+      /Your Happo config file \S+ must have a default export that is an object, got: string/,
+    );
+  });
+
+  it('throws a helpful error if the config file exports a symbol', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `export default Symbol('test-symbol');`,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+      /Your Happo config file \S+ must have a default export that is an object, got: symbol/,
+    );
+  });
+
+  it('throws a helpful error if the config file exports a function', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `export default function() {};`,
+    });
+
+    await assert.rejects(
+      loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+      /Your Happo config file \S+ must have a default export that is an object, got: function/,
+    );
+  });
+
   it('throws an error if the apiKey is missing', async () => {
     tmpfs.mock({
       'happo.config.ts': `

@@ -143,6 +143,24 @@ export async function loadConfigFile(
     throw error;
   }
 
+  if (config === null) {
+    throw new TypeError(
+      `Your Happo config file ${configFilePath} must have a default export that is an object, got: null.`,
+    );
+  }
+
+  if (typeof config !== 'object') {
+    throw new TypeError(
+      `Your Happo config file ${configFilePath} must have a default export that is an object, got: ${typeof config}.`,
+    );
+  }
+
+  if (Array.isArray(config)) {
+    throw new TypeError(
+      `Your Happo config file ${configFilePath} must have a default export that is an object, got: array.`,
+    );
+  }
+
   // We read these in here so that they can be passed along to the child process
   // in e2e/wrapper.ts. This allows us to use pull-request authentication
   // without having to make an additional HTTP request.
