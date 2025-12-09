@@ -377,6 +377,25 @@ function inlineShadowRoots(element: Element): void {
   }
 }
 
+/**
+ * Adds data-happo-modal to the first modal dialog that is open, and removes it
+ * from all other dialogs.
+ */
+function markModalDialogs(element: Element): void {
+  const cleanups = element.querySelectorAll<HTMLDialogElement>(
+    'dialog[data-happo-modal]',
+  );
+  for (const cleanup of cleanups) {
+    delete cleanup.dataset.happoModal;
+  }
+
+  const openModal = element.querySelector<HTMLDialogElement>('dialog:modal[open]');
+  if (!openModal) {
+    return;
+  }
+  openModal.dataset.happoModal = 'true';
+}
+
 function findSvgElementsWithSymbols(element: Element): Array<SVGElement> {
   return [...element.ownerDocument.querySelectorAll('svg')].filter((svg) =>
     svg.querySelector('symbol'),
@@ -443,6 +462,7 @@ export default function takeDOMSnapshot({
     }
 
     inlineShadowRoots(element);
+    markModalDialogs(element);
 
     assetUrls.push(
       ...getElementAssetUrls(

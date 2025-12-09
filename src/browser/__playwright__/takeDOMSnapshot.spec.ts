@@ -65,6 +65,53 @@ test('regular elements', async ({ page }) => {
   expect(snapshot.cssBlocks).toEqual([]);
 });
 
+test('modal dialogs are marked with data-happo-modal', async ({ page }) => {
+  await setupPage(page);
+
+  await page.goto('/regular-elements');
+  await page.evaluate(() => {
+    const dialog = document.querySelector('dialog');
+    if (!dialog) {
+      throw new Error('Element not found');
+    }
+    dialog.showModal();
+  });
+
+  const snapshot = await page.evaluate(() => {
+    return globalThis.happo.takeDOMSnapshot({
+      doc: document,
+      element: document.body,
+    });
+  });
+
+  expect(snapshot.html).toMatch(
+    /<dialog open="" data-happo-focus="true" data-happo-modal="true">/s,
+  );
+});
+
+test('non-modal dialogs are not marked with data-happo-modal', async ({ page }) => {
+  await setupPage(page);
+
+  await page.goto('/regular-elements');
+  await page.evaluate(() => {
+    const dialog = document.querySelector('dialog');
+    if (!dialog) {
+      throw new Error('Element not found');
+    }
+    dialog.show();
+  });
+
+  const snapshot = await page.evaluate(() => {
+    return globalThis.happo.takeDOMSnapshot({
+      doc: document,
+      element: document.body,
+    });
+  });
+
+  expect(snapshot.html).toMatch(/<dialog open="" data-happo-focus="true">/s);
+  expect(snapshot.html).not.toMatch(/data-happo-modal="true"/s);
+});
+
 test('style collection', async ({ page }) => {
   await setupPage(page);
 
