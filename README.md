@@ -4,10 +4,6 @@
 
 An open source library for integrating with [happo.io](https://happo.io) - a visual and accessibility regression testing platform that helps you catch unintended changes in your applications.
 
-## ⚠️ Active Development
-
-This library is currently under active development. Features and APIs may change between releases. Follow this repository to get notified about new releases and updates.
-
 ## 📚 Documentation
 
 For comprehensive documentation, visit [docs.happo.io](https://docs.happo.io).
