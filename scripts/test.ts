@@ -48,7 +48,12 @@ const { values: args, positionals } = parseArgs({
     pattern: {
       type: 'string',
       short: 'p',
-      description: 'Test name pattern to match',
+      description: 'Test file pattern to match',
+    },
+    testName: {
+      type: 'string',
+      short: 't',
+      description: 'Test name pattern to match (filters individual it blocks)',
     },
     watch: {
       type: 'boolean',
@@ -212,6 +217,10 @@ function run() {
       '--experimental-test-coverage',
       '--test-coverage-exclude="**/__tests__/**"',
     );
+  }
+
+  if (args.testName) {
+    nodeTestArgs.push(`--test-name-pattern=${args.testName}`);
   }
 
   assertValidReporters(args.reporter);
