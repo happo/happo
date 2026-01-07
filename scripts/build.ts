@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs';
+import path from 'node:path';
+
 import * as esbuild from 'esbuild';
 
 interface EntryConfig {
@@ -8,6 +11,7 @@ interface EntryConfig {
   platform: 'node' | 'browser';
   packages?: 'bundle' | 'external';
   format?: 'esm' | 'iife';
+  executable?: boolean;
 }
 
 const DIST_CONFIGS: Array<EntryConfig> = [
@@ -27,6 +31,7 @@ const DIST_CONFIGS: Array<EntryConfig> = [
     entryPoints: ['src/cli/main.ts'],
     outdir: 'dist/cli',
     platform: 'node',
+    executable: true,
   },
 
   {
@@ -109,6 +114,16 @@ async function main() {
   }
 
   const results = await Promise.all(buildPromises);
+
+  const chmodPromises: Array<Promise<void>> = [];
+  for (const config of DIST_CONFIGS) {
+    if (config.executable) {
+      chmodPromises.push(
+        fs.promises.chmod(path.join(config.outdir, 'main.js'), 0o755),
+      );
+    }
+  }
+  await Promise.all(chmodPromises);
 
   const errors: Array<string> = [];
   const warnings: Array<string> = [];
