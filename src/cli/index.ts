@@ -284,6 +284,21 @@ async function handleDefaultCommand(
         logger,
       );
       logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
+
+      if (environment.link && environment.githubToken && config.githubApiUrl) {
+        // githubToken and githubApiUrl are set which means that we should post
+        // a comment to the PR.
+        // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
+        const postGitHubComment = (await import('../network/postGitHubComment.ts'))
+          .default;
+        await postGitHubComment({
+          authToken: environment.githubToken,
+          link: environment.link,
+          statusImageUrl: asyncComparison.statusImageUrl,
+          compareUrl: asyncComparison.compareUrl,
+          githubApiUrl: config.githubApiUrl,
+        });
+      }
     }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);

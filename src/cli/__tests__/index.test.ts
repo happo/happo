@@ -59,6 +59,16 @@ mock.module('../../network/uploadAssets.ts', {
   },
 });
 
+const postGitHubCommentMock: Mock<
+  typeof import('../../network/postGitHubComment.ts').default
+> = mock.fn(async () => {
+  return true;
+});
+
+mock.module('../../network/postGitHubComment.ts', {
+  defaultExport: postGitHubCommentMock,
+});
+
 // Install fresh mocks & imports for each test
 beforeEach(async () => {
   logger = {
@@ -84,6 +94,7 @@ beforeEach(async () => {
   });
 
   makeHappoAPIRequestMock.mock.resetCalls();
+  postGitHubCommentMock.mock.resetCalls();
 });
 
 afterEach(() => {
@@ -209,6 +220,118 @@ describe('main', () => {
         logger.log.mock.calls[0]?.arguments[0],
         'Running happo tests...',
       );
+    });
+
+    it('posts GitHub comment when conditions are met', async () => {
+      tmpfs.writeFile(
+        'happo.config.ts',
+        `export default {
+          integration: { type: 'custom', build: async () => ({ rootDir: '${tmpfs.getTempDir()}/happo-custom', entryPoint: 'bundle.js' }) },
+          apiKey: 'test-key',
+          apiSecret: 'test-secret',
+          githubApiUrl: 'https://api.github.com',
+          targets: {
+            chrome: { type: 'chrome', viewport: '1024x768' },
+          },
+        };`,
+      );
+
+      await main(
+        [
+          'npx',
+          'happo',
+          '--beforeSha',
+          'before-sha',
+          '--afterSha',
+          'after-sha',
+          '--link',
+          'https://github.com/owner/repo/pull/123',
+          '--githubToken',
+          'test-token',
+        ],
+        logger,
+      );
+
+      assert.strictEqual(postGitHubCommentMock.mock.callCount(), 1);
+      const call = postGitHubCommentMock.mock.calls[0];
+      assert.ok(call);
+      assert.strictEqual(call.arguments[0]?.authToken, 'test-token');
+      assert.strictEqual(
+        call.arguments[0]?.link,
+        'https://github.com/owner/repo/pull/123',
+      );
+      assert.strictEqual(call.arguments[0]?.githubApiUrl, 'https://api.github.com');
+      assert.strictEqual(
+        call.arguments[0]?.statusImageUrl,
+        'https://happo.io/api/reports/123/status-image',
+      );
+      assert.strictEqual(
+        call.arguments[0]?.compareUrl,
+        'https://happo.io/api/reports/123/compare',
+      );
+    });
+
+    it('does not post GitHub comment when beforeSha equals afterSha', async () => {
+      tmpfs.writeFile(
+        'happo.config.ts',
+        `export default {
+          integration: { type: 'custom', build: async () => ({ rootDir: '${tmpfs.getTempDir()}/happo-custom', entryPoint: 'bundle.js' }) },
+          apiKey: 'test-key',
+          apiSecret: 'test-secret',
+          githubApiUrl: 'https://api.github.com',
+          targets: {
+            chrome: { type: 'chrome', viewport: '1024x768' },
+          },
+        };`,
+      );
+
+      await main(
+        [
+          'npx',
+          'happo',
+          '--beforeSha',
+          'same-sha',
+          '--afterSha',
+          'same-sha',
+          '--link',
+          'https://github.com/owner/repo/pull/123',
+          '--githubToken',
+          'test-token',
+        ],
+        logger,
+      );
+
+      assert.strictEqual(postGitHubCommentMock.mock.callCount(), 0);
+    });
+
+    it('does not post GitHub comment when githubToken is missing', async () => {
+      tmpfs.writeFile(
+        'happo.config.ts',
+        `export default {
+          integration: { type: 'custom', build: async () => ({ rootDir: '${tmpfs.getTempDir()}/happo-custom', entryPoint: 'bundle.js' }) },
+          apiKey: 'test-key',
+          apiSecret: 'test-secret',
+          targets: {
+            chrome: { type: 'chrome', viewport: '1024x768' },
+          },
+        };`,
+      );
+
+      await main(
+        [
+          'npx',
+          'happo',
+          '--beforeSha',
+          'before-sha',
+          '--afterSha',
+          'after-sha',
+          '--link',
+          'https://github.com/owner/repo/pull/123',
+        ],
+        logger,
+      );
+
+      assert.strictEqual(postGitHubCommentMock.mock.callCount(), 0);
     });
 
     it('shows error for unknown command', async () => {
