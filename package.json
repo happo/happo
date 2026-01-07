@@ -54,7 +54,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "preset.js"
   ],
   "scripts": {
     "all": "node ./scripts/allchecks.ts",
