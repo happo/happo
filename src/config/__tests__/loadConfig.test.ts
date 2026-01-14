@@ -647,4 +647,379 @@ describe('loadConfigFile', () => {
       },
     });
   });
+
+  describe('deepCompare validation', () => {
+    it('accepts valid deepCompare settings', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 0.5,
+              diffAlgorithm: 'color-delta',
+              ignoreThreshold: 0.01,
+              ignoreWhitespace: true,
+              applyBlur: false,
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.ok(config.deepCompare);
+      assert.strictEqual(config.deepCompare.compareThreshold, 0.5);
+      assert.strictEqual(config.deepCompare.diffAlgorithm, 'color-delta');
+      assert.strictEqual(config.deepCompare.ignoreThreshold, 0.01);
+      assert.strictEqual(config.deepCompare.ignoreWhitespace, true);
+      assert.strictEqual(config.deepCompare.applyBlur, false);
+    });
+
+    it('accepts deepCompare settings with only required fields', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 0.8,
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.ok(config.deepCompare);
+      assert.strictEqual(config.deepCompare.compareThreshold, 0.8);
+      assert.strictEqual(config.deepCompare.diffAlgorithm, 'color-delta');
+    });
+
+    it('defaults diffAlgorithm to color-delta when not provided', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 0.5,
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.ok(config.deepCompare);
+      assert.strictEqual(config.deepCompare.diffAlgorithm, 'color-delta');
+    });
+
+    it('throws an error if compareThreshold is missing', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              diffAlgorithm: 'color-delta',
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare` in config file \S+: `compareThreshold` is required/,
+      );
+    });
+
+    it('throws an error if deepCompare is not an object', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: 'invalid',
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare` in config file \S+: must be an object, got: string/,
+      );
+    });
+
+    it('throws an error if deepCompare is an array', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: [],
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare` in config file \S+: must be an object, got: array/,
+      );
+    });
+
+    it('throws an error if diffAlgorithm is invalid', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              diffAlgorithm: 'invalid-algorithm',
+              compareThreshold: 0.5,
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.diffAlgorithm` in config file \S+: must be "color-delta" or "ssim", got: "invalid-algorithm"/,
+      );
+    });
+
+    it('throws an error if diffAlgorithm is not a string', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              diffAlgorithm: 123,
+              compareThreshold: 0.5,
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.diffAlgorithm` in config file \S+: must be "color-delta" or "ssim", got: 123/,
+      );
+    });
+
+    it('throws an error if compareThreshold is not a number', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 'invalid',
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.compareThreshold` in config file \S+: must be a number between 0 and 1, got: "invalid"/,
+      );
+    });
+
+    it('throws an error if compareThreshold is less than 0', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: -0.1,
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.compareThreshold` in config file \S+: must be a number between 0 and 1, got: -0.1/,
+      );
+    });
+
+    it('throws an error if compareThreshold is greater than 1', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 1.1,
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.compareThreshold` in config file \S+: must be a number between 0 and 1, got: 1.1/,
+      );
+    });
+
+    it('throws an error if ignoreThreshold is not a number', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 0.5,
+              ignoreThreshold: 'invalid',
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.ignoreThreshold` in config file \S+: must be a number between 0 and 1, got: "invalid"/,
+      );
+    });
+
+    it('throws an error if ignoreThreshold is less than 0', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 0.5,
+              ignoreThreshold: -0.1,
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.ignoreThreshold` in config file \S+: must be a number between 0 and 1, got: -0.1/,
+      );
+    });
+
+    it('throws an error if ignoreThreshold is greater than 1', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 0.5,
+              ignoreThreshold: 1.1,
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.ignoreThreshold` in config file \S+: must be a number between 0 and 1, got: 1.1/,
+      );
+    });
+
+    it('throws an error if ignoreWhitespace is not a boolean', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 0.5,
+              ignoreWhitespace: 'invalid',
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.ignoreWhitespace` in config file \S+: must be a boolean, got: "invalid"/,
+      );
+    });
+
+    it('throws an error if applyBlur is not a boolean', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            deepCompare: {
+              compareThreshold: 0.5,
+              applyBlur: 'invalid',
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `deepCompare.applyBlur` in config file \S+: must be a boolean, got: "invalid"/,
+      );
+    });
+  });
 });

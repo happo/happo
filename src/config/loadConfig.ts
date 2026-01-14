@@ -7,7 +7,7 @@ import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from '../network/fetchWithRetry.ts';
 import getShortLivedAPIToken from './getShortLivedAPIToken.ts';
-import type { ConfigWithDefaults, TargetWithDefaults } from './index.ts';
+import type { ConfigWithDefaults, DeepCompareSettings, TargetWithDefaults } from './index.ts';
 
 const CONFIG_FILENAMES = [
   'happo.config.js',
@@ -101,6 +101,79 @@ async function getFallbackApiToken(
     return shortLivedApiToken ?? undefined;
   }
   return undefined;
+}
+
+function validateDeepCompareSettings(
+  deepCompare: DeepCompareSettings,
+  configFilePath: string,
+): asserts deepCompare is DeepCompareSettings {
+  if (typeof deepCompare !== 'object' || Array.isArray(deepCompare)) {
+    throw new TypeError(
+      `Invalid \`deepCompare\` in config file ${configFilePath}: must be an object, got: ${Array.isArray(deepCompare) ? 'array' : typeof deepCompare}.`,
+    );
+  }
+
+  const settings = deepCompare as DeepCompareSettings;
+
+  if (!('compareThreshold' in settings) || settings.compareThreshold === undefined) {
+    throw new TypeError(
+      `Invalid \`deepCompare\` in config file ${configFilePath}: \`compareThreshold\` is required.`,
+    );
+  }
+
+  if (
+    typeof settings.compareThreshold !== 'number' ||
+    settings.compareThreshold < 0 ||
+    settings.compareThreshold > 1
+  ) {
+    throw new TypeError(
+      `Invalid \`deepCompare.compareThreshold\` in config file ${configFilePath}: must be a number between 0 and 1, got: ${JSON.stringify(settings.compareThreshold)}.`,
+    );
+  }
+
+  if (
+    'diffAlgorithm' in settings &&
+    settings.diffAlgorithm !== undefined &&
+    (typeof settings.diffAlgorithm !== 'string' ||
+      (settings.diffAlgorithm !== 'color-delta' &&
+        settings.diffAlgorithm !== 'ssim'))
+  ) {
+    throw new TypeError(
+      `Invalid \`deepCompare.diffAlgorithm\` in config file ${configFilePath}: must be "color-delta" or "ssim", got: ${JSON.stringify(settings.diffAlgorithm)}.`,
+    );
+  }
+
+  if (
+    'ignoreThreshold' in settings &&
+    settings.ignoreThreshold !== undefined &&
+    (typeof settings.ignoreThreshold !== 'number' ||
+      settings.ignoreThreshold < 0 ||
+      settings.ignoreThreshold > 1)
+  ) {
+    throw new TypeError(
+      `Invalid \`deepCompare.ignoreThreshold\` in config file ${configFilePath}: must be a number between 0 and 1, got: ${JSON.stringify(settings.ignoreThreshold)}.`,
+    );
+  }
+
+  if (
+    'ignoreWhitespace' in settings &&
+    settings.ignoreWhitespace !== undefined &&
+    typeof settings.ignoreWhitespace !== 'boolean'
+  ) {
+    throw new TypeError(
+      `Invalid \`deepCompare.ignoreWhitespace\` in config file ${configFilePath}: must be a boolean, got: ${JSON.stringify(settings.ignoreWhitespace)}.`,
+    );
+  }
+
+  if (
+    'applyBlur' in settings &&
+    settings.applyBlur !== undefined &&
+    typeof settings.applyBlur !== 'boolean'
+  ) {
+    throw new TypeError(
+      `Invalid \`deepCompare.applyBlur\` in config file ${configFilePath}: must be a boolean, got: ${JSON.stringify(settings.applyBlur)}.`,
+    );
+  }
 }
 
 export async function loadConfigFile(
@@ -217,6 +290,15 @@ export async function loadConfigFile(
     target.viewport = target.viewport || '1024x768';
     target.freezeAnimations = target.freezeAnimations || 'last-frame';
     target.prefersReducedMotion = target.prefersReducedMotion ?? true;
+  }
+
+  // Validate deepCompare settings if present
+  if (config.deepCompare !== undefined && config.deepCompare !== null) {
+    validateDeepCompareSettings(config.deepCompare, configFilePath);
+    // Set default diffAlgorithm if not provided
+    if (!config.deepCompare.diffAlgorithm) {
+      config.deepCompare.diffAlgorithm = 'color-delta';
+    }
   }
 
   const configWithDefaults = {

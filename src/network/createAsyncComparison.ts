@@ -1,4 +1,4 @@
-import type { ConfigWithDefaults } from '../config/index.ts';
+import type { ConfigWithDefaults, DeepCompareSettings } from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
@@ -53,19 +53,34 @@ export default async function createAsyncComparison(
     );
   }
 
+  const body: {
+    link: string | undefined;
+    message: string | undefined;
+    author: string | undefined;
+    project: string | undefined;
+    isAsync: boolean;
+    notify: string | undefined;
+    fallbackShas: Array<string> | undefined;
+    deepCompare?: DeepCompareSettings;
+  } = {
+    link,
+    message,
+    author: authorEmail,
+    project: config.project,
+    isAsync: true,
+    notify,
+    fallbackShas,
+  };
+
+  if (config.deepCompare) {
+    body.deepCompare = config.deepCompare;
+  }
+
   const result = await makeHappoAPIRequest(
     {
       path: `/api/reports/${beforeSha}/compare/${afterSha}`,
       method: 'POST',
-      body: {
-        link,
-        message,
-        author: authorEmail,
-        project: config.project,
-        isAsync: true,
-        notify,
-        fallbackShas,
-      },
+      body,
     },
     config,
     { retryCount: 3 },
