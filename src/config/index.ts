@@ -108,6 +108,50 @@ interface PagesIntegration {
   pages: Array<Page>;
 }
 
+/**
+ * Settings for deep compare functionality
+ */
+export interface DeepCompareSettings {
+  /**
+   * Threshold for comparing images with the given diff algorithm (float between
+   * 0 and 1). 1 means all differences are allowed. 0 means no differences are
+   * allowed. A good starting value is 0.03 for color-delta and 0.01 for ssim.
+   */
+  compareThreshold: number;
+
+  /**
+   * Algorithm to use for diff comparison. Must be "color-delta" or "ssim".
+   * Defaults to "color-delta" if not provided. Note that "ssim" is experimental
+   * and may be removed in the future.
+   */
+  diffAlgorithm?: 'color-delta' | 'ssim';
+
+  /**
+   * Threshold for ignoring individual pixel differences, side-stepping the
+   * compare threshold. Used relatively to the image size. E.g. a value of 0.01
+   * means 1% of the pixels can be above the compare threshold. Use this option
+   * if your screenshots contain images or graphics with sharp noise. It is not
+   * recommended to use this option for other types of diffs. (float
+   * between 0 and 1).
+   */
+  ignoreThreshold?: number;
+
+  /**
+   * Whether to ignore whitespace in the diff. If true, whitespace differences
+   * will not be considered when comparing images. Whitespace is defined as a
+   * vertical section in a screenshot containing a single solid color.
+   */
+  ignoreWhitespace?: boolean;
+
+  /**
+   * Whether to apply blur to the diff. This can be used to smooth out subtle
+   * differences that would otherwise be above the compare threshold. This
+   * should mainly be used when your screenshots have a high contrast and you
+   * want to smooth out some of the sharpness that can otherwise cause flakiness.
+   */
+  applyBlur?: boolean;
+}
+
 export interface Config {
   /**
    * Key used to authenticate with the Happo API. Never store this in plain
@@ -163,6 +207,11 @@ export interface Config {
     | PlaywrightIntegration
     | CustomIntegration
     | PagesIntegration;
+
+  /**
+   * An object with settings for deep compare.
+   */
+  deepCompare?: DeepCompareSettings;
 }
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';
