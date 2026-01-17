@@ -417,7 +417,7 @@ export default function takeDOMSnapshot({
     throw new Error('doc.defaultView cannot be null or undefined');
   }
 
-  assertElement(oneOrMoreElements, doc.defaultView);
+  assertElement(oneOrMoreElements);
 
   const allElements = transformToElementArray(oneOrMoreElements);
   const htmlParts: Array<string> = [];
