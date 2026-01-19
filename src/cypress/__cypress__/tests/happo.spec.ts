@@ -6,6 +6,17 @@ describe('happo spec', () => {
       variant: 'default',
     });
 
+    cy.get('button').happoScreenshot({
+      component: 'button',
+      variant: 'single element',
+    });
+
+    cy.get('button').happoScreenshot({
+      component: 'button',
+      variant: 'multiple elements',
+      includeAllElements: true,
+    });
+
     cy.get('p').happoScreenshot();
   });
 });
