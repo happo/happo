@@ -590,7 +590,16 @@ describe('main', () => {
             logger,
           );
           assert.notStrictEqual(process.exitCode, 0);
-          assert(makeHappoAPIRequestMock.mock.callCount() === 0);
+          assert(makeHappoAPIRequestMock.mock.callCount() === 1);
+          const startJobRequest = makeHappoAPIRequestMock.mock.calls.at(-1);
+          if (!startJobRequest) {
+            throw new Error('No start job request found');
+          }
+          assert.strictEqual(
+            startJobRequest.arguments[1]?.endpoint,
+            'https://happo.io',
+          );
+          assert.ok(startJobRequest.arguments[0]?.path?.includes('/api/jobs'));
         });
       });
     });

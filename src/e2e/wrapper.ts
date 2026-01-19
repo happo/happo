@@ -3,9 +3,11 @@ import http from 'node:http';
 
 import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
+import cancelJob from '../network/cancelJob.ts';
 import createAsyncComparison from '../network/createAsyncComparison.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
+import startJob, { type StartJobResult } from '../network/startJob.ts';
 import startServer, { type ServerInfo } from '../network/startServer.ts';
 
 let allRequestIds: Set<number>;
@@ -116,6 +118,7 @@ export async function finalizeAll({
 async function finalizeHappoReport(
   happoConfig: ConfigWithDefaults,
   environment: EnvironmentResult,
+  job: StartJobResult,
   logger: Logger,
 ) {
   if (!allRequestIds.size) {
@@ -132,30 +135,7 @@ async function finalizeHappoReport(
     throw new Error('Failed to create async Happo report');
   }
 
-  const { beforeSha, afterSha, link, message, nonce } = environment;
-
-  const jobResult = await makeHappoAPIRequest(
-    {
-      path: `/api/jobs/${beforeSha}/${afterSha}`,
-      method: 'POST',
-      json: true,
-      body: {
-        project: happoConfig.project,
-        link,
-        message,
-      },
-    },
-    happoConfig,
-    { retryCount: 2 },
-  );
-
-  if (!jobResult) {
-    throw new Error('Failed to create Happo job');
-  }
-
-  if (!('url' in jobResult) || typeof jobResult.url !== 'string') {
-    throw new Error('Job result is missing url');
-  }
+  const { nonce } = environment;
 
   if (!nonce) {
     // If there is a nonce, the comparison will happen when the finalize
@@ -184,7 +164,7 @@ async function finalizeHappoReport(
       });
     }
   }
-  logger.log(`[HAPPO] ${jobResult.url}`);
+  logger.log(`[HAPPO] ${job.url}`);
 }
 
 function startE2EServer(
@@ -254,6 +234,10 @@ export default async function runWithWrapper(
   const e2eServer = await startE2EServer(environment, happoConfig);
   logger.log(`[HAPPO] Listening on port ${e2eServer.port}`);
 
+  const job = await startJob(happoConfig, environment, logger);
+  if (!job) {
+    throw new Error('Failed to create Happo job');
+  }
   try {
     const exitCode = await new Promise<number>((resolve, reject) => {
       const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
@@ -277,7 +261,7 @@ export default async function runWithWrapper(
       child.on('close', async (code: number) => {
         if (code === 0 || e2eIntegration.allowFailures) {
           try {
-            await finalizeHappoReport(happoConfig, environment, logger);
+            await finalizeHappoReport(happoConfig, environment, job, logger);
           } catch (e) {
             logger.error('Failed to finalize Happo report', e);
             return reject(e);
@@ -287,20 +271,12 @@ export default async function runWithWrapper(
             'Command failed with exit code ${code}. Cancelling Happo job.',
           );
           try {
-            await makeHappoAPIRequest(
-              {
-                path: `/api/jobs/${environment.beforeSha}/${environment.afterSha}/cancel`,
-                method: 'POST',
-                json: true,
-                body: {
-                  status: 'failure',
-                  project: happoConfig.project,
-                  link: environment.link,
-                  message: `${e2eIntegration.type} run failed`,
-                },
-              },
+            await cancelJob(
+              'failure',
+              `${e2eIntegration.type} run failed`,
               happoConfig,
-              { retryCount: 3 },
+              environment,
+              logger,
             );
           } catch (e) {
             logger.error('Failed to cancel Happo job', e);
