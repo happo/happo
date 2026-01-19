@@ -79,11 +79,11 @@ describe('takeDOMSnapshot', () => {
 </html>
   `);
     const { document: doc } = globalThis.window;
-    const element = doc.querySelectorAll('button');
-    if (!element) {
-      throw new Error('Element not found');
+    const elements = doc.querySelectorAll('button');
+    if (!elements || elements.length === 0) {
+      throw new Error('Elements not found');
     }
-    const snapshot = takeDOMSnapshot({ doc, element });
+    const snapshot = takeDOMSnapshot({ doc, element: elements });
     assert.equal(
       snapshot.html.trim(),
       `

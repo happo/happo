@@ -92,7 +92,9 @@ Cypress.Commands.add(
         ? responsiveInlinedCanvases
         : config.responsiveInlinedCanvases;
 
-    const element = includeAllElements ? originalSubject : originalSubject[0];
+    const element = includeAllElements
+      ? Array.from(originalSubject)
+      : originalSubject[0];
     if (!element) {
       throw new Error('element cannot be null or undefined');
     }
