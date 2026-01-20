@@ -3,7 +3,7 @@ import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
 
-interface StartJobResult {
+export interface StartJobResult {
   id: number;
   url: string;
 }
