@@ -1,4 +1,30 @@
-function isIterableCollection(
+export function isElementWithDataset(
+  element: unknown,
+): element is HTMLElement | SVGElement | MathMLElement {
+  if (typeof element !== 'object') {
+    return false;
+  }
+
+  if (element == null) {
+    return false;
+  }
+
+  if (!('dataset' in element)) {
+    return false;
+  }
+
+  if (typeof element.dataset !== 'object') {
+    return false;
+  }
+
+  if (element.dataset == null) {
+    return false;
+  }
+
+  return true;
+}
+
+export function isIterableCollection(
   element: NonNullable<unknown>,
 ): element is Iterable<unknown> {
   if (typeof element !== 'object') {

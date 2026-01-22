@@ -11,16 +11,19 @@ const config: Config = defineConfig({
     chrome: {
       type: 'chrome',
       viewport: '1024x768',
+      applyPseudoClasses: true,
     },
 
     chromeSmall: {
       type: 'chrome',
       viewport: '375x667',
+      applyPseudoClasses: true,
     },
 
     accessibility: {
       type: 'accessibility',
       viewport: '375x667',
+      applyPseudoClasses: true,
     },
   },
 });
