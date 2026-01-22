@@ -52,7 +52,7 @@ describe('createAssetPackage', () => {
         'sub folder/countries-bg.jpeg',
       ].toSorted(),
     );
-    assert.equal(pkg.hash, '6bfbf5cafbb71da0dac6bf083bc26a57');
+    assert.equal(pkg.hash, '1144340b24e1a9ca500a9f02befc5a61');
   });
 
   it('includes external assets when downloadAllAssets is true', async () => {

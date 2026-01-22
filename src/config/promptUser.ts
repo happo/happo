@@ -18,4 +18,3 @@ export default function promptUser(message: string): Promise<void> {
     });
   });
 }
-

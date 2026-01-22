@@ -20,4 +20,3 @@ export default function openBrowser(url: string): Promise<void> {
     // Ignore errors - browser might not open, but that's okay
   });
 }
-

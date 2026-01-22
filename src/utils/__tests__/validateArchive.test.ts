@@ -3,7 +3,6 @@ import { describe, it } from 'node:test';
 
 import validateArchive from '../validateArchive.ts';
 
-
 describe('validateArchive', () => {
   it('does not throw when totalBytes is lower than 30 MB', () => {
     assert.strictEqual(validateArchive(100, []), undefined);

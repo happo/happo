@@ -10,7 +10,7 @@ import type {
 import applyConstructedStylesPatch, {
   recordedCSSSymbol,
 } from './applyConstructedStylesPatch.ts';
-import assertElement from './assertElement.ts';
+import assertElement, { isElementWithDataset, isIterableCollection } from './assertElement.ts';
 import { MD5 } from './md5.ts';
 
 export { applyConstructedStylesPatch };
@@ -238,7 +238,7 @@ function inlineCanvases(
       }
       replacements.push({ from: canvas, to: image });
     } catch (e) {
-      if (e instanceof Error && e.name === 'SecurityError') {
+      if (typeof e === 'object' && e !== null && 'name' in e && e.name === 'SecurityError') {
         console.warn('[HAPPO] Failed to convert tainted canvas to PNG image');
         console.warn(e);
       } else {
@@ -321,18 +321,10 @@ function transformToElementArray(
   if (Array.isArray(elements)) {
     return elements;
   }
-  // Check if 'elements' is a NodeList
-  if (elements instanceof globalThis.window.NodeList) {
-    return Array.from(elements);
-  }
-  // Check if 'elements' is a single Element
-  if (elements instanceof globalThis.window.Element) {
-    return [elements];
-  }
 
-  // Handle array-like objects
-  if ((elements as NodeListOf<Element>).length !== undefined) {
-    return Array.from(elements as NodeListOf<Element>);
+  // Check if 'elements' is an iterable collection, like a NodeList
+  if (isIterableCollection(elements)) {
+    return Array.from(elements);
   }
 
   return [elements];
@@ -454,9 +446,7 @@ export default function takeDOMSnapshot({
     if (
       doc.activeElement &&
       doc.activeElement !== doc.body &&
-      (doc.activeElement instanceof globalThis.window.HTMLElement ||
-        doc.activeElement instanceof globalThis.window.SVGElement ||
-        doc.activeElement instanceof globalThis.window.MathMLElement)
+      isElementWithDataset(doc.activeElement)
     ) {
       doc.activeElement.dataset.happoFocus = 'true';
     }
@@ -474,11 +464,7 @@ export default function takeDOMSnapshot({
     if (strategy === 'hoist') {
       htmlParts.push(element.outerHTML);
     } else if (strategy === 'clip') {
-      if (
-        !(element instanceof HTMLElement) &&
-        !(element instanceof SVGElement) &&
-        !(element instanceof MathMLElement)
-      ) {
+      if (!isElementWithDataset(element)) {
         throw new TypeError(
           'element does not support the dataset property, i.e. it is not an HTMLElement or SVGElement or MathMLElement',
         );

@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { describe, it } from 'node:test';
 
 import withJSDOM from '../../test-utils/withJSDOM.ts';
-import assertElement from '../assertElement.ts';
+import assertElement, { isElementWithDataset } from '../assertElement.ts';
 
 const initDOM = withJSDOM();
 
@@ -105,5 +105,35 @@ describe('assertElement', () => {
     iframe.contentDocument.body.append(textNode);
     const nodeList = iframe.contentDocument.body.childNodes;
     assert.throws(() => assertElement(nodeList));
+  });
+});
+
+
+describe('isElementWithDataset', () => {
+  it('returns true if the element is an HTMLElement', () => {
+    initDOM('<!DOCTYPE html>');
+    const { document: doc } = globalThis.window;
+    const element = doc.createElement('div');
+    assert.equal(isElementWithDataset(element), true);
+  });
+
+  it('returns true if the element is an SVGElement', () => {
+    initDOM('<!DOCTYPE html>');
+    const { document: doc } = globalThis.window;
+    const element = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    assert.equal(isElementWithDataset(element), true);
+  });
+
+  it('returns true if the element is an MathMLElement', () => {
+    initDOM('<!DOCTYPE html>');
+    const { document: doc } = globalThis.window;
+    const element = doc.createElement('math');
+    assert.equal(isElementWithDataset(element), true);
+  });
+
+  it('returns false if the element does not have a dataset', () => {
+    initDOM('<!DOCTYPE html>');
+    const { document: doc } = globalThis.window;
+    assert.equal(isElementWithDataset(doc.createTextNode('text node')), false);
   });
 });
