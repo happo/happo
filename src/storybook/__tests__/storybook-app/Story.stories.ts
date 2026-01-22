@@ -269,7 +269,11 @@ function ComponentThatThrows(): ReactNode {
 }
 
 // https://github.com/bvaughn/react-error-boundary?tab=readme-ov-file#errorboundary-with-fallbackrender-prop
-function fallbackRender({ error }: { error: Error }): ReactNode {
+function fallbackRender({ error }: { error: unknown }): ReactNode {
+  if (!(error instanceof Error)) {
+    return createElement('div', null, `Error: ${String(error)}`);
+  }
+
   // We need to sanitize ports, asset hashes, and line/col numbers from
   // the stack trace to make the Happo diffs stabilized.
   if (error.stack) {
