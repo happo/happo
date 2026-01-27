@@ -26,6 +26,36 @@ function parseDashdashCommandParts(
   return rawArgs.slice(dashdashIndex + 1);
 }
 
+const fallbackOptions = {
+  allProjects: {
+    type: 'boolean',
+  },
+  format: {
+    type: 'string',
+  },
+  project: {
+    type: 'string',
+  },
+  limit: {
+    type: 'string',
+  },
+  page: {
+    type: 'string',
+  },
+  component: {
+    type: 'string',
+  },
+  variant: {
+    type: 'string',
+  },
+  target: {
+    type: 'string',
+  },
+  sha: {
+    type: 'string',
+  },
+} as const;
+
 function parseRawArgs(rawArgs: Array<string>) {
   const parsedArgs = parseArgs({
     args: rawArgs,
@@ -89,6 +119,8 @@ function parseRawArgs(rawArgs: Array<string>) {
       githubToken: {
         type: 'string',
       },
+
+      ...fallbackOptions,
     },
 
     allowPositionals: true,
@@ -106,6 +138,7 @@ Usage: happo [options]
 Commands:
   <default>    Run happo tests
   finalize     Finalize happo report for Cypress/Playwright tests running in parallel
+  flake        List reported flakes for a project
 
 Options:
   --config              Path to happo config file
@@ -123,6 +156,17 @@ Options:
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
   --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
   --githubToken <token> GitHub token to use for posting Happo statuses as comments. Use in combination with the \`githubApiUrl\` configuration option. (default: auto-detected from environment)
+
+Flake command options:
+  --allProjects         List flakes across all projects (default: current project)
+  --format <format>     Output format for flake command (default: "human", use "json" for raw output)
+  --project <name>      Project to filter flakes for (default: project from config)
+  --limit <number>      Limit flake results (default: 100, max: 1000)
+  --page <number>       Page number for flakes (default: 1)
+  --component <name>    Filter flakes by component name
+  --variant <name>      Filter flakes by variant name
+  --target <name>       Filter flakes by target name
+  --sha <sha>           Filter flakes by before/after sha
 
 Examples:
   happo
@@ -142,6 +186,13 @@ Examples:
 
   happo finalize
   happo finalize --nonce my-unique-nonce
+
+  happo flake
+  happo flake --allProjects
+  happo flake --format=json
+  happo flake --project=test-project --limit=10 --page=2
+  happo flake --component=button --variant=primary --target=chrome
+  happo flake --sha=ff2df74c1730341240840010c7518b2c1f4b55cb
   `;
 
 function makeAbsolute(configFilePath: string): string {
@@ -224,6 +275,39 @@ export async function main(
 
     if (command === 'finalize') {
       await handleFinalizeCommand(config, environment, logger);
+      return;
+    }
+
+    if (command === 'flake') {
+      const flakeOptions: FlakeCommandOptions = {};
+      if (args.values.allProjects !== undefined) {
+        flakeOptions.allProjects = args.values.allProjects;
+      }
+      if (args.values.format !== undefined) {
+        flakeOptions.format = args.values.format;
+      }
+      if (args.values.project !== undefined) {
+        flakeOptions.project = args.values.project;
+      }
+      if (args.values.limit !== undefined) {
+        flakeOptions.limit = args.values.limit;
+      }
+      if (args.values.page !== undefined) {
+        flakeOptions.page = args.values.page;
+      }
+      if (args.values.component !== undefined) {
+        flakeOptions.component = args.values.component;
+      }
+      if (args.values.variant !== undefined) {
+        flakeOptions.variant = args.values.variant;
+      }
+      if (args.values.target !== undefined) {
+        flakeOptions.target = args.values.target;
+      }
+      if (args.values.sha !== undefined) {
+        flakeOptions.sha = args.values.sha;
+      }
+      await handleFlakeCommand(config, flakeOptions, logger);
       return;
     }
 
@@ -329,6 +413,69 @@ async function handleFinalizeCommand(
   }
   process.exitCode = 0;
   return;
+}
+
+type FlakeCommandOptions = {
+  allProjects?: boolean;
+  format?: string;
+  project?: string;
+  limit?: string;
+  page?: string;
+  component?: string;
+  variant?: string;
+  target?: string;
+  sha?: string;
+};
+
+async function handleFlakeCommand(
+  config: ConfigWithDefaults,
+  {
+    allProjects,
+    format,
+    project: projectOverride,
+    limit,
+    page,
+    component,
+    variant,
+    target,
+    sha,
+  }: FlakeCommandOptions,
+  logger: Logger,
+): Promise<void> {
+  if (format && (format !== 'json' && format !== 'human')) {
+    logger.error(
+      `Unsupported format: ${format}. Use --format=json for raw JSON output or --format=human for human-readable output.`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const { default: getFlakes, formatFlakeOutput } = await import(
+    '../network/getFlakes.ts'
+  );
+  const project = allProjects ? undefined : projectOverride ?? config.project;
+  const flakes = await getFlakes(
+    {
+      project,
+      limit,
+      page,
+      component,
+      variant,
+      target,
+      sha,
+    },
+    config,
+    logger,
+  );
+
+  if (format === 'json') {
+    logger.log(JSON.stringify(flakes, null, 2));
+    process.exitCode = 0;
+    return;
+  }
+
+  logger.log(formatFlakeOutput(flakes));
+  process.exitCode = 0;
 }
 
 const E2E_INTEGRATION_TYPES = ['cypress', 'playwright'];

@@ -17,6 +17,7 @@ interface Logger {
 
 let logger: Logger;
 let main: (argv: Array<string>, logger: Logger) => Promise<void>;
+let flakeResponseOverride: object | null = null;
 const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
   async (request: RequestAttributes, config: ConfigWithDefaults) => {
     const { url, path } = request;
@@ -42,6 +43,57 @@ const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
         statusImageUrl: 'https://happo.io/api/reports/123/status-image',
         compareUrl: 'https://happo.io/api/reports/123/compare',
       };
+    }
+    if (fetchURL.includes('/api/flake')) {
+      if (flakeResponseOverride !== null) {
+        return flakeResponseOverride;
+      }
+      return [
+        {
+          project: 'test-project',
+          component: 'Button',
+          variant: 'primary',
+          target: 'chrome',
+          snapshots: [
+            {
+              url: 'https://happo.io/snapshots/1.png',
+              width: 100,
+              height: 80,
+            },
+            {
+              url: 'https://happo.io/snapshots/2.png',
+              width: 100,
+              height: 80,
+            },
+          ],
+          comparison: {
+            status: 'failure',
+            url: 'https://happo.io/comparisons/1',
+          },
+        },
+        {
+          project: 'test-project',
+          component: 'Card',
+          variant: 'hover',
+          target: 'firefox',
+          snapshots: [
+            {
+              url: 'https://happo.io/snapshots/3.png',
+              width: 120,
+              height: 90,
+            },
+            {
+              url: 'https://happo.io/snapshots/4.png',
+              width: 120,
+              height: 90,
+            },
+          ],
+          comparison: {
+            status: 'success',
+            url: 'https://happo.io/comparisons/2',
+          },
+        },
+      ];
     }
 
     return {};
@@ -75,6 +127,7 @@ beforeEach(async () => {
     log: mock.fn(),
     error: mock.fn(),
   };
+  flakeResponseOverride = null;
 
   // Now import the SUT; it will see the mocked module
   ({ main } = await import('../index.ts'));
@@ -348,6 +401,177 @@ describe('main', () => {
         ),
       );
       assert.strictEqual(process.exitCode, 1);
+    });
+
+    describe('flake command', () => {
+      beforeEach(() => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `export default {
+            integration: { type: 'cypress' },
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            project: 'test-project',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+          };`,
+        );
+      });
+
+      it('uses the configured project by default', async () => {
+        await main(['npx', 'happo', 'flake'], logger);
+
+        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+        const call = makeHappoAPIRequestMock.mock.calls[0];
+        assert.ok(call);
+        assert.strictEqual(call.arguments[0]?.path, '/api/flake?project=test-project');
+        assert.strictEqual(
+          logger.log.mock.calls[0]?.arguments[0],
+          [
+            'Found 2 flakes:',
+            '- [test-project] Button / primary / chrome [https://happo.io/snapshots/1.png, https://happo.io/snapshots/2.png] (https://happo.io/comparisons/1)',
+            '- [test-project] Card / hover / firefox [https://happo.io/snapshots/3.png, https://happo.io/snapshots/4.png] (https://happo.io/comparisons/2)',
+            'Tip: use --format=json to see full details.',
+          ].join('\n'),
+        );
+      });
+
+      it('lists flakes across all projects with --allProjects', async () => {
+        await main(['npx', 'happo', 'flake', '--allProjects'], logger);
+
+        const call = makeHappoAPIRequestMock.mock.calls[0];
+        assert.ok(call);
+        assert.strictEqual(call.arguments[0]?.path, '/api/flake');
+      });
+
+      it('supports flake filters in query params', async () => {
+        await main(
+          [
+            'npx',
+            'happo',
+            'flake',
+            '--project',
+            'custom-project',
+            '--limit',
+            '10',
+            '--page',
+            '2',
+            '--component',
+            'Button',
+            '--variant',
+            'primary',
+            '--target',
+            'chrome',
+            '--sha',
+            'abc123',
+          ],
+          logger,
+        );
+
+        const call = makeHappoAPIRequestMock.mock.calls[0];
+        assert.ok(call);
+        assert.strictEqual(
+          call.arguments[0]?.path,
+          '/api/flake?project=custom-project&limit=10&page=2&component=Button&variant=primary&target=chrome&sha=abc123',
+        );
+      });
+
+      it('returns JSON output with --format=json', async () => {
+        await main(['npx', 'happo', 'flake', '--format=json'], logger);
+
+        assert.strictEqual(
+          logger.log.mock.calls[0]?.arguments[0],
+          JSON.stringify(
+            [
+              {
+                project: 'test-project',
+                component: 'Button',
+                variant: 'primary',
+                target: 'chrome',
+                snapshots: [
+                  {
+                    url: 'https://happo.io/snapshots/1.png',
+                    width: 100,
+                    height: 80,
+                  },
+                  {
+                    url: 'https://happo.io/snapshots/2.png',
+                    width: 100,
+                    height: 80,
+                  },
+                ],
+                comparison: {
+                  status: 'failure',
+                  url: 'https://happo.io/comparisons/1',
+                },
+              },
+              {
+                project: 'test-project',
+                component: 'Card',
+                variant: 'hover',
+                target: 'firefox',
+                snapshots: [
+                  {
+                    url: 'https://happo.io/snapshots/3.png',
+                    width: 120,
+                    height: 90,
+                  },
+                  {
+                    url: 'https://happo.io/snapshots/4.png',
+                    width: 120,
+                    height: 90,
+                  },
+                ],
+                comparison: {
+                  status: 'success',
+                  url: 'https://happo.io/comparisons/2',
+                },
+              },
+            ],
+            null,
+            2,
+          ),
+        );
+      });
+
+      it('prints a no flakes message when empty', async () => {
+        flakeResponseOverride = [];
+        await main(['npx', 'happo', 'flake'], logger);
+
+        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+        assert.strictEqual(logger.log.mock.callCount(), 1);
+        assert.strictEqual(logger.log.mock.calls[0]?.arguments[0], 'No flakes found.');
+        assert.ok(!process.exitCode || process.exitCode === 0);
+      });
+
+      it('throws when the API returns a non-array response', async () => {
+        flakeResponseOverride = { ok: true };
+        await main(['npx', 'happo', 'flake'], logger);
+
+        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+        assert.strictEqual(logger.log.mock.callCount(), 0);
+        assert.strictEqual(logger.error.mock.callCount(), 1);
+        assert.strictEqual(
+          logger.error.mock.calls[0]?.arguments[0],
+          'Expected flake response to be an array.',
+        );
+        assert.strictEqual(process.exitCode, 1);
+      });
+
+      it('rejects unsupported formats', async () => {
+        await main(['npx', 'happo', 'flake', '--format=xml'], logger);
+
+        assert.strictEqual(process.exitCode, 1);
+        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 0);
+        assert.strictEqual(logger.error.mock.callCount(), 1);
+        assert.strictEqual(
+          logger.error.mock.calls[0]?.arguments[0],
+          'Unsupported format: xml. Use --format=json for raw JSON output or --format=human for human-readable output.',
+        );
+      });
+
+
     });
 
     describe('custom integration', () => {
