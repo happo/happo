@@ -452,10 +452,24 @@ export async function parseFrames(
   return frames.toReversed();
 }
 
+function isTestEnv(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env.NODE_ENV === 'test' || Boolean(env.JEST_WORKER_ID);
+}
+
 /**
  * Create a reporter with rate limiting
  */
 export function createReporter(opts: ReporterOptions = {}): Reporter {
+  if (isTestEnv()) {
+    return {
+      async captureException() {
+        // Never emit telemetry during tests.
+      },
+    };
+  }
+
   const maxPerMinute = Math.max(1, opts.maxPerMinute ?? 10);
   let sentThisMinute = 0;
   let minuteTick = Date.now();
