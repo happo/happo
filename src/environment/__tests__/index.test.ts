@@ -274,36 +274,52 @@ describe('resolveEnvironment', () => {
   });
 
   it('resolves the GitHub Actions environment', async () => {
-    initGitRepo();
-    const currentSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
+    const { beforeSha, afterSha, branch } = initGitRepo();
+
+    // Advance main after branching so the PR base is not the merge-base.
+    tmpfs.exec('git', ['checkout', 'main']);
+    commitNewFile('main-advance.txt', 'We advanced main');
+    const latestMainSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
+    tmpfs.exec('git', ['checkout', branch]);
+
+    const prEventContents = fs.readFileSync(
+      path.resolve(__dirname, 'github_pull_request_event.json'),
+      'utf8',
+    );
+    const prEventContentsWithChanges = prEventContents
+      .replaceAll('ec26c3e57ca3a959ca5aad62de7213c562f8c821', afterSha)
+      .replaceAll('f95f852bd8fca8fcc58a9a2d6c842781e32a215e', latestMainSha);
+
+    tmpfs.writeFile('github_pull_request_event.json', prEventContentsWithChanges);
+
     const githubEnv = {
-      GITHUB_SHA: currentSha,
-      GITHUB_EVENT_PATH: path.resolve(__dirname, 'github_pull_request_event.json'),
+      GITHUB_SHA: afterSha,
+      GITHUB_EVENT_PATH: tmpfs.fullPath('github_pull_request_event.json'),
     };
     let result = await resolveEnvironment({}, githubEnv);
-    assert.equal(result.afterSha, 'ec26c3e57ca3a959ca5aad62de7213c562f8c821');
-    assert.equal(result.beforeSha, 'f95f852bd8fca8fcc58a9a2d6c842781e32a215e');
+    assert.equal(result.afterSha, afterSha);
+    assert.equal(result.beforeSha, beforeSha);
     assert.equal(result.link, 'https://github.com/Codertocat/Hello-World/pull/2');
     assert.equal(result.message, 'Update the README with new information.');
 
     // Try with a push event
     // Copy the event file to the temp dir and update the sha to the current sha
-    const eventContents = fs.readFileSync(
+    const pushEventContents = fs.readFileSync(
       path.resolve(__dirname, 'github_push_event.json'),
       'utf8',
     );
     // Replace all the instances of the sha
-    const eventContentsWithChanges = eventContents.replaceAll(
+    const pushEventContentsWithChanges = pushEventContents.replaceAll(
       '0000000000000000000000000000000000000000',
-      currentSha,
+      afterSha,
     );
-    const eventPath = tmpfs.fullPath('github_push_event.json');
-    fs.writeFileSync(eventPath, eventContentsWithChanges);
-    githubEnv.GITHUB_EVENT_PATH = eventPath;
+    const pushEventPath = tmpfs.fullPath('github_push_event.json');
+    fs.writeFileSync(pushEventPath, pushEventContentsWithChanges);
+    githubEnv.GITHUB_EVENT_PATH = pushEventPath;
     result = await resolveEnvironment({}, githubEnv);
-    assert.equal(result.afterSha, currentSha);
+    assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, '6113728f27ae82c7b1a177c8d03f9e96e0adf246');
-    assert.equal(result.link, `https://github.com/foo/bar/commit/${currentSha}`);
+    assert.equal(result.link, `https://github.com/foo/bar/commit/${afterSha}`);
     assert.notEqual(result.message, undefined);
 
     // Try with a workflow_dispatch event
@@ -312,11 +328,12 @@ describe('resolveEnvironment', () => {
       'github_workflow_dispatch.json',
     );
     result = await resolveEnvironment({}, githubEnv);
-    assert.equal(result.afterSha, currentSha);
-    assert.equal(result.beforeSha, currentSha);
+    
+    assert.equal(result.afterSha, afterSha);
+    assert.equal(result.beforeSha, afterSha);
     assert.equal(
       result.link,
-      `https://github.com/octo-org/octo-repo/commit/${currentSha}`,
+      `https://github.com/octo-org/octo-repo/commit/${afterSha}`,
     );
     assert.notEqual(result.message, undefined);
 
