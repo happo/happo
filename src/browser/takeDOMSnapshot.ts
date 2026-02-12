@@ -211,24 +211,19 @@ function inlineCanvases(
       const image = doc.createElement('img');
 
       const url = `/.happo-tmp/_inlined/${MD5.hashStr(canvasImageBase64)}.png`;
-      image.src = url;
       (image as ExtendedHTMLElementWithBase64)._base64Url = canvasImageBase64;
-      const style = canvas.getAttribute('style');
-      if (style) {
-        image.setAttribute('style', style);
+      for (const attributeName of canvas.getAttributeNames()) {
+        // Transfer all attributes from the canvas to the image
+        const value = canvas.getAttribute(attributeName);
+        if (value) {
+          image.setAttribute(attributeName, value);
+        }
       }
-      const className = canvas.getAttribute('class');
-      if (className) {
-        image.setAttribute('class', className);
-      }
+      image.src = url;
       if (responsiveInlinedCanvases) {
         image.style.width = '100%';
         image.style.height = 'auto';
       } else {
-        const width = canvas.getAttribute('width');
-        const height = canvas.getAttribute('height');
-        if (width) image.setAttribute('width', width);
-        if (height) image.setAttribute('height', height);
         copyStyles(canvas, image);
       }
       canvas.replaceWith(image);
