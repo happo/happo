@@ -104,7 +104,7 @@ Cypress.Commands.add(
       element,
       responsiveInlinedCanvases: resInCan,
       strategy: snapshotStrategy,
-      handleBase64Image: ({ base64Url }) => {
+      handleBase64Image: ({ base64Url, element }) => {
         const rawBase64 = base64Url.replace(/^data:image\/png;base64,/, '');
         const chunks = chunked(rawBase64, config.canvasChunkSize);
         for (let i = 0; i < chunks.length; i++) {
@@ -115,6 +115,7 @@ Cypress.Commands.add(
             'happoRegisterBase64Image',
             {
               base64Chunk,
+              src: element.getAttribute('src'),
               isFirst,
               isLast,
             },
