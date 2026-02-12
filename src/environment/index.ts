@@ -299,6 +299,30 @@ function resolveShaFromTagMatcher(tagMatcher: string): string | undefined {
   return commitRes.stdout.trim();
 }
 
+function resolveMergeBase(baseSha: string, afterSha: string): string | undefined {
+  const res = spawnSync('git', ['merge-base', baseSha, afterSha], {
+    encoding: 'utf8',
+  });
+
+  if (res.status !== 0) {
+    console.error(
+      `[HAPPO] Ignored error when resolving merge base between ${baseSha} and ${afterSha}: ${res.stderr}`,
+    );
+    return undefined;
+  }
+
+  const mergeBase = res.stdout.split('\n')[0]?.trim();
+
+  if (!mergeBase) {
+    console.error(
+      `[HAPPO] git merge-base stdout is empty when resolving merge base between ${baseSha} and ${afterSha}. stdout: ${res.stdout}\nstderr: ${res.stderr}`,
+    );
+    return undefined;
+  }
+
+  return mergeBase;
+}
+
 async function resolveBeforeSha(
   cliArgs: CLIArgs,
   env: Record<string, string | undefined>,
@@ -320,12 +344,24 @@ async function resolveBeforeSha(
 
   if (GITHUB_EVENT_PATH) {
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
+
     if (ghEvent.pull_request) {
-      return ghEvent.pull_request.base.sha;
+      const resolvedSha = resolveMergeBase(ghEvent.pull_request.base.sha, afterSha);
+
+      if (resolvedSha) {
+        return resolvedSha;
+      } else {
+        console.error(
+          `[HAPPO] Failed to resolve merge base commit for GitHub event ${ghEvent.pull_request.base.sha} and ${afterSha}. Falling back to pull request base SHA.`,
+        );
+        return ghEvent.pull_request.base.sha;
+      }
     }
+
     if (ghEvent.merge_group) {
       return ghEvent.merge_group.base_sha;
     }
+
     return ghEvent.before;
   }
 
@@ -343,14 +379,7 @@ async function resolveBeforeSha(
   }
 
   const baseBranch = cliArgs.baseBranch || baseAzureBranch || 'origin/main';
-  const res = spawnSync('git', ['merge-base', baseBranch, afterSha], {
-    encoding: 'utf8',
-  });
-  if (res.status !== 0) {
-    console.error(`[HAPPO] Ignored error when resolving base commit: ${res.stderr}`);
-    return undefined;
-  }
-  return res.stdout.split('\n')[0];
+  return resolveMergeBase(baseBranch, afterSha);
 }
 
 function getHeadShaWithLocalChanges(): {
