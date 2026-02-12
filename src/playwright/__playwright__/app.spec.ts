@@ -38,6 +38,11 @@ test('basic test', async ({ page, happoScreenshot }) => {
     ],
   });
 
+  await happoScreenshot(await page.$('canvas'), {
+    component: 'Canvas',
+    variant: 'red square',
+  });
+
   const stretchToParent = page.locator('#stretch-to-parent');
 
   await happoScreenshot(stretchToParent, {

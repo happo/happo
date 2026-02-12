@@ -132,7 +132,6 @@ function getElementAssetUrls(
       continue;
     }
     const srcset = element.getAttribute('srcset');
-    const src = element.getAttribute('src');
     const imageHref =
       element.tagName.toLowerCase() === 'image' && element.getAttribute('href');
     const linkHref =
@@ -145,6 +144,7 @@ function getElementAssetUrls(
     if (base64Url && element.tagName === 'IMG') {
       handleBase64Image({ base64Url, element: element as HTMLImageElement });
     }
+    const src = element.getAttribute('src');
     if (src) {
       allUrls.push({ url: src, baseUrl: element.baseURI });
     }
