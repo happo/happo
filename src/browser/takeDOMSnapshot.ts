@@ -213,6 +213,10 @@ function inlineCanvases(
       const url = `/.happo-tmp/_inlined/${MD5.hashStr(canvasImageBase64)}.png`;
       (image as ExtendedHTMLElementWithBase64)._base64Url = canvasImageBase64;
       for (const attributeName of canvas.getAttributeNames()) {
+        if (attributeName.startsWith('on')) {
+          // Skip event listeners
+          continue;
+        }
         // Transfer all attributes from the canvas to the image
         const value = canvas.getAttribute(attributeName);
         if (value) {
