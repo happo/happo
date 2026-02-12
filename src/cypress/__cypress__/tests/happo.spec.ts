@@ -30,6 +30,11 @@ describe('happo spec', () => {
       includeAllElements: true,
     });
 
+    cy.get('canvas').happoScreenshot({
+      component: 'canvas',
+      variant: 'default',
+    });
+
     cy.get('p').happoScreenshot();
   });
 });

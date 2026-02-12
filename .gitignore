@@ -13,3 +13,4 @@ test-results/
 tmp
 tsconfig.tsbuildinfo
 types
+.happo-tmp/

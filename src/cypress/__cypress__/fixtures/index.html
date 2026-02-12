@@ -15,5 +15,18 @@
       <button>Hello</button>
       <button>World</button>
     </main>
+
+    <footer>
+      <canvas alt="Red square" width="100" height="100"></canvas>
+    </footer>
+
+    <script type="text/javascript">
+      const canvas = document.querySelector('canvas');
+      canvas.width = 100;
+      canvas.height = 100;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'red';
+      ctx.fillRect(0, 0, 100, 100);
+    </script>
   </body>
 </html>
