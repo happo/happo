@@ -2,6 +2,9 @@ import { spawnSync } from 'node:child_process';
 import crypto, { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
+const NUMBER_OF_COMMITS_TO_FETCH = 50;
+const FULL_SHA_REGEX = /^[a-f0-9]{40}$/i;
+
 interface GitHubEvent {
   pull_request?: {
     html_url: string;
@@ -299,14 +302,58 @@ function resolveShaFromTagMatcher(tagMatcher: string): string | undefined {
   return commitRes.stdout.trim();
 }
 
-function resolveMergeBase(baseSha: string, afterSha: string): string | undefined {
-  const res = spawnSync('git', ['merge-base', baseSha, afterSha], {
+function fetchMoreHistory(
+  ref: string, // can be a full SHA or a ref/branch name
+  numberOfCommitsToFetch: number,
+): boolean {
+  const fetchRes = spawnSync(
+    'git',
+    ['fetch', 'origin', ref, `--depth=${numberOfCommitsToFetch}`],
+    {
+      encoding: 'utf8',
+    },
+  );
+  const success = fetchRes.status === 0;
+  if (!success) {
+    console.error(
+      `[HAPPO] Failed to fetch more history (${numberOfCommitsToFetch} commits) for ${ref}. Error: ${fetchRes.stderr}`,
+    );
+  }
+  return success;
+}
+
+function resolveMergeBase(
+  baseRef: string, // can be a full SHA or a ref/branch name
+  afterSha: string,
+  debugMode: boolean,
+  tryNumber: number = 1,
+): string | undefined {
+  const res = spawnSync('git', ['merge-base', baseRef, afterSha], {
     encoding: 'utf8',
   });
 
   if (res.status !== 0) {
+    // In GitHub Actions, checkouts can be shallow and may not include the PR base
+    // commit (or enough of its history) to compute a merge-base.
+    //
+    // - First attempt often fails with "Not a valid commit name <sha>".
+    // - After fetching just the base commit, a subsequent attempt can still fail
+    //   with exit code 1 and empty stderr because history is still too shallow.
+    //
+    // When the base looks like a full SHA, we can try to fetch deeper history
+    // and retry with increasing depth.
+    if (FULL_SHA_REGEX.test(baseRef) && tryNumber <= 10) {
+      if (debugMode) {
+        console.error(
+          `[HAPPO] When resolving the merge base between ${baseRef} and ${afterSha}, we failed to resolve the merge base. We'll try fetching more history (${tryNumber * NUMBER_OF_COMMITS_TO_FETCH} commits) and resolving the merge base again.`,
+        );
+      }
+      if (fetchMoreHistory(baseRef, tryNumber * NUMBER_OF_COMMITS_TO_FETCH)) {
+        return resolveMergeBase(baseRef, afterSha, debugMode, tryNumber + 1);
+      }
+    }
     console.error(
-      `[HAPPO] Ignored error when resolving merge base between ${baseSha} and ${afterSha}: ${res.stderr}`,
+      `[HAPPO] Ignored error when resolving merge base between ${baseRef} and ${afterSha}: ${res.stderr}`,
     );
     return undefined;
   }
@@ -315,7 +362,7 @@ function resolveMergeBase(baseSha: string, afterSha: string): string | undefined
 
   if (!mergeBase) {
     console.error(
-      `[HAPPO] git merge-base stdout is empty when resolving merge base between ${baseSha} and ${afterSha}. stdout: ${res.stdout}\nstderr: ${res.stderr}`,
+      `[HAPPO] git merge-base stdout is empty when resolving merge base between ${baseRef} and ${afterSha}. stdout: ${res.stdout}\nstderr: ${res.stderr}`,
     );
     return undefined;
   }
@@ -327,6 +374,7 @@ async function resolveBeforeSha(
   cliArgs: CLIArgs,
   env: Record<string, string | undefined>,
   afterSha: string,
+  debugMode: boolean,
 ): Promise<string | undefined> {
   if (cliArgs.beforeSha) {
     return cliArgs.beforeSha;
@@ -346,7 +394,11 @@ async function resolveBeforeSha(
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
 
     if (ghEvent.pull_request) {
-      const resolvedSha = resolveMergeBase(ghEvent.pull_request.base.sha, afterSha);
+      const resolvedSha = resolveMergeBase(
+        ghEvent.pull_request.base.sha,
+        afterSha,
+        debugMode,
+      );
 
       if (resolvedSha) {
         return resolvedSha;
@@ -379,7 +431,7 @@ async function resolveBeforeSha(
   }
 
   const baseBranch = cliArgs.baseBranch || baseAzureBranch || 'origin/main';
-  return resolveMergeBase(baseBranch, afterSha);
+  return resolveMergeBase(baseBranch, afterSha, debugMode);
 }
 
 function getHeadShaWithLocalChanges(): {
@@ -578,7 +630,7 @@ export default async function resolveEnvironment(
 
   // Resolve the before SHA with the true HEAD SHA
   const [beforeSha, link, authorEmail, message] = await Promise.all([
-    resolveBeforeSha(cliArgs, env, realAfterSha),
+    resolveBeforeSha(cliArgs, env, realAfterSha, debugMode),
     resolveLink(cliArgs, env),
     resolveAuthorEmail(cliArgs, env),
 
