@@ -357,6 +357,208 @@ describe('resolveEnvironment', () => {
     );
   });
 
+  it('resolves the GitHub Actions merge base when the base SHA is missing locally', async () => {
+    const originDir = tmpfs.fullPath('origin-repo');
+    const actionsDir = tmpfs.fullPath('actions-repo');
+
+    // Step 1: make 70 commits on main.
+    tmpfs.exec('git', ['init', '--initial-branch=main', originDir]);
+    tmpfs.exec('git', ['-C', originDir, 'config', 'user.name', 'Test User', '--local']);
+    tmpfs.exec('git', [
+      '-C',
+      originDir,
+      'config',
+      'user.email',
+      'test@example.com',
+      '--local',
+    ]);
+
+    tmpfs.writeFile('origin-repo/README.md', 'commit 1\n');
+    tmpfs.exec('git', ['-C', originDir, 'add', '.']);
+    tmpfs.exec('git', ['-C', originDir, 'commit', '-m', 'commit 1']);
+    const firstSha = tmpfs.exec('git', ['-C', originDir, 'rev-parse', 'HEAD']).trim();
+
+    // Create a branch that represents the PR head, pointing at the first commit.
+    tmpfs.exec('git', ['-C', originDir, 'branch', 'pr', firstSha]);
+
+    for (let i = 2; i <= 70; i += 1) {
+      tmpfs.exec('git', ['-C', originDir, 'commit', '--allow-empty', '-m', `commit ${i}`]);
+    }
+    const midMainSha = tmpfs
+      .exec('git', ['-C', originDir, 'rev-parse', 'HEAD~35'])
+      .trim();
+    const latestMainSha = tmpfs.exec('git', ['-C', originDir, 'rev-parse', 'HEAD']).trim();
+
+    // Step 2: checkout only the first commit (PR head) and ensure later commits are missing.
+    tmpfs.exec('git', [
+      'clone',
+      '--no-local',
+      '--depth=1',
+      '--branch',
+      'pr',
+      originDir,
+      actionsDir,
+    ]);
+
+    let showLatestSucceeded = true;
+    try {
+      tmpfs.exec('git', ['-C', actionsDir, 'show', '--no-patch', latestMainSha]);
+    } catch {
+      showLatestSucceeded = false;
+    }
+    assert.equal(showLatestSucceeded, false, 'expected base SHA to be missing locally');
+
+    let showMidSucceeded = true;
+    try {
+      tmpfs.exec('git', ['-C', actionsDir, 'show', '--no-patch', midMainSha]);
+    } catch {
+      showMidSucceeded = false;
+    }
+    assert.equal(showMidSucceeded, false, 'expected mid-history SHA to be missing locally');
+
+    // Step 3: construct a GitHub event json where base.sha is the latest commit on main.
+    const prEventTemplate = fs.readFileSync(
+      path.resolve(__dirname, 'github_pull_request_event.json'),
+      'utf8',
+    );
+    const prEvent = prEventTemplate
+      .replaceAll('ec26c3e57ca3a959ca5aad62de7213c562f8c821', firstSha)
+      .replaceAll('f95f852bd8fca8fcc58a9a2d6c842781e32a215e', latestMainSha);
+    tmpfs.writeFile('actions-repo/github_event.json', prEvent);
+    const eventPath = tmpfs.fullPath('actions-repo/github_event.json');
+
+    // Step 4: resolve the environment and ensure the baseSha has been correctly resolved.
+    const previousCwd = process.cwd();
+    process.chdir(actionsDir);
+    try {
+      const result = await resolveEnvironment(
+        {},
+        {
+          GITHUB_SHA: firstSha,
+          GITHUB_EVENT_PATH: eventPath,
+        },
+      );
+      assert.equal(result.afterSha, firstSha);
+      assert.equal(
+        result.beforeSha,
+        firstSha,
+        'expected beforeSha to resolve to the merge-base (the first commit)',
+      );
+      assert.notEqual(
+        result.beforeSha,
+        latestMainSha,
+        'expected beforeSha not to fall back to the base SHA from the event',
+      );
+    } finally {
+      process.chdir(previousCwd);
+    }
+  });
+
+  it('falls back when GitHub Actions merge-base resolution exceeds retry limit', async () => {
+    const originDir = tmpfs.fullPath('origin-repo-tries');
+    const actionsDir = tmpfs.fullPath('actions-repo-tries');
+
+    // Origin repo with two unrelated histories:
+    // - `pr` points to the first commit on `main`
+    // - `orphan-base` is an orphan branch (no common ancestor with `main`)
+    tmpfs.exec('git', ['init', '--initial-branch=main', originDir]);
+    tmpfs.exec('git', ['-C', originDir, 'config', 'user.name', 'Test User', '--local']);
+    tmpfs.exec('git', [
+      '-C',
+      originDir,
+      'config',
+      'user.email',
+      'test@example.com',
+      '--local',
+    ]);
+
+    tmpfs.writeFile('origin-repo-tries/README.md', 'commit 1\n');
+    tmpfs.exec('git', ['-C', originDir, 'add', '.']);
+    tmpfs.exec('git', ['-C', originDir, 'commit', '-m', 'commit 1']);
+    const prHeadSha = tmpfs.exec('git', ['-C', originDir, 'rev-parse', 'HEAD']).trim();
+    tmpfs.exec('git', ['-C', originDir, 'branch', 'pr', prHeadSha]);
+
+    // Create an unrelated root commit on an orphan branch.
+    tmpfs.exec('git', ['-C', originDir, 'checkout', '--orphan', 'orphan-base']);
+    tmpfs.exec('git', ['-C', originDir, 'rm', '-rf', '.']);
+    tmpfs.writeFile('origin-repo-tries/orphan.txt', 'orphan\n');
+    tmpfs.exec('git', ['-C', originDir, 'add', '.']);
+    tmpfs.exec('git', ['-C', originDir, 'commit', '-m', 'orphan commit']);
+    const baseSha = tmpfs.exec('git', ['-C', originDir, 'rev-parse', 'HEAD']).trim();
+
+    // Shallow checkout only the PR head, so `baseSha` is missing locally.
+    tmpfs.exec('git', [
+      'clone',
+      '--no-local',
+      '--depth=1',
+      '--branch',
+      'pr',
+      originDir,
+      actionsDir,
+    ]);
+
+    let baseShaExistsLocally = true;
+    try {
+      tmpfs.exec('git', ['-C', actionsDir, 'show', '--no-patch', baseSha]);
+    } catch {
+      baseShaExistsLocally = false;
+    }
+    assert.equal(baseShaExistsLocally, false, 'expected base SHA to be missing locally');
+
+    // Create PR event with an unreachable base SHA. Merge-base will never resolve,
+    // so we should retry up to the limit and then fall back to `baseSha`.
+    const prEventTemplate = fs.readFileSync(
+      path.resolve(__dirname, 'github_pull_request_event.json'),
+      'utf8',
+    );
+    const prEvent = prEventTemplate
+      .replaceAll('ec26c3e57ca3a959ca5aad62de7213c562f8c821', prHeadSha)
+      .replaceAll('f95f852bd8fca8fcc58a9a2d6c842781e32a215e', baseSha);
+    tmpfs.writeFile('actions-repo-tries/github_event.json', prEvent);
+    const eventPath = tmpfs.fullPath('actions-repo-tries/github_event.json');
+
+    const originalConsoleError = console.error;
+    const errorMessages: Array<string> = [];
+    console.error = (...args: Array<unknown>) => {
+      errorMessages.push(args.map(String).join(' '));
+    };
+
+    const previousCwd = process.cwd();
+    process.chdir(actionsDir);
+    try {
+      const result = await resolveEnvironment(
+        {},
+        {
+          GITHUB_SHA: prHeadSha,
+          GITHUB_EVENT_PATH: eventPath,
+          HAPPO_DEBUG: 'true',
+        },
+      );
+
+      assert.equal(result.afterSha, prHeadSha);
+
+      // We should fall back to the event base SHA when we cannot compute merge-base.
+      assert.equal(
+        result.beforeSha,
+        baseSha,
+        'expected beforeSha to fall back to the pull_request.base.sha',
+      );
+
+      // Verify we hit the retry limit (10 attempts).
+      const retryMessages = errorMessages.filter((m) =>
+        m.includes("we failed to resolve the merge base. We'll try fetching"),
+      );
+      assert.equal(
+        retryMessages.length,
+        10,
+        `expected 10 retry attempts, got ${retryMessages.length}`,
+      );
+    } finally {
+      process.chdir(previousCwd);
+      console.error = originalConsoleError;
+    }
+  });
+
   it('resolves the GitHub merge group environment', async () => {
     initGitRepo();
     const currentSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();

@@ -14,3 +14,5 @@ tmp
 tsconfig.tsbuildinfo
 types
 .happo-tmp/
+
+.claude/worktrees/
