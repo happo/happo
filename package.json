@@ -109,7 +109,7 @@
     "@storybook/react-vite": "^10.0.1",
     "@types/async-retry": "^1.4.9",
     "@types/base64-stream": "^1.0.5",
-    "@types/jsdom": "^27.0.0",
+    "@types/jsdom": "^28.0.0",
     "@types/mime-types": "^3.0.1",
     "@types/multiparty": "^4.2.1",
     "@types/node": "^24.9.1",
