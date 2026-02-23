@@ -44,6 +44,7 @@ before(async () => {
     apiSecret: '${TEST_API_SECRET}',
     targets: {
       chrome: {
+        type: 'chrome',
         execute: async () => ['request-id-1'],
       },
     },
