@@ -1,6 +1,6 @@
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import createHash from '../utils/createHash.ts';
-import type { ConfigWithDefaults, Page, TargetWithDefaults } from './index.ts';
+import type { BrowserType, ConfigWithDefaults, Page, TargetWithDefaults } from './index.ts';
 
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
 
@@ -62,13 +62,13 @@ function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
 
 export default class RemoteBrowserTarget {
   public readonly chunks: number;
-  public readonly browserName: string;
+  public readonly browserName: BrowserType;
   public readonly viewport: string;
   public readonly maxHeight: number | undefined;
   public readonly otherOptions: Record<string, unknown>;
 
   constructor(
-    browserName: string,
+    browserName: BrowserType,
     {
       viewport = '1024x768',
       chunks = 1,
@@ -76,6 +76,12 @@ export default class RemoteBrowserTarget {
       ...otherOptions
     }: TargetWithDefaults,
   ) {
+    if (!browserName) {
+      throw new Error(
+        `Invalid browser type: "${browserName}". Make sure the "type" field in your target configuration is set to a valid browser type.`,
+      );
+    }
+
     const viewportMatch = viewport.match(VIEWPORT_PATTERN);
     if (!viewportMatch) {
       throw new Error(
