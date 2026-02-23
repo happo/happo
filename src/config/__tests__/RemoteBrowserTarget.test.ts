@@ -1,8 +1,8 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
 
-import RemoteBrowserTarget from '../RemoteBrowserTarget.ts';
 import type { BrowserType, TargetWithDefaults } from '../index.ts';
+import RemoteBrowserTarget from '../RemoteBrowserTarget.ts';
 
 const baseTarget: TargetWithDefaults = {
   type: 'chrome',
@@ -15,18 +15,13 @@ describe('RemoteBrowserTarget', () => {
     it('throws when browserName is undefined', () => {
       assert.throws(
         () =>
-          new RemoteBrowserTarget(
-            undefined as unknown as BrowserType,
-            baseTarget,
-          ),
+          new RemoteBrowserTarget(undefined as unknown as BrowserType, baseTarget),
         /Invalid browser type/,
       );
     });
 
     it('does not throw for a valid browser type', () => {
-      assert.doesNotThrow(
-        () => new RemoteBrowserTarget('chrome', baseTarget),
-      );
+      assert.doesNotThrow(() => new RemoteBrowserTarget('chrome', baseTarget));
     });
   });
 });
