@@ -1,7 +1,10 @@
 .DS_Store
 .cache/
+.claude/settings.local.json
+.claude/worktrees/
 .env.local
 .happo-out
+.happo-tmp/
 .npm
 .out
 /coverage/
@@ -13,6 +16,3 @@ test-results/
 tmp
 tsconfig.tsbuildinfo
 types
-.happo-tmp/
-
-.claude/worktrees/

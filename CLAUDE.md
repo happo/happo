@@ -11,7 +11,7 @@ Happo is an open source library for integrating with [happo.io](https://happo.io
 ```bash
 pnpm install        # Install dependencies
 pnpm build          # Full build: type-check + esbuild dist
-pnpm build:types    # TypeScript type-check only (emits declarations to dist/)
+pnpm build:types    # TypeScript declarations build (tsc project refs; emits to dist/ and tmp/tsc/)
 pnpm build:dist     # esbuild bundling only
 pnpm lint           # ESLint
 pnpm test           # Run unit tests (Node test runner)
@@ -37,7 +37,7 @@ pnpm test -- --watch
 pnpm test
 ```
 
-Tests live in `__tests__/` subdirectories throughout `src/`. Test files are named `*.test.ts`. The `fzf` CLI tool must be installed for the interactive file picker.
+Unit tests are TypeScript files named `*.test.ts`. The test runner looks under `src/`, `tsconfigs/`, and `scripts/` (including `__tests__/` subdirectories), so tests are not limited to `src/`. The `fzf` CLI tool must be installed for the interactive file picker.
 
 ### Environment
 
@@ -49,16 +49,16 @@ Tests live in `__tests__/` subdirectories throughout `src/`. Test files are name
 
 The library produces multiple distinct bundles from `scripts/build.ts` using esbuild:
 
-| Entry point | Output | Platform | Notes |
-|---|---|---|---|
-| `src/cli/main.ts` | `dist/cli/main.js` | node | Executable CLI |
-| `src/config/index.ts` | `dist/config/` | node | Public types + `defineConfig` |
-| `src/browser/main.ts` | `dist/browser/` | browser | IIFE bundle for in-browser snapshot capture |
-| `src/storybook/browser/` | `dist/storybook/browser/` | browser | Storybook addon/decorator |
-| `src/storybook/index.ts` + `preset.ts` | `dist/storybook/` | node | Storybook integration (build Storybook, prep package) |
-| `src/cypress/` | `dist/cypress/` | node | Cypress task + commands |
-| `src/playwright/index.ts` | `dist/playwright/` | node | Playwright integration |
-| `src/custom/index.ts` | `dist/custom/` | node | Custom integration helper |
+| Entry point                            | Output                    | Platform | Notes                                                 |
+| -------------------------------------- | ------------------------- | -------- | ----------------------------------------------------- |
+| `src/cli/main.ts`                      | `dist/cli/main.js`        | node     | Executable CLI                                        |
+| `src/config/index.ts`                  | `dist/config/`            | node     | Public types + `defineConfig`                         |
+| `src/browser/main.ts`                  | `dist/browser/`           | browser  | IIFE bundle for in-browser snapshot capture           |
+| `src/storybook/browser/`               | `dist/storybook/browser/` | browser  | Storybook addon/decorator                             |
+| `src/storybook/index.ts` + `preset.ts` | `dist/storybook/`         | node     | Storybook integration (build Storybook, prep package) |
+| `src/cypress/`                         | `dist/cypress/`           | node     | Cypress task + commands                               |
+| `src/playwright/index.ts`              | `dist/playwright/`        | node     | Playwright integration                                |
+| `src/custom/index.ts`                  | `dist/custom/`            | node     | Custom integration helper                             |
 
 ### Source Directory Map
 
@@ -97,6 +97,7 @@ All configs extend `tsconfigs/tsconfig.base.json` which enables strict mode, `ve
 ### ESLint
 
 ESLint uses `eslint-plugin-compat` with different `browserslist` environments per directory:
+
 - Default: `node` environment
 - `src/browser/**`: `browser` environment
 - `src/isomorphic/**`: `isomorphic` environment (both node + browser)
