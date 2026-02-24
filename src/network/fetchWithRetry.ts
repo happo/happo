@@ -117,6 +117,7 @@ export default async function fetchWithRetry(
 
         // This WILL be retried
         throw new Error(`${message} (took ${Date.now() - start} ms)`, {
+          // eslint-disable-next-line preserve-caught-error -- We actually are preserving the original error, the rule is wrong in this case
           cause: originalError,
         });
       }
