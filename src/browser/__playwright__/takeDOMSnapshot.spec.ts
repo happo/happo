@@ -1,9 +1,9 @@
 import http from 'node:http';
 
 import { expect, type Page, test } from '@playwright/test';
-import handler from 'serve-handler';
 
 import type { WindowHappo } from '../../isomorphic/types.ts';
+import staticFileHandler from '../../test-utils/staticFileHandler.ts';
 
 declare global {
   var happo: {
@@ -23,11 +23,9 @@ async function setupPage(page: Page): Promise<void> {
 }
 
 test.beforeAll(async () => {
-  server = http.createServer((req, res) => {
-    return handler(req, res, {
-      public: './src/browser/__playwright__/test-assets',
-    });
-  });
+  server = http.createServer(
+    staticFileHandler('./src/browser/__playwright__/test-assets'),
+  );
 
   await new Promise<void>((resolve) => {
     server.listen(7700, () => resolve());

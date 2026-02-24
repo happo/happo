@@ -1,17 +1,9 @@
-import http from 'node:http';
-
-import handler from 'serve-handler';
-
 import startServer, { type ServerInfo } from '../network/startServer.ts';
+import staticFileHandler from './staticFileHandler.ts';
 
 export default function startTestServer(
   publicDir: string,
   port?: number,
 ): Promise<ServerInfo> {
-  return startServer(
-    (req: http.IncomingMessage, res: http.ServerResponse) => {
-      return handler(req, res, { public: publicDir });
-    },
-    { port },
-  );
+  return startServer(staticFileHandler(publicDir), { port });
 }
