@@ -7,7 +7,11 @@ import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from '../network/fetchWithRetry.ts';
 import getShortLivedAPIToken from './getShortLivedAPIToken.ts';
-import type { ConfigWithDefaults, DeepCompareSettings, TargetWithDefaults } from './index.ts';
+import type {
+  ConfigWithDefaults,
+  DeepCompareSettings,
+  TargetWithDefaults,
+} from './index.ts';
 
 const CONFIG_FILENAMES = [
   'happo.config.js',
@@ -188,7 +192,9 @@ export async function loadConfigFile(
     }
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      throw new Error(`Happo config file could not be found: ${configFilePath}`);
+      throw new Error(`Happo config file could not be found: ${configFilePath}`, {
+        cause: error,
+      });
     }
 
     throw error;
