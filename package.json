@@ -119,7 +119,7 @@
     "esbuild": "^0.27.0",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-compat": "^6.2.0",
+    "eslint-plugin-compat": "^7.0.0",
     "eslint-plugin-depend": "^1.4.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unicorn": "^63.0.0",
