@@ -261,6 +261,10 @@ Documentation:
   }
 
   async finish(): Promise<void> {
+    if (!this.happoConfig) {
+      return;
+    }
+
     if (this.happoDebug) {
       console.log('[HAPPO] Running Controller.finish');
     }
