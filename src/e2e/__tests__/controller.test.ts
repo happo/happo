@@ -167,6 +167,18 @@ describe('Controller', () => {
     ]);
   });
 
+  it('finish() is a no-op when happo is disabled (no HAPPO_E2E_PORT)', async () => {
+    const savedPort = process.env.HAPPO_E2E_PORT;
+    delete process.env.HAPPO_E2E_PORT;
+    try {
+      const controller = new Controller();
+      await controller.init(); // returns early without loading config
+      await assert.doesNotReject(() => controller.finish());
+    } finally {
+      process.env.HAPPO_E2E_PORT = savedPort;
+    }
+  });
+
   // https://github.com/happo/happo-e2e/issues/58
   it('gracefully handles CSS files that cannot be downloaded when there are external assets', async () => {
     const controller = new Controller();
