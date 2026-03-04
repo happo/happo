@@ -1,6 +1,7 @@
 import Controller, { type SnapshotRegistrationParams } from '../e2e/controller.ts';
 
 const controller = new Controller();
+let disabledLogged = false;
 
 const { HAPPO_DEBUG } = process.env;
 
@@ -133,9 +134,19 @@ const task: HappoTask = {
   },
 
   async handleBeforeSpec(): Promise<void> {
-    await controller.init();
+    const isRunning = await controller.init();
 
-    if (controller.isActive() && !task.isRegisteredCorrectly) {
+    if (!isRunning) {
+      if (!disabledLogged) {
+        console.log(
+          '[HAPPO] Happo is disabled. See https://docs.happo.io/docs/cypress for how to enable it.',
+        );
+        disabledLogged = true;
+      }
+      return;
+    }
+
+    if (!task.isRegisteredCorrectly) {
       throw new Error(`Happo hasn't been registered correctly. Make sure you call \`happoTask.register\` when you register the plugin:
 
   const happoTask = require('happo/cypress/task');

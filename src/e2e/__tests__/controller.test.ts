@@ -68,7 +68,8 @@ after(() => {
 describe('Controller', () => {
   it('initializes with the correct happo config', async () => {
     const controller = new Controller();
-    await controller.init();
+    const isRunning = await controller.init();
+    assert.strictEqual(isRunning, true);
     assert.strictEqual(controller.config?.apiKey, TEST_API_KEY);
     assert.strictEqual(controller.config?.apiSecret, TEST_API_SECRET);
     assert.strictEqual(controller.config?.integration.type, 'playwright');
@@ -168,12 +169,13 @@ describe('Controller', () => {
     ]);
   });
 
-  it('finish() is a no-op when happo is disabled (no HAPPO_E2E_PORT)', async () => {
+  it('init() returns false and finish() is a no-op when happo is disabled (no HAPPO_E2E_PORT)', async () => {
     const savedPort = process.env.HAPPO_E2E_PORT;
     delete process.env.HAPPO_E2E_PORT;
     try {
       const controller = new Controller();
-      await controller.init(); // returns early without loading config
+      const isRunning = await controller.init();
+      assert.strictEqual(isRunning, false);
       await assert.doesNotReject(() => controller.finish());
     } finally {
       process.env.HAPPO_E2E_PORT = savedPort;
