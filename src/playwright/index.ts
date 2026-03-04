@@ -25,6 +25,7 @@ if (!fs.existsSync(pathToBrowserBuild)) {
 }
 
 const controller = new Controller();
+let disabledLogged = false;
 
 type ScreenshotFunction = (
   handleOrLocator: ElementHandle | Locator | null,
@@ -56,7 +57,13 @@ export const test: TestType<
   // Runs once per worker, before any test starts
   _happoForEachWorker: [
     async ({}, use) => {
-      await controller.init();
+      const isRunning = await controller.init();
+      if (!isRunning && !disabledLogged) {
+        console.log(
+          '[HAPPO] Happo is disabled. See https://docs.happo.io/docs/playwright for how to enable it.',
+        );
+        disabledLogged = true;
+      }
       await use();
 
       // It's possible that the call to `finish` is not needed, since it's

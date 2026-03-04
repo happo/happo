@@ -193,7 +193,7 @@ class Controller {
     }
   }
 
-  async init(): Promise<void> {
+  async init(): Promise<boolean> {
     this.snapshots = [];
     this.allCssBlocks = [];
     this.snapshotAssetUrls = [];
@@ -206,17 +206,7 @@ class Controller {
     }
 
     if (!HAPPO_E2E_PORT) {
-      console.log(
-        `
-[HAPPO] Happo is disabled. Enable it by using the \`happo\` command.
-
-Documentation:
-  Playwright:     https://docs.happo.io/docs/playwright#usage
-  Cypress (run):  https://docs.happo.io/docs/cypress#usage-with-cypress-run
-  Cypress (open): https://docs.happo.io/docs/cypress#usage-with-cypress-open
-      `.trim(),
-      );
-      return;
+      return false;
     }
 
     if (this.happoDebug) {
@@ -225,6 +215,7 @@ Documentation:
 
     const configFilePath = findConfigFile();
     this.happoConfig = await loadConfigFile(configFilePath);
+    return true;
   }
 
   isActive(): boolean {
