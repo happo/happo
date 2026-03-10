@@ -34,7 +34,7 @@ function resolveBuildCommandParts() {
   return getStorybookBuildCommandParts();
 }
 
-function buildStorybook({
+async function buildStorybook({
   configDir,
   staticDir,
   outputDir,
@@ -43,38 +43,38 @@ function buildStorybook({
   staticDir?: string | undefined;
   outputDir: string;
 }): Promise<void> {
+  await fs.promises.rm(outputDir, { recursive: true, force: true });
+
+  const buildCommandParts = resolveBuildCommandParts();
+
+  if (!buildCommandParts[0]) {
+    throw new Error('Failed to resolve build command parts');
+  }
+
+  const params = [
+    ...buildCommandParts,
+    '--output-dir',
+    outputDir,
+    '--config-dir',
+    configDir,
+  ];
+
+  if (staticDir) {
+    params.push('--static-dir', staticDir);
+  }
+
+  let binary = fs.existsSync('yarn.lock') ? 'yarn' : 'npx';
+
+  if (buildCommandParts[0].includes('node_modules')) {
+    binary = buildCommandParts[0];
+    params.shift(); // remove binary from params
+  }
+
+  if (HAPPO_DEBUG) {
+    console.log(`[happo] Using build command \`${binary} ${params.join(' ')}\``);
+  }
+
   return new Promise((resolve, reject) => {
-    fs.rmSync(outputDir, { recursive: true, force: true });
-
-    const buildCommandParts = resolveBuildCommandParts();
-
-    if (!buildCommandParts[0]) {
-      throw new Error('Failed to resolve build command parts');
-    }
-
-    const params = [
-      ...buildCommandParts,
-      '--output-dir',
-      outputDir,
-      '--config-dir',
-      configDir,
-    ];
-
-    if (staticDir) {
-      params.push('--static-dir', staticDir);
-    }
-
-    let binary = fs.existsSync('yarn.lock') ? 'yarn' : 'npx';
-
-    if (buildCommandParts[0].includes('node_modules')) {
-      binary = buildCommandParts[0];
-      params.shift(); // remove binary from params
-    }
-
-    if (HAPPO_DEBUG) {
-      console.log(`[happo] Using build command \`${binary} ${params.join(' ')}\``);
-    }
-
     const spawned = spawn(binary, params, {
       stdio: 'inherit',
       shell: process.platform == 'win32',
@@ -126,9 +126,9 @@ export default async function buildStorybookPackage({
 
     assertSkippedIsSkipItems(skipped);
 
-    const iframeContent = fs.readFileSync(iframePath, 'utf8');
+    const iframeContent = await fs.promises.readFile(iframePath, 'utf8');
 
-    fs.writeFileSync(
+    await fs.promises.writeFile(
       iframePath,
       iframeContent.replace(
         '<head>',
