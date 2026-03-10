@@ -4,7 +4,7 @@ import type { ConfigWithDefaults } from '../config/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from './fetchWithRetry.ts';
 
-type FormDataValue = string | File | undefined;
+type FormDataValue = string | number | File | undefined;
 
 export interface RequestAttributes {
   /**

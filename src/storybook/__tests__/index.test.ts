@@ -1,13 +1,29 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { it } from 'node:test';
+import { before, describe, it } from 'node:test';
 
 import happoStorybookPlugin from '../index.ts';
 
-it('removes the project.json after build', async () => {
-  const result = await happoStorybookPlugin({
-    configDir: 'src/storybook/__tests__/storybook-app',
+describe('happoStorybookPlugin', () => {
+  let packageDir: string;
+  let estimatedSnapsCount: number | undefined;
+
+  before(async () => {
+    ({ packageDir, estimatedSnapsCount } = await happoStorybookPlugin({
+      configDir: 'src/storybook/__tests__/storybook-app',
+    }));
   });
-  assert.strictEqual(fs.existsSync(path.join(result, 'project.json')), false);
+
+  it('removes the project.json after build', () => {
+    assert.strictEqual(fs.existsSync(path.join(packageDir, 'project.json')), false);
+  });
+
+  it('returns estimatedSnapsCount read from the real Storybook index.json', () => {
+    // This test ensures getStorybookStoryCount works against the format that
+    // the installed version of Storybook actually produces. If Storybook
+    // changes its index.json structure, this test will catch it.
+    // 22 stories across Story.stories.ts (20) and Interactive.stories.ts (2)
+    assert.strictEqual(estimatedSnapsCount, 22);
+  });
 });

@@ -65,10 +65,17 @@ interface CustomIntegration {
    * the path to the folder containing the custom files and the path to the
    * entry point file relative to the root directory.
    *
+   * Optionally return `estimatedSnapsCount` to enable server-side auto-chunking,
+   * which parallelizes rendering across multiple workers.
+   *
    * @example
-   * { rootDir: 'dist/custom', entryPoint: 'index.js' }
+   * { rootDir: 'dist/custom', entryPoint: 'index.js', estimatedSnapsCount: 42 }
    */
-  build: () => Promise<{ rootDir: string; entryPoint: string }>;
+  build: () => Promise<{
+    rootDir: string;
+    entryPoint: string;
+    estimatedSnapsCount?: number;
+  }>;
 }
 
 export interface Page {
