@@ -96,6 +96,10 @@ const parseOptions = {
     type: 'string',
   },
 
+  beforeShaTagMatcher: {
+    type: 'string',
+  },
+
   fallbackShas: {
     type: 'string',
   },
