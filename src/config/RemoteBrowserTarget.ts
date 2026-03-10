@@ -10,6 +10,20 @@ import type {
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
 
 /**
+ * Compute the number of chunks to use based on an estimated snapshot count.
+ *
+ * Aims for roughly 100 items per chunk, capped at 20. Returns 1 for
+ * non-positive or non-finite inputs.
+ */
+function computeDefaultChunks(estimatedSnapCount: number): number {
+  if (!Number.isFinite(estimatedSnapCount) || estimatedSnapCount <= 0) {
+    return 1;
+  }
+
+  return Math.min(20, Math.ceil(estimatedSnapCount / 100));
+}
+
+/**
  * PageSlice is an array of pages with the extra extendsSha property.
  */
 interface PageSlice extends Array<Page> {
@@ -48,8 +62,8 @@ export interface ExecuteParams {
 
   /**
    * Total number of snapshots in the package. When provided for staticPackage
-   * requests, the server can use this to automatically determine the optimal
-   * number of parallel chunks.
+   * requests without explicit chunks, used to automatically determine the
+   * optimal number of parallel chunks.
    */
   estimatedSnapsCount?: number;
 }
@@ -73,7 +87,7 @@ function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
 }
 
 export default class RemoteBrowserTarget {
-  public readonly chunks: number;
+  public readonly chunks: number | undefined;
   public readonly browserName: BrowserType;
   public readonly viewport: string;
   public readonly maxHeight: number | undefined;
@@ -83,7 +97,7 @@ export default class RemoteBrowserTarget {
     browserName: BrowserType,
     {
       viewport = '1024x768',
-      chunks = 1,
+      chunks,
       maxHeight,
       ...otherOptions
     }: TargetWithDefaults,
@@ -149,8 +163,6 @@ export default class RemoteBrowserTarget {
             : `browser-${this.browserName}`,
         targetName,
         payloadHash,
-        estimatedSnapsCount:
-          staticPackage && estimatedSnapsCount != null ? estimatedSnapsCount : undefined,
         payload: new File([payloadString], 'payload.json', {
           type: 'application/json',
         }),
@@ -189,16 +201,19 @@ export default class RemoteBrowserTarget {
     const requestIds: Array<number> = [];
 
     if (staticPackage) {
-      for (let i = 0; i < this.chunks; i += 1) {
+      const effectiveChunks =
+        this.chunks ?? Math.max(1, computeDefaultChunks(estimatedSnapsCount ?? 0));
+      for (let i = 0; i < effectiveChunks; i += 1) {
         // We `await` here inside the loop to avoid POSTing all payloads to the
         // server at the same time (thus reducing load a little).
         const requestId = await boundMakeRequest({
-          chunk: { index: i, total: this.chunks },
+          chunk:
+            effectiveChunks > 1 ? { index: i, total: effectiveChunks } : undefined,
         });
         requestIds.push(requestId);
       }
     } else if (pages) {
-      for (const pageSlice of getPageSlices(pages, this.chunks)) {
+      for (const pageSlice of getPageSlices(pages, this.chunks ?? 1)) {
         // We `await` here inside the loop to avoid POSTing all payloads to the
         // server at the same time (thus reducing load a little).
         const requestId = await boundMakeRequest({
@@ -207,8 +222,9 @@ export default class RemoteBrowserTarget {
         requestIds.push(requestId);
       }
     } else {
-      const snapsPerChunk = Math.ceil((snapPayloads?.length ?? 0) / this.chunks);
-      for (let i = 0; i < this.chunks; i += 1) {
+      const effectiveChunks = this.chunks ?? 1;
+      const snapsPerChunk = Math.ceil((snapPayloads?.length ?? 0) / effectiveChunks);
+      for (let i = 0; i < effectiveChunks; i += 1) {
         const slice = snapPayloads?.slice(
           i * snapsPerChunk,
           i * snapsPerChunk + snapsPerChunk,
