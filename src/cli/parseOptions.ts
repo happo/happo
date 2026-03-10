@@ -102,6 +102,6 @@ export const parseOptions = {
   },
 } as const;
 
-export type ParsedCliArgs = ReturnType<
+export type ParsedCLIArgs = ReturnType<
   typeof parseArgs<{ options: typeof parseOptions; allowPositionals: true }>
 >['values'];

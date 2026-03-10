@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import crypto, { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-import type { ParsedCliArgs } from '../cli/parseOptions.ts';
+import type { ParsedCLIArgs } from '../cli/parseOptions.ts';
 
 const NUMBER_OF_COMMITS_TO_FETCH = 50;
 const FULL_SHA_REGEX = /^[a-f0-9]{40}$/i;
@@ -31,8 +31,6 @@ interface GitHubEvent {
   before?: string;
   after?: string;
 }
-
-type CLIArgs = ParsedCliArgs;
 
 export interface EnvironmentResult {
   link: string | undefined;
@@ -84,7 +82,7 @@ async function resolveGithubEvent(GITHUB_EVENT_PATH: string): Promise<GitHubEven
 }
 
 async function resolveLink(
-  cliArgs: CLIArgs,
+  cliArgs: ParsedCLIArgs,
   env: Record<string, string | undefined>,
 ): Promise<string | undefined> {
   if (cliArgs.link) {
@@ -191,7 +189,7 @@ async function resolveLink(
 }
 
 async function resolveAuthorEmail(
-  cliArgs: CLIArgs,
+  cliArgs: ParsedCLIArgs,
   env: Record<string, string | undefined>,
 ): Promise<string | undefined> {
   if (cliArgs.authorEmail) {
@@ -217,7 +215,7 @@ async function resolveAuthorEmail(
 }
 
 async function resolveMessage(
-  cliArgs: CLIArgs,
+  cliArgs: ParsedCLIArgs,
   env: Record<string, string | undefined>,
   afterSha: string,
 ): Promise<string | undefined> {
@@ -360,7 +358,7 @@ function resolveMergeBase(
 }
 
 async function resolveBeforeSha(
-  cliArgs: CLIArgs,
+  cliArgs: ParsedCLIArgs,
   env: Record<string, string | undefined>,
   afterSha: string,
   debugMode: boolean,
@@ -494,7 +492,7 @@ function getHeadShaWithLocalChanges(): {
 }
 
 async function resolveAfterSha(
-  cliArgs: CLIArgs,
+  cliArgs: ParsedCLIArgs,
   env: Record<string, string | undefined>,
 ): Promise<string | { headSha: string; headShaWithLocalChanges: string }> {
   if (cliArgs.afterSha) {
@@ -558,7 +556,7 @@ async function resolveAfterSha(
 }
 
 function resolveFallbackShas(
-  cliArgs: CLIArgs,
+  cliArgs: ParsedCLIArgs,
   beforeSha: string | undefined,
 ): Array<string> | undefined {
   if (cliArgs.fallbackShas) {
@@ -607,7 +605,7 @@ function getRawEnv(
 }
 
 export default async function resolveEnvironment(
-  cliArgs: CLIArgs,
+  cliArgs: ParsedCLIArgs,
   env: Record<string, string | undefined> = process.env,
 ): Promise<EnvironmentResult> {
   const debugMode = !!env.HAPPO_DEBUG;
