@@ -1,35 +1,5 @@
 import { parseArgs } from 'node:util';
 
-const fallbackOptions = {
-  allProjects: {
-    type: 'boolean',
-  },
-  format: {
-    type: 'string',
-  },
-  project: {
-    type: 'string',
-  },
-  limit: {
-    type: 'string',
-  },
-  page: {
-    type: 'string',
-  },
-  component: {
-    type: 'string',
-  },
-  variant: {
-    type: 'string',
-  },
-  target: {
-    type: 'string',
-  },
-  sha: {
-    type: 'string',
-  },
-} as const;
-
 export const parseOptions = {
   version: {
     type: 'boolean',
@@ -94,7 +64,42 @@ export const parseOptions = {
     type: 'string',
   },
 
-  ...fallbackOptions,
+  // Flake command options
+  allProjects: {
+    type: 'boolean',
+  },
+
+  format: {
+    type: 'string',
+  },
+
+  project: {
+    type: 'string',
+  },
+
+  limit: {
+    type: 'string',
+  },
+
+  page: {
+    type: 'string',
+  },
+
+  component: {
+    type: 'string',
+  },
+
+  variant: {
+    type: 'string',
+  },
+
+  target: {
+    type: 'string',
+  },
+
+  sha: {
+    type: 'string',
+  },
 } as const;
 
 export type ParsedCliArgs = ReturnType<
