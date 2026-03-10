@@ -6,6 +6,7 @@ import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
+import { parseOptions } from './parseOptions.ts';
 import type { Reporter } from './telemetry.ts';
 import { createReporter } from './telemetry.ts';
 
@@ -26,102 +27,6 @@ function parseDashdashCommandParts(
   return rawArgs.slice(dashdashIndex + 1);
 }
 
-const fallbackOptions = {
-  allProjects: {
-    type: 'boolean',
-  },
-  format: {
-    type: 'string',
-  },
-  project: {
-    type: 'string',
-  },
-  limit: {
-    type: 'string',
-  },
-  page: {
-    type: 'string',
-  },
-  component: {
-    type: 'string',
-  },
-  variant: {
-    type: 'string',
-  },
-  target: {
-    type: 'string',
-  },
-  sha: {
-    type: 'string',
-  },
-} as const;
-
-const parseOptions = {
-  version: {
-    type: 'boolean',
-    short: 'v',
-  },
-
-  help: {
-    type: 'boolean',
-    short: 'h',
-  },
-
-  config: {
-    type: 'string',
-    short: 'c',
-  },
-
-  baseBranch: {
-    type: 'string',
-  },
-
-  link: {
-    type: 'string',
-  },
-
-  message: {
-    type: 'string',
-  },
-
-  authorEmail: {
-    type: 'string',
-  },
-
-  afterSha: {
-    type: 'string',
-  },
-
-  beforeSha: {
-    type: 'string',
-  },
-
-  beforeShaTagMatcher: {
-    type: 'string',
-  },
-
-  fallbackShas: {
-    type: 'string',
-  },
-
-  fallbackShasCount: {
-    type: 'string',
-  },
-
-  notify: {
-    type: 'string',
-  },
-
-  nonce: {
-    type: 'string',
-  },
-
-  githubToken: {
-    type: 'string',
-  },
-
-  ...fallbackOptions,
-} as const;
 
 function levenshtein(a: string, b: string): number {
   const n = b.length;

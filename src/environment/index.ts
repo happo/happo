@@ -2,6 +2,8 @@ import { spawnSync } from 'node:child_process';
 import crypto, { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
+import type { ParsedCliArgs } from '../cli/parseOptions.ts';
+
 const NUMBER_OF_COMMITS_TO_FETCH = 50;
 const FULL_SHA_REGEX = /^[a-f0-9]{40}$/i;
 
@@ -30,20 +32,7 @@ interface GitHubEvent {
   after?: string;
 }
 
-interface CLIArgs {
-  baseBranch?: string;
-  afterSha?: string;
-  beforeSha?: string;
-  message?: string;
-  link?: string;
-  authorEmail?: string;
-  beforeShaTagMatcher?: string;
-  notify?: string;
-  fallbackShas?: string;
-  fallbackShasCount?: string;
-  nonce?: string;
-  githubToken?: string;
-}
+type CLIArgs = ParsedCliArgs;
 
 export interface EnvironmentResult {
   link: string | undefined;
