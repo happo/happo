@@ -35,8 +35,10 @@ describe('RemoteBrowserTarget', () => {
 
   describe('execute()', () => {
     let httpServer: http.Server;
-    let lastReceivedFields: Record<string, Array<string> | undefined>;
-    let lastReceivedPayload: Record<string, unknown>;
+    let receivedCalls: Array<{
+      fields: Record<string, Array<string> | undefined>;
+      payload: Record<string, unknown>;
+    }> = [];
     let config: ConfigWithDefaults;
 
     before(async () => {
@@ -44,25 +46,23 @@ describe('RemoteBrowserTarget', () => {
         const form = new multiparty.Form();
         form.parse(req, (err, fields, files) => {
           if (err) {
-            // If parsing fails, return a 400 response instead of 200
-            lastReceivedFields = {};
-            lastReceivedPayload = {};
+            receivedCalls.push({ fields: {}, payload: {} });
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: String(err) }));
             return;
           }
 
-          lastReceivedFields = fields;
-
-          // Parse the uploaded payload JSON for inspection
+          let payload: Record<string, unknown> = {};
           const payloadPath = files?.payload?.[0]?.path;
           if (payloadPath) {
             try {
-              lastReceivedPayload = JSON.parse(fs.readFileSync(payloadPath, 'utf8'));
+              payload = JSON.parse(fs.readFileSync(payloadPath, 'utf8'));
             } catch {
-              lastReceivedPayload = {};
+              // ignore
             }
           }
+
+          receivedCalls.push({ fields, payload });
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ requestId: 1 }));
@@ -81,8 +81,7 @@ describe('RemoteBrowserTarget', () => {
     });
 
     beforeEach(() => {
-      lastReceivedFields = {};
-      lastReceivedPayload = {};
+      receivedCalls = [];
       const address = httpServer.address() as { port: number };
       config = {
         githubApiUrl: 'https://api.github.com',
@@ -99,7 +98,7 @@ describe('RemoteBrowserTarget', () => {
     });
 
     describe('with staticPackage and estimatedSnapsCount', () => {
-      it('sends estimatedSnapsCount as a top-level form field', async () => {
+      it('sends one request per computed chunk (200 snaps → 2 chunks)', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
           {
@@ -109,10 +108,49 @@ describe('RemoteBrowserTarget', () => {
           },
           config,
         );
-        assert.deepStrictEqual(lastReceivedFields.estimatedSnapsCount, ['200']);
+        assert.strictEqual(receivedCalls.length, 2);
       });
 
-      it('does not include estimatedSnapsCount in the payload JSON', async () => {
+      it('sends one request when estimatedSnapsCount is 0', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            estimatedSnapsCount: 0,
+            targetName: 'chrome',
+          },
+          config,
+        );
+        assert.strictEqual(receivedCalls.length, 1);
+      });
+
+      it('sends one request when estimatedSnapsCount is Infinity', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            estimatedSnapsCount: Infinity,
+            targetName: 'chrome',
+          },
+          config,
+        );
+        assert.strictEqual(receivedCalls.length, 1);
+      });
+
+      it('caps the number of chunks at 20', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            estimatedSnapsCount: 100 * 25,
+            targetName: 'chrome',
+          },
+          config,
+        );
+        assert.strictEqual(receivedCalls.length, 20);
+      });
+
+      it('sets correct chunk metadata in each payload', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
           {
@@ -122,23 +160,64 @@ describe('RemoteBrowserTarget', () => {
           },
           config,
         );
-        assert.strictEqual(lastReceivedPayload.estimatedSnapsCount, undefined);
+        for (const [i, call] of receivedCalls.entries()) {
+          assert.deepStrictEqual(call.payload.chunk, { index: i, total: 2 });
+        }
       });
     });
 
     describe('with staticPackage but no estimatedSnapsCount', () => {
-      it('does not send estimatedSnapsCount', async () => {
+      it('sends a single request with no chunk metadata', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
           { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
           config,
         );
-        assert.strictEqual(lastReceivedFields.estimatedSnapsCount, undefined);
+        assert.strictEqual(receivedCalls.length, 1);
+        assert.strictEqual(receivedCalls[0]?.payload.chunk, undefined);
+      });
+    });
+
+    describe('with staticPackage, estimatedSnapsCount, and explicit chunks set', () => {
+      it('uses explicit chunks and ignores estimatedSnapsCount (chunks: 1)', async () => {
+        const target = new RemoteBrowserTarget('chrome', {
+          ...baseTarget,
+          chunks: 1,
+        });
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            estimatedSnapsCount: 200,
+            targetName: 'chrome',
+          },
+          config,
+        );
+        assert.strictEqual(receivedCalls.length, 1);
+        assert.strictEqual(receivedCalls[0]?.payload.chunk, undefined);
+      });
+
+      it('uses explicit chunks and ignores estimatedSnapsCount (chunks: 3)', async () => {
+        const target = new RemoteBrowserTarget('chrome', {
+          ...baseTarget,
+          chunks: 3,
+        });
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            estimatedSnapsCount: 200,
+            targetName: 'chrome',
+          },
+          config,
+        );
+        assert.strictEqual(receivedCalls.length, 3);
+        for (const [i, call] of receivedCalls.entries()) {
+          assert.deepStrictEqual(call.payload.chunk, { index: i, total: 3 });
+        }
       });
     });
 
     describe('with snapPayloads and estimatedSnapsCount (no staticPackage)', () => {
-      it('does not send estimatedSnapsCount', async () => {
+      it('sends a single request (estimatedSnapsCount ignored for snapPayloads)', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
           {
@@ -150,7 +229,7 @@ describe('RemoteBrowserTarget', () => {
           },
           config,
         );
-        assert.strictEqual(lastReceivedFields.estimatedSnapsCount, undefined);
+        assert.strictEqual(receivedCalls.length, 1);
       });
     });
   });
