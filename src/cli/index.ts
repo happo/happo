@@ -56,80 +56,142 @@ const fallbackOptions = {
   },
 } as const;
 
+const parseOptions = {
+  version: {
+    type: 'boolean',
+    short: 'v',
+  },
+
+  help: {
+    type: 'boolean',
+    short: 'h',
+  },
+
+  config: {
+    type: 'string',
+    short: 'c',
+  },
+
+  baseBranch: {
+    type: 'string',
+  },
+
+  link: {
+    type: 'string',
+  },
+
+  message: {
+    type: 'string',
+  },
+
+  authorEmail: {
+    type: 'string',
+  },
+
+  afterSha: {
+    type: 'string',
+  },
+
+  beforeSha: {
+    type: 'string',
+  },
+
+  fallbackShas: {
+    type: 'string',
+  },
+
+  fallbackShasCount: {
+    type: 'string',
+  },
+
+  notify: {
+    type: 'string',
+  },
+
+  nonce: {
+    type: 'string',
+  },
+
+  githubToken: {
+    type: 'string',
+  },
+
+  ...fallbackOptions,
+} as const;
+
+function levenshtein(a: string, b: string): number {
+  const n = b.length;
+  const row = Array.from({ length: n + 1 }, (_, j) => j);
+
+  for (let i = 1; i <= a.length; i++) {
+    let prev = row[0]!;
+    row[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const temp = row[j]!;
+      row[j] = a[i - 1] === b[j - 1] ? prev : 1 + Math.min(prev, temp, row[j - 1]!);
+      prev = temp;
+    }
+  }
+
+  return row[n]!;
+}
+
+function findClosestOption(
+  unknownName: string,
+  knownNames: ReadonlyArray<string>,
+): string | undefined {
+  let bestMatch: string | undefined;
+  let bestDistance = Infinity;
+
+  for (const known of knownNames) {
+    const distance = levenshtein(unknownName, known);
+    const threshold = Math.floor(Math.max(unknownName.length, known.length) / 3);
+    if (distance <= threshold && distance < bestDistance) {
+      bestDistance = distance;
+      bestMatch = known;
+    }
+  }
+
+  return bestMatch;
+}
+
 function parseRawArgs(rawArgs: Array<string>) {
-  const parsedArgs = parseArgs({
-    args: rawArgs,
+  try {
+    const parsedArgs = parseArgs({
+      args: rawArgs,
+      options: parseOptions,
+      allowPositionals: true,
+    });
 
-    options: {
-      version: {
-        type: 'boolean',
-        short: 'v',
-      },
+    return {
+      ...parsedArgs,
+      dashdashCommandParts: parseDashdashCommandParts(rawArgs),
+    };
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      error.code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION'
+    ) {
+      const match = error.message.match(/^Unknown option '(--[^']+)'/);
 
-      help: {
-        type: 'boolean',
-        short: 'h',
-      },
+      if (match && match[1]) {
+        const unknownOption = match[1];
+        const suggestion = findClosestOption(
+          unknownOption.slice(2),
+          Object.keys(parseOptions),
+        );
 
-      config: {
-        type: 'string',
-        short: 'c',
-      },
-
-      baseBranch: {
-        type: 'string',
-      },
-
-      link: {
-        type: 'string',
-      },
-
-      message: {
-        type: 'string',
-      },
-
-      authorEmail: {
-        type: 'string',
-      },
-
-      afterSha: {
-        type: 'string',
-      },
-
-      beforeSha: {
-        type: 'string',
-      },
-
-      fallbackShas: {
-        type: 'string',
-      },
-
-      fallbackShasCount: {
-        type: 'string',
-      },
-
-      notify: {
-        type: 'string',
-      },
-
-      nonce: {
-        type: 'string',
-      },
-
-      githubToken: {
-        type: 'string',
-      },
-
-      ...fallbackOptions,
-    },
-
-    allowPositionals: true,
-  });
-
-  return {
-    ...parsedArgs,
-    dashdashCommandParts: parseDashdashCommandParts(rawArgs),
-  };
+        if (suggestion !== undefined) {
+          throw new TypeError(
+            `Unknown option: '${unknownOption}'. Did you mean '--${suggestion}'?`,
+            { cause: error },
+          );
+        }
+      }
+    }
+    throw error;
+  }
 }
 
 const helpText = `Happo ${await getVersion()}
@@ -442,7 +504,7 @@ async function handleFlakeCommand(
   }: FlakeCommandOptions,
   logger: Logger,
 ): Promise<void> {
-  if (format && (format !== 'json' && format !== 'human')) {
+  if (format && format !== 'json' && format !== 'human') {
     logger.error(
       `Unsupported format: ${format}. Use --format=json for raw JSON output or --format=human for human-readable output.`,
     );
@@ -450,10 +512,9 @@ async function handleFlakeCommand(
     return;
   }
 
-  const { default: getFlakes, formatFlakeOutput } = await import(
-    '../network/getFlakes.ts'
-  );
-  const project = allProjects ? undefined : projectOverride ?? config.project;
+  const { default: getFlakes, formatFlakeOutput } =
+    await import('../network/getFlakes.ts');
+  const project = allProjects ? undefined : (projectOverride ?? config.project);
   const flakes = await getFlakes(
     {
       project,

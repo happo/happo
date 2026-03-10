@@ -387,6 +387,28 @@ describe('main', () => {
       assert.strictEqual(postGitHubCommentMock.mock.callCount(), 0);
     });
 
+    it('suggests camelCase for kebab-case option with a good match', async () => {
+      await main(['npx', 'happo', '--base-branch', 'origin/main'], logger);
+
+      assert.strictEqual(process.exitCode, 1);
+      assert.strictEqual(logger.error.mock.callCount(), 1);
+      assert.strictEqual(
+        logger.error.mock.calls[0]?.arguments[0],
+        "Unknown option: '--base-branch'. Did you mean '--baseBranch'?",
+      );
+    });
+
+    it('suggests the correct option for a small typo', async () => {
+      await main(['npx', 'happo', '--baseeBranch', 'origin/main'], logger);
+
+      assert.strictEqual(process.exitCode, 1);
+      assert.strictEqual(logger.error.mock.callCount(), 1);
+      assert.strictEqual(
+        logger.error.mock.calls[0]?.arguments[0],
+        "Unknown option: '--baseeBranch'. Did you mean '--baseBranch'?",
+      );
+    });
+
     it('shows error for unknown command', async () => {
       await main(['npx', 'happo', 'unknown-command'], logger);
 
