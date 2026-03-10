@@ -1,6 +1,6 @@
 {
   "name": "happo",
-  "version": "6.3.6",
+  "version": "6.4.0",
   "description": "Catch unexpected visual and accessibility changes and UI bugs",
   "license": "MIT",
   "repository": {
