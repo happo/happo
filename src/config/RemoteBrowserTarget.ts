@@ -1,6 +1,11 @@
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import createHash from '../utils/createHash.ts';
-import type { BrowserType, ConfigWithDefaults, Page, TargetWithDefaults } from './index.ts';
+import type {
+  BrowserType,
+  ConfigWithDefaults,
+  Page,
+  TargetWithDefaults,
+} from './index.ts';
 
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
 
@@ -40,6 +45,13 @@ export interface ExecuteParams {
   snapPayloads?: Array<unknown>;
   pages?: Array<Page>;
   targetName?: string;
+
+  /**
+   * Total number of snapshots in the package. When provided for staticPackage
+   * requests, the server can use this to automatically determine the optimal
+   * number of parallel chunks.
+   */
+  estimatedSnapsCount?: number;
 }
 
 function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
@@ -104,6 +116,7 @@ export default class RemoteBrowserTarget {
       snapPayloads,
       pages,
       targetName,
+      estimatedSnapsCount,
     }: ExecuteParams,
     config: ConfigWithDefaults,
   ): Promise<Array<number>> {
@@ -129,13 +142,15 @@ export default class RemoteBrowserTarget {
         payloadString + (pageSlice ? Math.random() : ''),
       );
 
-      const formData: Record<string, string | File | undefined> = {
+      const formData: Record<string, string | number | File | undefined> = {
         type:
           pageSlice && pageSlice.extendsSha
             ? 'extends-report'
             : `browser-${this.browserName}`,
         targetName,
         payloadHash,
+        estimatedSnapsCount:
+          staticPackage && estimatedSnapsCount != null ? estimatedSnapsCount : undefined,
         payload: new File([payloadString], 'payload.json', {
           type: 'application/json',
         }),

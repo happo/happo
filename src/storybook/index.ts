@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import type { StorybookIntegration } from '../config/index.ts';
 import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
+import getStorybookStoryCount from './getStorybookStoryCount.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
 import type { SkipItems } from './isomorphic/types.ts';
 
@@ -96,13 +97,18 @@ function buildStorybook({
   });
 }
 
+export interface BuildStorybookPackageResult {
+  packageDir: string;
+  estimatedSnapsCount?: number;
+}
+
 export default async function buildStorybookPackage({
   configDir = '.storybook',
   staticDir,
   outputDir = '.out',
   usePrebuiltPackage = false,
   skip,
-}: Omit<StorybookIntegration, 'type'>): Promise<string> {
+}: Omit<StorybookIntegration, 'type'>): Promise<BuildStorybookPackageResult> {
   if (!usePrebuiltPackage) {
     await buildStorybook({ configDir, staticDir, outputDir });
   }
@@ -136,8 +142,13 @@ export default async function buildStorybookPackage({
       ),
     );
 
-    // Tell happo where the files are located.
-    return outputDir;
+    const estimatedSnapsCount = await getStorybookStoryCount(outputDir);
+
+    const result: BuildStorybookPackageResult = { packageDir: outputDir };
+    if (estimatedSnapsCount != null) {
+      result.estimatedSnapsCount = estimatedSnapsCount;
+    }
+    return result;
   } catch (e) {
     console.error(e);
     throw e;

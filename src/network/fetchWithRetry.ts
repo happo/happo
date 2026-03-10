@@ -14,17 +14,17 @@ export class ErrorWithStatusCode extends Error {
   }
 }
 
-type FormDataValue = string | File | undefined;
+type FormDataValue = string | number | File | undefined;
 
 function prepareFormData(data: Record<string, FormDataValue>): FormData | null {
-  if (!data) {
+  if (data == null) {
     return null;
   }
 
   const form = new FormData();
 
   for (const [key, value] of Object.entries(data)) {
-    if (value) {
+    if (value != null) {
       form.append(key, value);
     }
   }
