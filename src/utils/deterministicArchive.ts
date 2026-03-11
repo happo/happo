@@ -8,6 +8,13 @@ import { zip } from 'fflate';
 import createHash from './createHash.ts';
 import validateArchive from './validateArchive.ts';
 
+// Normalize path separators to forward slashes for cross-platform consistency.
+// path.relative() returns backslashes on Windows; callers may also pass names
+// built with path.join() on Windows.
+function normalizeEntryName(name: string): string {
+  return name.replaceAll('\\', '/');
+}
+
 // We're setting the creation date to the same for all files so that the zip
 // packages created for the same content ends up having the same fingerprint.
 // https://github.com/101arrowz/fflate/issues/219#issuecomment-2333945868
@@ -58,7 +65,7 @@ async function resolveFilesRecursiveForDir(
         const fullPath = `${fileType.parentPath}/${fileType.name}`;
 
         fileEntries.push({
-          name: path.relative(resolvedDirOrFile, fullPath),
+          name: normalizeEntryName(path.relative(resolvedDirOrFile, fullPath)),
           stream: fs.createReadStream(fullPath),
         });
       }
@@ -69,7 +76,7 @@ async function resolveFilesRecursiveForDir(
 
   return [
     {
-      name: path.relative(process.cwd(), resolvedDirOrFile),
+      name: normalizeEntryName(path.relative(process.cwd(), resolvedDirOrFile)),
       stream: fs.createReadStream(resolvedDirOrFile),
     },
   ];
@@ -173,11 +180,12 @@ export default async function deterministicArchive(
   // Process in-memory content
   // Extract basename to match archiver's behavior with prefix: '' for content entries
   for (const file of contentToArchiveSorted) {
-    if (!seenFiles.has(file.name)) {
+    const normalizedName = normalizeEntryName(file.name);
+    if (!seenFiles.has(normalizedName)) {
       const data = await contentToUint8Array(file.content);
-      entryDataList.push({ name: file.name, data });
-      entries.push({ name: file.name, size: data.length });
-      seenFiles.add(file.name);
+      entryDataList.push({ name: normalizedName, data });
+      entries.push({ name: normalizedName, size: data.length });
+      seenFiles.add(normalizedName);
     }
   }
 
