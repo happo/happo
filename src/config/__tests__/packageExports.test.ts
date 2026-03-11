@@ -160,7 +160,8 @@ describe('package.json exports', () => {
 
   describe('after build:dist', () => {
     before(() => {
-      execSync('pnpm clean && pnpm build:dist');
+      execSync('pnpm clean', { stdio: 'inherit', cwd: rootDir });
+      execSync('pnpm build:dist', { stdio: 'inherit', cwd: rootDir });
     });
 
     it('has a built file for each export', () => {

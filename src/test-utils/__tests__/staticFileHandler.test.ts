@@ -141,7 +141,7 @@ describe('staticFileHandler', () => {
       // Place a symlink inside publicDir whose target escapes to outsideDir.
       // The string-based guard allows this because the symlink path itself
       // starts with publicRoot; only a realpath check catches it.
-      fs.symlinkSync(outsideDir, path.join(tmpfs.getTempDir(), 'link'));
+      fs.symlinkSync(outsideDir, tmpfs.fullPath('link'));
 
       const res = await get('/link/secret.txt');
       assert.equal(res.status, 403);

@@ -4,7 +4,7 @@ const result: StorybookConfig = {
   stories: ['./**/*.stories.ts'],
   staticDirs: ['./public'],
 
-  addons: ['storybook/actions', '../../../../dist/storybook/preset.js'],
+  addons: ['storybook/actions', '../../preset.ts'],
 
   framework: {
     name: '@storybook/react-vite',

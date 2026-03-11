@@ -111,8 +111,8 @@ function assertMocked(caller: string): void {
  *   tmpfs.restore();
  * });
  */
-export function fullPath(relativePath: string): string {
-  return path.join(getTempDir(), relativePath);
+export function fullPath(...relativePath: Array<string>): string {
+  return path.join(getTempDir(), ...relativePath);
 }
 
 /**
