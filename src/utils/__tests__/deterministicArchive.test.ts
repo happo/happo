@@ -82,7 +82,7 @@ test('picks out the right files', async () => {
   );
   assert(entryNames.has('one.jpg'), 'one.jpg should be in the archive');
   assert(
-    entryNames.has(path.join('subfolder', 'nested.txt')),
+    entryNames.has('subfolder/nested.txt'),
     'subfolder/nested.txt should be in the archive',
   );
 });
@@ -150,7 +150,7 @@ test('keeps folder structure when adding single files', async () => {
     // Filter out any system files that might be created
     .filter((entryName) => !entryName.includes('.DS_Store'));
 
-  assert.deepStrictEqual(entries, [path.join('subfolder', 'nested.txt')]);
+  assert.deepStrictEqual(entries, ['subfolder/nested.txt']);
 });
 
 test('keeps folder structure when adding single files with absolute paths', async () => {
@@ -162,5 +162,5 @@ test('keeps folder structure when adding single files with absolute paths', asyn
     // Filter out any system files that might be created
     .filter((entryName) => !entryName.includes('.DS_Store'));
 
-  assert.deepStrictEqual(entries, [path.join('subfolder', 'nested.txt')]);
+  assert.deepStrictEqual(entries, ['subfolder/nested.txt']);
 });
