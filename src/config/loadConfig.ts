@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import { any as findAny } from 'empathic/find';
 
@@ -204,7 +203,7 @@ export async function loadConfigFile(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: change this to unknown and add type assertions
   let config: any;
   try {
-    config = (await import(pathToFileURL(configFilePath).href)).default;
+    config = (await import(configFilePath)).default;
   } catch (error) {
     if (
       error instanceof Error &&
