@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import http from 'node:http';
+import path from 'node:path';
 import { afterEach, describe, it, mock } from 'node:test';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
@@ -73,7 +74,7 @@ describe('findConfigFile', () => {
     const foundConfigFile = findConfigFile();
 
     assert.ok(foundConfigFile);
-    assert.ok(foundConfigFile.endsWith('/happo.config.js'));
+    assert.strictEqual(path.basename(foundConfigFile), 'happo.config.js');
   });
 
   it('finds happo.config.mjs', () => {
@@ -84,7 +85,7 @@ describe('findConfigFile', () => {
     const foundConfigFile = findConfigFile();
 
     assert.ok(foundConfigFile);
-    assert.ok(foundConfigFile.endsWith('/happo.config.mjs'));
+    assert.strictEqual(path.basename(foundConfigFile), 'happo.config.mjs');
   });
 
   it('finds happo.config.cjs', () => {
@@ -95,7 +96,7 @@ describe('findConfigFile', () => {
     const foundConfigFile = findConfigFile();
 
     assert.ok(foundConfigFile);
-    assert.ok(foundConfigFile.endsWith('/happo.config.cjs'));
+    assert.strictEqual(path.basename(foundConfigFile), 'happo.config.cjs');
   });
 
   it('finds happo.config.ts', () => {
@@ -106,7 +107,7 @@ describe('findConfigFile', () => {
     const foundConfigFile = findConfigFile();
 
     assert.ok(foundConfigFile);
-    assert.ok(foundConfigFile.endsWith('/happo.config.ts'));
+    assert.strictEqual(path.basename(foundConfigFile), 'happo.config.ts');
   });
 
   it('finds happo.config.mts', () => {
@@ -117,7 +118,7 @@ describe('findConfigFile', () => {
     const foundConfigFile = findConfigFile();
 
     assert.ok(foundConfigFile);
-    assert.ok(foundConfigFile.endsWith('/happo.config.mts'));
+    assert.strictEqual(path.basename(foundConfigFile), 'happo.config.mts');
   });
 
   it('finds happo.config.cts', () => {
@@ -128,7 +129,7 @@ describe('findConfigFile', () => {
     const foundConfigFile = findConfigFile();
 
     assert.ok(foundConfigFile);
-    assert.ok(foundConfigFile.endsWith('/happo.config.cts'));
+    assert.strictEqual(path.basename(foundConfigFile), 'happo.config.cts');
   });
 
   it('finds the config file in a parent directory', () => {
@@ -145,7 +146,7 @@ describe('findConfigFile', () => {
 
     const foundConfigFile = findConfigFile();
     assert.ok(foundConfigFile);
-    assert.ok(foundConfigFile.endsWith(`${tmpDir}/happo.config.ts`));
+    assert.strictEqual(foundConfigFile, path.join(tmpDir, 'happo.config.ts'));
   });
 
   it('finds the config file in a subdirectory', () => {
@@ -163,7 +164,10 @@ describe('findConfigFile', () => {
 
     const foundConfigFile = findConfigFile();
     assert.ok(foundConfigFile);
-    assert.ok(foundConfigFile.endsWith(`${tmpDir}/projects/pizza/happo.config.ts`));
+    assert.strictEqual(
+      foundConfigFile,
+      path.join(tmpDir, 'projects', 'pizza', 'happo.config.ts'),
+    );
   });
 
   it('finds the config file in a subdirectory with a different extension', () => {
@@ -181,7 +185,10 @@ describe('findConfigFile', () => {
 
     const foundConfigFile = findConfigFile();
     assert.ok(foundConfigFile);
-    assert.ok(foundConfigFile.endsWith(`${tmpDir}/projects/pizza/happo.config.ts`));
+    assert.strictEqual(
+      foundConfigFile,
+      path.join(tmpDir, 'projects', 'pizza', 'happo.config.ts'),
+    );
   });
 
   it('throws an error if no config file is found', () => {

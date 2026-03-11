@@ -1,10 +1,7 @@
 import type { Decorator } from '@storybook/react-vite';
 
-import happoDecorator from '../../../../dist/storybook/browser/decorator.js';
-import {
-  setRenderTimeoutMs,
-  setThemeSwitcher,
-} from '../../../../dist/storybook/browser/register.js';
+import happoDecorator from '../../browser/decorator.ts';
+import { setRenderTimeoutMs, setThemeSwitcher } from '../../browser/register.ts';
 
 setThemeSwitcher(async (theme) => {
   // Make sure that it can be async

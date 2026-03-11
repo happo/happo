@@ -52,7 +52,11 @@ describe('createAssetPackage', () => {
         'sub folder/countries-bg.jpeg',
       ].toSorted(),
     );
-    assert.equal(pkg.hash, '1144340b24e1a9ca500a9f02befc5a61');
+    const expectedHash =
+      process.platform === 'win32'
+        ? '2b8154beaccb309d13862122294cb545'
+        : '1144340b24e1a9ca500a9f02befc5a61';
+    assert.equal(pkg.hash, expectedHash);
   });
 
   it('includes external assets when downloadAllAssets is true', async () => {

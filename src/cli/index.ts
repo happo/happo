@@ -27,7 +27,6 @@ function parseDashdashCommandParts(
   return rawArgs.slice(dashdashIndex + 1);
 }
 
-
 function levenshtein(a: string, b: string): number {
   const n = b.length;
   const row = Array.from({ length: n + 1 }, (_, j) => j);

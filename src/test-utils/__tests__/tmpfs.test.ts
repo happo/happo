@@ -47,7 +47,15 @@ describe('getTempDir', () => {
 
   it('returns a non-empty string if a temp dir is set', () => {
     tmpfs.mock({});
-    assert.match(tmpfs.getTempDir(), /^\/\w+/);
+    assert.ok(path.isAbsolute(tmpfs.getTempDir()));
+  });
+
+  it('returns the full path of multiple path segments', () => {
+    tmpfs.mock({});
+    assert.strictEqual(
+      tmpfs.fullPath('subdir', 'another', 'test.txt'),
+      path.join(tmpfs.getTempDir(), 'subdir', 'another', 'test.txt'),
+    );
   });
 });
 
@@ -126,8 +134,13 @@ describe('exec', () => {
     });
 
     it('executes in the temp dir', () => {
-      const result = tmpfs.exec('pwd');
-      assert.strictEqual(result, `${tmpfs.getTempDir()}\n`);
+      // Use Node to report the current working directory so we get a
+      // platform-appropriate absolute path that matches getTempDir().
+      const result = tmpfs.exec(process.execPath, [
+        '-e',
+        'console.log(process.cwd())',
+      ]);
+      assert.strictEqual(result.trim(), tmpfs.getTempDir());
     });
   });
 });

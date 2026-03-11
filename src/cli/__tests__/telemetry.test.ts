@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import path from 'node:path';
 import { describe, it } from 'node:test';
 
 import { createReporter, detectCI, parseDsn, parseFrames } from '../telemetry.ts';
@@ -70,7 +71,7 @@ describe('telemetry', () => {
         {
           function: 'new Foo',
           raw_function: 'new Foo',
-          abs_path: 'path/subdir/foo.js',
+          abs_path: path.join('path', 'subdir', 'foo.js'),
           filename: 'foo.js',
           lineno: 1,
           colno: 1,
@@ -78,7 +79,7 @@ describe('telemetry', () => {
         {
           function: 'funcName3',
           raw_function: 'funcName3',
-          abs_path: 'path/file3.js',
+          abs_path: path.join('path', 'file3.js'),
           filename: 'file3.js',
           lineno: 30,
           colno: 15,
@@ -86,7 +87,7 @@ describe('telemetry', () => {
         {
           function: 'funcName2',
           raw_function: 'funcName2',
-          abs_path: 'path/file2.js',
+          abs_path: path.join('path', 'file2.js'),
           filename: 'file2.js',
           lineno: 20,
           colno: 10,
@@ -102,7 +103,7 @@ describe('telemetry', () => {
         {
           function: 'funcName',
           raw_function: 'funcName',
-          abs_path: 'path/file.js',
+          abs_path: path.join('path', 'file.js'),
           filename: 'file.js',
           lineno: 10,
           colno: 5,

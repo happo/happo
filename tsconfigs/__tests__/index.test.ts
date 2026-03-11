@@ -77,9 +77,11 @@ describe('tsconfig.json', () => {
   it('extends all other tsconfig.json files', () => {
     const tsconfigPaths = getAllTsconfigs()
       // Remove the base config that everything extends
-      .filter((tsconfig) => tsconfig !== `${tsconfigDirName}/tsconfig.base.json`)
+      .filter(
+        (tsconfig) => tsconfig !== path.join(tsconfigDirName, 'tsconfig.base.json'),
+      )
       // Normalize the paths to be relative to the tsconfig.json file
-      .map((tsconfig) => `./${tsconfig}`);
+      .map((tsconfig) => `./${tsconfig.split(path.sep).join('/')}`);
 
     assert.ok(tsconfigJson.references.length === tsconfigPaths.length);
 
@@ -113,19 +115,29 @@ describe('tsconfigs', () => {
   });
 
   it('covers all TypeScript files', () => {
+    const rootDir = findRootDir();
+    const normalizePath = (file: string): string => {
+      const absolute = path.isAbsolute(file) ? file : path.resolve(rootDir, file);
+      return path.relative(rootDir, absolute).split(path.sep).join('/');
+    };
+
     const tsconfigs = getAllTsconfigs();
     const filesCoveredByTsconfigs = new Set(
-      tsconfigs.flatMap((tsconfig) => tsconfigListFiles(tsconfig)),
+      tsconfigs.flatMap((tsconfig) =>
+        tsconfigListFiles(tsconfig).map((file) => normalizePath(file)),
+      ),
     );
 
     const extensions = ['ts', 'tsx', 'mts', 'cts'];
     const srcFiles = new Set(
-      fs.globSync([
-        ...extensions.map((extension) => `*.${extension}`),
-        ...extensions.map((extension) => `scripts/**/*.${extension}`),
-        ...extensions.map((extension) => `src/**/*.${extension}`),
-        ...extensions.map((extension) => `tsconfigs/**/*.${extension}`),
-      ]),
+      fs
+        .globSync([
+          ...extensions.map((extension) => `*.${extension}`),
+          ...extensions.map((extension) => `scripts/**/*.${extension}`),
+          ...extensions.map((extension) => `src/**/*.${extension}`),
+          ...extensions.map((extension) => `tsconfigs/**/*.${extension}`),
+        ])
+        .map((file) => normalizePath(file)),
     );
 
     assert.ok(srcFiles.size > 0);
@@ -193,7 +205,7 @@ describe('tsconfigs', () => {
     const tsconfigs = getAllTsconfigs();
 
     for (const tsconfig of tsconfigs) {
-      if (tsconfig.endsWith('/tsconfig.base.json')) {
+      if (path.basename(tsconfig) === 'tsconfig.base.json') {
         continue;
       }
 

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 
-import { forceHappoScreenshot } from '../../../../dist/storybook/browser/register.js';
+import { forceHappoScreenshot } from '../../browser/register.ts';
 import Interactive from './src/Interactive.ts';
 
 const meta: Meta<typeof Interactive> = {

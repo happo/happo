@@ -279,7 +279,7 @@ describe('main', () => {
       tmpfs.writeFile(
         'happo.config.ts',
         `export default {
-          integration: { type: 'custom', build: async () => ({ rootDir: '${tmpfs.getTempDir()}/happo-custom', entryPoint: 'bundle.js' }) },
+          integration: { type: 'custom', build: async () => ({ rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))}, entryPoint: 'bundle.js' }) },
           apiKey: 'test-key',
           apiSecret: 'test-secret',
           githubApiUrl: 'https://api.github.com',
@@ -328,7 +328,7 @@ describe('main', () => {
       tmpfs.writeFile(
         'happo.config.ts',
         `export default {
-          integration: { type: 'custom', build: async () => ({ rootDir: '${tmpfs.getTempDir()}/happo-custom', entryPoint: 'bundle.js' }) },
+          integration: { type: 'custom', build: async () => ({ rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))}, entryPoint: 'bundle.js' }) },
           apiKey: 'test-key',
           apiSecret: 'test-secret',
           githubApiUrl: 'https://api.github.com',
@@ -361,7 +361,7 @@ describe('main', () => {
       tmpfs.writeFile(
         'happo.config.ts',
         `export default {
-          integration: { type: 'custom', build: async () => ({ rootDir: '${tmpfs.getTempDir()}/happo-custom', entryPoint: 'bundle.js' }) },
+          integration: { type: 'custom', build: async () => ({ rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))}, entryPoint: 'bundle.js' }) },
           apiKey: 'test-key',
           apiSecret: 'test-secret',
           targets: {
@@ -447,7 +447,10 @@ describe('main', () => {
         assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
         const call = makeHappoAPIRequestMock.mock.calls[0];
         assert.ok(call);
-        assert.strictEqual(call.arguments[0]?.path, '/api/flake?project=test-project');
+        assert.strictEqual(
+          call.arguments[0]?.path,
+          '/api/flake?project=test-project',
+        );
         assert.strictEqual(
           logger.log.mock.calls[0]?.arguments[0],
           [
@@ -563,7 +566,10 @@ describe('main', () => {
 
         assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
         assert.strictEqual(logger.log.mock.callCount(), 1);
-        assert.strictEqual(logger.log.mock.calls[0]?.arguments[0], 'No flakes found.');
+        assert.strictEqual(
+          logger.log.mock.calls[0]?.arguments[0],
+          'No flakes found.',
+        );
         assert.ok(!process.exitCode || process.exitCode === 0);
       });
 
@@ -592,8 +598,6 @@ describe('main', () => {
           'Unsupported format: xml. Use --format=json for raw JSON output or --format=human for human-readable output.',
         );
       });
-
-
     });
 
     describe('custom integration', () => {
@@ -605,7 +609,7 @@ describe('main', () => {
             integration: { 
               type: 'custom',
               build: async () => ({
-                rootDir: '${tmpfs.getTempDir()}/happo-custom',
+                rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
                 entryPoint: 'bundle.js',
               }),
             },
