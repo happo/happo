@@ -18,12 +18,10 @@ const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
  */
 /**
  * Maximum number of chunk items sent in a single bulk request.
- * Matches the cap used by computeDefaultChunks so a single auto-computed
- * run never needs more than one bulk request, while still protecting
- * against arbitrarily large explicit `chunks` values producing a
- * body that exceeds server limits.
+ * Keeps individual payloads bounded while still protecting against
+ * arbitrarily large explicit `chunks` values exceeding server limits.
  */
-const MAX_BULK_ITEMS_PER_REQUEST = 20;
+const MAX_BULK_ITEMS_PER_REQUEST = 50;
 
 function computeDefaultChunks(estimatedSnapCount: number): number {
   if (!Number.isFinite(estimatedSnapCount) || estimatedSnapCount <= 0) {
