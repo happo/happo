@@ -32,6 +32,24 @@ describe('token caching', () => {
     assert.notStrictEqual(token1, token2);
   });
 
+  describe('when concurrent calls hit a cache miss simultaneously', () => {
+    it('only mints one token', async () => {
+      // Each Date.now() call returns a new second, so independently-minted
+      // tokens would have different exp values and thus different JWT strings.
+      let nowMs = 0;
+      const dateNowMock = mock.method(Date, 'now', () => (nowMs += 1001));
+      try {
+        const [token1, token2] = await Promise.all([
+          getSignedToken('key', 'secret'),
+          getSignedToken('key', 'secret'),
+        ]);
+        assert.strictEqual(token1, token2);
+      } finally {
+        dateNowMock.mock.restore();
+      }
+    });
+  });
+
   describe('when close to the token TTL', () => {
     afterEach(() => {
       mock.timers.reset();
