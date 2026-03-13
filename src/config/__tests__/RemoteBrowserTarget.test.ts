@@ -58,8 +58,9 @@ describe('RemoteBrowserTarget', () => {
     let simulateBulkPartialFailure = false;
     /**
      * When true the server returns a 200 bulk response with an invalid shape
-     * (no "results" array), exercising the "malformed bulk response" fallback
-     * path which should fall back to individual requests.
+     * (no "results" array), exercising the "malformed bulk response" path
+     * which is expected to fail fast without falling back to individual
+     * requests, to avoid creating duplicate snap-requests.
      */
     let simulateBulkInvalidShape = false;
     let config: ConfigWithDefaults;

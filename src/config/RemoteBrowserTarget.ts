@@ -11,18 +11,18 @@ import type {
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
 
 /**
- * Compute the number of chunks to use based on an estimated snapshot count.
- *
- * Aims for roughly 100 items per chunk, capped at 20. Returns 1 for
- * non-positive or non-finite inputs.
- */
-/**
  * Maximum number of chunk items sent in a single bulk request.
  * Keeps individual payloads bounded while still protecting against
  * arbitrarily large explicit `chunks` values exceeding server limits.
  */
 const MAX_BULK_ITEMS_PER_REQUEST = 50;
 
+/**
+ * Compute the number of chunks to use based on an estimated snapshot count.
+ *
+ * Aims for roughly 100 items per chunk, capped at 20. Returns 1 for
+ * non-positive or non-finite inputs.
+ */
 function computeDefaultChunks(estimatedSnapCount: number): number {
   if (!Number.isFinite(estimatedSnapCount) || estimatedSnapCount <= 0) {
     return 1;
@@ -291,16 +291,19 @@ export default class RemoteBrowserTarget {
     // Large item arrays are split into batches of MAX_BULK_ITEMS_PER_REQUEST
     // and sent as sequential bulk requests to keep individual payloads bounded.
     try {
-      const requestIds: Array<number | undefined> = new Array(items.length).fill(
-        undefined,
-      );
+      const requestIds: Array<number | undefined> = Array.from({
+        length: items.length,
+      });
 
       for (
         let batchStart = 0;
         batchStart < items.length;
         batchStart += MAX_BULK_ITEMS_PER_REQUEST
       ) {
-        const batch = items.slice(batchStart, batchStart + MAX_BULK_ITEMS_PER_REQUEST);
+        const batch = items.slice(
+          batchStart,
+          batchStart + MAX_BULK_ITEMS_PER_REQUEST,
+        );
 
         const result = await makeHappoAPIRequest(
           {
