@@ -16,6 +16,15 @@ const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
  * Aims for roughly 100 items per chunk, capped at 20. Returns 1 for
  * non-positive or non-finite inputs.
  */
+/**
+ * Maximum number of chunk items sent in a single bulk request.
+ * Matches the cap used by computeDefaultChunks so a single auto-computed
+ * run never needs more than one bulk request, while still protecting
+ * against arbitrarily large explicit `chunks` values producing a
+ * body that exceeds server limits.
+ */
+const MAX_BULK_ITEMS_PER_REQUEST = 20;
+
 function computeDefaultChunks(estimatedSnapCount: number): number {
   if (!Number.isFinite(estimatedSnapCount) || estimatedSnapCount <= 0) {
     return 1;
@@ -280,58 +289,72 @@ export default class RemoteBrowserTarget {
     // Try the bulk endpoint first. If it is unavailable, fall back to individual
     // requests. If it responds with an unexpected payload shape, fail fast to
     // avoid creating duplicate snap-requests.
+    //
+    // Large item arrays are split into batches of MAX_BULK_ITEMS_PER_REQUEST
+    // and sent as sequential bulk requests to keep individual payloads bounded.
     try {
-      const result = await makeHappoAPIRequest(
-        {
-          path: '/api/snap-requests/bulk',
-          method: 'POST',
-          body: { items },
-        },
-        config,
-        { retryCount: 5 },
+      const requestIds: Array<number | undefined> = new Array(items.length).fill(
+        undefined,
       );
 
-      if (
-        result &&
-        'results' in result &&
-        Array.isArray(result.results) &&
-        result.results.length === items.length
+      for (
+        let batchStart = 0;
+        batchStart < items.length;
+        batchStart += MAX_BULK_ITEMS_PER_REQUEST
       ) {
-        const bulkResults = result.results as Array<{
-          requestId?: number;
-          error?: string;
-        }>;
+        const batch = items.slice(batchStart, batchStart + MAX_BULK_ITEMS_PER_REQUEST);
 
-        const requestIds: Array<number | undefined> = bulkResults.map((r) =>
-          typeof r.requestId === 'number' ? r.requestId : undefined,
+        const result = await makeHappoAPIRequest(
+          {
+            path: '/api/snap-requests/bulk',
+            method: 'POST',
+            body: { items: batch },
+          },
+          config,
+          { retryCount: 5 },
         );
 
-        // Retry any failed items individually (sequentially to reduce load)
-        for (const [i, item] of items.entries()) {
-          if (requestIds[i] === undefined) {
-            requestIds[i] = await sendIndividualSnapRequest(item, config);
+        if (
+          result &&
+          'results' in result &&
+          Array.isArray(result.results) &&
+          result.results.length === batch.length
+        ) {
+          const bulkResults = result.results as Array<{
+            requestId?: number;
+            error?: string;
+          }>;
+
+          for (const [i, r] of bulkResults.entries()) {
+            requestIds[batchStart + i] =
+              typeof r.requestId === 'number' ? r.requestId : undefined;
           }
+        } else {
+          // The bulk endpoint responded with a 200 but an unexpected payload
+          // shape. Fail fast instead of falling back to avoid potentially
+          // creating duplicate snap-requests.
+          throw new Error(
+            'Bulk snap-requests endpoint returned an unexpected payload shape; aborting to avoid duplicate snap-requests.',
+          );
         }
-
-        const finalizedRequestIds: Array<number> = requestIds.map((id, index) => {
-          if (id === undefined) {
-            throw new Error(
-              `Failed to obtain snap request ID for item at index ${index}`,
-            );
-          }
-
-          return id;
-        });
-
-        return finalizedRequestIds;
       }
 
-      // If we reach this point, the bulk endpoint responded with a 200 but an
-      // unexpected payload shape. Fail fast instead of falling back to avoid
-      // potentially creating duplicate snap-requests.
-      throw new Error(
-        'Bulk snap-requests endpoint returned an unexpected payload shape; aborting to avoid duplicate snap-requests.',
-      );
+      // Retry any failed items individually (sequentially to reduce load)
+      for (const [i, item] of items.entries()) {
+        if (requestIds[i] === undefined) {
+          requestIds[i] = await sendIndividualSnapRequest(item, config);
+        }
+      }
+
+      return requestIds.map((id, index) => {
+        if (id === undefined) {
+          throw new Error(
+            `Failed to obtain snap request ID for item at index ${index}`,
+          );
+        }
+
+        return id;
+      });
     } catch (error) {
       // Fall back to individual requests only when the server explicitly
       // reports that the bulk endpoint is missing or not implemented.

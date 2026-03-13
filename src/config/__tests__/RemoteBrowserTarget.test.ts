@@ -323,6 +323,38 @@ describe('RemoteBrowserTarget', () => {
       });
     });
 
+    describe('with explicit chunks exceeding MAX_BULK_ITEMS_PER_REQUEST (batching)', () => {
+      it('splits into multiple bulk requests of at most 20 items each (25 chunks → 2 bulk calls)', async () => {
+        const target = new RemoteBrowserTarget('chrome', {
+          ...baseTarget,
+          chunks: 25,
+        });
+        await target.execute(
+          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 2);
+        assert.strictEqual(bulkCalls[0]?.items.length, 20);
+        assert.strictEqual(bulkCalls[1]?.items.length, 5);
+      });
+
+      it('returns the correct number of requestIds across batches', async () => {
+        const target = new RemoteBrowserTarget('chrome', {
+          ...baseTarget,
+          chunks: 25,
+        });
+        const requestIds = await target.execute(
+          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
+          config,
+        );
+        assert.strictEqual(requestIds.length, 25);
+        // Server returns requestId: idx + 1 per batch, so batch 1 → 1..20,
+        // batch 2 → 1..5 in isolation, but positionally mapped to 21..25.
+        assert.deepStrictEqual(requestIds.slice(0, 3), [1, 2, 3]);
+        assert.deepStrictEqual(requestIds.slice(20, 23), [1, 2, 3]);
+      });
+    });
+
     describe('per-item retry when bulk endpoint returns partial failures', () => {
       beforeEach(() => {
         simulateBulkPartialFailure = true;
