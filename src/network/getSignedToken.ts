@@ -10,9 +10,13 @@ interface CachedToken {
 
 const cache = new Map<string, CachedToken>();
 
+function getCacheKey(apiKey: string, apiSecret: string): string {
+  return `${apiKey}:${apiSecret}`;
+}
+
 export async function getSignedToken(apiKey: string, apiSecret: string): Promise<string> {
   const nowSeconds = Date.now() / 1000;
-  const cached = cache.get(apiKey);
+  const cached = cache.get(getCacheKey(apiKey, apiSecret));
 
   if (cached && cached.expiresAt - nowSeconds > TOKEN_REFRESH_BUFFER_SECONDS) {
     return cached.token;
@@ -25,7 +29,7 @@ export async function getSignedToken(apiKey: string, apiSecret: string): Promise
     .setExpirationTime(expiresAt)
     .sign(encodedSecret);
 
-  cache.set(apiKey, { token, expiresAt });
+  cache.set(getCacheKey(apiKey, apiSecret), { token, expiresAt });
   return token;
 }
 

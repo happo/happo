@@ -26,6 +26,12 @@ describe('token caching', () => {
     assert.notStrictEqual(token1, token2);
   });
 
+  it('mints a new token when the apiSecret changes for the same apiKey', async () => {
+    const token1 = await getSignedToken('key', 'secret1');
+    const token2 = await getSignedToken('key', 'secret2');
+    assert.notStrictEqual(token1, token2);
+  });
+
   describe('when close to the token TTL', () => {
     afterEach(() => {
       mock.timers.reset();
