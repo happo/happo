@@ -556,7 +556,6 @@ class Controller {
       {
         path: `/api/images/${hash}/upload-url`,
         method: 'GET',
-        json: true,
       },
       this.happoConfig,
       { retryCount: 2 },
@@ -591,7 +590,6 @@ class Controller {
       {
         url: uploadUrl,
         method: 'POST',
-        json: true,
         formData: {
           file: new File([buffer], 'image.png', { type: 'image/png' }),
         },

@@ -28,7 +28,6 @@ export default async function uploadAssets(
     {
       path: `/api/snap-requests/assets/${hash}/signed-url`,
       method: 'GET',
-      json: true,
     },
     config,
     { retryCount: 3 },
@@ -98,7 +97,6 @@ export default async function uploadAssets(
     {
       path: `/api/snap-requests/assets/${hash}/signed-url/finalize`,
       method: 'POST',
-      json: true,
     },
     config,
     { retryCount: 3 },
