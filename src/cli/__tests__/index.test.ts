@@ -31,12 +31,26 @@ const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
     if (fetchURL.includes('/api/jobs')) {
       return { id: 99, url: 'https://happo.io/api/jobs/99' };
     }
+
+    if (fetchURL.includes('/api/snap-requests/bulk')) {
+      const items =
+        (request.body as { items?: Array<unknown> } | undefined)?.items ?? [];
+
+      return {
+        results: items.map((_, index) => ({
+          requestId: index + 1,
+        })),
+      };
+    }
+
     if (fetchURL.includes('/api/snap-requests')) {
       return { requestId: 123 };
     }
+
     if (fetchURL.includes('/api/async-reports')) {
       return { id: 123, url: 'https://happo.io/api/async-reports/123' };
     }
+
     if (/\/api\/.+\/compare\/.+$/.test(fetchURL)) {
       return {
         id: 123,
@@ -44,6 +58,7 @@ const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
         compareUrl: 'https://happo.io/api/reports/123/compare',
       };
     }
+
     if (fetchURL.includes('/api/flake')) {
       if (flakeResponseOverride !== null) {
         return flakeResponseOverride;

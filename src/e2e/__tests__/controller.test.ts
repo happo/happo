@@ -20,8 +20,14 @@ before(async () => {
   let requestId = 0;
 
   server = http.createServer((req, res) => {
-    // Set proper headers
     res.setHeader('Content-Type', 'application/json');
+
+    // happo-e2e callback endpoint used by Controller.processSnapRequestIds
+    if (req.url === '/' && req.method === 'POST') {
+      // Echo back success; body content is not important for these tests.
+      res.end(JSON.stringify({ ok: true }));
+      return;
+    }
 
     if (
       req.url?.startsWith('/api/snap-requests/assets/') &&
@@ -31,7 +37,44 @@ before(async () => {
       return;
     }
 
-    res.end(JSON.stringify({ requestId: requestId++ }));
+    if (req.url?.startsWith('/api/snap-requests/bulk')) {
+      let body = '';
+
+      req.on('data', (chunk: Buffer) => {
+        body += chunk.toString();
+      });
+
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body) as {
+            items?: Array<unknown>;
+          };
+
+          const items = parsed.items ?? [];
+
+          const results = items.map((_, index) => ({
+            requestId: requestId + index,
+          }));
+
+          requestId += items.length;
+          res.end(JSON.stringify({ results }));
+        } catch {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ error: 'invalid bulk payload' }));
+        }
+      });
+
+      return;
+    }
+
+    // Fallback for individual snap-requests (non-bulk)
+    if (req.url?.startsWith('/api/snap-requests')) {
+      res.end(JSON.stringify({ requestId: requestId++ }));
+      return;
+    }
+
+    res.statusCode = 404;
+    res.end(JSON.stringify({ error: 'not found' }));
   });
 
   server.listen(port);
