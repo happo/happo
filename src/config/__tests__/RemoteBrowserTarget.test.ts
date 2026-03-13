@@ -56,6 +56,12 @@ describe('RemoteBrowserTarget', () => {
      * request, triggering per-item individual retry.
      */
     let simulateBulkPartialFailure = false;
+    /**
+     * When true the server returns a 200 bulk response with an invalid shape
+     * (no "results" array), exercising the "malformed bulk response" fallback
+     * path which should fall back to individual requests.
+     */
+    let simulateBulkInvalidShape = false;
     let config: ConfigWithDefaults;
 
     before(async () => {
@@ -77,6 +83,15 @@ describe('RemoteBrowserTarget', () => {
                 items: Array<Record<string, unknown>>;
               };
               bulkCalls.push(parsed);
+
+              if (simulateBulkInvalidShape) {
+                // 200 OK but without a valid "results" array – simulates a
+                // non-conforming bulk response from an older/custom server.
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ ok: true }));
+                return;
+              }
+
               const results = parsed.items.map((_, idx) =>
                 simulateBulkPartialFailure && idx === 0
                   ? { error: 'simulated failure' }
@@ -135,6 +150,7 @@ describe('RemoteBrowserTarget', () => {
       individualCalls = [];
       simulateBulkNotSupported = false;
       simulateBulkPartialFailure = false;
+      simulateBulkInvalidShape = false;
       const address = httpServer.address() as { port: number };
       config = {
         githubApiUrl: 'https://api.github.com',
@@ -374,6 +390,33 @@ describe('RemoteBrowserTarget', () => {
         for (const [i, call] of individualCalls.entries()) {
           assert.deepStrictEqual(call.payload.chunk, { index: i, total: 2 });
         }
+      });
+    });
+
+    describe('when bulk endpoint responds with invalid shape', () => {
+      beforeEach(() => {
+        simulateBulkInvalidShape = true;
+      });
+
+      it('throws an explicit error when bulk response is missing results', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await assert.rejects(
+          () =>
+            target.execute(
+              {
+                staticPackage: 'https://example.com/pkg.zip',
+                estimatedSnapsCount: 200,
+                targetName: 'chrome',
+              },
+              config,
+            ),
+          /Bulk snap-requests endpoint returned an unexpected payload shape/,
+        );
+
+        // We still made one bulk call, but since the response was malformed
+        // RemoteBrowserTarget should NOT attempt any individual fallbacks.
+        assert.strictEqual(bulkCalls.length, 1);
+        assert.strictEqual(individualCalls.length, 0);
       });
     });
   });
