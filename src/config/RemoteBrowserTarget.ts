@@ -277,9 +277,9 @@ export default class RemoteBrowserTarget {
       return [];
     }
 
-    // Try the bulk endpoint first. If it is unavailable or returns an unexpected
-    // payload shape, gracefully fall back to individual requests instead of
-    // failing the run.
+    // Try the bulk endpoint first. If it is unavailable, fall back to individual
+    // requests. If it responds with an unexpected payload shape, fail fast to
+    // avoid creating duplicate snap-requests.
     try {
       const result = await makeHappoAPIRequest(
         {
@@ -325,19 +325,27 @@ export default class RemoteBrowserTarget {
 
         return finalizedRequestIds;
       }
-      // If we reach this point, the bulk endpoint responded but with an
-      // unexpected shape. Treat this as if bulk is unsupported and fall back
-      // to individual requests below.
+
+      // If we reach this point, the bulk endpoint responded with a 200 but an
+      // unexpected payload shape. Fail fast instead of falling back to avoid
+      // potentially creating duplicate snap-requests.
+      throw new Error(
+        'Bulk snap-requests endpoint returned an unexpected payload shape; aborting to avoid duplicate snap-requests.',
+      );
     } catch (error) {
       // Fall back to individual requests only when the server explicitly
-      // reports that the bulk endpoint is missing.
-      if (!(error instanceof ErrorWithStatusCode && error.statusCode === 404)) {
+      // reports that the bulk endpoint is missing or not implemented.
+      if (
+        !(
+          error instanceof ErrorWithStatusCode &&
+          (error.statusCode === 404 || error.statusCode === 501)
+        )
+      ) {
         throw error;
       }
     }
 
-    // Fallback: sequential individual requests (for older happo deployments or
-    // when the bulk response is malformed)
+    // Fallback: sequential individual requests (for older happo deployments)
     const requestIds: Array<number> = [];
 
     for (const item of items) {
