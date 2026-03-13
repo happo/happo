@@ -6,6 +6,7 @@ import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
+import type { ParsedCLIArgs } from './parseOptions.ts';
 import { parseOptions } from './parseOptions.ts';
 import type { Reporter } from './telemetry.ts';
 import { createReporter } from './telemetry.ts';
@@ -385,17 +386,18 @@ async function handleFinalizeCommand(
   return;
 }
 
-type FlakeCommandOptions = {
-  allProjects?: boolean;
-  format?: string;
-  project?: string;
-  limit?: string;
-  page?: string;
-  component?: string;
-  variant?: string;
-  target?: string;
-  sha?: string;
-};
+type FlakeCommandOptions = Pick<
+  ParsedCLIArgs,
+  | 'allProjects'
+  | 'format'
+  | 'project'
+  | 'limit'
+  | 'page'
+  | 'component'
+  | 'variant'
+  | 'target'
+  | 'sha'
+>;
 
 async function handleFlakeCommand(
   config: ConfigWithDefaults,
