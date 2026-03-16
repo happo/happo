@@ -1,8 +1,7 @@
-import { SignJWT } from 'jose';
-
 import type { ConfigWithDefaults } from '../config/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from './fetchWithRetry.ts';
+import { getSignedToken } from './getSignedToken.ts';
 
 type FormDataValue = string | number | File | undefined;
 
@@ -55,13 +54,6 @@ export interface MakeHappoAPIRequestOptions {
   retryMaxTimeout?: number;
 }
 
-async function signRequest(apiKey: string, apiSecret: string): Promise<string> {
-  const encodedSecret = new TextEncoder().encode(apiSecret);
-  return await new SignJWT({ key: apiKey })
-    .setProtectedHeader({ alg: 'HS256', kid: apiKey })
-    .sign(encodedSecret);
-}
-
 export default async function makeHappoAPIRequest(
   { url, path, method = 'GET', formData, body }: RequestAttributes,
   { apiKey, apiSecret, endpoint }: ConfigWithDefaults,
@@ -81,7 +73,7 @@ export default async function makeHappoAPIRequest(
     );
   }
 
-  const signed = await signRequest(apiKey, apiSecret);
+  const signed = await getSignedToken(apiKey, apiSecret);
 
   const headers = {
     Authorization: `Bearer ${signed}`,
