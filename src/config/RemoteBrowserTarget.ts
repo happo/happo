@@ -1,3 +1,4 @@
+import { ErrorWithStatusCode } from '../network/fetchWithRetry.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import createHash from '../utils/createHash.ts';
 import type {
@@ -8,6 +9,13 @@ import type {
 } from './index.ts';
 
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
+
+/**
+ * Maximum number of chunk items sent in a single bulk request.
+ * Keeps individual payloads bounded while still protecting against
+ * arbitrarily large explicit `chunks` values exceeding server limits.
+ */
+const MAX_BULK_ITEMS_PER_REQUEST = 50;
 
 /**
  * Compute the number of chunks to use based on an estimated snapshot count.
@@ -35,10 +43,12 @@ interface Chunk {
   total: number;
 }
 
-interface BoundMakeRequestParams {
-  slice?: Array<unknown> | undefined;
-  chunk?: Chunk | undefined;
-  pageSlice?: PageSlice | undefined;
+interface ChunkItem {
+  type: string;
+  targetName: string | undefined;
+  payloadString: string;
+  payloadHash: string;
+  extendsSha?: string;
 }
 
 export interface CSSBlock {
@@ -84,6 +94,100 @@ function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
     }
   }
   return result;
+}
+
+function buildChunkItem({
+  slice,
+  chunk,
+  pageSlice,
+  browserName,
+  viewport,
+  maxHeight,
+  otherOptions,
+  globalCSS,
+  staticPackage,
+  assetsPackage,
+  targetName,
+}: {
+  slice?: Array<unknown> | undefined;
+  chunk?: Chunk | undefined;
+  pageSlice?: PageSlice | undefined;
+  browserName: BrowserType;
+  viewport: string;
+  maxHeight: number | undefined;
+  otherOptions: Record<string, unknown>;
+  globalCSS: string | Array<CSSBlock> | undefined;
+  staticPackage: string | undefined;
+  assetsPackage: string | undefined;
+  targetName: string | undefined;
+}): ChunkItem {
+  const payloadString = JSON.stringify({
+    viewport,
+    maxHeight,
+    ...otherOptions,
+    globalCSS,
+    snapPayloads: slice,
+    chunk,
+    staticPackage,
+    assetsPackage,
+    pages: pageSlice,
+    extendsSha: pageSlice ? pageSlice.extendsSha : undefined,
+  });
+
+  const payloadHash = createHash(payloadString + (pageSlice ? Math.random() : ''));
+
+  const type =
+    pageSlice && pageSlice.extendsSha ? 'extends-report' : `browser-${browserName}`;
+
+  const item: ChunkItem = { type, targetName, payloadString, payloadHash };
+  if (pageSlice?.extendsSha) {
+    item.extendsSha = pageSlice.extendsSha;
+  }
+  return item;
+}
+
+async function sendIndividualSnapRequest(
+  item: ChunkItem,
+  config: ConfigWithDefaults,
+): Promise<number> {
+  const formData: Record<string, string | number | File | undefined> = {
+    type: item.type,
+    targetName: item.targetName,
+    payloadHash: item.payloadHash,
+    payload: new File([item.payloadString], 'payload.json', {
+      type: 'application/json',
+    }),
+  };
+
+  if (item.extendsSha) {
+    formData.extendsSha = item.extendsSha;
+  }
+
+  // We `await` here inside the loop to avoid POSTing all payloads to the
+  // server at the same time (thus reducing load a little).
+  const requestResult = await makeHappoAPIRequest(
+    {
+      path: `/api/snap-requests?payloadHash=${item.payloadHash}`,
+      method: 'POST',
+      formData,
+    },
+    config,
+    { retryCount: 5 },
+  );
+
+  if (!requestResult) {
+    throw new Error('No requestResult');
+  }
+
+  if (!('requestId' in requestResult)) {
+    throw new Error('No requestId in requestResult');
+  }
+
+  if (typeof requestResult.requestId !== 'number') {
+    throw new TypeError('requestId is not a number');
+  }
+
+  return requestResult.requestId;
 }
 
 export default class RemoteBrowserTarget {
@@ -134,92 +238,35 @@ export default class RemoteBrowserTarget {
     }: ExecuteParams,
     config: ConfigWithDefaults,
   ): Promise<Array<number>> {
-    const boundMakeRequest = async ({
-      slice,
-      chunk,
-      pageSlice,
-    }: BoundMakeRequestParams): Promise<number> => {
-      const payloadString = JSON.stringify({
-        viewport: this.viewport,
-        maxHeight: this.maxHeight,
-        ...this.otherOptions,
-        globalCSS,
-        snapPayloads: slice,
-        chunk,
-        staticPackage,
-        assetsPackage,
-        pages: pageSlice,
-        extendsSha: pageSlice ? pageSlice.extendsSha : undefined,
-      });
-
-      const payloadHash = createHash(
-        payloadString + (pageSlice ? Math.random() : ''),
-      );
-
-      const formData: Record<string, string | number | File | undefined> = {
-        type:
-          pageSlice && pageSlice.extendsSha
-            ? 'extends-report'
-            : `browser-${this.browserName}`,
-        targetName,
-        payloadHash,
-        payload: new File([payloadString], 'payload.json', {
-          type: 'application/json',
-        }),
-      };
-
-      if (pageSlice && pageSlice.extendsSha) {
-        formData.extendsSha = pageSlice.extendsSha;
-      }
-
-      const requestResult = await makeHappoAPIRequest(
-        {
-          path: `/api/snap-requests?payloadHash=${payloadHash}`,
-          method: 'POST',
-          json: true,
-          formData,
-        },
-        config,
-        { retryCount: 5 },
-      );
-
-      if (!requestResult) {
-        throw new Error('No requestResult');
-      }
-
-      if (!('requestId' in requestResult)) {
-        throw new Error('No requestId in requestResult');
-      }
-
-      if (typeof requestResult.requestId !== 'number') {
-        throw new TypeError('requestId is not a number');
-      }
-
-      return requestResult.requestId;
+    const buildItemParams = {
+      browserName: this.browserName,
+      viewport: this.viewport,
+      maxHeight: this.maxHeight,
+      otherOptions: this.otherOptions,
+      globalCSS,
+      staticPackage,
+      assetsPackage,
+      targetName,
     };
 
-    const requestIds: Array<number> = [];
+    // Build all chunk items up front
+    const items: Array<ChunkItem> = [];
 
     if (staticPackage) {
       const effectiveChunks =
         this.chunks ?? Math.max(1, computeDefaultChunks(estimatedSnapsCount ?? 0));
       for (let i = 0; i < effectiveChunks; i += 1) {
-        // We `await` here inside the loop to avoid POSTing all payloads to the
-        // server at the same time (thus reducing load a little).
-        const requestId = await boundMakeRequest({
-          chunk:
-            effectiveChunks > 1 ? { index: i, total: effectiveChunks } : undefined,
-        });
-        requestIds.push(requestId);
+        items.push(
+          buildChunkItem({
+            ...buildItemParams,
+            chunk:
+              effectiveChunks > 1 ? { index: i, total: effectiveChunks } : undefined,
+          }),
+        );
       }
     } else if (pages) {
       for (const pageSlice of getPageSlices(pages, this.chunks ?? 1)) {
-        // We `await` here inside the loop to avoid POSTing all payloads to the
-        // server at the same time (thus reducing load a little).
-        const requestId = await boundMakeRequest({
-          pageSlice,
-        });
-        requestIds.push(requestId);
+        items.push(buildChunkItem({ ...buildItemParams, pageSlice }));
       }
     } else {
       const effectiveChunks = this.chunks ?? 1;
@@ -229,14 +276,104 @@ export default class RemoteBrowserTarget {
           i * snapsPerChunk,
           i * snapsPerChunk + snapsPerChunk,
         );
-
-        // We `await` here inside the loop to avoid POSTing all payloads to the
-        // server at the same time (thus reducing load a little).
-        const requestId = await boundMakeRequest({
-          slice,
-        });
-        requestIds.push(requestId);
+        items.push(buildChunkItem({ ...buildItemParams, slice }));
       }
+    }
+
+    if (items.length === 0) {
+      return [];
+    }
+
+    // Try the bulk endpoint first. If it is unavailable, fall back to individual
+    // requests. If it responds with an unexpected payload shape, fail fast to
+    // avoid creating duplicate snap-requests.
+    //
+    // Large item arrays are split into batches of MAX_BULK_ITEMS_PER_REQUEST
+    // and sent as sequential bulk requests to keep individual payloads bounded.
+    try {
+      const requestIds: Array<number | undefined> = Array.from({
+        length: items.length,
+      });
+
+      for (
+        let batchStart = 0;
+        batchStart < items.length;
+        batchStart += MAX_BULK_ITEMS_PER_REQUEST
+      ) {
+        const batch = items.slice(
+          batchStart,
+          batchStart + MAX_BULK_ITEMS_PER_REQUEST,
+        );
+
+        const result = await makeHappoAPIRequest(
+          {
+            path: '/api/snap-requests/bulk',
+            method: 'POST',
+            body: { items: batch },
+          },
+          config,
+          { retryCount: 5 },
+        );
+
+        if (
+          result &&
+          'results' in result &&
+          Array.isArray(result.results) &&
+          result.results.length === batch.length
+        ) {
+          const bulkResults = result.results as Array<{
+            requestId?: number;
+            error?: string;
+          }>;
+
+          for (const [i, r] of bulkResults.entries()) {
+            requestIds[batchStart + i] =
+              typeof r.requestId === 'number' ? r.requestId : undefined;
+          }
+        } else {
+          // The bulk endpoint responded with a 200 but an unexpected payload
+          // shape. Fail fast instead of falling back to avoid potentially
+          // creating duplicate snap-requests.
+          throw new Error(
+            'Bulk snap-requests endpoint returned an unexpected payload shape; aborting to avoid duplicate snap-requests.',
+          );
+        }
+      }
+
+      // Retry any failed items individually (sequentially to reduce load)
+      for (const [i, item] of items.entries()) {
+        if (requestIds[i] === undefined) {
+          requestIds[i] = await sendIndividualSnapRequest(item, config);
+        }
+      }
+
+      return requestIds.map((id, index) => {
+        if (id === undefined) {
+          throw new Error(
+            `Failed to obtain snap request ID for item at index ${index}`,
+          );
+        }
+
+        return id;
+      });
+    } catch (error) {
+      // Fall back to individual requests only when the server explicitly
+      // reports that the bulk endpoint is missing or not implemented.
+      if (
+        !(
+          error instanceof ErrorWithStatusCode &&
+          (error.statusCode === 404 || error.statusCode === 501)
+        )
+      ) {
+        throw error;
+      }
+    }
+
+    // Fallback: sequential individual requests (for older happo deployments)
+    const requestIds: Array<number> = [];
+
+    for (const item of items) {
+      requestIds.push(await sendIndividualSnapRequest(item, config));
     }
 
     return requestIds;

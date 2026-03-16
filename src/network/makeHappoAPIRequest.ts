@@ -25,7 +25,6 @@ export interface RequestAttributes {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   formData?: Record<string, FormDataValue>;
   body?: unknown;
-  json?: boolean;
 }
 
 export interface MakeHappoAPIRequestOptions {

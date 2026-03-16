@@ -22,7 +22,6 @@ async function postAsyncReport(
     {
       path: `/api/async-reports/${afterSha}`,
       method: 'POST',
-      json: true,
       body: {
         requestIds,
         project: happoConfig.project,
@@ -86,7 +85,6 @@ export async function finalizeAll({
     {
       path: `/api/async-reports/${afterSha}/finalize`,
       method: 'POST',
-      json: true,
       body,
     },
     happoConfig,
