@@ -380,7 +380,12 @@ async function handleFinalizeCommand(
 
   try {
     const finalizeAll = (await import('../e2e/wrapper.ts')).finalizeAll;
-    await finalizeAll({ happoConfig: config, environment, skippedExamplesJSON, logger });
+    await finalizeAll({
+      happoConfig: config,
+      environment,
+      ...(skippedExamplesJSON !== undefined && { skippedExamplesJSON }),
+      logger,
+    });
   } catch (e) {
     logger.error(e instanceof Error ? e.message : String(e), e);
     process.exitCode = 1;
