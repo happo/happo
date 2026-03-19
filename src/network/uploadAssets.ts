@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import retry from 'async-retry';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
@@ -65,6 +67,7 @@ export default async function uploadAssets(
         headers: {
           'Content-Type': 'application/zip',
         },
+        signal: AbortSignal.timeout(60_000),
       });
 
       if (!res.ok) {
@@ -79,6 +82,21 @@ export default async function uploadAssets(
         }
 
         throw error;
+      }
+
+      // Verify the upload succeeded by checking the ETag header. S3 always
+      // returns an ETag matching the MD5 of the uploaded content. A firewall
+      // or transparent proxy returning a fake 200 will typically not include
+      // a correct ETag, catching the case where the payload never reached S3.
+      const etag = res.headers.get('etag');
+      const expectedEtag = createHash('md5').update(buffer).digest('hex');
+      if (!etag || !etag.includes(expectedEtag)) {
+        const error = new Error(
+          `S3 upload verification failed: expected ETag to include ${expectedEtag}, got ${etag ?? '(none)'}. ` +
+            `A firewall may be intercepting the upload.`,
+        );
+        bail(error);
+        return;
       }
 
       return res;
