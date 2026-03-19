@@ -155,8 +155,11 @@ Examples:
 
   happo -- playwright test
 
+  --skippedExamples <json>  JSON array of examples to skip in the finalize command (e.g. '[{"component":"Button","variant":"primary","target":"chrome"}]')
+
   happo finalize
   happo finalize --nonce my-unique-nonce
+  happo finalize --skippedExamples '[{"component":"Button","variant":"primary","target":"chrome"}]'
 
   happo flake
   happo flake --allProjects

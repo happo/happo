@@ -100,6 +100,10 @@ export const parseOptions = {
   sha: {
     type: 'string',
   },
+
+  skippedExamples: {
+    type: 'string',
+  },
 } as const;
 
 export type ParsedCLIArgs = ReturnType<
