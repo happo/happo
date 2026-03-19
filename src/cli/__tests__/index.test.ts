@@ -784,6 +784,65 @@ describe('main', () => {
         assert(makeHappoAPIRequestMock.mock.callCount() > 0);
       });
 
+      it('sends skippedExamples in the finalize request body when --skippedExamples is set', async () => {
+        const skippedExamples = [
+          { component: 'Button', variant: 'primary', target: 'chrome' },
+        ];
+        await main(
+          [
+            'npx',
+            'happo',
+            'finalize',
+            '--afterSha',
+            'test-sha',
+            '--beforeSha',
+            'test-sha',
+            '--nonce',
+            'test-nonce',
+            '--skippedExamples',
+            JSON.stringify(skippedExamples),
+          ],
+          logger,
+        );
+        assert.equal(process.exitCode, 0);
+        const finalizeCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
+          call.arguments[0]?.path?.includes('/finalize'),
+        );
+        assert.ok(finalizeCall, 'expected a finalize API call');
+        assert.deepStrictEqual(
+          (finalizeCall.arguments[0]?.body as { skippedExamples: unknown })
+            ?.skippedExamples,
+          skippedExamples,
+        );
+      });
+
+      it('sends an empty skippedExamples array when --skippedExamples is not set', async () => {
+        await main(
+          [
+            'npx',
+            'happo',
+            'finalize',
+            '--afterSha',
+            'test-sha',
+            '--beforeSha',
+            'test-sha',
+            '--nonce',
+            'test-nonce',
+          ],
+          logger,
+        );
+        assert.equal(process.exitCode, 0);
+        const finalizeCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
+          call.arguments[0]?.path?.includes('/finalize'),
+        );
+        assert.ok(finalizeCall, 'expected a finalize API call');
+        assert.deepStrictEqual(
+          (finalizeCall.arguments[0]?.body as { skippedExamples: unknown })
+            ?.skippedExamples,
+          [],
+        );
+      });
+
       describe('cancelling the Happo job', () => {
         withOverrides(
           () => process.env,
