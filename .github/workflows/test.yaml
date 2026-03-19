@@ -40,7 +40,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           happo-api-key: ${{ secrets.HAPPO_API_KEY }}
           happo-api-secret: ${{ secrets.HAPPO_API_SECRET }}
-          projects: 'cypress,storybook-v9,storybook-v10,playwright,custom,pages'
+          projects: 'cypress,storybook-v9,storybook-v10,playwright,playwright-nonce,custom,pages'
 
   cypress:
     runs-on: ubuntu-latest
@@ -97,6 +97,19 @@ jobs:
       - uses: ./.github/actions/setup-env
       - uses: ./.github/actions/setup-playwright
       - run: pnpm test:playwright
+
+  playwright-nonce:
+    runs-on: ubuntu-latest
+    name: Playwright (nonce)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-env
+      - uses: ./.github/actions/setup-playwright
+      - run: pnpm test:playwright:nonce
+        env:
+          HAPPO_NONCE: ${{ github.run_id }}
 
   typescript:
     runs-on: ubuntu-latest
