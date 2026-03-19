@@ -248,7 +248,7 @@ export async function main(
     }
 
     if (command === 'finalize') {
-      await handleFinalizeCommand(config, environment, args.values.skippedExamples, logger);
+      await handleFinalizeCommand(config, environment, logger);
       return;
     }
 
@@ -371,7 +371,6 @@ async function handleDefaultCommand(
 async function handleFinalizeCommand(
   config: ConfigWithDefaults,
   environment: EnvironmentResult,
-  skippedExamplesJSON: string | undefined,
   logger: Logger,
 ): Promise<void> {
   logger.log('Finalizing happo report...');
@@ -380,12 +379,7 @@ async function handleFinalizeCommand(
 
   try {
     const finalizeAll = (await import('../e2e/wrapper.ts')).finalizeAll;
-    await finalizeAll({
-      happoConfig: config,
-      environment,
-      ...(skippedExamplesJSON !== undefined && { skippedExamplesJSON }),
-      logger,
-    });
+    await finalizeAll({ happoConfig: config, environment, logger });
   } catch (e) {
     logger.error(e instanceof Error ? e.message : String(e), e);
     process.exitCode = 1;

@@ -47,17 +47,15 @@ type Logger = Pick<Console, 'log' | 'error'>;
 interface FinalizeAllOptions {
   happoConfig: ConfigWithDefaults;
   environment: EnvironmentResult;
-  skippedExamplesJSON?: string;
   logger: Logger;
 }
 
 export async function finalizeAll({
   happoConfig,
   environment,
-  skippedExamplesJSON,
   logger,
 }: FinalizeAllOptions): Promise<void> {
-  const { afterSha, nonce } = environment;
+  const { afterSha, nonce, skippedExamples: skippedExamplesJSON } = environment;
 
   if (!nonce) {
     throw new Error('[HAPPO] Missing --nonce argument');
