@@ -585,6 +585,7 @@ describe('loadConfigFile', () => {
         viewport: '1024x768',
         freezeAnimations: 'last-frame',
         prefersReducedMotion: true,
+        allowPointerEvents: true,
       },
     });
   });
@@ -639,18 +640,21 @@ describe('loadConfigFile', () => {
         viewport: '800x600',
         freezeAnimations: 'first-frame',
         prefersReducedMotion: false,
+        allowPointerEvents: true,
       },
       safari: {
         type: 'safari',
         viewport: '1024x768',
         freezeAnimations: 'last-frame',
         prefersReducedMotion: true,
+        allowPointerEvents: true,
       },
       firefox: {
         type: 'firefox',
         viewport: '800x600',
         freezeAnimations: 'first-frame',
         prefersReducedMotion: false,
+        allowPointerEvents: true,
       },
     });
   });
