@@ -659,6 +659,31 @@ describe('loadConfigFile', () => {
     });
   });
 
+  it('does not clobber allowPointerEvents: false with the default', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          apiKey: 'test-api-key',
+          apiSecret: 'test-api-secret',
+          targets: {
+            chrome: {
+              type: 'chrome',
+              allowPointerEvents: false,
+            },
+          },
+        };
+      `,
+    });
+
+    const config = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+      ci: false,
+    });
+
+    assert.ok(config);
+    assert.strictEqual(config.targets['chrome']?.allowPointerEvents, false);
+  });
+
   describe('deepCompare validation', () => {
     it('accepts valid deepCompare settings', async () => {
       tmpfs.mock({
