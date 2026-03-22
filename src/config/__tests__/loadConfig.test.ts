@@ -585,6 +585,7 @@ describe('loadConfigFile', () => {
         viewport: '1024x768',
         freezeAnimations: 'last-frame',
         prefersReducedMotion: true,
+        allowPointerEvents: true,
       },
     });
   });
@@ -639,20 +640,48 @@ describe('loadConfigFile', () => {
         viewport: '800x600',
         freezeAnimations: 'first-frame',
         prefersReducedMotion: false,
+        allowPointerEvents: true,
       },
       safari: {
         type: 'safari',
         viewport: '1024x768',
         freezeAnimations: 'last-frame',
         prefersReducedMotion: true,
+        allowPointerEvents: true,
       },
       firefox: {
         type: 'firefox',
         viewport: '800x600',
         freezeAnimations: 'first-frame',
         prefersReducedMotion: false,
+        allowPointerEvents: true,
       },
     });
+  });
+
+  it('does not clobber allowPointerEvents: false with the default', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          apiKey: 'test-api-key',
+          apiSecret: 'test-api-secret',
+          targets: {
+            chrome: {
+              type: 'chrome',
+              allowPointerEvents: false,
+            },
+          },
+        };
+      `,
+    });
+
+    const config = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+      ci: false,
+    });
+
+    assert.ok(config);
+    assert.strictEqual(config.targets['chrome']?.allowPointerEvents, false);
   });
 
   describe('deepCompare validation', () => {

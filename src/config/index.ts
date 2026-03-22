@@ -317,21 +317,16 @@ interface BaseTarget {
   prefersColorScheme?: 'light' | 'dark';
 
   /**
-   * Set `allowPointerEvents: true` to allow pointer events in the browser
+   * Controls whether pointer events are allowed in the browser. Defaults to
+   * `true`.
    *
-   * By default Happo injects some CSS to prevent spurious hover effects caused
-   * by the system mouse pointer. If you rely on mouse interaction in your tests
-   * (e.g., when using Storybook interactive stories), you might see an error
-   * like this in your logs:
+   * When `true` (the default), Happo does not inject CSS to disable pointer
+   * events, which allows mouse interaction in your tests (e.g., when using
+   * Storybook interactive stories).
    *
-   * > Error: Unable to perform pointer interaction as the element has
-   * > `pointer-events: none`
-   *
-   * In some cases, this error prevents the variant from being included in the
-   * report.
-   *
-   * To resolve this, set `allowPointerEvents: true` to tell Happo to skip
-   * injecting the CSS that disables pointer events.
+   * Set `allowPointerEvents: false` to tell Happo to inject CSS that disables
+   * pointer events. This can prevent spurious hover effects caused by the
+   * system mouse pointer.
    *
    * If you're interested in testing `:hover`, `:focus`, and `:active` states
    * with Happo, you may also want to use the `applyPseudoClasses` option.
