@@ -394,13 +394,16 @@ function findSvgElementsWithSymbols(element: Element): Array<SVGElement> {
   );
 }
 
+type QueryRoot = Document | ShadowRoot | Element;
+
 /**
- * Collects the given root plus all shadow roots reachable from it. Traversing
- * once and reusing the result avoids repeated full-DOM scans when querying
- * multiple selectors.
+ * Collects the given root plus all shadow roots reachable from it. Accepts any
+ * query root (Document, ShadowRoot, or Element) so callers can scope the
+ * traversal to a specific subtree. Collecting once and reusing the result
+ * avoids repeated full-DOM scans when querying multiple selectors.
  */
-function collectAllRoots(root: Document | ShadowRoot): Array<Document | ShadowRoot> {
-  const roots: Array<Document | ShadowRoot> = [root];
+function collectAllRoots(root: QueryRoot): Array<QueryRoot> {
+  const roots: Array<QueryRoot> = [root];
   for (const el of root.querySelectorAll('*')) {
     if (el.shadowRoot) {
       roots.push(...collectAllRoots(el.shadowRoot));
@@ -451,6 +454,13 @@ export default function takeDOMSnapshot({
   const allElements = transformToElementArray(oneOrMoreElements);
   const htmlParts: Array<string> = [];
   const assetUrls: Array<AssetUrl> = [];
+
+  // Collect doc-level roots once (used for focus cleanup across the whole document,
+  // including shadow roots). Only traverse when the option is enabled.
+  const allDocRoots: Array<QueryRoot> = autoApplyPseudoStateAttributes
+    ? collectAllRoots(doc)
+    : [doc];
+
   for (const originalElement of allElements) {
     const { element, cleanup: canvasCleanup } = inlineCanvases(originalElement, {
       doc,
@@ -474,9 +484,9 @@ export default function takeDOMSnapshot({
       }
     }
 
-    const allRoots = autoApplyPseudoStateAttributes ? collectAllRoots(doc) : [doc];
-
-    for (const root of allRoots) {
+    // Clear stale focus attributes across the full document (including shadow roots)
+    // so that stale data-happo-focus from previous snapshots is never left behind.
+    for (const root of allDocRoots) {
       for (const e of root.querySelectorAll<HTMLElement | SVGElement | MathMLElement>(
         '[data-happo-focus]',
       )) {
@@ -493,23 +503,29 @@ export default function takeDOMSnapshot({
     }
 
     if (autoApplyPseudoStateAttributes) {
+      // Scope to the element subtree being snapshotted to avoid mutating DOM
+      // nodes that won't appear in this snapshot.
+      const elementRoots = collectAllRoots(element);
       for (const { pseudo, attrSelector, datasetKey } of PSEUDO_STATE_ATTRS) {
-        for (const root of allRoots) {
+        for (const root of elementRoots) {
+          // Probe selector support first. If unsupported, skip entirely so we
+          // don't strip manually-set attributes without being able to re-apply them.
+          let matches: NodeListOf<Element>;
+          try {
+            matches = root.querySelectorAll(pseudo);
+          } catch {
+            // Selector not supported in this environment (e.g. :focus-visible in older browsers)
+            continue;
+          }
           for (const e of root.querySelectorAll(attrSelector)) {
             if (isElementWithDataset(e)) {
               delete e.dataset[datasetKey];
             }
           }
-        }
-        for (const root of allRoots) {
-          try {
-            for (const e of root.querySelectorAll(pseudo)) {
-              if (isElementWithDataset(e)) {
-                e.dataset[datasetKey] = 'true';
-              }
+          for (const e of matches) {
+            if (isElementWithDataset(e)) {
+              e.dataset[datasetKey] = 'true';
             }
-          } catch {
-            // Selector not supported in this environment (e.g. :focus-visible in older browsers)
           }
         }
       }

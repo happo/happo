@@ -152,7 +152,7 @@ describe('takeDOMSnapshot', () => {
       );
     });
 
-    it('auto-detects focused element', () => {
+    it('detects focused element (always-on behavior)', () => {
       initDOM(`
 <!DOCTYPE html>
 <html>
@@ -169,7 +169,8 @@ describe('takeDOMSnapshot', () => {
       if (!element) throw new Error('Element not found');
 
       doc.querySelector<HTMLInputElement>('#first')?.focus();
-      const snapshot = takeDOMSnapshot({ doc, element, autoApplyPseudoStateAttributes: true });
+      // Focus detection runs regardless of autoApplyPseudoStateAttributes
+      const snapshot = takeDOMSnapshot({ doc, element });
       const parser = new globalThis.window.DOMParser();
       const snapshotDoc = parser.parseFromString(snapshot.html, 'text/html');
       const firstInput = snapshotDoc.querySelector('#first');

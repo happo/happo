@@ -52,6 +52,9 @@ let config: CypressConfig = {
   canvasChunkSize: 200_000, // 800 Kb per chunk
 };
 
+// Cached so the happoGetIntegrationConfig task is called at most once per run.
+let cachedAutoApplyPseudoStateAttributes: boolean | null = null;
+
 export const configure = (userConfig?: Partial<CypressConfig>): void => {
   config = { ...config, ...userConfig };
 };
@@ -99,14 +102,7 @@ Cypress.Commands.add(
       throw new Error('element cannot be null or undefined');
     }
 
-    cy.task<{ autoApplyPseudoStateAttributes: boolean } | null>(
-      'happoGetIntegrationConfig',
-      null,
-      { ...taskOptions, log: false },
-    ).then((integrationConfig) => {
-      const autoApplyPseudoStateAttributes =
-        integrationConfig?.autoApplyPseudoStateAttributes ?? false;
-
+    const takeSnapshot = (autoApplyPseudoStateAttributes: boolean): void => {
       const properties: TakeDOMSnapshotOptions = {
         doc,
         element,
@@ -151,6 +147,20 @@ Cypress.Commands.add(
         },
         taskOptions,
       );
-    });
+    };
+
+    if (cachedAutoApplyPseudoStateAttributes === null) {
+      cy.task<{ autoApplyPseudoStateAttributes: boolean } | null>(
+        'happoGetIntegrationConfig',
+        null,
+        { ...taskOptions, log: false },
+      ).then((integrationConfig) => {
+        cachedAutoApplyPseudoStateAttributes =
+          integrationConfig?.autoApplyPseudoStateAttributes ?? false;
+        takeSnapshot(cachedAutoApplyPseudoStateAttributes);
+      });
+    } else {
+      takeSnapshot(cachedAutoApplyPseudoStateAttributes);
+    }
   },
 );
