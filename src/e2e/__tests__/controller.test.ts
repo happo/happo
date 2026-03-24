@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import fs from 'node:fs';
 import http from 'node:http';
 import { after, before, describe, it } from 'node:test';
 
@@ -270,6 +271,58 @@ describe('Controller', () => {
     assert.deepStrictEqual(controller.cssBlocks, [
       { key: 'http://example.com/sheet.css', href: 'http://example.com/sheet.css' },
     ]);
+
+    await controller.finish();
+  });
+
+  it('decodes a base64 inlined image from a single chunk and removes the .b64 file', async () => {
+    const controller = new Controller();
+    await controller.init();
+
+    const payload = Buffer.from('hello');
+    const src = '/.happo-tmp/_inlined/single-chunk.bin';
+
+    await controller.registerBase64ImageChunk({
+      base64Chunk: payload.toString('base64'),
+      src,
+      isFirst: true,
+      isLast: true,
+    });
+
+    assert.strictEqual(
+      fs.readFileSync('.happo-tmp/_inlined/single-chunk.bin', 'utf8'),
+      'hello',
+    );
+    assert.strictEqual(fs.existsSync('.happo-tmp/_inlined/single-chunk.bin.b64'), false);
+
+    await controller.finish();
+  });
+
+  it('decodes a base64 inlined image assembled from multiple chunks', async () => {
+    const controller = new Controller();
+    await controller.init();
+
+    const base64 = Buffer.from('chunked').toString('base64');
+    const src = '/.happo-tmp/_inlined/multi-chunk.bin';
+
+    await controller.registerBase64ImageChunk({
+      base64Chunk: base64.slice(0, 4),
+      src,
+      isFirst: true,
+      isLast: false,
+    });
+    await controller.registerBase64ImageChunk({
+      base64Chunk: base64.slice(4),
+      src,
+      isFirst: false,
+      isLast: true,
+    });
+
+    assert.strictEqual(
+      fs.readFileSync('.happo-tmp/_inlined/multi-chunk.bin', 'utf8'),
+      'chunked',
+    );
+    assert.strictEqual(fs.existsSync('.happo-tmp/_inlined/multi-chunk.bin.b64'), false);
 
     await controller.finish();
   });
