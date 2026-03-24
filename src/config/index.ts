@@ -48,13 +48,17 @@ interface BaseE2EIntegration {
 
   /**
    * When set to `true`, Happo automatically detects elements that are in
-   * `:hover`, `:focus`, `:active`, or `:focus-visible` states at the moment a
-   * screenshot is taken and adds the corresponding `data-happo-hover`,
-   * `data-happo-focus`, `data-happo-active`, and `data-happo-focus-visible`
-   * attributes. This lets you write tests naturally (e.g. hover or focus an
-   * element) and have Happo capture those states without any extra markup.
+   * `:hover`, `:active`, or `:focus-visible` states at the moment a screenshot
+   * is taken and adds the corresponding `data-happo-hover`,
+   * `data-happo-active`, and `data-happo-focus-visible` attributes. It also
+   * improves focus handling by traversing into shadow DOM to find the deepest
+   * focused element so that `data-happo-focus` is applied reliably.
    *
-   * Works with shadow DOM as well.
+   * Note: basic focus handling (`data-happo-focus` based on `activeElement`)
+   * is always applied regardless of this option.
+   *
+   * This lets you write tests naturally (e.g. hover or focus an element) and
+   * have Happo capture those states without any extra markup.
    *
    * Requires `applyPseudoClasses: true` on your targets for the attributes to
    * be rendered as CSS pseudo-class styles on Happo workers.

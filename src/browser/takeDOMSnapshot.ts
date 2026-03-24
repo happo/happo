@@ -474,10 +474,14 @@ export default function takeDOMSnapshot({
       }
     }
 
-    for (const e of doc.querySelectorAll<HTMLElement | SVGElement | MathMLElement>(
-      '[data-happo-focus]',
-    )) {
-      delete e.dataset.happoFocus;
+    const allRoots = autoApplyPseudoStateAttributes ? collectAllRoots(doc) : [doc];
+
+    for (const root of allRoots) {
+      for (const e of root.querySelectorAll<HTMLElement | SVGElement | MathMLElement>(
+        '[data-happo-focus]',
+      )) {
+        delete e.dataset.happoFocus;
+      }
     }
 
     const activeElement = autoApplyPseudoStateAttributes
@@ -489,7 +493,6 @@ export default function takeDOMSnapshot({
     }
 
     if (autoApplyPseudoStateAttributes) {
-      const allRoots = collectAllRoots(doc);
       for (const { pseudo, attrSelector, datasetKey } of PSEUDO_STATE_ATTRS) {
         for (const root of allRoots) {
           for (const e of root.querySelectorAll(attrSelector)) {
