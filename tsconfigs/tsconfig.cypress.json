@@ -5,7 +5,7 @@
     "outDir": "../dist",
     "declarationDir": "../dist",
     "tsBuildInfoFile": "../tmp/tsc/tsconfig.cypress.tsbuildinfo",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "esnext"],
     "types": ["cypress", "node"]
   },
 

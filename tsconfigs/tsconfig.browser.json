@@ -7,7 +7,7 @@
     "outDir": "../dist",
     "declarationDir": "../dist",
     "tsBuildInfoFile": "../tmp/tsc/tsconfig.browser.tsbuildinfo",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "esnext"],
     "types": []
   },
 
