@@ -6,8 +6,6 @@ import { describe, it } from 'node:test';
 import { up as findUp } from 'empathic/find';
 import ts from 'typescript';
 
-import tsconfigJson from '../../tsconfig.json' with { type: 'json' };
-
 const tsconfigDirName = 'tsconfigs';
 
 function findRootDir() {
@@ -29,8 +27,7 @@ function getAllTsconfigs() {
     .map((file) => file.slice(rootDir.length + 1));
 }
 
-function readAndParseTsconfig(tsconfigPath: string): ts.ParsedCommandLine {
-  // 1. Read the raw JSON from tsconfig
+function readTsconfigJson(tsconfigPath: string): object {
   const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
 
   if (configFile.error) {
@@ -43,15 +40,20 @@ function readAndParseTsconfig(tsconfigPath: string): ts.ParsedCommandLine {
     );
   }
 
-  // 2. Parse it into a compiler options + file list
+  if (configFile.config === undefined) {
+    throw new Error(`Expected config object from ${tsconfigPath}`);
+  }
+
+  return configFile.config;
+}
+
+function readAndParseTsconfig(tsconfigPath: string): ts.ParsedCommandLine {
   const configDir = path.dirname(tsconfigPath);
-  const parsedConfig = ts.parseJsonConfigFileContent(
-    configFile.config,
+  return ts.parseJsonConfigFileContent(
+    readTsconfigJson(tsconfigPath),
     ts.sys,
     configDir,
   );
-
-  return parsedConfig;
 }
 
 function tsconfigListFiles(tsconfigPath: string): Array<string> {
@@ -75,6 +77,10 @@ describe('getAllTsConfigs', () => {
 
 describe('tsconfig.json', () => {
   it('extends all other tsconfig.json files', () => {
+    const rootDir = findRootDir();
+    const rootTsconfig = readAndParseTsconfig(path.join(rootDir, 'tsconfig.json'));
+
+    assert.ok(rootTsconfig.projectReferences);
     const tsconfigPaths = getAllTsconfigs()
       // Remove the base config that everything extends
       .filter(
@@ -83,9 +89,12 @@ describe('tsconfig.json', () => {
       // Normalize the paths to be relative to the tsconfig.json file
       .map((tsconfig) => `./${tsconfig.split(path.sep).join('/')}`);
 
-    assert.ok(tsconfigJson.references.length === tsconfigPaths.length);
+    assert.ok(rootTsconfig.projectReferences.length === tsconfigPaths.length);
 
-    const referencePaths = tsconfigJson.references.map((ref) => ref.path);
+    // parseJsonConfigFileContent resolves project reference paths to absolute paths.
+    const referencePaths = rootTsconfig.projectReferences.map(
+      (ref) => `./${path.relative(rootDir, ref.path).split(path.sep).join('/')}`,
+    );
     assert.deepStrictEqual(referencePaths, tsconfigPaths);
   });
 });
