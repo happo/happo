@@ -349,13 +349,14 @@ function inlineShadowRoots(element: Element): void {
   }
 
   for (const element of elementsToProcess) {
-    const hiddenElement = document.createElement('happo-shadow-content');
+    const ownerDoc = element.ownerDocument;
+    const hiddenElement = ownerDoc.createElement('happo-shadow-content');
     hiddenElement.style.display = 'none';
 
     // Add adopted stylesheets as <style> elements
     if (element.shadowRoot) {
-      for (const styleSheet of element.shadowRoot.adoptedStyleSheets) {
-        const styleElement = document.createElement('style');
+      for (const styleSheet of element.shadowRoot.adoptedStyleSheets || []) {
+        const styleElement = ownerDoc.createElement('style');
         styleElement.dataset.happoInlined = 'true';
         const styleContent = getContentFromStyleSheet(styleSheet);
         styleElement.textContent = styleContent;
@@ -393,6 +394,42 @@ function findSvgElementsWithSymbols(element: Element): Array<SVGElement> {
   );
 }
 
+/**
+ * Queries all elements matching `selector` in `root` and recursively in any
+ * shadow roots found within it.
+ */
+function querySelectorAllWithShadow(root: Document | ShadowRoot, selector: string): Array<Element> {
+  const results: Array<Element> = [];
+  results.push(...Array.from(root.querySelectorAll(selector)));
+  for (const el of root.querySelectorAll('*')) {
+    if (el.shadowRoot) {
+      results.push(...querySelectorAllWithShadow(el.shadowRoot, selector));
+    }
+  }
+  return results;
+}
+
+/**
+ * Returns the deepest focused element, traversing into shadow roots.
+ */
+function getDeepActiveElement(doc: Document): Element | null {
+  let el: Element | null = doc.activeElement;
+  while (el?.shadowRoot?.activeElement) {
+    el = el.shadowRoot.activeElement;
+  }
+  return el;
+}
+
+const PSEUDO_STATE_ATTRS = [
+  { pseudo: ':hover', attrSelector: '[data-happo-hover]', datasetKey: 'happoHover' },
+  { pseudo: ':active', attrSelector: '[data-happo-active]', datasetKey: 'happoActive' },
+  {
+    pseudo: ':focus-visible',
+    attrSelector: '[data-happo-focus-visible]',
+    datasetKey: 'happoFocusVisible',
+  },
+] as const;
+
 export default function takeDOMSnapshot({
   doc,
   element: oneOrMoreElements,
@@ -400,6 +437,7 @@ export default function takeDOMSnapshot({
   transformDOM,
   handleBase64Image,
   strategy = 'hoist',
+  autoApplyPseudoStateAttributes = false,
 }: TakeDOMSnapshotOptions): DOMSnapshotResult {
   if (doc == null) {
     throw new Error('doc cannot be null or undefined');
@@ -442,12 +480,27 @@ export default function takeDOMSnapshot({
       delete e.dataset.happoFocus;
     }
 
-    if (
-      doc.activeElement &&
-      doc.activeElement !== doc.body &&
-      isElementWithDataset(doc.activeElement)
-    ) {
-      doc.activeElement.dataset.happoFocus = 'true';
+    const activeElement = autoApplyPseudoStateAttributes
+      ? getDeepActiveElement(doc)
+      : doc.activeElement;
+
+    if (activeElement && activeElement !== doc.body && isElementWithDataset(activeElement)) {
+      activeElement.dataset.happoFocus = 'true';
+    }
+
+    if (autoApplyPseudoStateAttributes) {
+      for (const { pseudo, attrSelector, datasetKey } of PSEUDO_STATE_ATTRS) {
+        for (const e of querySelectorAllWithShadow(doc, attrSelector)) {
+          if (isElementWithDataset(e)) {
+            delete e.dataset[datasetKey];
+          }
+        }
+        for (const e of querySelectorAllWithShadow(doc, pseudo)) {
+          if (isElementWithDataset(e)) {
+            e.dataset[datasetKey] = 'true';
+          }
+        }
+      }
     }
 
     inlineShadowRoots(element);

@@ -45,6 +45,21 @@ interface BaseE2EIntegration {
    * assets will be included.
    */
   downloadAllAssets?: boolean;
+
+  /**
+   * When set to `true`, Happo automatically detects elements that are in
+   * `:hover`, `:focus`, `:active`, or `:focus-visible` states at the moment a
+   * screenshot is taken and adds the corresponding `data-happo-hover`,
+   * `data-happo-focus`, `data-happo-active`, and `data-happo-focus-visible`
+   * attributes. This lets you write tests naturally (e.g. hover or focus an
+   * element) and have Happo capture those states without any extra markup.
+   *
+   * Works with shadow DOM as well.
+   *
+   * Requires `applyPseudoClasses: true` on your targets for the attributes to
+   * be rendered as CSS pseudo-class styles on Happo workers.
+   */
+  autoApplyPseudoStateAttributes?: boolean;
 }
 
 interface CypressIntegration extends BaseE2EIntegration {

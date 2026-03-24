@@ -99,48 +99,57 @@ Cypress.Commands.add(
       throw new Error('element cannot be null or undefined');
     }
 
-    const properties: TakeDOMSnapshotOptions = {
-      doc,
-      element,
-      responsiveInlinedCanvases: resInCan,
-      strategy: snapshotStrategy,
-      handleBase64Image: ({ base64Url, element }) => {
-        const rawBase64 = base64Url.replace(/^data:image\/png;base64,/, '');
-        const chunks = chunked(rawBase64, config.canvasChunkSize);
-        for (let i = 0; i < chunks.length; i++) {
-          const base64Chunk = chunks[i];
-          const isFirst = i === 0;
-          const isLast = i === chunks.length - 1;
-          cy.task(
-            'happoRegisterBase64Image',
-            {
-              base64Chunk,
-              src: element.getAttribute('src'),
-              isFirst,
-              isLast,
-            },
-            taskOptions,
-          );
+    cy.task('happoGetIntegrationConfig', null, { log: false }).then(
+      (integrationConfig) => {
+        const autoApplyPseudoStateAttributes =
+          (integrationConfig as { autoApplyPseudoStateAttributes: boolean } | null)
+            ?.autoApplyPseudoStateAttributes ?? false;
+
+        const properties: TakeDOMSnapshotOptions = {
+          doc,
+          element,
+          responsiveInlinedCanvases: resInCan,
+          strategy: snapshotStrategy,
+          autoApplyPseudoStateAttributes,
+          handleBase64Image: ({ base64Url, element }) => {
+            const rawBase64 = base64Url.replace(/^data:image\/png;base64,/, '');
+            const chunks = chunked(rawBase64, config.canvasChunkSize);
+            for (let i = 0; i < chunks.length; i++) {
+              const base64Chunk = chunks[i];
+              const isFirst = i === 0;
+              const isLast = i === chunks.length - 1;
+              cy.task(
+                'happoRegisterBase64Image',
+                {
+                  base64Chunk,
+                  src: element.getAttribute('src'),
+                  isFirst,
+                  isLast,
+                },
+                taskOptions,
+              );
+            }
+          },
+        };
+
+        if (transformDOM) {
+          properties.transformDOM = transformDOM;
         }
+
+        const domSnapshot = takeDOMSnapshot(properties);
+
+        cy.task(
+          'happoRegisterSnapshot',
+          {
+            timestamp: Date.now(),
+            component,
+            variant,
+            targets,
+            ...domSnapshot,
+          },
+          taskOptions,
+        );
       },
-    };
-
-    if (transformDOM) {
-      properties.transformDOM = transformDOM;
-    }
-
-    const domSnapshot = takeDOMSnapshot(properties);
-
-    cy.task(
-      'happoRegisterSnapshot',
-      {
-        timestamp: Date.now(),
-        component,
-        variant,
-        targets,
-        ...domSnapshot,
-      },
-      taskOptions,
     );
   },
 );
