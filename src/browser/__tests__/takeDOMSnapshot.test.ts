@@ -170,12 +170,17 @@ describe('takeDOMSnapshot', () => {
 
       doc.querySelector<HTMLInputElement>('#first')?.focus();
       const snapshot = takeDOMSnapshot({ doc, element, autoApplyPseudoStateAttributes: true });
-      assert.ok(
-        snapshot.html.includes('id="first" data-happo-focus="true"'),
-        'focused element should have data-happo-focus',
+      const parser = new globalThis.window.DOMParser();
+      const snapshotDoc = parser.parseFromString(snapshot.html, 'text/html');
+      const firstInput = snapshotDoc.querySelector('#first');
+      const secondInput = snapshotDoc.querySelector('#second');
+      assert.strictEqual(
+        (firstInput as HTMLElement | null)?.dataset.happoFocus,
+        'true',
+        'focused element should have data-happo-focus="true"',
       );
       assert.ok(
-        !snapshot.html.includes('id="second" data-happo-focus'),
+        !secondInput?.hasAttribute('data-happo-focus'),
         'non-focused element should not have data-happo-focus',
       );
     });
@@ -242,9 +247,14 @@ describe('takeDOMSnapshot', () => {
 
       // With autoApplyPseudoStateAttributes, we traverse shadow roots to find the real focused element
       const snapshot = takeDOMSnapshot({ doc, element: main, autoApplyPseudoStateAttributes: true });
-      assert.ok(
-        snapshot.html.includes('data-happo-focus="true"'),
-        'shadow-DOM focused element should have data-happo-focus applied',
+      const parser = new globalThis.window.DOMParser();
+      const snapshotDoc = parser.parseFromString(snapshot.html, 'text/html');
+      const focusedInput = snapshotDoc.querySelector('#shadow-input');
+      assert.ok(focusedInput, 'shadow input should be present in snapshot HTML');
+      assert.strictEqual(
+        (focusedInput as HTMLElement | null)?.dataset.happoFocus,
+        'true',
+        'shadow-DOM focused input should have data-happo-focus="true" applied',
       );
     });
   });

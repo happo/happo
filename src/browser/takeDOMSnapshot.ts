@@ -395,18 +395,18 @@ function findSvgElementsWithSymbols(element: Element): Array<SVGElement> {
 }
 
 /**
- * Queries all elements matching `selector` in `root` and recursively in any
- * shadow roots found within it.
+ * Collects the given root plus all shadow roots reachable from it. Traversing
+ * once and reusing the result avoids repeated full-DOM scans when querying
+ * multiple selectors.
  */
-function querySelectorAllWithShadow(root: Document | ShadowRoot, selector: string): Array<Element> {
-  const results: Array<Element> = [];
-  results.push(...Array.from(root.querySelectorAll(selector)));
+function collectAllRoots(root: Document | ShadowRoot): Array<Document | ShadowRoot> {
+  const roots: Array<Document | ShadowRoot> = [root];
   for (const el of root.querySelectorAll('*')) {
     if (el.shadowRoot) {
-      results.push(...querySelectorAllWithShadow(el.shadowRoot, selector));
+      roots.push(...collectAllRoots(el.shadowRoot));
     }
   }
-  return results;
+  return roots;
 }
 
 /**
@@ -489,15 +489,24 @@ export default function takeDOMSnapshot({
     }
 
     if (autoApplyPseudoStateAttributes) {
+      const allRoots = collectAllRoots(doc);
       for (const { pseudo, attrSelector, datasetKey } of PSEUDO_STATE_ATTRS) {
-        for (const e of querySelectorAllWithShadow(doc, attrSelector)) {
-          if (isElementWithDataset(e)) {
-            delete e.dataset[datasetKey];
+        for (const root of allRoots) {
+          for (const e of root.querySelectorAll(attrSelector)) {
+            if (isElementWithDataset(e)) {
+              delete e.dataset[datasetKey];
+            }
           }
         }
-        for (const e of querySelectorAllWithShadow(doc, pseudo)) {
-          if (isElementWithDataset(e)) {
-            e.dataset[datasetKey] = 'true';
+        for (const root of allRoots) {
+          try {
+            for (const e of root.querySelectorAll(pseudo)) {
+              if (isElementWithDataset(e)) {
+                e.dataset[datasetKey] = 'true';
+              }
+            }
+          } catch {
+            // Selector not supported in this environment (e.g. :focus-visible in older browsers)
           }
         }
       }
