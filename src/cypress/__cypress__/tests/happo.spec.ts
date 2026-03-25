@@ -24,16 +24,9 @@ describe('happo spec', () => {
     });
     cy.get('button').first().trigger('mouseup');
 
-    // autoApplyPseudoStateAttributes: focus detected automatically.
-    // A mouse click sets :focus but not :focus-visible (mouse interaction).
-    cy.get('button').first().click();
-    cy.get('button').first().happoScreenshot({
-      component: 'button',
-      variant: 'focus',
-    });
-
-    // autoApplyPseudoStateAttributes: focus-visible detected automatically.
-    // Programmatic focus (JS .focus()) triggers :focus-visible.
+    // autoApplyPseudoStateAttributes: focus and focus-visible detected automatically.
+    // In Cypress, synthetic events always grant :focus-visible, so both
+    // data-happo-focus and data-happo-focus-visible are applied together.
     cy.get('button').first().focus();
     cy.get('button').first().happoScreenshot({
       component: 'button',
