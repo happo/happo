@@ -88,6 +88,9 @@ test('basic test', async ({ page, happoScreenshot }) => {
     variant: 'focus',
   });
 
+  // Remove the focus from the button
+  await page.locator('#interactive-btn').blur();
+
   // autoApplyPseudoStateAttributes: focus-visible state detected automatically.
   // Programmatic focus (page.focus) triggers :focus-visible in Chromium.
   await page.focus('#interactive-btn');
