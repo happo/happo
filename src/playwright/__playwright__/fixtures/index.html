@@ -25,16 +25,17 @@
         background-color: lightblue;
       }
 
-      #interactive-btn:active {
-        background-color: coral;
-      }
-
       #interactive-btn:focus {
         box-shadow: inset 0 0 0 3px orange;
       }
 
       #interactive-btn:focus-visible {
         background-color: lightyellow;
+      }
+
+      /* :active comes last so coral wins even when :focus/:focus-visible also apply */
+      #interactive-btn:active {
+        background-color: coral;
       }
     </style>
 

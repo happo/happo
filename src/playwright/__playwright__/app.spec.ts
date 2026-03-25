@@ -67,21 +67,33 @@ test('basic test', async ({ page, happoScreenshot }) => {
   // Move the mouse away so hover state doesn't bleed into the next snapshots.
   await page.mouse.move(0, 0);
 
-  // autoApplyPseudoStateAttributes: active state detected automatically
+  // autoApplyPseudoStateAttributes: active state detected automatically.
+  // Move the mouse away while the button is still held so that mouseout fires
+  // and clears the hover tracker before the snapshot is taken.
   await page.hover('#interactive-btn');
   await page.mouse.down();
+  await page.mouse.move(0, 0);
   await happoScreenshot(page.locator('#interactive-btn'), {
     component: 'Button',
     variant: 'active',
   });
   await page.mouse.up();
-  await page.mouse.move(0, 0);
 
-  // autoApplyPseudoStateAttributes: focus and focus-visible states detected automatically
+  // autoApplyPseudoStateAttributes: focus state detected automatically.
+  // A mouse click sets :focus but not :focus-visible (mouse interaction).
+  await page.click('#interactive-btn');
+  await page.mouse.move(0, 0);
+  await happoScreenshot(page.locator('#interactive-btn'), {
+    component: 'Button',
+    variant: 'focus',
+  });
+
+  // autoApplyPseudoStateAttributes: focus-visible state detected automatically.
+  // Programmatic focus (page.focus) triggers :focus-visible in Chromium.
   await page.focus('#interactive-btn');
   await happoScreenshot(page.locator('#interactive-btn'), {
     component: 'Button',
-    variant: 'focus and focus-visible',
+    variant: 'focus-visible',
   });
 
   await page.click('text=goodbye');
