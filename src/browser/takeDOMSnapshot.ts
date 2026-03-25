@@ -401,9 +401,20 @@ type QueryRoot = Document | ShadowRoot | Element;
  * query root (Document, ShadowRoot, or Element) so callers can scope the
  * traversal to a specific subtree. Collecting once and reusing the result
  * avoids repeated full-DOM scans when querying multiple selectors.
+ *
+ * Note: when `root` is an Element that is itself a shadow host, its own
+ * `shadowRoot` is added explicitly before walking descendants, because
+ * `querySelectorAll('*')` only traverses light-DOM children and will not
+ * descend into the element's own shadow tree.
  */
 function collectAllRoots(root: QueryRoot): Array<QueryRoot> {
   const roots: Array<QueryRoot> = [root];
+  // nodeType === 1 identifies Element nodes (Document = 9, ShadowRoot/DocumentFragment = 11).
+  // An Element can be a shadow host; its shadowRoot is not walked by querySelectorAll('*')
+  // below because that only traverses light-DOM children.
+  if (root.nodeType === 1 && (root as Element).shadowRoot) {
+    roots.push(...collectAllRoots((root as Element).shadowRoot!));
+  }
   for (const el of root.querySelectorAll('*')) {
     if (el.shadowRoot) {
       roots.push(...collectAllRoots(el.shadowRoot));

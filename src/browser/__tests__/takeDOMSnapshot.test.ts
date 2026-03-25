@@ -258,6 +258,30 @@ describe('takeDOMSnapshot', () => {
         'shadow-DOM focused input should have data-happo-focus="true" applied',
       );
     });
+
+    it('clears stale attributes inside the shadow root of the snapshotted element itself', () => {
+      initDOM(`
+<!DOCTYPE html>
+<html>
+  <body></body>
+</html>
+  `);
+      const { document: doc } = globalThis.window;
+
+      // The snapshotted element IS itself a shadow host
+      const host = doc.createElement('div');
+      const shadowRoot = host.attachShadow({ mode: 'open' });
+      shadowRoot.innerHTML = '<button data-happo-hover="true">Hover me</button>';
+      doc.body.append(host);
+
+      // When snapshotting the host directly, collectAllRoots must include
+      // the host's own shadowRoot (not just its light-DOM descendants).
+      const snapshot = takeDOMSnapshot({ doc, element: host, autoApplyPseudoStateAttributes: true });
+      assert.ok(
+        !snapshot.html.includes('data-happo-hover'),
+        'stale data-happo-hover inside the host shadow root should be cleared',
+      );
+    });
   });
 
   it('works with radio and checkbox', () => {
