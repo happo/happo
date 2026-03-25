@@ -11,10 +11,12 @@ const happo: WindowHappo = {
 
 globalThis.happo = happo;
 
-// Track the hovered element via mouseover/mouseout events so that
-// takeDOMSnapshot can apply data-happo-hover reliably even in headless
-// browsers where querySelectorAll(':hover') may not reflect live state.
+// Track hover and active elements via mouse events so that takeDOMSnapshot
+// can apply data-happo-hover / data-happo-active reliably even in headless
+// browsers where querySelectorAll(':hover') / ':active' may not reflect state.
 let _happoHoveredElement: Element | null = null;
+let _happoActiveElement: Element | null = null;
+
 document.addEventListener(
   'mouseover',
   (e) => {
@@ -33,7 +35,24 @@ document.addEventListener(
   },
   true,
 );
+document.addEventListener(
+  'mousedown',
+  (e) => {
+    if (e.target instanceof Element) {
+      _happoActiveElement = e.target;
+    }
+  },
+  true,
+);
+document.addEventListener('mouseup', () => {
+  _happoActiveElement = null;
+}, true);
+
 Object.defineProperty(globalThis, '__happoHoveredElement', {
   get: () => _happoHoveredElement,
+  configurable: true,
+});
+Object.defineProperty(globalThis, '__happoActiveElement', {
+  get: () => _happoActiveElement,
   configurable: true,
 });

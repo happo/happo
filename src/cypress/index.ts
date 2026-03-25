@@ -41,14 +41,16 @@ Cypress.on('window:before:load', (win: Window) => {
   }
   applyConstructedStylesPatch(win);
 
-  // Track the hovered element via mouseover/mouseout so that takeDOMSnapshot
-  // can apply data-happo-hover reliably (cy.trigger('mouseover') fires the
-  // event but doesn't update querySelectorAll(':hover') in Cypress).
+  // Track hover and active elements via mouse events so that takeDOMSnapshot
+  // can apply data-happo-hover / data-happo-active reliably (cy.trigger fires
+  // events but doesn't update querySelectorAll(':hover') / ':active').
   let _happoHoveredElement: Element | null = null;
+  let _happoActiveElement: Element | null = null;
+
   win.document.addEventListener(
     'mouseover',
     (e) => {
-      if (e.target instanceof win.Element) {
+      if (isEventTargetElement(e.target)) {
         _happoHoveredElement = e.target;
       }
     },
@@ -63,11 +65,33 @@ Cypress.on('window:before:load', (win: Window) => {
     },
     true,
   );
+  win.document.addEventListener(
+    'mousedown',
+    (e) => {
+      if (isEventTargetElement(e.target)) {
+        _happoActiveElement = e.target;
+      }
+    },
+    true,
+  );
+  win.document.addEventListener('mouseup', () => {
+    _happoActiveElement = null;
+  }, true);
+
   Object.defineProperty(win, '__happoHoveredElement', {
     get: () => _happoHoveredElement,
     configurable: true,
   });
+  Object.defineProperty(win, '__happoActiveElement', {
+    get: () => _happoActiveElement,
+    configurable: true,
+  });
 });
+
+// nodeType 1 === Element. Cross-frame safe alternative to instanceof Element.
+function isEventTargetElement(target: EventTarget | null): target is Element {
+  return target != null && 'nodeType' in target && (target as Node).nodeType === 1;
+}
 
 interface CypressConfig {
   responsiveInlinedCanvases: boolean;

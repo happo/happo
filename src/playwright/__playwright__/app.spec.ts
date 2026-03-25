@@ -64,11 +64,24 @@ test('basic test', async ({ page, happoScreenshot }) => {
     variant: 'hover',
   });
 
-  // autoApplyPseudoStateAttributes: focus state detected automatically
+  // Move the mouse away so hover state doesn't bleed into the next snapshots.
+  await page.mouse.move(0, 0);
+
+  // autoApplyPseudoStateAttributes: active state detected automatically
+  await page.hover('#interactive-btn');
+  await page.mouse.down();
+  await happoScreenshot(page.locator('#interactive-btn'), {
+    component: 'Button',
+    variant: 'active',
+  });
+  await page.mouse.up();
+  await page.mouse.move(0, 0);
+
+  // autoApplyPseudoStateAttributes: focus and focus-visible states detected automatically
   await page.focus('#interactive-btn');
   await happoScreenshot(page.locator('#interactive-btn'), {
     component: 'Button',
-    variant: 'focus',
+    variant: 'focus and focus-visible',
   });
 
   await page.click('text=goodbye');

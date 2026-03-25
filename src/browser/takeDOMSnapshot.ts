@@ -399,14 +399,20 @@ type QueryRoot = Document | ShadowRoot | Element;
 declare global {
   interface Window {
     // Populated by the browser bundle (main.ts) and Cypress command setup to
-    // track the hovered element via mouseover/mouseout events. More reliable
-    // than querySelectorAll(':hover') in headless browser environments.
+    // track hover/active elements via mouse events. More reliable than
+    // querySelectorAll(':hover') / querySelectorAll(':active') in headless
+    // browser environments where those pseudo-classes may not update.
     __happoHoveredElement?: Element | null;
+    __happoActiveElement?: Element | null;
   }
 }
 
 function getTrackedHoverElement(doc: Document): Element | null {
   return doc.defaultView?.__happoHoveredElement ?? null;
+}
+
+function getTrackedActiveElement(doc: Document): Element | null {
+  return doc.defaultView?.__happoActiveElement ?? null;
 }
 
 // nodeType === 1 identifies Element nodes (Document = 9, ShadowRoot/DocumentFragment = 11).
@@ -569,12 +575,16 @@ export default function takeDOMSnapshot({
         }
       }
 
-      // Supplement :hover detection with event-based tracking. In headless
-      // browsers querySelectorAll(':hover') may not reflect the live state,
-      // but mouseover events still fire reliably after page.hover() / trigger().
+      // Supplement :hover/:active detection with event-based tracking. In
+      // headless browsers querySelectorAll(':hover') / querySelectorAll(':active')
+      // may not reflect the live state, but mouse events still fire reliably.
       const trackedHoverEl = getTrackedHoverElement(doc);
       if (trackedHoverEl && isElementWithDataset(trackedHoverEl) && element.contains(trackedHoverEl)) {
         trackedHoverEl.dataset.happoHover = 'true';
+      }
+      const trackedActiveEl = getTrackedActiveElement(doc);
+      if (trackedActiveEl && isElementWithDataset(trackedActiveEl) && element.contains(trackedActiveEl)) {
+        trackedActiveEl.dataset.happoActive = 'true';
       }
     }
 
