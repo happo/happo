@@ -88,9 +88,14 @@ test('basic test', async ({ page, happoScreenshot }) => {
     variant: 'focus',
   });
 
+  // Remove the focus from the button
+  await page.locator('#interactive-btn').blur();
+
   // autoApplyPseudoStateAttributes: focus-visible state detected automatically.
-  // Programmatic focus (page.focus) triggers :focus-visible in Chromium.
-  await page.focus('#interactive-btn');
+  // Tabbing to the button triggers :focus-visible
+  await page.click('#interactive-btn');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
   await happoScreenshot(page.locator('#interactive-btn'), {
     component: 'Button',
     variant: 'focus-visible',
