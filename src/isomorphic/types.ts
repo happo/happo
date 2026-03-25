@@ -35,6 +35,20 @@ export interface TakeDOMSnapshotOptions {
     element: HTMLImageElement;
   }) => void;
   strategy?: 'hoist' | 'clip';
+  /**
+   * When true, extends the default pseudo-state handling by automatically
+   * detecting and applying data attributes for elements currently in `:hover`,
+   * `:active`, and `:focus-visible` pseudo states, and by doing deeper focus
+   * traversal (e.g. into shadow DOM) when determining which element should
+   * receive `data-happo-focus`.
+   *
+   * Note: basic focus handling (`data-happo-focus` based on `activeElement`)
+   * is always applied regardless of this option. Enabling this option means
+   * you can write your Playwright or Cypress tests naturally (e.g. hover or
+   * focus an element) and have Happo capture those states without manually
+   * adding `data-happo-hover`, `data-happo-focus-visible`, etc. attributes.
+   */
+  autoApplyPseudoStateAttributes?: boolean;
 }
 
 export interface DOMSnapshotResult {

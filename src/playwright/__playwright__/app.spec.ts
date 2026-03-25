@@ -57,6 +57,56 @@ test('basic test', async ({ page, happoScreenshot }) => {
     snapshotStrategy: 'clip',
   });
 
+  // autoApplyPseudoStateAttributes: hover state detected automatically
+  await page.hover('#interactive-btn');
+  await happoScreenshot(page.locator('#interactive-btn'), {
+    component: 'Button',
+    variant: 'hover',
+  });
+
+  // Move the mouse away so hover state doesn't bleed into the next snapshots.
+  await page.mouse.move(0, 0);
+
+  // autoApplyPseudoStateAttributes: active state detected automatically.
+  // Move the mouse away while the button is still held so that mouseout fires
+  // and clears the hover tracker before the snapshot is taken.
+  await page.hover('#interactive-btn');
+  await page.mouse.down();
+  await page.mouse.move(0, 0);
+  await happoScreenshot(page.locator('#interactive-btn'), {
+    component: 'Button',
+    variant: 'active',
+  });
+  await page.mouse.up();
+
+  // autoApplyPseudoStateAttributes: focus state detected automatically.
+  // A mouse click sets :focus but not :focus-visible (mouse interaction).
+  await page.click('#interactive-btn');
+  await page.mouse.move(0, 0);
+  await happoScreenshot(page.locator('#interactive-btn'), {
+    component: 'Button',
+    variant: 'focus',
+  });
+
+  // autoApplyPseudoStateAttributes: focus-visible state detected automatically.
+  // Programmatic focus (page.focus) triggers :focus-visible in Chromium.
+  await page.focus('#interactive-btn');
+  await happoScreenshot(page.locator('#interactive-btn'), {
+    component: 'Button',
+    variant: 'focus-visible',
+  });
+
+
+  // Hover a button that has nested content
+  await page.hover('#interactive-nested-btn');
+  await happoScreenshot(page.locator('#interactive-nested-btn'), {
+    component: 'Button with nested span',
+    variant: 'hover',
+  });
+
+  // Move the mouse away so hover state doesn't bleed into the next snapshots.
+  await page.mouse.move(0, 0);
+
   await page.click('text=goodbye');
 
   await expect(page.locator('text=Sad to see you go').first()).toBeVisible();

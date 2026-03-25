@@ -7,6 +7,7 @@ const config: Config = defineConfig({
   project: 'cypress',
   integration: {
     type: 'cypress',
+    autoApplyPseudoStateAttributes: true,
   },
 });
 

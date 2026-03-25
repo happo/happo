@@ -349,13 +349,14 @@ function inlineShadowRoots(element: Element): void {
   }
 
   for (const element of elementsToProcess) {
-    const hiddenElement = document.createElement('happo-shadow-content');
+    const ownerDoc = element.ownerDocument;
+    const hiddenElement = ownerDoc.createElement('happo-shadow-content');
     hiddenElement.style.display = 'none';
 
     // Add adopted stylesheets as <style> elements
     if (element.shadowRoot) {
-      for (const styleSheet of element.shadowRoot.adoptedStyleSheets) {
-        const styleElement = document.createElement('style');
+      for (const styleSheet of element.shadowRoot.adoptedStyleSheets || []) {
+        const styleElement = ownerDoc.createElement('style');
         styleElement.dataset.happoInlined = 'true';
         const styleContent = getContentFromStyleSheet(styleSheet);
         styleElement.textContent = styleContent;
@@ -393,6 +394,77 @@ function findSvgElementsWithSymbols(element: Element): Array<SVGElement> {
   );
 }
 
+type QueryRoot = Document | ShadowRoot | Element;
+
+declare global {
+  interface Window {
+    // Populated by the browser bundle (main.ts) and Cypress command setup to
+    // track hover/active elements via mouse events. More reliable than
+    // querySelectorAll(':hover') / querySelectorAll(':active') in headless
+    // browser environments where those pseudo-classes may not update.
+    __happoHoveredElement?: Element | null;
+    __happoActiveElement?: Element | null;
+  }
+}
+
+function getTrackedHoverElement(doc: Document): Element | null {
+  return doc.defaultView?.__happoHoveredElement ?? null;
+}
+
+function getTrackedActiveElement(doc: Document): Element | null {
+  return doc.defaultView?.__happoActiveElement ?? null;
+}
+
+// nodeType === 1 identifies Element nodes (Document = 9, ShadowRoot/DocumentFragment = 11).
+function isElementNode(root: QueryRoot): root is Element {
+  return root.nodeType === 1;
+}
+
+/**
+ * Collects the given root plus all shadow roots reachable from it. Accepts any
+ * query root (Document, ShadowRoot, or Element) so callers can scope the
+ * traversal to a specific subtree. Collecting once and reusing the result
+ * avoids repeated full-DOM scans when querying multiple selectors.
+ *
+ * Note: when `root` is an Element that is itself a shadow host, its own
+ * `shadowRoot` is added explicitly before walking descendants, because
+ * `querySelectorAll('*')` only traverses light-DOM children and will not
+ * descend into the element's own shadow tree.
+ */
+function collectAllRoots(root: QueryRoot): Array<QueryRoot> {
+  const roots: Array<QueryRoot> = [root];
+  if (isElementNode(root) && root.shadowRoot) {
+    roots.push(...collectAllRoots(root.shadowRoot));
+  }
+  for (const el of root.querySelectorAll('*')) {
+    if (el.shadowRoot) {
+      roots.push(...collectAllRoots(el.shadowRoot));
+    }
+  }
+  return roots;
+}
+
+/**
+ * Returns the deepest focused element, traversing into shadow roots.
+ */
+function getDeepActiveElement(doc: Document): Element | null {
+  let el: Element | null = doc.activeElement;
+  while (el?.shadowRoot?.activeElement) {
+    el = el.shadowRoot.activeElement;
+  }
+  return el;
+}
+
+const PSEUDO_STATE_ATTRS = [
+  { pseudo: ':hover', attrSelector: '[data-happo-hover]', datasetKey: 'happoHover' },
+  { pseudo: ':active', attrSelector: '[data-happo-active]', datasetKey: 'happoActive' },
+  {
+    pseudo: ':focus-visible',
+    attrSelector: '[data-happo-focus-visible]',
+    datasetKey: 'happoFocusVisible',
+  },
+] as const;
+
 export default function takeDOMSnapshot({
   doc,
   element: oneOrMoreElements,
@@ -400,6 +472,7 @@ export default function takeDOMSnapshot({
   transformDOM,
   handleBase64Image,
   strategy = 'hoist',
+  autoApplyPseudoStateAttributes = false,
 }: TakeDOMSnapshotOptions): DOMSnapshotResult {
   if (doc == null) {
     throw new Error('doc cannot be null or undefined');
@@ -413,6 +486,13 @@ export default function takeDOMSnapshot({
   const allElements = transformToElementArray(oneOrMoreElements);
   const htmlParts: Array<string> = [];
   const assetUrls: Array<AssetUrl> = [];
+
+  // Collect doc-level roots once (used for focus cleanup across the whole document,
+  // including shadow roots). Only traverse when the option is enabled.
+  const allDocRoots: Array<QueryRoot> = autoApplyPseudoStateAttributes
+    ? collectAllRoots(doc)
+    : [doc];
+
   for (const originalElement of allElements) {
     const { element, cleanup: canvasCleanup } = inlineCanvases(originalElement, {
       doc,
@@ -436,18 +516,76 @@ export default function takeDOMSnapshot({
       }
     }
 
-    for (const e of doc.querySelectorAll<HTMLElement | SVGElement | MathMLElement>(
-      '[data-happo-focus]',
-    )) {
-      delete e.dataset.happoFocus;
+    // Clear stale focus attributes across the full document (including shadow roots)
+    // so that stale data-happo-focus from previous snapshots is never left behind.
+    for (const root of allDocRoots) {
+      for (const e of root.querySelectorAll<HTMLElement | SVGElement | MathMLElement>(
+        '[data-happo-focus]',
+      )) {
+        delete e.dataset.happoFocus;
+      }
     }
 
-    if (
-      doc.activeElement &&
-      doc.activeElement !== doc.body &&
-      isElementWithDataset(doc.activeElement)
-    ) {
-      doc.activeElement.dataset.happoFocus = 'true';
+    const activeElement = autoApplyPseudoStateAttributes
+      ? getDeepActiveElement(doc)
+      : doc.activeElement;
+
+    if (activeElement && activeElement !== doc.body && isElementWithDataset(activeElement)) {
+      activeElement.dataset.happoFocus = 'true';
+    }
+
+    if (autoApplyPseudoStateAttributes) {
+      // Scope to the element subtree being snapshotted to avoid mutating DOM
+      // nodes that won't appear in this snapshot.
+      const elementRoots = collectAllRoots(element);
+      for (const { pseudo, attrSelector, datasetKey } of PSEUDO_STATE_ATTRS) {
+        for (const root of elementRoots) {
+          // Probe selector support first. If unsupported, skip entirely so we
+          // don't strip manually-set attributes without being able to re-apply them.
+          let matches: NodeListOf<Element>;
+          let rootMatches: boolean;
+          try {
+            matches = root.querySelectorAll(pseudo);
+            // querySelectorAll only returns descendants, not root itself — check explicitly.
+            rootMatches = isElementNode(root) && root.matches(pseudo);
+          } catch {
+            // Selector not supported in this environment (e.g. :focus-visible in older browsers)
+            continue;
+          }
+          // Clear stale attribute from descendants.
+          for (const e of root.querySelectorAll(attrSelector)) {
+            if (isElementWithDataset(e)) {
+              delete e.dataset[datasetKey];
+            }
+          }
+          // Clear stale attribute from root itself (not returned by querySelectorAll).
+          if (isElementNode(root) && isElementWithDataset(root)) {
+            delete root.dataset[datasetKey];
+          }
+          // Apply to matched descendants.
+          for (const e of matches) {
+            if (isElementWithDataset(e)) {
+              e.dataset[datasetKey] = 'true';
+            }
+          }
+          // Apply to root itself if it matches the pseudo-class.
+          if (rootMatches && isElementWithDataset(root)) {
+            root.dataset[datasetKey] = 'true';
+          }
+        }
+      }
+
+      // Supplement :hover/:active detection with event-based tracking. In
+      // headless browsers querySelectorAll(':hover') / querySelectorAll(':active')
+      // may not reflect the live state, but mouse events still fire reliably.
+      const trackedHoverEl = getTrackedHoverElement(doc);
+      if (trackedHoverEl && isElementWithDataset(trackedHoverEl) && element.contains(trackedHoverEl)) {
+        trackedHoverEl.dataset.happoHover = 'true';
+      }
+      const trackedActiveEl = getTrackedActiveElement(doc);
+      if (trackedActiveEl && isElementWithDataset(trackedActiveEl) && element.contains(trackedActiveEl)) {
+        trackedActiveEl.dataset.happoActive = 'true';
+      }
     }
 
     inlineShadowRoots(element);

@@ -7,10 +7,30 @@ describe('happo spec', () => {
       variant: 'default',
     });
 
+    // autoApplyPseudoStateAttributes: hover detected via mouseover event tracking
+    // (cy.trigger fires the event; querySelectorAll(':hover') isn't updated by it).
+    cy.get('button').first().trigger('mouseover');
+    cy.get('button').first().happoScreenshot({
+      component: 'button',
+      variant: 'hover',
+    });
+    cy.get('button').first().trigger('mouseout');
+
+    // autoApplyPseudoStateAttributes: active detected via mousedown event tracking.
+    cy.get('button').first().trigger('mousedown');
+    cy.get('button').first().happoScreenshot({
+      component: 'button',
+      variant: 'active',
+    });
+    cy.get('button').first().trigger('mouseup');
+
+    // autoApplyPseudoStateAttributes: focus and focus-visible detected automatically.
+    // In Cypress, synthetic events always grant :focus-visible, so both
+    // data-happo-focus and data-happo-focus-visible are applied together.
     cy.get('button').first().focus();
-    cy.get('main').happoScreenshot({
-      component: 'main',
-      variant: 'button focused',
+    cy.get('button').first().happoScreenshot({
+      component: 'button',
+      variant: 'focus-visible',
     });
     cy.get('button').first().blur();
 

@@ -40,7 +40,58 @@ Cypress.on('window:before:load', (win: Window) => {
     throw new TypeError('CSSStyleSheet is not supported in this browser');
   }
   applyConstructedStylesPatch(win);
+
+  // Track hover and active elements via mouse events so that takeDOMSnapshot
+  // can apply data-happo-hover / data-happo-active reliably (cy.trigger fires
+  // events but doesn't update querySelectorAll(':hover') / ':active').
+  let _happoHoveredElement: Element | null = null;
+  let _happoActiveElement: Element | null = null;
+
+  win.document.addEventListener(
+    'mouseover',
+    (e) => {
+      if (isEventTargetElement(e.target)) {
+        _happoHoveredElement = e.target;
+      }
+    },
+    true,
+  );
+  win.document.addEventListener(
+    'mouseout',
+    (e) => {
+      if (_happoHoveredElement === e.target) {
+        _happoHoveredElement = null;
+      }
+    },
+    true,
+  );
+  win.document.addEventListener(
+    'mousedown',
+    (e) => {
+      if (isEventTargetElement(e.target)) {
+        _happoActiveElement = e.target;
+      }
+    },
+    true,
+  );
+  win.document.addEventListener('mouseup', () => {
+    _happoActiveElement = null;
+  }, true);
+
+  Object.defineProperty(win, '__happoHoveredElement', {
+    get: () => _happoHoveredElement,
+    configurable: true,
+  });
+  Object.defineProperty(win, '__happoActiveElement', {
+    get: () => _happoActiveElement,
+    configurable: true,
+  });
 });
+
+// nodeType 1 === Element. Cross-frame safe alternative to instanceof Element.
+function isEventTargetElement(target: EventTarget | null): target is Element {
+  return target != null && 'nodeType' in target && (target as Node).nodeType === 1;
+}
 
 interface CypressConfig {
   responsiveInlinedCanvases: boolean;
@@ -51,6 +102,9 @@ let config: CypressConfig = {
   responsiveInlinedCanvases: false,
   canvasChunkSize: 200_000, // 800 Kb per chunk
 };
+
+// Cached so the happoGetIntegrationConfig task is called at most once per run.
+let cachedAutoApplyPseudoStateAttributes: boolean | null = null;
 
 export const configure = (userConfig?: Partial<CypressConfig>): void => {
   config = { ...config, ...userConfig };
@@ -99,48 +153,65 @@ Cypress.Commands.add(
       throw new Error('element cannot be null or undefined');
     }
 
-    const properties: TakeDOMSnapshotOptions = {
-      doc,
-      element,
-      responsiveInlinedCanvases: resInCan,
-      strategy: snapshotStrategy,
-      handleBase64Image: ({ base64Url, element }) => {
-        const rawBase64 = base64Url.replace(/^data:image\/png;base64,/, '');
-        const chunks = chunked(rawBase64, config.canvasChunkSize);
-        for (let i = 0; i < chunks.length; i++) {
-          const base64Chunk = chunks[i];
-          const isFirst = i === 0;
-          const isLast = i === chunks.length - 1;
-          cy.task(
-            'happoRegisterBase64Image',
-            {
-              base64Chunk,
-              src: element.getAttribute('src'),
-              isFirst,
-              isLast,
-            },
-            taskOptions,
-          );
-        }
-      },
+    const takeSnapshot = (autoApplyPseudoStateAttributes: boolean): void => {
+      const properties: TakeDOMSnapshotOptions = {
+        doc,
+        element,
+        responsiveInlinedCanvases: resInCan,
+        strategy: snapshotStrategy,
+        autoApplyPseudoStateAttributes,
+        handleBase64Image: ({ base64Url, element }) => {
+          const rawBase64 = base64Url.replace(/^data:image\/png;base64,/, '');
+          const chunks = chunked(rawBase64, config.canvasChunkSize);
+          for (let i = 0; i < chunks.length; i++) {
+            const base64Chunk = chunks[i];
+            const isFirst = i === 0;
+            const isLast = i === chunks.length - 1;
+            cy.task(
+              'happoRegisterBase64Image',
+              {
+                base64Chunk,
+                src: element.getAttribute('src'),
+                isFirst,
+                isLast,
+              },
+              taskOptions,
+            );
+          }
+        },
+      };
+
+      if (transformDOM) {
+        properties.transformDOM = transformDOM;
+      }
+
+      const domSnapshot = takeDOMSnapshot(properties);
+
+      cy.task(
+        'happoRegisterSnapshot',
+        {
+          timestamp: Date.now(),
+          component,
+          variant,
+          targets,
+          ...domSnapshot,
+        },
+        taskOptions,
+      );
     };
 
-    if (transformDOM) {
-      properties.transformDOM = transformDOM;
+    if (cachedAutoApplyPseudoStateAttributes === null) {
+      cy.task<{ autoApplyPseudoStateAttributes: boolean } | null>(
+        'happoGetIntegrationConfig',
+        null,
+        { ...taskOptions, log: false },
+      ).then((integrationConfig) => {
+        cachedAutoApplyPseudoStateAttributes =
+          integrationConfig?.autoApplyPseudoStateAttributes ?? false;
+        takeSnapshot(cachedAutoApplyPseudoStateAttributes);
+      });
+    } else {
+      takeSnapshot(cachedAutoApplyPseudoStateAttributes);
     }
-
-    const domSnapshot = takeDOMSnapshot(properties);
-
-    cy.task(
-      'happoRegisterSnapshot',
-      {
-        timestamp: Date.now(),
-        component,
-        variant,
-        targets,
-        ...domSnapshot,
-      },
-      taskOptions,
-    );
   },
 );

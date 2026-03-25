@@ -123,6 +123,195 @@ describe('takeDOMSnapshot', () => {
     assert.equal(snapshot.cssBlocks[0]?.baseUrl, 'about:blank');
   });
 
+  describe('autoApplyPseudoStateAttributes', () => {
+    it('does not affect behavior when false (default)', () => {
+      initDOM(`
+<!DOCTYPE html>
+<html>
+  <body>
+    <main>
+      <button data-happo-hover="true">Hover me</button>
+      <button data-happo-active="true">Click me</button>
+    </main>
+  </body>
+</html>
+  `);
+      const { document: doc } = globalThis.window;
+      const element = doc.querySelector('main');
+      if (!element) throw new Error('Element not found');
+
+      // Without autoApplyPseudoStateAttributes, existing attributes are preserved
+      const snapshot = takeDOMSnapshot({ doc, element });
+      assert.ok(
+        snapshot.html.includes('data-happo-hover="true"'),
+        'data-happo-hover should be preserved',
+      );
+      assert.ok(
+        snapshot.html.includes('data-happo-active="true"'),
+        'data-happo-active should be preserved',
+      );
+    });
+
+    it('detects focused element (always-on behavior)', () => {
+      initDOM(`
+<!DOCTYPE html>
+<html>
+  <body>
+    <main>
+      <input type="text" id="first">
+      <input type="text" id="second">
+    </main>
+  </body>
+</html>
+  `);
+      const { document: doc } = globalThis.window;
+      const element = doc.querySelector('main');
+      if (!element) throw new Error('Element not found');
+
+      doc.querySelector<HTMLInputElement>('#first')?.focus();
+      // Focus detection runs regardless of autoApplyPseudoStateAttributes
+      const snapshot = takeDOMSnapshot({ doc, element });
+      const parser = new globalThis.window.DOMParser();
+      const snapshotDoc = parser.parseFromString(snapshot.html, 'text/html');
+      const firstInput = snapshotDoc.querySelector<HTMLElement>('#first');
+      const secondInput = snapshotDoc.querySelector('#second');
+      assert.strictEqual(
+        firstInput?.dataset.happoFocus,
+        'true',
+        'focused element should have data-happo-focus="true"',
+      );
+      assert.ok(
+        !secondInput?.hasAttribute('data-happo-focus'),
+        'non-focused element should not have data-happo-focus',
+      );
+    });
+
+    it('clears stale data-happo-hover and data-happo-active attributes', () => {
+      initDOM(`
+<!DOCTYPE html>
+<html>
+  <body>
+    <main>
+      <button data-happo-hover="true">Hover me</button>
+      <button data-happo-active="true">Click me</button>
+    </main>
+  </body>
+</html>
+  `);
+      const { document: doc } = globalThis.window;
+      const element = doc.querySelector('main');
+      if (!element) throw new Error('Element not found');
+
+      // With autoApplyPseudoStateAttributes, stale manual attributes are cleared
+      // (since nothing is currently hovered/active in JSDOM)
+      const snapshot = takeDOMSnapshot({ doc, element, autoApplyPseudoStateAttributes: true });
+      assert.ok(
+        !snapshot.html.includes('data-happo-hover'),
+        'stale data-happo-hover should be cleared',
+      );
+      assert.ok(
+        !snapshot.html.includes('data-happo-active'),
+        'stale data-happo-active should be cleared',
+      );
+    });
+
+    it('detects focus inside shadow DOM', () => {
+      initDOM(`
+<!DOCTYPE html>
+<html>
+  <body>
+    <main></main>
+  </body>
+</html>
+  `);
+      const { document: doc } = globalThis.window;
+      const main = doc.querySelector('main');
+      if (!main) throw new Error('main not found');
+
+      // Create a shadow host with a focusable element inside
+      const host = doc.createElement('div');
+      const shadowRoot = host.attachShadow({ mode: 'open' });
+      shadowRoot.innerHTML = '<input type="text" id="shadow-input">';
+      main.append(host);
+
+      const shadowInput = shadowRoot.querySelector<HTMLInputElement>('#shadow-input');
+      if (!shadowInput) throw new Error('shadow input not found');
+      shadowInput.focus();
+
+      // The shadow host's shadow root activeElement should be the input
+      assert.equal(doc.activeElement, host, 'shadow host should be the activeElement');
+      assert.equal(
+        doc.activeElement?.shadowRoot?.activeElement,
+        shadowInput,
+        'shadow input should be the deep activeElement',
+      );
+
+      // With autoApplyPseudoStateAttributes, we traverse shadow roots to find the real focused element
+      const snapshot = takeDOMSnapshot({ doc, element: main, autoApplyPseudoStateAttributes: true });
+      const parser = new globalThis.window.DOMParser();
+      const snapshotDoc = parser.parseFromString(snapshot.html, 'text/html');
+      const focusedInput = snapshotDoc.querySelector<HTMLElement>('#shadow-input');
+      assert.ok(focusedInput, 'shadow input should be present in snapshot HTML');
+      assert.strictEqual(
+        focusedInput?.dataset.happoFocus,
+        'true',
+        'shadow-DOM focused input should have data-happo-focus="true" applied',
+      );
+    });
+
+    it('clears stale attribute from the snapshotted element itself', () => {
+      initDOM(`
+<!DOCTYPE html>
+<html>
+  <body></body>
+</html>
+  `);
+      const { document: doc } = globalThis.window;
+
+      // The snapshotted element itself has a stale attribute set directly on it.
+      // querySelectorAll(attrSelector) only matches descendants, not the element
+      // itself, so without the explicit root check the stale attr would not be cleared.
+      const button = doc.createElement('button');
+      button.dataset.happoHover = 'true';
+      button.textContent = 'Hover me';
+      doc.body.append(button);
+
+      const snapshot = takeDOMSnapshot({
+        doc,
+        element: button,
+        autoApplyPseudoStateAttributes: true,
+      });
+      assert.ok(
+        !snapshot.html.includes('data-happo-hover'),
+        'stale data-happo-hover on the snapshotted element itself should be cleared',
+      );
+    });
+
+    it('clears stale attributes inside the shadow root of the snapshotted element itself', () => {
+      initDOM(`
+<!DOCTYPE html>
+<html>
+  <body></body>
+</html>
+  `);
+      const { document: doc } = globalThis.window;
+
+      // The snapshotted element IS itself a shadow host
+      const host = doc.createElement('div');
+      const shadowRoot = host.attachShadow({ mode: 'open' });
+      shadowRoot.innerHTML = '<button data-happo-hover="true">Hover me</button>';
+      doc.body.append(host);
+
+      // When snapshotting the host directly, collectAllRoots must include
+      // the host's own shadowRoot (not just its light-DOM descendants).
+      const snapshot = takeDOMSnapshot({ doc, element: host, autoApplyPseudoStateAttributes: true });
+      assert.ok(
+        !snapshot.html.includes('data-happo-hover'),
+        'stale data-happo-hover inside the host shadow root should be cleared',
+      );
+    });
+  });
+
   it('works with radio and checkbox', () => {
     initDOM(`
 <!DOCTYPE html>

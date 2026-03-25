@@ -39,6 +39,10 @@ function getCleanupTimeframe({
   return { start, end };
 }
 
+interface IntegrationConfig {
+  autoApplyPseudoStateAttributes: boolean;
+}
+
 interface HappoTask {
   isRegisteredCorrectly: boolean;
   register(on: Cypress.PluginEvents): void;
@@ -53,6 +57,7 @@ interface HappoTask {
     isFirst: boolean;
     isLast: boolean;
   }): Promise<null>;
+  happoGetIntegrationConfig(): IntegrationConfig;
   handleBeforeSpec(): Promise<void>;
 }
 
@@ -63,6 +68,7 @@ const task: HappoTask = {
     on('task', {
       happoRegisterSnapshot: task.happoRegisterSnapshot,
       happoRegisterBase64Image: task.happoRegisterBase64Image,
+      happoGetIntegrationConfig: task.happoGetIntegrationConfig,
     });
     on('before:spec', task.handleBeforeSpec);
     on('after:spec', task.handleAfterSpec);
@@ -131,6 +137,16 @@ const task: HappoTask = {
       isLast,
     });
     return null;
+  },
+
+  happoGetIntegrationConfig(): IntegrationConfig {
+    const integration = controller.config?.integration;
+    return {
+      autoApplyPseudoStateAttributes:
+        integration?.type === 'cypress'
+          ? (integration.autoApplyPseudoStateAttributes ?? false)
+          : false,
+    };
   },
 
   async handleBeforeSpec(): Promise<void> {

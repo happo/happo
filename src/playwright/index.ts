@@ -97,6 +97,12 @@ export const test: TestType<
 
   // Passes down the happoScreenshot function as a fixture
   happoScreenshot: async ({ page }, use) => {
+    const integration = controller.config?.integration;
+    const autoApplyPseudoStateAttributes =
+      integration?.type === 'playwright'
+        ? (integration.autoApplyPseudoStateAttributes ?? false)
+        : false;
+
     const happoScreenshot: ScreenshotFunction = async (
       handleOrLocator,
       { component, variant, snapshotStrategy = 'hoist', ...rest },
@@ -132,7 +138,7 @@ export const test: TestType<
       }
 
       const snapshot = await page.evaluate(
-        ({ element, strategy }) => {
+        ({ element, strategy, autoApplyPseudoStateAttributes }) => {
           if (!globalThis.happo) {
             throw new Error('globalThis.happo is not defined');
           }
@@ -148,11 +154,13 @@ export const test: TestType<
             doc: element.ownerDocument,
             element,
             strategy,
+            autoApplyPseudoStateAttributes,
           });
         },
         {
           element: elementHandle,
           strategy: snapshotStrategy,
+          autoApplyPseudoStateAttributes,
         },
       );
 
