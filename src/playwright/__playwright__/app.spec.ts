@@ -96,6 +96,17 @@ test('basic test', async ({ page, happoScreenshot }) => {
     variant: 'focus-visible',
   });
 
+
+  // Hover a button that has nested content
+  await page.hover('#interactive-nested-btn');
+  await happoScreenshot(page.locator('#interactive-nested-btn'), {
+    component: 'Button with nested span',
+    variant: 'hover',
+  });
+
+  // Move the mouse away so hover state doesn't bleed into the next snapshots.
+  await page.mouse.move(0, 0);
+
   await page.click('text=goodbye');
 
   await expect(page.locator('text=Sad to see you go').first()).toBeVisible();
