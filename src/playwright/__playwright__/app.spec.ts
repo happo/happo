@@ -57,6 +57,20 @@ test('basic test', async ({ page, happoScreenshot }) => {
     snapshotStrategy: 'clip',
   });
 
+  // autoApplyPseudoStateAttributes: hover state detected automatically
+  await page.hover('#interactive-btn');
+  await happoScreenshot(page.locator('#interactive-btn'), {
+    component: 'Button',
+    variant: 'hover',
+  });
+
+  // autoApplyPseudoStateAttributes: focus state detected automatically
+  await page.focus('#interactive-btn');
+  await happoScreenshot(page.locator('#interactive-btn'), {
+    component: 'Button',
+    variant: 'focus',
+  });
+
   await page.click('text=goodbye');
 
   await expect(page.locator('text=Sad to see you go').first()).toBeVisible();

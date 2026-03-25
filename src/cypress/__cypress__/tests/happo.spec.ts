@@ -7,6 +7,8 @@ describe('happo spec', () => {
       variant: 'default',
     });
 
+    // autoApplyPseudoStateAttributes detects the focused element automatically —
+    // no need to add data-happo-focus manually.
     cy.get('button').first().focus();
     cy.get('main').happoScreenshot({
       component: 'main',
