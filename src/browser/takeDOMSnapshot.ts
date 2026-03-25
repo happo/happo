@@ -396,6 +396,19 @@ function findSvgElementsWithSymbols(element: Element): Array<SVGElement> {
 
 type QueryRoot = Document | ShadowRoot | Element;
 
+declare global {
+  interface Window {
+    // Populated by the browser bundle (main.ts) and Cypress command setup to
+    // track the hovered element via mouseover/mouseout events. More reliable
+    // than querySelectorAll(':hover') in headless browser environments.
+    __happoHoveredElement?: Element | null;
+  }
+}
+
+function getTrackedHoverElement(doc: Document): Element | null {
+  return doc.defaultView?.__happoHoveredElement ?? null;
+}
+
 // nodeType === 1 identifies Element nodes (Document = 9, ShadowRoot/DocumentFragment = 11).
 function isElementNode(root: QueryRoot): root is Element {
   return root.nodeType === 1;
@@ -554,6 +567,14 @@ export default function takeDOMSnapshot({
             root.dataset[datasetKey] = 'true';
           }
         }
+      }
+
+      // Supplement :hover detection with event-based tracking. In headless
+      // browsers querySelectorAll(':hover') may not reflect the live state,
+      // but mouseover events still fire reliably after page.hover() / trigger().
+      const trackedHoverEl = getTrackedHoverElement(doc);
+      if (trackedHoverEl && isElementWithDataset(trackedHoverEl) && element.contains(trackedHoverEl)) {
+        trackedHoverEl.dataset.happoHover = 'true';
       }
     }
 

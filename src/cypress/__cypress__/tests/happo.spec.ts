@@ -16,6 +16,16 @@ describe('happo spec', () => {
     });
     cy.get('button').first().blur();
 
+    // autoApplyPseudoStateAttributes detects the hovered element automatically
+    // via mouseover event tracking (cy.trigger fires the event, which the
+    // tracker picks up even though querySelectorAll(':hover') isn't updated).
+    cy.get('button').first().trigger('mouseover');
+    cy.get('button').first().happoScreenshot({
+      component: 'button',
+      variant: 'hovered',
+    });
+    cy.get('button').first().trigger('mouseout');
+
     cy.get('h1').happoScreenshot({
       component: 'h1',
       variant: 'default',

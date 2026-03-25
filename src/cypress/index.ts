@@ -40,6 +40,33 @@ Cypress.on('window:before:load', (win: Window) => {
     throw new TypeError('CSSStyleSheet is not supported in this browser');
   }
   applyConstructedStylesPatch(win);
+
+  // Track the hovered element via mouseover/mouseout so that takeDOMSnapshot
+  // can apply data-happo-hover reliably (cy.trigger('mouseover') fires the
+  // event but doesn't update querySelectorAll(':hover') in Cypress).
+  let _happoHoveredElement: Element | null = null;
+  win.document.addEventListener(
+    'mouseover',
+    (e) => {
+      if (e.target instanceof win.Element) {
+        _happoHoveredElement = e.target;
+      }
+    },
+    true,
+  );
+  win.document.addEventListener(
+    'mouseout',
+    (e) => {
+      if (_happoHoveredElement === e.target) {
+        _happoHoveredElement = null;
+      }
+    },
+    true,
+  );
+  Object.defineProperty(win, '__happoHoveredElement', {
+    get: () => _happoHoveredElement,
+    configurable: true,
+  });
 });
 
 interface CypressConfig {
