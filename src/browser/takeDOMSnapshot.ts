@@ -396,6 +396,11 @@ function findSvgElementsWithSymbols(element: Element): Array<SVGElement> {
 
 type QueryRoot = Document | ShadowRoot | Element;
 
+// nodeType === 1 identifies Element nodes (Document = 9, ShadowRoot/DocumentFragment = 11).
+function isElementNode(root: QueryRoot): root is Element {
+  return root.nodeType === 1;
+}
+
 /**
  * Collects the given root plus all shadow roots reachable from it. Accepts any
  * query root (Document, ShadowRoot, or Element) so callers can scope the
@@ -409,11 +414,8 @@ type QueryRoot = Document | ShadowRoot | Element;
  */
 function collectAllRoots(root: QueryRoot): Array<QueryRoot> {
   const roots: Array<QueryRoot> = [root];
-  // nodeType === 1 identifies Element nodes (Document = 9, ShadowRoot/DocumentFragment = 11).
-  // An Element can be a shadow host; its shadowRoot is not walked by querySelectorAll('*')
-  // below because that only traverses light-DOM children.
-  if (root.nodeType === 1 && (root as Element).shadowRoot) {
-    roots.push(...collectAllRoots((root as Element).shadowRoot!));
+  if (isElementNode(root) && root.shadowRoot) {
+    roots.push(...collectAllRoots(root.shadowRoot));
   }
   for (const el of root.querySelectorAll('*')) {
     if (el.shadowRoot) {

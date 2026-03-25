@@ -173,10 +173,10 @@ describe('takeDOMSnapshot', () => {
       const snapshot = takeDOMSnapshot({ doc, element });
       const parser = new globalThis.window.DOMParser();
       const snapshotDoc = parser.parseFromString(snapshot.html, 'text/html');
-      const firstInput = snapshotDoc.querySelector('#first');
+      const firstInput = snapshotDoc.querySelector<HTMLElement>('#first');
       const secondInput = snapshotDoc.querySelector('#second');
       assert.strictEqual(
-        (firstInput as HTMLElement | null)?.dataset.happoFocus,
+        firstInput?.dataset.happoFocus,
         'true',
         'focused element should have data-happo-focus="true"',
       );
@@ -250,10 +250,10 @@ describe('takeDOMSnapshot', () => {
       const snapshot = takeDOMSnapshot({ doc, element: main, autoApplyPseudoStateAttributes: true });
       const parser = new globalThis.window.DOMParser();
       const snapshotDoc = parser.parseFromString(snapshot.html, 'text/html');
-      const focusedInput = snapshotDoc.querySelector('#shadow-input');
+      const focusedInput = snapshotDoc.querySelector<HTMLElement>('#shadow-input');
       assert.ok(focusedInput, 'shadow input should be present in snapshot HTML');
       assert.strictEqual(
-        (focusedInput as HTMLElement | null)?.dataset.happoFocus,
+        focusedInput?.dataset.happoFocus,
         'true',
         'shadow-DOM focused input should have data-happo-focus="true" applied',
       );
