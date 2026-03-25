@@ -259,6 +259,34 @@ describe('takeDOMSnapshot', () => {
       );
     });
 
+    it('clears stale attribute from the snapshotted element itself', () => {
+      initDOM(`
+<!DOCTYPE html>
+<html>
+  <body></body>
+</html>
+  `);
+      const { document: doc } = globalThis.window;
+
+      // The snapshotted element itself has a stale attribute set directly on it.
+      // querySelectorAll(attrSelector) only matches descendants, not the element
+      // itself, so without the explicit root check the stale attr would not be cleared.
+      const button = doc.createElement('button');
+      button.dataset.happoHover = 'true';
+      button.textContent = 'Hover me';
+      doc.body.append(button);
+
+      const snapshot = takeDOMSnapshot({
+        doc,
+        element: button,
+        autoApplyPseudoStateAttributes: true,
+      });
+      assert.ok(
+        !snapshot.html.includes('data-happo-hover'),
+        'stale data-happo-hover on the snapshotted element itself should be cleared',
+      );
+    });
+
     it('clears stale attributes inside the shadow root of the snapshotted element itself', () => {
       initDOM(`
 <!DOCTYPE html>

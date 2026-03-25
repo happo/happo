@@ -524,21 +524,34 @@ export default function takeDOMSnapshot({
           // Probe selector support first. If unsupported, skip entirely so we
           // don't strip manually-set attributes without being able to re-apply them.
           let matches: NodeListOf<Element>;
+          let rootMatches: boolean;
           try {
             matches = root.querySelectorAll(pseudo);
+            // querySelectorAll only returns descendants, not root itself — check explicitly.
+            rootMatches = isElementNode(root) && root.matches(pseudo);
           } catch {
             // Selector not supported in this environment (e.g. :focus-visible in older browsers)
             continue;
           }
+          // Clear stale attribute from descendants.
           for (const e of root.querySelectorAll(attrSelector)) {
             if (isElementWithDataset(e)) {
               delete e.dataset[datasetKey];
             }
           }
+          // Clear stale attribute from root itself (not returned by querySelectorAll).
+          if (isElementNode(root) && isElementWithDataset(root)) {
+            delete root.dataset[datasetKey];
+          }
+          // Apply to matched descendants.
           for (const e of matches) {
             if (isElementWithDataset(e)) {
               e.dataset[datasetKey] = 'true';
             }
+          }
+          // Apply to root itself if it matches the pseudo-class.
+          if (rootMatches && isElementWithDataset(root)) {
+            root.dataset[datasetKey] = 'true';
           }
         }
       }
