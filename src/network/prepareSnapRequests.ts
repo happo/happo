@@ -27,6 +27,7 @@ async function createIframeHTML(
   rootDir: string,
   entryPoint: string,
   logger: Logger,
+  { failOnStoryError = false }: { failOnStoryError?: boolean } = {},
 ): Promise<void> {
   const iframePath = path.join(rootDir, 'iframe.html');
 
@@ -41,6 +42,7 @@ async function createIframeHTML(
     <title>Happo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/javascript">window.__HAPPO_FAIL_ON_STORY_ERROR = ${JSON.stringify(failOnStoryError)};</script>
   </head>
   <body>
     <script src="${entryPoint}"></script>
@@ -62,7 +64,11 @@ async function buildPackage(
 ): Promise<BuildPackageResult> {
   if (integration.type === 'custom') {
     const { rootDir, entryPoint, estimatedSnapsCount } = await integration.build();
-    await createIframeHTML(rootDir, entryPoint, logger);
+    await createIframeHTML(rootDir, entryPoint, logger, {
+      ...(integration.failOnStoryError !== undefined && {
+        failOnStoryError: integration.failOnStoryError,
+      }),
+    });
 
     const result: BuildPackageResult = { packageDir: rootDir };
     if (estimatedSnapsCount != null) {

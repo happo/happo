@@ -18,6 +18,7 @@ declare global {
   var happoTime: HappoTime | undefined;
   var happoSkipped: SkipItems | undefined;
   var __IS_HAPPO_RUN: boolean | undefined;
+  var __HAPPO_FAIL_ON_STORY_ERROR: boolean | undefined;
   var __STORYBOOK_CLIENT_API__:
     | {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,6 +69,19 @@ let forcedHappoScreenshotSteps:
   | Array<{ stepLabel: string; done: boolean }>
   | undefined;
 let shouldWaitForCompletedEvent = true;
+let storyErrors: Array<Error> = [];
+
+function extractStorybookErrorMessage(): string {
+  const codeEl = document.querySelector('.sb-errordisplay_code');
+  if (codeEl instanceof HTMLElement && codeEl.textContent) {
+    return codeEl.textContent.trim();
+  }
+  const errorEl = document.querySelector('.sb-errordisplay');
+  if (errorEl instanceof HTMLElement && errorEl.textContent) {
+    return errorEl.textContent.trim();
+  }
+  return 'Unknown story error (could not extract error details from DOM)';
+}
 
 class ForcedHappoScreenshot extends Error {
   type: string;
@@ -246,6 +260,7 @@ globalThis.happo = globalThis.happo || ({} as WindowHappo);
 
 globalThis.happo.init = async (config: InitConfig) => {
   examples = filterExamples(await getExamples(), config);
+  storyErrors = [];
 };
 
 interface Story {
@@ -352,6 +367,12 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
   }
 
   if (currentIndex >= examples.length) {
+    if (globalThis.__HAPPO_FAIL_ON_STORY_ERROR && storyErrors.length > 0) {
+      throw new AggregateError(
+        storyErrors,
+        `${storyErrors.length} story/stories had errors`,
+      );
+    }
     return;
   }
 
@@ -447,6 +468,19 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
 
     if (waitFor) {
       await waitForWaitFor(waitFor);
+    }
+
+    if (
+      globalThis.__HAPPO_FAIL_ON_STORY_ERROR &&
+      /sb-show-errordisplay/.test(document.body.className)
+    ) {
+      // After the delay/waitFor the error display is still present — this is a
+      // real error in the current story (not just an unmounting artifact).
+      const errorMessage = extractStorybookErrorMessage();
+      storyErrors.push(
+        new Error(`${component} > ${variant}: ${errorMessage}`),
+      );
+      return { component, variant, skipped: true };
     }
 
     const highlightsRootElement = document.querySelector(

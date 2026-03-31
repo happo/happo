@@ -1,5 +1,9 @@
 import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
 
+declare global {
+  var __HAPPO_FAIL_ON_STORY_ERROR: boolean | undefined;
+}
+
 interface HappoStaticExample extends NextExampleResult {
   component: Required<NextExampleResult>['component'];
   variant: Required<NextExampleResult>['variant'];
@@ -9,6 +13,7 @@ interface HappoStaticExample extends NextExampleResult {
 
 let examples: Array<HappoStaticExample> = [];
 let currentIndex = 0;
+let renderErrors: Array<Error> = [];
 
 const happoStatic = {
   init(win: WindowWithHappo = globalThis.window): void {
@@ -17,6 +22,7 @@ const happoStatic = {
 
       init: ({ targetName, chunk, only }) => {
         currentIndex = 0;
+        renderErrors = [];
 
         if (only) {
           examples = examples.filter(
@@ -46,11 +52,34 @@ const happoStatic = {
 
         if (!example) {
           // we're done
+          if (globalThis.__HAPPO_FAIL_ON_STORY_ERROR && renderErrors.length > 0) {
+            throw new AggregateError(
+              renderErrors,
+              `${renderErrors.length} example(s) had errors`,
+            );
+          }
           return;
         }
 
         if (example.render) {
-          await example.render();
+          try {
+            await example.render();
+          } catch (e) {
+            if (globalThis.__HAPPO_FAIL_ON_STORY_ERROR) {
+              const message =
+                e instanceof Error ? e.message : String(e);
+              const error = new Error(
+                `${example.component} > ${example.variant}: ${message}`,
+              );
+              if (e instanceof Error && e.stack !== undefined) {
+                error.stack = e.stack;
+              }
+              renderErrors.push(error);
+              currentIndex++;
+              return { component: example.component, variant: example.variant, skipped: true };
+            }
+            throw e;
+          }
         }
         currentIndex++;
 
@@ -98,6 +127,7 @@ const happoStatic = {
   reset(): void {
     examples = [];
     currentIndex = 0;
+    renderErrors = [];
   },
 };
 

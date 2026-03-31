@@ -31,6 +31,17 @@ export interface StorybookIntegration {
    * variant}`, or an array of `{component, variant}`.
    */
   skip?: SkipItems | (() => Promise<SkipItems>) | undefined;
+
+  /**
+   * When `true`, stories that render with errors (e.g. unhandled exceptions
+   * that cause Storybook to show its error overlay) will cause the Happo run
+   * to fail with an `AggregateError` listing every affected story, rather than
+   * silently capturing screenshots of the error display.
+   *
+   * Defaults to `false` for backwards compatibility. The default may change
+   * in a future major release.
+   */
+  failOnStoryError?: boolean;
 }
 
 interface BaseE2EIntegration {
@@ -95,6 +106,17 @@ interface CustomIntegration {
     entryPoint: string;
     estimatedSnapsCount?: number;
   }>;
+
+  /**
+   * When `true`, examples whose `render` function throws will cause the Happo
+   * run to fail with an `AggregateError` listing every affected example,
+   * rather than silently capturing screenshots of whatever partial state was
+   * rendered.
+   *
+   * Defaults to `false` for backwards compatibility. The default may change
+   * in a future major release.
+   */
+  failOnStoryError?: boolean;
 }
 
 export interface Page {
