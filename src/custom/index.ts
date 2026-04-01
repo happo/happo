@@ -1,7 +1,7 @@
 import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
 
 declare global {
-  var __HAPPO_FAIL_ON_STORY_ERROR: boolean | undefined;
+  var __HAPPO_FAIL_ON_RENDER_ERROR: boolean | undefined;
 }
 
 interface HappoStaticExample extends NextExampleResult {
@@ -14,15 +14,22 @@ interface HappoStaticExample extends NextExampleResult {
 let examples: Array<HappoStaticExample> = [];
 let currentIndex = 0;
 let renderErrors: Array<Error> = [];
+let failOnRenderError = false;
 
 const happoStatic = {
   init(win: WindowWithHappo = globalThis.window): void {
     win.happo = {
       ...win.happo,
 
-      init: ({ targetName, chunk, only }) => {
+      init: ({ targetName, chunk, only, failOnRenderError: failOnRenderErrorConfig }) => {
         currentIndex = 0;
         renderErrors = [];
+        // InitConfig takes precedence; fall back to the global injected into
+        // iframe.html for deployments where workers don't yet pass this flag.
+        failOnRenderError =
+          failOnRenderErrorConfig ??
+          globalThis.__HAPPO_FAIL_ON_RENDER_ERROR ??
+          false;
 
         if (only) {
           examples = examples.filter(
@@ -52,7 +59,7 @@ const happoStatic = {
 
         if (!example) {
           // we're done
-          if (globalThis.__HAPPO_FAIL_ON_STORY_ERROR && renderErrors.length > 0) {
+          if (failOnRenderError && renderErrors.length > 0) {
             throw new AggregateError(
               renderErrors,
               `${renderErrors.length} example(s) had errors`,
@@ -65,7 +72,7 @@ const happoStatic = {
           try {
             await example.render();
           } catch (e) {
-            if (globalThis.__HAPPO_FAIL_ON_STORY_ERROR) {
+            if (failOnRenderError) {
               const message =
                 e instanceof Error ? e.message : String(e);
               const error = new Error(
@@ -128,6 +135,7 @@ const happoStatic = {
     examples = [];
     currentIndex = 0;
     renderErrors = [];
+    failOnRenderError = false;
   },
 };
 

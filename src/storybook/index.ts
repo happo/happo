@@ -108,7 +108,7 @@ export default async function buildStorybookPackage({
   outputDir = '.out',
   usePrebuiltPackage = false,
   skip,
-  failOnStoryError = false,
+  failOnRenderError = false,
 }: Omit<StorybookIntegration, 'type'>): Promise<BuildStorybookPackageResult> {
   if (!usePrebuiltPackage) {
     await buildStorybook({ configDir, staticDir, outputDir });
@@ -139,7 +139,7 @@ export default async function buildStorybookPackage({
             <script type="text/javascript">window.happoSkipped = ${JSON.stringify(
               skipped,
             )};</script>
-            <script type="text/javascript">window.__HAPPO_FAIL_ON_STORY_ERROR = ${JSON.stringify(failOnStoryError)};</script>
+            <script type="text/javascript">window.__HAPPO_FAIL_ON_RENDER_ERROR = ${JSON.stringify(!!failOnRenderError)};</script>
           `,
       ),
     );

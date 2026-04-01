@@ -41,7 +41,7 @@ export interface StorybookIntegration {
    * Defaults to `false` for backwards compatibility. The default may change
    * in a future major release.
    */
-  failOnStoryError?: boolean;
+  failOnRenderError?: boolean;
 }
 
 interface BaseE2EIntegration {
@@ -116,7 +116,7 @@ interface CustomIntegration {
    * Defaults to `false` for backwards compatibility. The default may change
    * in a future major release.
    */
-  failOnStoryError?: boolean;
+  failOnRenderError?: boolean;
 }
 
 export interface Page {

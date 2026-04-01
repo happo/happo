@@ -20,6 +20,11 @@ export interface InitConfig {
     component: string;
     variant: string;
   };
+  /**
+   * When `true`, examples that render with errors will cause the run to fail
+   * with an `AggregateError` instead of silently continuing.
+   */
+  failOnRenderError?: boolean;
 }
 
 export interface TakeDOMSnapshotOptions {

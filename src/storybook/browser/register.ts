@@ -18,7 +18,7 @@ declare global {
   var happoTime: HappoTime | undefined;
   var happoSkipped: SkipItems | undefined;
   var __IS_HAPPO_RUN: boolean | undefined;
-  var __HAPPO_FAIL_ON_STORY_ERROR: boolean | undefined;
+  var __HAPPO_FAIL_ON_RENDER_ERROR: boolean | undefined;
   var __STORYBOOK_CLIENT_API__:
     | {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,17 +70,25 @@ let forcedHappoScreenshotSteps:
   | undefined;
 let shouldWaitForCompletedEvent = true;
 let storyErrors: Array<Error> = [];
+let failOnRenderError = false;
 
 function extractStorybookErrorMessage(): string {
-  const codeEl = document.querySelector('.sb-errordisplay_code');
-  if (codeEl instanceof HTMLElement && codeEl.textContent) {
-    return codeEl.textContent.trim();
+  // Storybook renders its error overlay using internal class names. Try the
+  // most specific selector first (the pre/code block containing the message
+  // and stack), then fall back to the container, then to any element whose
+  // class name includes "errordisplay".
+  const selectors = [
+    '.sb-errordisplay_code',
+    '.sb-errordisplay',
+    '[class*="errordisplay"]',
+  ];
+  for (const selector of selectors) {
+    const el = document.querySelector(selector);
+    if (el instanceof HTMLElement && el.textContent?.trim()) {
+      return el.textContent.trim();
+    }
   }
-  const errorEl = document.querySelector('.sb-errordisplay');
-  if (errorEl instanceof HTMLElement && errorEl.textContent) {
-    return errorEl.textContent.trim();
-  }
-  return 'Unknown story error (could not extract error details from DOM)';
+  return 'Unknown render error (could not extract error details from DOM)';
 }
 
 class ForcedHappoScreenshot extends Error {
@@ -261,6 +269,10 @@ globalThis.happo = globalThis.happo || ({} as WindowHappo);
 globalThis.happo.init = async (config: InitConfig) => {
   examples = filterExamples(await getExamples(), config);
   storyErrors = [];
+  // InitConfig takes precedence; fall back to the global injected into
+  // iframe.html for deployments where workers don't yet pass this flag.
+  failOnRenderError =
+    config.failOnRenderError ?? globalThis.__HAPPO_FAIL_ON_RENDER_ERROR ?? false;
 };
 
 interface Story {
@@ -367,7 +379,7 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
   }
 
   if (currentIndex >= examples.length) {
-    if (globalThis.__HAPPO_FAIL_ON_STORY_ERROR && storyErrors.length > 0) {
+    if (failOnRenderError && storyErrors.length > 0) {
       throw new AggregateError(
         storyErrors,
         `${storyErrors.length} story/stories had errors`,
@@ -450,7 +462,7 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       await themeSwitcher(theme, channel);
     }
 
-    if (/sb-show-errordisplay/.test(document.body.className)) {
+    if (document.body.classList.contains('sb-show-errordisplay')) {
       // It's possible that the error is from unmounting the previous story. We
       // can try re-rendering in this case.
       channel.emit('forceReRender');
@@ -471,8 +483,8 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
     }
 
     if (
-      globalThis.__HAPPO_FAIL_ON_STORY_ERROR &&
-      /sb-show-errordisplay/.test(document.body.className)
+      failOnRenderError &&
+      document.body.classList.contains('sb-show-errordisplay')
     ) {
       // After the delay/waitFor the error display is still present — this is a
       // real error in the current story (not just an unmounting artifact).

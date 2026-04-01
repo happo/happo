@@ -268,6 +268,10 @@ function ComponentThatThrows(): ReactNode {
   throw new Error('Some error');
 }
 
+export const MiscThrowsWithoutBoundary: StoryObj = {
+  render: (): ReactNode => createElement(ComponentThatThrows),
+};
+
 // https://github.com/bvaughn/react-error-boundary?tab=readme-ov-file#errorboundary-with-fallbackrender-prop
 function fallbackRender({ error }: { error: unknown }): ReactNode {
   if (!(error instanceof Error)) {

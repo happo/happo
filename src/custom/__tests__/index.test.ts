@@ -172,15 +172,7 @@ it('passes along properties from the example', async () => {
   assert.strictEqual(nextExample, undefined);
 });
 
-describe('when __HAPPO_FAIL_ON_STORY_ERROR is true', () => {
-  beforeEach(() => {
-    globalThis.__HAPPO_FAIL_ON_STORY_ERROR = true;
-  });
-
-  afterEach(() => {
-    globalThis.__HAPPO_FAIL_ON_STORY_ERROR = undefined;
-  });
-
+describe('when failOnRenderError is true', () => {
   it('collects errors and throws AggregateError at the end', async () => {
     happoStatic.init(win);
     happoStatic.registerExample({
@@ -205,6 +197,7 @@ describe('when __HAPPO_FAIL_ON_STORY_ERROR is true', () => {
 
     assertWindowHasHappo(win);
     assertHappoStaticIsInitialized(win.happo);
+    win.happo.init({ failOnRenderError: true });
 
     const good = await win.happo.nextExample();
     assert.strictEqual(good?.component, 'Foo');
@@ -252,6 +245,7 @@ describe('when __HAPPO_FAIL_ON_STORY_ERROR is true', () => {
 
     assertWindowHasHappo(win);
     assertHappoStaticIsInitialized(win.happo);
+    win.happo.init({ failOnRenderError: true });
 
     await win.happo.nextExample();
     const done = await win.happo.nextExample();
@@ -259,7 +253,7 @@ describe('when __HAPPO_FAIL_ON_STORY_ERROR is true', () => {
   });
 });
 
-describe('when __HAPPO_FAIL_ON_STORY_ERROR is false (default)', () => {
+describe('when failOnRenderError is false (default)', () => {
   it('re-throws render errors immediately', async () => {
     happoStatic.init(win);
     happoStatic.registerExample({
