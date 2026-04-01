@@ -9,14 +9,18 @@ interface HappoStaticExample extends NextExampleResult {
 
 let examples: Array<HappoStaticExample> = [];
 let currentIndex = 0;
+let renderErrors: Array<Error> = [];
+let failOnRenderError = false;
 
 const happoStatic = {
   init(win: WindowWithHappo = globalThis.window): void {
     win.happo = {
       ...win.happo,
 
-      init: ({ targetName, chunk, only }) => {
+      init: ({ targetName, chunk, only, failOnRenderError: failOnRenderErrorConfig }) => {
         currentIndex = 0;
+        renderErrors = [];
+        failOnRenderError = failOnRenderErrorConfig ?? false;
 
         if (only) {
           examples = examples.filter(
@@ -46,11 +50,34 @@ const happoStatic = {
 
         if (!example) {
           // we're done
+          if (failOnRenderError && renderErrors.length > 0) {
+            throw new AggregateError(
+              renderErrors,
+              `${renderErrors.length} example(s) had errors`,
+            );
+          }
           return;
         }
 
         if (example.render) {
-          await example.render();
+          try {
+            await example.render();
+          } catch (e) {
+            if (failOnRenderError) {
+              const message =
+                e instanceof Error ? e.message : String(e);
+              const error = new Error(
+                `${example.component} > ${example.variant}: ${message}`,
+              );
+              if (e instanceof Error && e.stack !== undefined) {
+                error.stack = e.stack;
+              }
+              renderErrors.push(error);
+              currentIndex++;
+              return { component: example.component, variant: example.variant, skipped: true };
+            }
+            throw e;
+          }
         }
         currentIndex++;
 
@@ -98,6 +125,8 @@ const happoStatic = {
   reset(): void {
     examples = [];
     currentIndex = 0;
+    renderErrors = [];
+    failOnRenderError = false;
   },
 };
 

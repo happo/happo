@@ -68,6 +68,8 @@ let forcedHappoScreenshotSteps:
   | Array<{ stepLabel: string; done: boolean }>
   | undefined;
 let shouldWaitForCompletedEvent = true;
+let storyErrors: Array<Error> = [];
+let failOnRenderError = false;
 
 class ForcedHappoScreenshot extends Error {
   type: string;
@@ -246,6 +248,11 @@ globalThis.happo = globalThis.happo || ({} as WindowHappo);
 
 globalThis.happo.init = async (config: InitConfig) => {
   examples = filterExamples(await getExamples(), config);
+  storyErrors = [];
+  failOnRenderError = config.failOnRenderError ?? false;
+  if (globalThis.happo) {
+    globalThis.happo.failOnRenderError = failOnRenderError;
+  }
 };
 
 interface Story {
@@ -257,7 +264,7 @@ interface Story {
 function renderStory(
   story: Story,
   { force = false } = {},
-): Promise<{ pausedAtStep?: { stepLabel: string; done: boolean } }> {
+): Promise<{ pausedAtStep?: { stepLabel: string; done: boolean }; renderError?: Error }> {
   const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
 
   if (!channel) {
@@ -266,9 +273,31 @@ function renderStory(
 
   let isPlaying = false;
   let loadingCount = 0;
+  let capturedRenderError: Error | undefined;
 
   return new Promise((resolve) => {
-    const timeout = time.originalSetTimeout(resolve, renderTimeoutMs);
+    const timeout = time.originalSetTimeout(() => {
+      resolve({
+        ...(capturedRenderError !== undefined && { renderError: capturedRenderError }),
+      });
+    }, renderTimeoutMs);
+
+    function handleRenderError({
+      message,
+      stack,
+    }: {
+      message: string;
+      stack?: string;
+    }) {
+      const error = new Error(message);
+      if (stack !== undefined) {
+        error.stack = stack;
+      }
+      capturedRenderError = error;
+    }
+
+    channel.on('happo/renderError', handleRenderError);
+
     function handleRenderPhaseChanged(ev: { storyId: string; newPhase: string }) {
       if (!channel) {
         throw new Error('Missing Storybook Addons Channel');
@@ -298,17 +327,25 @@ function renderStory(
         }
 
         channel.off('storyRenderPhaseChanged', handleRenderPhaseChanged);
+        channel.off('happo/renderError', handleRenderError);
         clearTimeout(timeout);
 
         if (isPlaying && forcedHappoScreenshotSteps) {
           const pausedAtStep = forcedHappoScreenshotSteps.at(-1);
 
           if (pausedAtStep && !pausedAtStep.done) {
-            return resolve({ pausedAtStep });
+            return resolve({
+              pausedAtStep,
+              ...(capturedRenderError !== undefined && {
+                renderError: capturedRenderError,
+              }),
+            });
           }
         }
 
-        return resolve({});
+        return resolve({
+          ...(capturedRenderError !== undefined && { renderError: capturedRenderError }),
+        });
       }
 
       if (ev.newPhase === 'playing') {
@@ -328,8 +365,11 @@ function renderStory(
 
     if (!shouldWaitForCompletedEvent) {
       time.originalSetTimeout(() => {
+        channel.off('happo/renderError', handleRenderError);
         clearTimeout(timeout);
-        resolve({});
+        resolve({
+          ...(capturedRenderError !== undefined && { renderError: capturedRenderError }),
+        });
       }, 0);
     }
   });
@@ -352,6 +392,12 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
   }
 
   if (currentIndex >= examples.length) {
+    if (failOnRenderError && storyErrors.length > 0) {
+      throw new AggregateError(
+        storyErrors,
+        `${storyErrors.length} story/stories had errors`,
+      );
+    }
     return;
   }
 
@@ -429,10 +475,21 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       await themeSwitcher(theme, channel);
     }
 
-    if (/sb-show-errordisplay/.test(document.body.className)) {
+    if (document.body.classList.contains('sb-show-errordisplay')) {
       // It's possible that the error is from unmounting the previous story. We
       // can try re-rendering in this case.
       channel.emit('forceReRender');
+    }
+
+    if (failOnRenderError && renderResult.renderError) {
+      const wrappedError = new Error(
+        `${component} > ${variant}: ${renderResult.renderError.message}`,
+      );
+      if (renderResult.renderError.stack !== undefined) {
+        wrappedError.stack = renderResult.renderError.stack;
+      }
+      storyErrors.push(wrappedError);
+      return { component, variant, skipped: true };
     }
 
     if (beforeScreenshot && typeof beforeScreenshot === 'function') {
