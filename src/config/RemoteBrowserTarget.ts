@@ -76,6 +76,13 @@ export interface ExecuteParams {
    * optimal number of parallel chunks.
    */
   estimatedSnapsCount?: number;
+
+  /**
+   * When `true`, the worker will pass `failOnRenderError: true` to
+   * `happo.init()`, causing examples that render with errors to be skipped and
+   * collected, with an `AggregateError` thrown at the end of iteration.
+   */
+  failOnRenderError?: boolean;
 }
 
 function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
@@ -108,6 +115,7 @@ function buildChunkItem({
   staticPackage,
   assetsPackage,
   targetName,
+  failOnRenderError,
 }: {
   slice?: Array<unknown> | undefined;
   chunk?: Chunk | undefined;
@@ -120,6 +128,7 @@ function buildChunkItem({
   staticPackage: string | undefined;
   assetsPackage: string | undefined;
   targetName: string | undefined;
+  failOnRenderError?: boolean;
 }): ChunkItem {
   const payloadString = JSON.stringify({
     viewport,
@@ -132,6 +141,7 @@ function buildChunkItem({
     assetsPackage,
     pages: pageSlice,
     extendsSha: pageSlice ? pageSlice.extendsSha : undefined,
+    failOnRenderError,
   });
 
   const payloadHash = createHash(payloadString + (pageSlice ? Math.random() : ''));
@@ -235,6 +245,7 @@ export default class RemoteBrowserTarget {
       pages,
       targetName,
       estimatedSnapsCount,
+      failOnRenderError,
     }: ExecuteParams,
     config: ConfigWithDefaults,
   ): Promise<Array<number>> {
@@ -247,6 +258,7 @@ export default class RemoteBrowserTarget {
       staticPackage,
       assetsPackage,
       targetName,
+      ...(failOnRenderError !== undefined && { failOnRenderError }),
     };
 
     // Build all chunk items up front

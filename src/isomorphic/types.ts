@@ -76,6 +76,7 @@ export type WindowHappo = {
   init?: (config: InitConfig) => Promise<void> | void;
   nextExample?: () => Promise<NextExampleResult | undefined>;
   takeDOMSnapshot?: (options: TakeDOMSnapshotOptions) => DOMSnapshotResult;
+  failOnRenderError?: boolean;
 };
 
 export interface WindowWithHappo extends Window {

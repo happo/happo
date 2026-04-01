@@ -18,7 +18,6 @@ declare global {
   var happoTime: HappoTime | undefined;
   var happoSkipped: SkipItems | undefined;
   var __IS_HAPPO_RUN: boolean | undefined;
-  var __HAPPO_FAIL_ON_RENDER_ERROR: boolean | undefined;
   var __STORYBOOK_CLIENT_API__:
     | {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,25 +70,6 @@ let forcedHappoScreenshotSteps:
 let shouldWaitForCompletedEvent = true;
 let storyErrors: Array<Error> = [];
 let failOnRenderError = false;
-
-function extractStorybookErrorMessage(): string {
-  // Storybook renders its error overlay using internal class names. Try the
-  // most specific selector first (the pre/code block containing the message
-  // and stack), then fall back to the container, then to any element whose
-  // class name includes "errordisplay".
-  const selectors = [
-    '.sb-errordisplay_code',
-    '.sb-errordisplay',
-    '[class*="errordisplay"]',
-  ];
-  for (const selector of selectors) {
-    const el = document.querySelector(selector);
-    if (el instanceof HTMLElement && el.textContent?.trim()) {
-      return el.textContent.trim();
-    }
-  }
-  return 'Unknown render error (could not extract error details from DOM)';
-}
 
 class ForcedHappoScreenshot extends Error {
   type: string;
@@ -269,10 +249,10 @@ globalThis.happo = globalThis.happo || ({} as WindowHappo);
 globalThis.happo.init = async (config: InitConfig) => {
   examples = filterExamples(await getExamples(), config);
   storyErrors = [];
-  // InitConfig takes precedence; fall back to the global injected into
-  // iframe.html for deployments where workers don't yet pass this flag.
-  failOnRenderError =
-    config.failOnRenderError ?? globalThis.__HAPPO_FAIL_ON_RENDER_ERROR ?? false;
+  failOnRenderError = config.failOnRenderError ?? false;
+  if (globalThis.happo) {
+    globalThis.happo.failOnRenderError = failOnRenderError;
+  }
 };
 
 interface Story {
@@ -284,7 +264,7 @@ interface Story {
 function renderStory(
   story: Story,
   { force = false } = {},
-): Promise<{ pausedAtStep?: { stepLabel: string; done: boolean } }> {
+): Promise<{ pausedAtStep?: { stepLabel: string; done: boolean }; renderError?: Error }> {
   const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
 
   if (!channel) {
@@ -293,9 +273,31 @@ function renderStory(
 
   let isPlaying = false;
   let loadingCount = 0;
+  let capturedRenderError: Error | undefined;
 
   return new Promise((resolve) => {
-    const timeout = time.originalSetTimeout(resolve, renderTimeoutMs);
+    const timeout = time.originalSetTimeout(() => {
+      resolve({
+        ...(capturedRenderError !== undefined && { renderError: capturedRenderError }),
+      });
+    }, renderTimeoutMs);
+
+    function handleRenderError({
+      message,
+      stack,
+    }: {
+      message: string;
+      stack?: string;
+    }) {
+      const error = new Error(message);
+      if (stack !== undefined) {
+        error.stack = stack;
+      }
+      capturedRenderError = error;
+    }
+
+    channel.on('happo/renderError', handleRenderError);
+
     function handleRenderPhaseChanged(ev: { storyId: string; newPhase: string }) {
       if (!channel) {
         throw new Error('Missing Storybook Addons Channel');
@@ -325,17 +327,25 @@ function renderStory(
         }
 
         channel.off('storyRenderPhaseChanged', handleRenderPhaseChanged);
+        channel.off('happo/renderError', handleRenderError);
         clearTimeout(timeout);
 
         if (isPlaying && forcedHappoScreenshotSteps) {
           const pausedAtStep = forcedHappoScreenshotSteps.at(-1);
 
           if (pausedAtStep && !pausedAtStep.done) {
-            return resolve({ pausedAtStep });
+            return resolve({
+              pausedAtStep,
+              ...(capturedRenderError !== undefined && {
+                renderError: capturedRenderError,
+              }),
+            });
           }
         }
 
-        return resolve({});
+        return resolve({
+          ...(capturedRenderError !== undefined && { renderError: capturedRenderError }),
+        });
       }
 
       if (ev.newPhase === 'playing') {
@@ -355,8 +365,11 @@ function renderStory(
 
     if (!shouldWaitForCompletedEvent) {
       time.originalSetTimeout(() => {
+        channel.off('happo/renderError', handleRenderError);
         clearTimeout(timeout);
-        resolve({});
+        resolve({
+          ...(capturedRenderError !== undefined && { renderError: capturedRenderError }),
+        });
       }, 0);
     }
   });
@@ -468,6 +481,17 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       channel.emit('forceReRender');
     }
 
+    if (failOnRenderError && renderResult.renderError) {
+      const wrappedError = new Error(
+        `${component} > ${variant}: ${renderResult.renderError.message}`,
+      );
+      if (renderResult.renderError.stack !== undefined) {
+        wrappedError.stack = renderResult.renderError.stack;
+      }
+      storyErrors.push(wrappedError);
+      return { component, variant, skipped: true };
+    }
+
     if (beforeScreenshot && typeof beforeScreenshot === 'function') {
       try {
         await beforeScreenshot({ rootElement });
@@ -480,19 +504,6 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
 
     if (waitFor) {
       await waitForWaitFor(waitFor);
-    }
-
-    if (
-      failOnRenderError &&
-      document.body.classList.contains('sb-show-errordisplay')
-    ) {
-      // After the delay/waitFor the error display is still present — this is a
-      // real error in the current story (not just an unmounting artifact).
-      const errorMessage = extractStorybookErrorMessage();
-      storyErrors.push(
-        new Error(`${component} > ${variant}: ${errorMessage}`),
-      );
-      return { component, variant, skipped: true };
     }
 
     const highlightsRootElement = document.querySelector(

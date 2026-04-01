@@ -27,7 +27,6 @@ async function createIframeHTML(
   rootDir: string,
   entryPoint: string,
   logger: Logger,
-  { failOnRenderError = false }: { failOnRenderError?: boolean } = {},
 ): Promise<void> {
   const iframePath = path.join(rootDir, 'iframe.html');
 
@@ -42,7 +41,6 @@ async function createIframeHTML(
     <title>Happo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="text/javascript">window.__HAPPO_FAIL_ON_RENDER_ERROR = ${JSON.stringify(failOnRenderError)};</script>
   </head>
   <body>
     <script src="${entryPoint}"></script>
@@ -64,11 +62,7 @@ async function buildPackage(
 ): Promise<BuildPackageResult> {
   if (integration.type === 'custom') {
     const { rootDir, entryPoint, estimatedSnapsCount } = await integration.build();
-    await createIframeHTML(rootDir, entryPoint, logger, {
-      ...(integration.failOnRenderError !== undefined && {
-        failOnRenderError: integration.failOnRenderError,
-      }),
-    });
+    await createIframeHTML(rootDir, entryPoint, logger);
 
     const result: BuildPackageResult = { packageDir: rootDir };
     if (estimatedSnapsCount != null) {
@@ -169,6 +163,14 @@ export default async function prepareSnapRequests(
 
       if (config.integration.type === 'pages') {
         targetParams.pages = config.integration.pages;
+      }
+
+      if (
+        (config.integration.type === 'storybook' ||
+          config.integration.type === 'custom') &&
+        config.integration.failOnRenderError != null
+      ) {
+        targetParams.failOnRenderError = config.integration.failOnRenderError;
       }
 
       const snapRequestIds = await target.execute(targetParams, config);

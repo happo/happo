@@ -1,9 +1,5 @@
 import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
 
-declare global {
-  var __HAPPO_FAIL_ON_RENDER_ERROR: boolean | undefined;
-}
-
 interface HappoStaticExample extends NextExampleResult {
   component: Required<NextExampleResult>['component'];
   variant: Required<NextExampleResult>['variant'];
@@ -24,12 +20,7 @@ const happoStatic = {
       init: ({ targetName, chunk, only, failOnRenderError: failOnRenderErrorConfig }) => {
         currentIndex = 0;
         renderErrors = [];
-        // InitConfig takes precedence; fall back to the global injected into
-        // iframe.html for deployments where workers don't yet pass this flag.
-        failOnRenderError =
-          failOnRenderErrorConfig ??
-          globalThis.__HAPPO_FAIL_ON_RENDER_ERROR ??
-          false;
+        failOnRenderError = failOnRenderErrorConfig ?? false;
 
         if (only) {
           examples = examples.filter(
