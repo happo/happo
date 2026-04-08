@@ -165,6 +165,14 @@ export default async function prepareSnapRequests(
         targetParams.pages = config.integration.pages;
       }
 
+      if (
+        (config.integration.type === 'storybook' ||
+          config.integration.type === 'custom') &&
+        config.integration.failOnRenderError != null
+      ) {
+        targetParams.failOnRenderError = config.integration.failOnRenderError;
+      }
+
       const snapRequestIds = await target.execute(targetParams, config);
       logger.start(`  - ${logTag(config.project)}${name}`, { startTime });
       logger.success();

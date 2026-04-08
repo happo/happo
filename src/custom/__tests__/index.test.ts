@@ -172,6 +172,106 @@ it('passes along properties from the example', async () => {
   assert.strictEqual(nextExample, undefined);
 });
 
+describe('when failOnRenderError is true', () => {
+  it('collects errors and throws AggregateError at the end', async () => {
+    happoStatic.init(win);
+    happoStatic.registerExample({
+      component: 'Foo',
+      variant: 'good',
+      render: async () => {},
+    });
+    happoStatic.registerExample({
+      component: 'Foo',
+      variant: 'bad',
+      render: async () => {
+        throw new Error('boom');
+      },
+    });
+    happoStatic.registerExample({
+      component: 'Foo',
+      variant: 'also-bad',
+      render: async () => {
+        throw new Error('kaboom');
+      },
+    });
+
+    assertWindowHasHappo(win);
+    assertHappoStaticIsInitialized(win.happo);
+    win.happo.init({ failOnRenderError: true });
+
+    const good = await win.happo.nextExample();
+    assert.strictEqual(good?.component, 'Foo');
+    assert.strictEqual(good?.variant, 'good');
+    assert.strictEqual(good?.skipped, undefined);
+
+    const bad = await win.happo.nextExample();
+    assert.strictEqual(bad?.component, 'Foo');
+    assert.strictEqual(bad?.variant, 'bad');
+    assert.strictEqual(bad?.skipped, true);
+
+    const alsoBad = await win.happo.nextExample();
+    assert.strictEqual(alsoBad?.component, 'Foo');
+    assert.strictEqual(alsoBad?.variant, 'also-bad');
+    assert.strictEqual(alsoBad?.skipped, true);
+
+    const { happo } = win;
+    await assert.rejects(
+      () => happo.nextExample!(),
+      (err: unknown) => {
+        assert.ok(err instanceof AggregateError, 'should be AggregateError');
+        assert.strictEqual(err.errors.length, 2);
+        assert.ok(
+          err.errors[0] instanceof Error &&
+            err.errors[0].message.includes('Foo > bad'),
+          'first error should mention Foo > bad',
+        );
+        assert.ok(
+          err.errors[1] instanceof Error &&
+            err.errors[1].message.includes('Foo > also-bad'),
+          'second error should mention Foo > also-bad',
+        );
+        return true;
+      },
+    );
+  });
+
+  it('does not throw when there are no errors', async () => {
+    happoStatic.init(win);
+    happoStatic.registerExample({
+      component: 'Foo',
+      variant: 'good',
+      render: async () => {},
+    });
+
+    assertWindowHasHappo(win);
+    assertHappoStaticIsInitialized(win.happo);
+    win.happo.init({ failOnRenderError: true });
+
+    await win.happo.nextExample();
+    const done = await win.happo.nextExample();
+    assert.strictEqual(done, undefined);
+  });
+});
+
+describe('when failOnRenderError is false (default)', () => {
+  it('re-throws render errors immediately', async () => {
+    happoStatic.init(win);
+    happoStatic.registerExample({
+      component: 'Foo',
+      variant: 'bad',
+      render: async () => {
+        throw new Error('boom');
+      },
+    });
+
+    assertWindowHasHappo(win);
+    assertHappoStaticIsInitialized(win.happo);
+    const { happo } = win;
+
+    await assert.rejects(() => happo.nextExample!(), /boom/);
+  });
+});
+
 it('#registerExample validates input', () => {
   assert.throws(
     // @ts-expect-error - Testing invalid types intentionally

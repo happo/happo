@@ -1,7 +1,40 @@
-import { createElement, type ReactNode, useEffect } from 'react';
+import { Component, createElement, type ReactNode, useEffect } from 'react';
 import { addons, makeDecorator } from 'storybook/preview-api';
 
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
+
+interface HappoErrorBoundaryState {
+  hasError: boolean;
+}
+
+class HappoErrorBoundary extends Component<
+  { children: ReactNode },
+  HappoErrorBoundaryState
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): HappoErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  override componentDidCatch(error: Error): void {
+    const channel = addons.getChannel();
+    channel.emit('happo/renderError', {
+      message: error.message,
+      stack: error.stack,
+    });
+  }
+
+  override render(): ReactNode {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 interface HappoParams {
   [key: string]: ((args: { rootElement: Element | null }) => unknown) | unknown;
@@ -70,9 +103,14 @@ export const withHappo: ReturnType<typeof makeDecorator> = makeDecorator({
   name: 'withHappo',
   parameterName: 'happo',
   wrapper: (Story, context) => {
+    const storyElement = createElement(Story as React.ComponentType, null);
+    const wrappedStory =
+      globalThis.__IS_HAPPO_RUN && globalThis.happo?.failOnRenderError
+        ? createElement(HappoErrorBoundary, null, storyElement)
+        : storyElement;
     return createElement(HappoDecorator, {
       params: context.parameters.happo || null,
-      children: createElement(Story as React.ComponentType, null),
+      children: wrappedStory,
     });
   },
 });
