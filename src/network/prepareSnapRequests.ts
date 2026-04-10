@@ -56,13 +56,31 @@ interface BuildPackageResult {
   estimatedSnapsCount?: number;
 }
 
+async function injectSkippedIntoIframe(
+  iframePath: string,
+  skipped: Array<{ component: string; variant: string }>,
+): Promise<void> {
+  const content = await fs.promises.readFile(iframePath, 'utf8');
+  const injected = content.replace(
+    '<head>',
+    `<head><script type="text/javascript">window.happoSkipped = ${JSON.stringify(skipped)};</script>`,
+  );
+  await fs.promises.writeFile(iframePath, injected);
+}
+
 async function buildPackage(
   { integration }: ConfigWithDefaults,
   logger: Logger,
+  skippedExamples?: Array<{ component: string; variant: string }>,
 ): Promise<BuildPackageResult> {
   if (integration.type === 'custom') {
     const { rootDir, entryPoint, estimatedSnapsCount } = await integration.build();
     await createIframeHTML(rootDir, entryPoint, logger);
+
+    if (skippedExamples && skippedExamples.length > 0) {
+      const iframePath = path.join(rootDir, 'iframe.html');
+      await injectSkippedIntoIframe(iframePath, skippedExamples);
+    }
 
     const result: BuildPackageResult = { packageDir: rootDir };
     if (estimatedSnapsCount != null) {
@@ -72,7 +90,10 @@ async function buildPackage(
   }
 
   if (integration.type === 'storybook') {
-    return await buildStorybookPackage(integration);
+    return await buildStorybookPackage({
+      ...integration,
+      ...(skippedExamples === undefined ? {} : { skippedExamples }),
+    });
   }
 
   throw new Error(`Unsupported integration type: ${integration.type}`);
@@ -96,8 +117,9 @@ interface PreparePackageResult {
 async function preparePackage(
   config: ConfigWithDefaults,
   logger: Logger,
+  skippedExamples?: Array<{ component: string; variant: string }>,
 ): Promise<PreparePackageResult> {
-  const { packageDir, estimatedSnapsCount } = await buildPackage(config, logger);
+  const { packageDir, estimatedSnapsCount } = await buildPackage(config, logger, skippedExamples);
 
   await validatePackage(packageDir);
 
@@ -120,12 +142,13 @@ async function preparePackage(
 
 export default async function prepareSnapRequests(
   config: ConfigWithDefaults,
+  skippedExamples?: Array<{ component: string; variant: string }>,
 ): Promise<Array<number>> {
   const logger = new Logger();
   const prepareResult =
     config.integration.type === 'pages'
       ? null
-      : await preparePackage(config, logger);
+      : await preparePackage(config, logger, skippedExamples);
 
   const targetNames = Object.keys(config.targets);
   const tl = targetNames.length;

@@ -5,7 +5,7 @@ import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
-import type { Logger } from '../isomorphic/types.ts';
+import type { Logger, SkipItem } from '../isomorphic/types.ts';
 import type { ParsedCLIArgs } from './parseOptions.ts';
 import { parseOptions } from './parseOptions.ts';
 import type { Reporter } from './telemetry.ts';
@@ -127,6 +127,7 @@ Options:
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
   --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
   --githubToken <token> GitHub token to use for posting Happo statuses as comments. Use in combination with the \`githubApiUrl\` configuration option. (default: auto-detected from environment)
+  --skippedExamples <json> JSON array of {component, variant} objects to skip in this run and borrow from the nearest baseline report instead
 
 Flake command options:
   --allProjects         List flakes across all projects (default: current project)
@@ -155,7 +156,7 @@ Examples:
 
   happo -- playwright test
 
-  --skippedExamples <json>  JSON array of examples to skip in the finalize command (e.g. '[{"component":"Button","variant":"primary","target":"chrome"}]')
+  happo --skippedExamples '[{"component":"Button","variant":"Primary"}]'
 
   happo finalize
   happo finalize --nonce my-unique-nonce
@@ -243,6 +244,7 @@ export async function main(
         args.dashdashCommandParts,
         configFilePath,
         logger,
+        environment.skippedExamples,
       );
       return;
     }
@@ -321,13 +323,54 @@ async function handleDefaultCommand(
   await startJob(config, environment, logger);
 
   try {
+    // When --skippedExamples is set, first resolve the baseline SHA. If no
+    // baseline is found we fall back to a full run (no skipping).
+    let skippedExamples: Array<SkipItem> | undefined;
+    let baselineSha: string | undefined;
+
+    if (environment.skippedExamples) {
+      try {
+        skippedExamples = JSON.parse(environment.skippedExamples) as Array<SkipItem>;
+      } catch (e) {
+        logger.error('[HAPPO] Failed to parse --skippedExamples JSON:', e);
+        process.exitCode = 1;
+        return;
+      }
+
+      const findBaselineReport = (
+        await import('../network/findBaselineReport.ts')
+      ).default;
+      baselineSha = await findBaselineReport(environment, config, logger);
+      if (!baselineSha) {
+        logger.log(
+          '[HAPPO] No baseline report found for --skippedExamples run. Generating a full report instead.',
+        );
+        skippedExamples = undefined;
+      }
+    }
+
     // Prepare the snap requests for the job. This includes bundling static
-    // assets and uploading them.
-    const snapRequestIds = await prepareSnapRequests(config);
+    // assets and uploading them. Only pass the skip list when we have a
+    // baseline to borrow the skipped examples from.
+    const snapRequestIds = await prepareSnapRequests(config, skippedExamples);
+
+    let allSnapRequestIds = snapRequestIds;
+
+    if (skippedExamples && baselineSha) {
+      const createExtendsReportSnapRequest = (
+        await import('../network/createExtendsReportSnapRequest.ts')
+      ).default;
+      const extendsRequestId = await createExtendsReportSnapRequest(
+        baselineSha,
+        skippedExamples,
+        config,
+      );
+      allSnapRequestIds = [...snapRequestIds, extendsRequestId];
+    }
 
     // Put together a report from the snap requests.
     const asyncReport = await createAsyncReport(
-      snapRequestIds,
+      allSnapRequestIds,
       config,
       environment,
       logger,
@@ -460,6 +503,7 @@ async function handleE2ECommand(
   dashdashCommandParts: Array<string>,
   configFilePath: string,
   logger: Logger,
+  skippedExamplesJSON?: string,
 ): Promise<void> {
   if (!E2E_INTEGRATION_TYPES.includes(config.integration.type)) {
     logger.error(
@@ -488,6 +532,7 @@ async function handleE2ECommand(
     environment,
     logger,
     configFilePath,
+    skippedExamplesJSON,
   );
   process.exitCode = exitCode;
 }

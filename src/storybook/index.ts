@@ -6,21 +6,8 @@ import type { StorybookIntegration } from '../config/index.ts';
 import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
 import getStorybookStoryCount from './getStorybookStoryCount.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
-import type { SkipItems } from './isomorphic/types.ts';
 
 const { HAPPO_DEBUG } = process.env;
-
-function assertSkippedIsSkipItems(skipped: unknown): asserts skipped is SkipItems {
-  if (!Array.isArray(skipped)) {
-    throw new TypeError(`The \`skip\` option didn't provide an array`);
-  }
-
-  if (skipped.some((item) => !item.component || !item.variant)) {
-    throw new Error(
-      `Each item provided by the \`skip\` option needs a \`component\` and a \`variant\` property`,
-    );
-  }
-}
 
 function resolveBuildCommandParts() {
   const version = getStorybookVersionFromPackageJson();
@@ -107,8 +94,10 @@ export default async function buildStorybookPackage({
   staticDir,
   outputDir = '.out',
   usePrebuiltPackage = false,
-  skip,
-}: Omit<StorybookIntegration, 'type'>): Promise<BuildStorybookPackageResult> {
+  skippedExamples,
+}: Omit<StorybookIntegration, 'type'> & {
+  skippedExamples?: Array<{ component: string; variant: string }>;
+}): Promise<BuildStorybookPackageResult> {
   if (!usePrebuiltPackage) {
     await buildStorybook({ configDir, staticDir, outputDir });
   }
@@ -121,11 +110,6 @@ export default async function buildStorybookPackage({
   }
 
   try {
-    const skipped =
-      typeof skip === 'function' ? await skip() : Array.isArray(skip) ? skip : [];
-
-    assertSkippedIsSkipItems(skipped);
-
     const iframeContent = await fs.promises.readFile(iframePath, 'utf8');
 
     await fs.promises.writeFile(
@@ -136,7 +120,7 @@ export default async function buildStorybookPackage({
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <script type="text/javascript">window.__IS_HAPPO_RUN = true;</script>
             <script type="text/javascript">window.happoSkipped = ${JSON.stringify(
-              skipped,
+              skippedExamples ?? [],
             )};</script>
           `,
       ),

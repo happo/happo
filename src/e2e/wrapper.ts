@@ -225,6 +225,7 @@ export default async function runWithWrapper(
   environment: EnvironmentResult,
   logger: Logger,
   configFilePath: string,
+  skippedExamplesJSON?: string,
 ): Promise<number> {
   allRequestIds = new Set<number>();
   const e2eServer = await startE2EServer(environment, happoConfig);
@@ -236,15 +237,21 @@ export default async function runWithWrapper(
   }
   try {
     const exitCode = await new Promise<number>((resolve, reject) => {
+      const childEnv: Record<string, string | undefined> = {
+        ...process.env,
+        HAPPO_E2E_PORT: e2eServer.port.toString(),
+        HAPPO_CONFIG_FILE: configFilePath,
+        HAPPO_API_KEY: happoConfig.apiKey,
+        HAPPO_API_SECRET: happoConfig.apiSecret,
+      };
+
+      if (skippedExamplesJSON) {
+        childEnv.HAPPO_SKIPPED_EXAMPLES = skippedExamplesJSON;
+      }
+
       const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
         stdio: 'inherit',
-        env: {
-          ...process.env,
-          HAPPO_E2E_PORT: e2eServer.port.toString(),
-          HAPPO_CONFIG_FILE: configFilePath,
-          HAPPO_API_KEY: happoConfig.apiKey,
-          HAPPO_API_SECRET: happoConfig.apiSecret,
-        },
+        env: childEnv,
         shell: process.platform == 'win32',
       });
 

@@ -105,6 +105,7 @@ let config: CypressConfig = {
 
 // Cached so the happoGetIntegrationConfig task is called at most once per run.
 let cachedAutoApplyPseudoStateAttributes: boolean | null = null;
+let cachedSkippedExamples: Array<{ component: string; variant: string }> | null = null;
 
 export const configure = (userConfig?: Partial<CypressConfig>): void => {
   config = { ...config, ...userConfig };
@@ -201,16 +202,23 @@ Cypress.Commands.add(
     };
 
     if (cachedAutoApplyPseudoStateAttributes === null) {
-      cy.task<{ autoApplyPseudoStateAttributes: boolean } | null>(
+      cy.task<{ autoApplyPseudoStateAttributes: boolean; skippedExamples: Array<{ component: string; variant: string }> } | null>(
         'happoGetIntegrationConfig',
         null,
         { ...taskOptions, log: false },
-      ).then((integrationConfig) => {
+      ).then((happoSettings) => {
         cachedAutoApplyPseudoStateAttributes =
-          integrationConfig?.autoApplyPseudoStateAttributes ?? false;
+          happoSettings?.autoApplyPseudoStateAttributes ?? false;
+        cachedSkippedExamples = happoSettings?.skippedExamples ?? [];
+        if (cachedSkippedExamples.some((item) => item.component === component && item.variant === variant)) {
+          return;
+        }
         takeSnapshot(cachedAutoApplyPseudoStateAttributes);
       });
     } else {
+      if (cachedSkippedExamples?.some((item) => item.component === component && item.variant === variant)) {
+        return;
+      }
       takeSnapshot(cachedAutoApplyPseudoStateAttributes);
     }
   },

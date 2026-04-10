@@ -42,26 +42,41 @@ const happoStatic = {
       },
 
       nextExample: async () => {
-        const example = examples[currentIndex];
+        const happoSkipped = (globalThis as { happoSkipped?: Array<{ component: string; variant: string }> }).happoSkipped;
 
-        if (!example) {
-          // we're done
-          return;
+        while (true) {
+          const example = examples[currentIndex];
+
+          if (!example) {
+            // we're done
+            return;
+          }
+
+          if (
+            Array.isArray(happoSkipped) &&
+            happoSkipped.some(
+              (item) =>
+                item.component === example.component && item.variant === example.variant,
+            )
+          ) {
+            currentIndex++;
+            continue;
+          }
+
+          if (example.render) {
+            await example.render();
+          }
+          currentIndex++;
+
+          const clone = {
+            component: example.component,
+            variant: example.variant,
+            targets: example.targets,
+            waitForContent: example.waitForContent,
+          };
+
+          return clone;
         }
-
-        if (example.render) {
-          await example.render();
-        }
-        currentIndex++;
-
-        const clone = {
-          component: example.component,
-          variant: example.variant,
-          targets: example.targets,
-          waitForContent: example.waitForContent,
-        };
-
-        return clone;
       },
     };
   },

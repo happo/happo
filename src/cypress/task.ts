@@ -39,8 +39,9 @@ function getCleanupTimeframe({
   return { start, end };
 }
 
-interface IntegrationConfig {
+interface HappoScreenshotConfig {
   autoApplyPseudoStateAttributes: boolean;
+  skippedExamples: Array<{ component: string; variant: string }>;
 }
 
 interface HappoTask {
@@ -57,7 +58,7 @@ interface HappoTask {
     isFirst: boolean;
     isLast: boolean;
   }): Promise<null>;
-  happoGetIntegrationConfig(): IntegrationConfig;
+  happoGetHappoScreenshotConfig(): HappoScreenshotConfig;
   handleBeforeSpec(): Promise<void>;
 }
 
@@ -68,7 +69,7 @@ const task: HappoTask = {
     on('task', {
       happoRegisterSnapshot: task.happoRegisterSnapshot,
       happoRegisterBase64Image: task.happoRegisterBase64Image,
-      happoGetIntegrationConfig: task.happoGetIntegrationConfig,
+      happoGetHappoScreenshotConfig: task.happoGetHappoScreenshotConfig,
     });
     on('before:spec', task.handleBeforeSpec);
     on('after:spec', task.handleAfterSpec);
@@ -139,13 +140,22 @@ const task: HappoTask = {
     return null;
   },
 
-  happoGetIntegrationConfig(): IntegrationConfig {
+  happoGetHappoScreenshotConfig(): HappoScreenshotConfig {
     const integration = controller.config?.integration;
+    let skippedExamples: Array<{ component: string; variant: string }> = [];
+    if (process.env.HAPPO_SKIPPED_EXAMPLES) {
+      try {
+        skippedExamples = JSON.parse(process.env.HAPPO_SKIPPED_EXAMPLES) as typeof skippedExamples;
+      } catch {
+        // ignore parse errors
+      }
+    }
     return {
       autoApplyPseudoStateAttributes:
         integration?.type === 'cypress'
           ? (integration.autoApplyPseudoStateAttributes ?? false)
           : false,
+      skippedExamples,
     };
   },
 

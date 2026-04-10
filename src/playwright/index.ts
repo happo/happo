@@ -103,6 +103,18 @@ export const test: TestType<
         ? (integration.autoApplyPseudoStateAttributes ?? false)
         : false;
 
+    const partialSkipped: Array<{ component: string; variant: string }> = (() => {
+      if (!process.env.HAPPO_SKIPPED_EXAMPLES) return [];
+      try {
+        return JSON.parse(process.env.HAPPO_SKIPPED_EXAMPLES) as Array<{
+          component: string;
+          variant: string;
+        }>;
+      } catch {
+        return [];
+      }
+    })();
+
     const happoScreenshot: ScreenshotFunction = async (
       handleOrLocator,
       { component, variant, snapshotStrategy = 'hoist', ...rest },
@@ -126,6 +138,10 @@ export const test: TestType<
       }
       if (!variant) {
         throw new Error('Missing `variant`');
+      }
+
+      if (partialSkipped.some((item) => item.component === component && item.variant === variant)) {
+        return;
       }
 
       const elementHandle =
