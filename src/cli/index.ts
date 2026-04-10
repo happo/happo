@@ -234,6 +234,10 @@ export async function main(
     const configFilePath = makeAbsolute(args.values.config || findConfigFile());
     const config = await loadConfigFile(configFilePath, environment, logger);
 
+    if (args.values.project !== undefined) {
+      config.project = args.values.project;
+    }
+
     // Handle positional arguments (commands)
     const command = args.positionals[0];
 
