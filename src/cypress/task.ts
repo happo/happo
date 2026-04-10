@@ -58,7 +58,7 @@ interface HappoTask {
     isFirst: boolean;
     isLast: boolean;
   }): Promise<null>;
-  happoGetHappoScreenshotConfig(): HappoScreenshotConfig;
+  happoGetIntegrationConfig(): HappoScreenshotConfig;
   handleBeforeSpec(): Promise<void>;
 }
 
@@ -69,7 +69,7 @@ const task: HappoTask = {
     on('task', {
       happoRegisterSnapshot: task.happoRegisterSnapshot,
       happoRegisterBase64Image: task.happoRegisterBase64Image,
-      happoGetHappoScreenshotConfig: task.happoGetHappoScreenshotConfig,
+      happoGetIntegrationConfig: task.happoGetIntegrationConfig,
     });
     on('before:spec', task.handleBeforeSpec);
     on('after:spec', task.handleAfterSpec);
@@ -140,7 +140,7 @@ const task: HappoTask = {
     return null;
   },
 
-  happoGetHappoScreenshotConfig(): HappoScreenshotConfig {
+  happoGetIntegrationConfig(): HappoScreenshotConfig {
     const integration = controller.config?.integration;
     let skippedExamples: Array<{ component: string; variant: string }> = [];
     if (process.env.HAPPO_SKIPPED_EXAMPLES) {
