@@ -61,10 +61,13 @@ async function injectSkippedIntoIframe(
   skipped: Array<{ component: string; variant: string }>,
 ): Promise<void> {
   const content = await fs.promises.readFile(iframePath, 'utf8');
-  const injected = content.replace(
-    '<head>',
-    `<head><script type="text/javascript">window.happoSkipped = ${JSON.stringify(skipped)};</script>`,
-  );
+  const skippedScript = `<script type="text/javascript">window.happoSkipped = ${JSON.stringify(skipped)};</script>`;
+  const injected = content.replace(/<head\b[^>]*>/i, (match) => `${match}${skippedScript}`);
+  if (injected === content) {
+    throw new Error(
+      `Failed to inject skipped examples into iframe.html at '${iframePath}': could not find an opening <head> tag`,
+    );
+  }
   await fs.promises.writeFile(iframePath, injected);
 }
 

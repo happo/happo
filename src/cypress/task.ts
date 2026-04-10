@@ -145,7 +145,19 @@ const task: HappoTask = {
     let skippedExamples: Array<{ component: string; variant: string }> = [];
     if (process.env.HAPPO_SKIPPED_EXAMPLES) {
       try {
-        skippedExamples = JSON.parse(process.env.HAPPO_SKIPPED_EXAMPLES) as typeof skippedExamples;
+        const parsed: unknown = JSON.parse(process.env.HAPPO_SKIPPED_EXAMPLES);
+        if (
+          Array.isArray(parsed) &&
+          parsed.every(
+            (item): item is { component: string; variant: string } =>
+              typeof item === 'object' &&
+              item !== null &&
+              typeof item.component === 'string' &&
+              typeof item.variant === 'string',
+          )
+        ) {
+          skippedExamples = parsed;
+        }
       } catch {
         // ignore parse errors
       }

@@ -106,10 +106,20 @@ export const test: TestType<
     const partialSkipped: Array<{ component: string; variant: string }> = (() => {
       if (!process.env.HAPPO_SKIPPED_EXAMPLES) return [];
       try {
-        return JSON.parse(process.env.HAPPO_SKIPPED_EXAMPLES) as Array<{
-          component: string;
-          variant: string;
-        }>;
+        const parsed: unknown = JSON.parse(process.env.HAPPO_SKIPPED_EXAMPLES);
+        if (
+          Array.isArray(parsed) &&
+          parsed.every(
+            (item): item is { component: string; variant: string } =>
+              typeof item === 'object' &&
+              item !== null &&
+              typeof item.component === 'string' &&
+              typeof item.variant === 'string',
+          )
+        ) {
+          return parsed;
+        }
+        return [];
       } catch {
         return [];
       }

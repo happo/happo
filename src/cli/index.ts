@@ -242,13 +242,41 @@ export async function main(
     const command = args.positionals[0];
 
     if (args.dashdashCommandParts) {
+      let validatedSkippedExamplesJSON: string | undefined;
+      if (environment.skippedExamples) {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(environment.skippedExamples);
+        } catch (e) {
+          logger.error('[HAPPO] Failed to parse --skippedExamples JSON:', e);
+          process.exitCode = 1;
+          return;
+        }
+        if (
+          !Array.isArray(parsed) ||
+          !parsed.every(
+            (item) =>
+              typeof item === 'object' &&
+              item !== null &&
+              typeof (item as Record<string, unknown>).component === 'string' &&
+              typeof (item as Record<string, unknown>).variant === 'string',
+          )
+        ) {
+          logger.error(
+            '[HAPPO] --skippedExamples must be a JSON array of {component, variant} objects',
+          );
+          process.exitCode = 1;
+          return;
+        }
+        validatedSkippedExamplesJSON = environment.skippedExamples;
+      }
       await handleE2ECommand(
         config,
         environment,
         args.dashdashCommandParts,
         configFilePath,
         logger,
-        environment.skippedExamples,
+        validatedSkippedExamplesJSON,
       );
       return;
     }
@@ -333,13 +361,42 @@ async function handleDefaultCommand(
     let baselineSha: string | undefined;
 
     if (environment.skippedExamples) {
+      const supportedTypes = ['storybook', 'custom'];
+      if (!supportedTypes.includes(config.integration.type)) {
+        logger.error(
+          `[HAPPO] --skippedExamples is not supported for integration type '${config.integration.type}'. Supported types: ${supportedTypes.join(', ')}`,
+        );
+        process.exitCode = 1;
+        return;
+      }
+
+      let parsed: unknown;
       try {
-        skippedExamples = JSON.parse(environment.skippedExamples) as Array<SkipItem>;
+        parsed = JSON.parse(environment.skippedExamples);
       } catch (e) {
         logger.error('[HAPPO] Failed to parse --skippedExamples JSON:', e);
         process.exitCode = 1;
         return;
       }
+
+      if (
+        !Array.isArray(parsed) ||
+        !parsed.every(
+          (item): item is SkipItem =>
+            typeof item === 'object' &&
+            item !== null &&
+            typeof (item as Record<string, unknown>).component === 'string' &&
+            typeof (item as Record<string, unknown>).variant === 'string',
+        )
+      ) {
+        logger.error(
+          '[HAPPO] --skippedExamples must be a JSON array of {component, variant} objects',
+        );
+        process.exitCode = 1;
+        return;
+      }
+
+      skippedExamples = parsed;
 
       const findBaselineReport = (
         await import('../network/findBaselineReport.ts')
