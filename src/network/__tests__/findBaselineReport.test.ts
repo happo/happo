@@ -75,7 +75,7 @@ describe('findBaselineReport', () => {
     assert.ok(call);
     assert.strictEqual(
       call.arguments[0]?.path,
-      '/api/reports/after-sha/baseline-report',
+      '/api/reports/after-sha/find-baseline',
     );
     assert.strictEqual(call.arguments[0]?.method, 'POST');
   });

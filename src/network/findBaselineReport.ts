@@ -13,7 +13,7 @@ export default async function findBaselineReport(
   try {
     const result = await makeHappoAPIRequest(
       {
-        path: `/api/reports/${environment.afterSha}/baseline-report`,
+        path: `/api/reports/${environment.afterSha}/find-baseline`,
         method: 'POST',
         body: {
           project: config.project,
