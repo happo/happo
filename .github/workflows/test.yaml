@@ -83,7 +83,7 @@ jobs:
       - uses: ./.github/actions/setup-env
       - if: matrix.dependencies != ''
         run: pnpm add -D ${{ matrix.dependencies }}
-      - run: pnpm test:storybook
+      - run: pnpm test:storybook -- --skippedExamples "$(node ./scripts/getSkippedExamples.ts)"
         env:
           HAPPO_STORYBOOK_VERSION: ${{ matrix.version }}
 
