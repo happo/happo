@@ -75,8 +75,8 @@ describe('validateSkip', () => {
 });
 
 describe('parseSkip', () => {
-  it('returns empty array for undefined', () => {
-    assert.deepStrictEqual(parseSkip(undefined), []);
+  it('returns empty array when called with no argument', () => {
+    assert.deepStrictEqual(parseSkip(), []);
   });
 
   it('returns empty array for invalid JSON', () => {
