@@ -143,7 +143,18 @@ const task: HappoTask = {
 
   happoGetIntegrationConfig(): HappoScreenshotConfig {
     const integration = controller.config?.integration;
-    const skippedExamples = parseSkippedExamples(process.env.HAPPO_SKIPPED_EXAMPLES);
+    const rawSkipped = process.env.HAPPO_SKIPPED_EXAMPLES;
+    if (rawSkipped) {
+      try {
+        const p: unknown = JSON.parse(rawSkipped);
+        if (!Array.isArray(p)) {
+          console.warn('[HAPPO] HAPPO_SKIPPED_EXAMPLES is not a JSON array, will be ignored:', rawSkipped);
+        }
+      } catch {
+        console.warn('[HAPPO] HAPPO_SKIPPED_EXAMPLES is not valid JSON, will be ignored:', rawSkipped);
+      }
+    }
+    const skippedExamples = parseSkippedExamples(rawSkipped);
     return {
       autoApplyPseudoStateAttributes:
         integration?.type === 'cypress'
