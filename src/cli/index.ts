@@ -5,7 +5,8 @@ import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
-import type { Logger } from '../isomorphic/types.ts';
+import { validateSkip } from '../isomorphic/parseSkip.ts';
+import type { Logger, SkipItem } from '../isomorphic/types.ts';
 import type { ParsedCLIArgs } from './parseOptions.ts';
 import { parseOptions } from './parseOptions.ts';
 import type { Reporter } from './telemetry.ts';
@@ -127,6 +128,7 @@ Options:
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
   --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
   --githubToken <token> GitHub token to use for posting Happo statuses as comments. Use in combination with the \`githubApiUrl\` configuration option. (default: auto-detected from environment)
+  --skip <json> JSON array of {component, variant} objects to skip in this run and borrow from the nearest baseline report instead
 
 Flake command options:
   --allProjects         List flakes across all projects (default: current project)
@@ -155,11 +157,11 @@ Examples:
 
   happo -- playwright test
 
-  --skippedExamples <json>  JSON array of examples to skip in the finalize command (e.g. '[{"component":"Button","variant":"primary","target":"chrome"}]')
+  happo --skip '[{"component":"Button","variant":"Primary"}]'
 
   happo finalize
   happo finalize --nonce my-unique-nonce
-  happo finalize --skippedExamples '[{"component":"Button","variant":"primary","target":"chrome"}]'
+  happo finalize --skip '[{"component":"Button","variant":"primary","target":"chrome"}]'
 
   happo flake
   happo flake --allProjects
@@ -233,16 +235,35 @@ export async function main(
     const configFilePath = makeAbsolute(args.values.config || findConfigFile());
     const config = await loadConfigFile(configFilePath, environment, logger);
 
+    if (args.values.project !== undefined) {
+      config.project = args.values.project;
+    }
+
     // Handle positional arguments (commands)
     const command = args.positionals[0];
 
     if (args.dashdashCommandParts) {
+      let validatedSkipJSON: string | undefined;
+      if (environment.skip) {
+        try {
+          validateSkip(environment.skip);
+        } catch (e) {
+          logger.error(
+            '[HAPPO] Invalid --skip:',
+            e instanceof Error ? e.message : String(e),
+          );
+          process.exitCode = 1;
+          return;
+        }
+        validatedSkipJSON = environment.skip;
+      }
       await handleE2ECommand(
         config,
         environment,
         args.dashdashCommandParts,
         configFilePath,
         logger,
+        validatedSkipJSON,
       );
       return;
     }
@@ -321,13 +342,66 @@ async function handleDefaultCommand(
   await startJob(config, environment, logger);
 
   try {
+    // When --skip is set, first resolve the baseline SHA. If no
+    // baseline is found we fall back to a full run (no skipping).
+    let skip: Array<SkipItem> | undefined;
+    let baselineSha: string | undefined;
+
+    if (environment.skip) {
+      const supportedTypes = ['storybook', 'custom'];
+      if (!supportedTypes.includes(config.integration.type)) {
+        logger.error(
+          `[HAPPO] --skip is not supported for integration type '${config.integration.type}'. Supported types: ${supportedTypes.join(', ')}`,
+        );
+        process.exitCode = 1;
+        return;
+      }
+
+      try {
+        skip = validateSkip(environment.skip);
+      } catch (e) {
+        logger.error(
+          '[HAPPO] Invalid --skip:',
+          e instanceof Error ? e.message : String(e),
+        );
+        process.exitCode = 1;
+        return;
+      }
+
+      const findBaselineReport = (
+        await import('../network/findBaselineReport.ts')
+      ).default;
+      baselineSha = await findBaselineReport(environment, config, logger);
+      if (!baselineSha) {
+        logger.log(
+          '[HAPPO] No baseline report found for --skip run. Generating a full report instead.',
+        );
+        skip = undefined;
+      }
+    }
+
     // Prepare the snap requests for the job. This includes bundling static
-    // assets and uploading them.
-    const snapRequestIds = await prepareSnapRequests(config);
+    // assets and uploading them. Only pass the skip list when we have a
+    // baseline to borrow the skipped examples from.
+    const snapRequestIds = await prepareSnapRequests(config, skip);
+
+    let allSnapRequestIds = snapRequestIds;
+
+    if (skip && baselineSha) {
+      const createExtendsReportSnapRequest = (
+        await import('../network/createExtendsReportSnapRequest.ts')
+      ).default;
+      const extendsRequestId = await createExtendsReportSnapRequest(
+        baselineSha,
+        skip,
+        config,
+      );
+      allSnapRequestIds = [...snapRequestIds, extendsRequestId];
+    }
 
     // Put together a report from the snap requests.
     const asyncReport = await createAsyncReport(
-      snapRequestIds,
+      allSnapRequestIds,
       config,
       environment,
       logger,
@@ -460,6 +534,7 @@ async function handleE2ECommand(
   dashdashCommandParts: Array<string>,
   configFilePath: string,
   logger: Logger,
+  skipJSON?: string,
 ): Promise<void> {
   if (!E2E_INTEGRATION_TYPES.includes(config.integration.type)) {
     logger.error(
@@ -488,6 +563,7 @@ async function handleE2ECommand(
     environment,
     logger,
     configFilePath,
+    skipJSON,
   );
   process.exitCode = exitCode;
 }

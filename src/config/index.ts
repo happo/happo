@@ -1,5 +1,3 @@
-import type { SkipItems } from '../storybook/isomorphic/types.ts';
-
 export interface StorybookIntegration {
   type: 'storybook';
 
@@ -23,14 +21,6 @@ export interface StorybookIntegration {
    * sure that files are built to the outputDir.
    */
   usePrebuiltPackage?: boolean;
-
-  /**
-   * Items to skip when generating snapshots.
-   *
-   * Can be an async function that resolves to an array of `{component,
-   * variant}`, or an array of `{component, variant}`.
-   */
-  skip?: SkipItems | (() => Promise<SkipItems>) | undefined;
 }
 
 interface BaseE2EIntegration {

@@ -1,5 +1,8 @@
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
 import http from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
 
 import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
@@ -54,7 +57,7 @@ export async function finalizeAll({
   environment,
   logger,
 }: FinalizeAllOptions): Promise<void> {
-  const { afterSha, nonce, skippedExamples: skippedExamplesJSON } = environment;
+  const { afterSha, nonce, skip: skipJSON } = environment;
 
   if (!nonce) {
     throw new Error('[HAPPO] Missing --nonce argument');
@@ -63,19 +66,19 @@ export async function finalizeAll({
   const body: {
     project?: string | undefined;
     nonce: string;
-    skippedExamples: Array<Example>;
+    skip: Array<Example>;
   } = {
     project: happoConfig.project,
     nonce,
-    skippedExamples: [],
+    skip: [],
   };
 
-  if (skippedExamplesJSON) {
+  if (skipJSON) {
     try {
-      const skippedExamples = JSON.parse(skippedExamplesJSON);
-      body.skippedExamples = skippedExamples;
+      const skipItems = JSON.parse(skipJSON);
+      body.skip = skipItems;
     } catch (e) {
-      logger.error('Error when parsing --skippedExamples', skippedExamplesJSON);
+      logger.error('Error when parsing --skip', skipJSON);
       throw e;
     }
   }
@@ -225,6 +228,7 @@ export default async function runWithWrapper(
   environment: EnvironmentResult,
   logger: Logger,
   configFilePath: string,
+  skipJSON?: string,
 ): Promise<number> {
   allRequestIds = new Set<number>();
   const e2eServer = await startE2EServer(environment, happoConfig);
@@ -234,17 +238,34 @@ export default async function runWithWrapper(
   if (!job) {
     throw new Error('Failed to create Happo job');
   }
+
+  // Write skipped examples to a temp file to avoid env var size limits.
+  let skipFilePath: string | undefined;
+  if (skipJSON) {
+    skipFilePath = path.join(
+      os.tmpdir(),
+      `happo-skipped-${process.pid}.json`,
+    );
+    await fs.promises.writeFile(skipFilePath, skipJSON, 'utf8');
+  }
+
   try {
     const exitCode = await new Promise<number>((resolve, reject) => {
+      const childEnv: Record<string, string | undefined> = {
+        ...process.env,
+        HAPPO_E2E_PORT: e2eServer.port.toString(),
+        HAPPO_CONFIG_FILE: configFilePath,
+        HAPPO_API_KEY: happoConfig.apiKey,
+        HAPPO_API_SECRET: happoConfig.apiSecret,
+      };
+
+      if (skipFilePath) {
+        childEnv.HAPPO_SKIP_FILE = skipFilePath;
+      }
+
       const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
         stdio: 'inherit',
-        env: {
-          ...process.env,
-          HAPPO_E2E_PORT: e2eServer.port.toString(),
-          HAPPO_CONFIG_FILE: configFilePath,
-          HAPPO_API_KEY: happoConfig.apiKey,
-          HAPPO_API_SECRET: happoConfig.apiSecret,
-        },
+        env: childEnv,
         shell: process.platform == 'win32',
       });
 
@@ -286,5 +307,10 @@ export default async function runWithWrapper(
   } finally {
     allRequestIds.clear();
     await e2eServer.close();
+    if (skipFilePath) {
+      await fs.promises.unlink(skipFilePath).catch(() => {
+        // Ignore errors — the file may already be gone.
+      });
+    }
   }
 }

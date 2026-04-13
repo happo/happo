@@ -5,6 +5,7 @@ import type { ConfigWithDefaults } from '../config/index.ts';
 import RemoteBrowserTarget, {
   type ExecuteParams,
 } from '../config/RemoteBrowserTarget.ts';
+import type { SkipItem } from '../isomorphic/types.ts';
 import buildStorybookPackage from '../storybook/index.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
@@ -56,13 +57,35 @@ interface BuildPackageResult {
   estimatedSnapsCount?: number;
 }
 
+async function injectSkippedIntoIframe(
+  iframePath: string,
+  skipped: Array<SkipItem>,
+): Promise<void> {
+  const content = await fs.promises.readFile(iframePath, 'utf8');
+  const skippedJson = JSON.stringify(skipped).replaceAll(/<\/script>/gi, String.raw`<\/script>`);
+  const skippedScript = `<script type="application/json" id="happo-skipped">${skippedJson}</script>`;
+  const injected = content.replace(/<head\b[^>]*>/i, (match) => `${match}${skippedScript}`);
+  if (injected === content) {
+    throw new Error(
+      `Failed to inject skipped examples into iframe.html at '${iframePath}': could not find an opening <head> tag`,
+    );
+  }
+  await fs.promises.writeFile(iframePath, injected);
+}
+
 async function buildPackage(
   { integration }: ConfigWithDefaults,
   logger: Logger,
+  skip?: Array<SkipItem>,
 ): Promise<BuildPackageResult> {
   if (integration.type === 'custom') {
     const { rootDir, entryPoint, estimatedSnapsCount } = await integration.build();
     await createIframeHTML(rootDir, entryPoint, logger);
+
+    if (skip && skip.length > 0) {
+      const iframePath = path.join(rootDir, 'iframe.html');
+      await injectSkippedIntoIframe(iframePath, skip);
+    }
 
     const result: BuildPackageResult = { packageDir: rootDir };
     if (estimatedSnapsCount != null) {
@@ -72,7 +95,10 @@ async function buildPackage(
   }
 
   if (integration.type === 'storybook') {
-    return await buildStorybookPackage(integration);
+    return await buildStorybookPackage({
+      ...integration,
+      ...(skip === undefined ? {} : { skip }),
+    });
   }
 
   throw new Error(`Unsupported integration type: ${integration.type}`);
@@ -96,8 +122,9 @@ interface PreparePackageResult {
 async function preparePackage(
   config: ConfigWithDefaults,
   logger: Logger,
+  skip?: Array<SkipItem>,
 ): Promise<PreparePackageResult> {
-  const { packageDir, estimatedSnapsCount } = await buildPackage(config, logger);
+  const { packageDir, estimatedSnapsCount } = await buildPackage(config, logger, skip);
 
   await validatePackage(packageDir);
 
@@ -120,12 +147,13 @@ async function preparePackage(
 
 export default async function prepareSnapRequests(
   config: ConfigWithDefaults,
+  skip?: Array<SkipItem>,
 ): Promise<Array<number>> {
   const logger = new Logger();
   const prepareResult =
     config.integration.type === 'pages'
       ? null
-      : await preparePackage(config, logger);
+      : await preparePackage(config, logger, skip);
 
   const targetNames = Object.keys(config.targets);
   const tl = targetNames.length;

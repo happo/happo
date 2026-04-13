@@ -14,6 +14,11 @@ import type {
 import { test as base } from '@playwright/test';
 
 import Controller from '../e2e/controller.ts';
+import {
+  isInSkipSet,
+  parseSkip,
+  toSkipSet,
+} from '../isomorphic/parseSkip.ts';
 
 const pathToBrowserBuild = path.resolve(
   import.meta.dirname,
@@ -103,6 +108,12 @@ export const test: TestType<
         ? (integration.autoApplyPseudoStateAttributes ?? false)
         : false;
 
+    const skippedFilePath = process.env.HAPPO_SKIP_FILE;
+    const rawSkipped = skippedFilePath
+      ? fs.readFileSync(skippedFilePath, 'utf8')
+      : undefined;
+    const skipSet = toSkipSet(parseSkip(rawSkipped));
+
     const happoScreenshot: ScreenshotFunction = async (
       handleOrLocator,
       { component, variant, snapshotStrategy = 'hoist', ...rest },
@@ -126,6 +137,10 @@ export const test: TestType<
       }
       if (!variant) {
         throw new Error('Missing `variant`');
+      }
+
+      if (isInSkipSet(skipSet, component, variant)) {
+        return;
       }
 
       const elementHandle =

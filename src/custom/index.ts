@@ -1,3 +1,8 @@
+import {
+  isInSkipSet,
+  parseSkip,
+  toSkipSet,
+} from '../isomorphic/parseSkip.ts';
 import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
 
 interface HappoStaticExample extends NextExampleResult {
@@ -42,26 +47,41 @@ const happoStatic = {
       },
 
       nextExample: async () => {
-        const example = examples[currentIndex];
+        const happoSkippedEl =
+          typeof document === 'undefined'
+            ? null
+            : document.getElementById('happo-skipped');
+        const skipSet = toSkipSet(
+          parseSkip(happoSkippedEl?.textContent ?? undefined),
+        );
 
-        if (!example) {
-          // we're done
-          return;
+        while (true) {
+          const example = examples[currentIndex];
+
+          if (!example) {
+            // we're done
+            return;
+          }
+
+          if (isInSkipSet(skipSet, example.component, example.variant)) {
+            currentIndex++;
+            continue;
+          }
+
+          if (example.render) {
+            await example.render();
+          }
+          currentIndex++;
+
+          const clone = {
+            component: example.component,
+            variant: example.variant,
+            targets: example.targets,
+            waitForContent: example.waitForContent,
+          };
+
+          return clone;
         }
-
-        if (example.render) {
-          await example.render();
-        }
-        currentIndex++;
-
-        const clone = {
-          component: example.component,
-          variant: example.variant,
-          targets: example.targets,
-          waitForContent: example.waitForContent,
-        };
-
-        return clone;
       },
     };
   },

@@ -40,7 +40,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           happo-api-key: ${{ secrets.HAPPO_API_KEY }}
           happo-api-secret: ${{ secrets.HAPPO_API_SECRET }}
-          projects: 'cypress,storybook-v9,storybook-v10,playwright,playwright-nonce,custom,pages'
+          projects: 'cypress,storybook-v9,storybook-v10,storybook-skipped,playwright,playwright-nonce,custom,pages'
 
   cypress:
     runs-on: ubuntu-latest
@@ -86,6 +86,14 @@ jobs:
       - run: pnpm test:storybook
         env:
           HAPPO_STORYBOOK_VERSION: ${{ matrix.version }}
+
+  storybook-skipped:
+    runs-on: ubuntu-latest
+    name: Storybook (skipped examples)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - run: pnpm test:storybook:skipped
 
   playwright:
     runs-on: ubuntu-latest
