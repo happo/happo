@@ -383,7 +383,7 @@ async function handleDefaultCommand(
     // Prepare the snap requests for the job. This includes bundling static
     // assets and uploading them. Only pass the skip list when we have a
     // baseline to borrow the skipped examples from.
-    const snapRequestIds = await prepareSnapRequests(config, skip);
+    const { snapRequestIds, resolvedSkip } = await prepareSnapRequests(config, skip);
 
     let allSnapRequestIds = snapRequestIds;
 
@@ -391,9 +391,11 @@ async function handleDefaultCommand(
       const createExtendsReportSnapRequest = (
         await import('../network/createExtendsReportSnapRequest.ts')
       ).default;
+      // Use storybook-resolved skip (storyFile items expanded to component names)
+      // if available, otherwise fall back to the raw skip list.
       const extendsRequestId = await createExtendsReportSnapRequest(
         baselineSha,
-        skip,
+        resolvedSkip ?? skip,
         config,
       );
       allSnapRequestIds = [...snapRequestIds, extendsRequestId];

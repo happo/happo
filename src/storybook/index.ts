@@ -5,8 +5,8 @@ import path from 'node:path';
 import type { StorybookIntegration } from '../config/index.ts';
 import type { SkipItem } from '../isomorphic/types.ts';
 import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
-import getStorybookStoryCount from './getStorybookStoryCount.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
+import resolveStoryFileItems, { type StorybookIndexEntry } from './resolveStoryFileItems.ts';
 
 const { HAPPO_DEBUG } = process.env;
 
@@ -88,6 +88,7 @@ async function buildStorybook({
 export interface BuildStorybookPackageResult {
   packageDir: string;
   estimatedSnapsCount?: number;
+  resolvedSkip?: Array<{ component: string; variant?: string }>;
 }
 
 export default async function buildStorybookPackage({
@@ -113,6 +114,34 @@ export default async function buildStorybookPackage({
   try {
     const iframeContent = await fs.promises.readFile(iframePath, 'utf8');
 
+    // Read index.json once to compute story count and resolve storyFile items.
+    let estimatedSnapsCount: number | undefined;
+    let resolvedSkip: Array<{ component: string; variant?: string }> | undefined;
+
+    const indexPath = path.join(outputDir, 'index.json');
+    try {
+      const indexContent = await fs.promises.readFile(indexPath, 'utf8');
+      const indexData = JSON.parse(indexContent) as {
+        entries?: Record<string, StorybookIndexEntry>;
+        stories?: Record<string, StorybookIndexEntry>;
+      };
+      const entries = indexData.entries ?? indexData.stories ?? {};
+
+      estimatedSnapsCount = Object.values(entries).filter((e) => e.type === 'story').length;
+
+      if (skip !== undefined) {
+        resolvedSkip = resolveStoryFileItems(skip, entries);
+      }
+    } catch (error) {
+      console.warn('[HAPPO] Failed to read Storybook index.json:', error);
+      if (skip !== undefined) {
+        // Fall back to passing through only component-based items
+        resolvedSkip = skip.filter(
+          (item): item is { component: string; variant?: string } => 'component' in item,
+        );
+      }
+    }
+
     await fs.promises.writeFile(
       iframePath,
       iframeContent.replace(
@@ -121,17 +150,18 @@ export default async function buildStorybookPackage({
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <script type="text/javascript">window.__IS_HAPPO_RUN = true;</script>
             <script type="text/javascript">window.happoSkipped = ${JSON.stringify(
-              skip ?? [],
+              resolvedSkip ?? [],
             )};</script>
           `,
       ),
     );
 
-    const estimatedSnapsCount = await getStorybookStoryCount(outputDir);
-
     const result: BuildStorybookPackageResult = { packageDir: outputDir };
     if (estimatedSnapsCount != null) {
       result.estimatedSnapsCount = estimatedSnapsCount;
+    }
+    if (resolvedSkip !== undefined) {
+      result.resolvedSkip = resolvedSkip;
     }
     return result;
   } catch (e) {

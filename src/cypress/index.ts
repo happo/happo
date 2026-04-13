@@ -7,7 +7,7 @@ import {
   type SkipSet,
   toSkipSet,
 } from '../isomorphic/parseSkip.ts';
-import type { TakeDOMSnapshotOptions } from '../isomorphic/types.ts';
+import type { SkipItem, TakeDOMSnapshotOptions } from '../isomorphic/types.ts';
 import chunked from './chunked.ts';
 
 interface HappoScreenshotOptions {
@@ -207,7 +207,7 @@ Cypress.Commands.add(
     };
 
     if (cachedAutoApplyPseudoStateAttributes === null) {
-      cy.task<{ autoApplyPseudoStateAttributes: boolean; skip: Array<{ component: string; variant?: string }> } | null>(
+      cy.task<{ autoApplyPseudoStateAttributes: boolean; skip: Array<SkipItem> } | null>(
         'happoGetIntegrationConfig',
         null,
         { ...taskOptions, log: false },

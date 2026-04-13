@@ -12,7 +12,9 @@ export default async function createExtendsReportSnapRequest(
       path: '/api/snap-requests/extends-report',
       method: 'POST',
       body: {
-        extendedSnaps: skip,
+        extendedSnaps: skip.filter(
+          (item): item is { component: string; variant?: string } => 'component' in item,
+        ),
         extendsSha,
         project: config.project,
       },

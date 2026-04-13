@@ -55,6 +55,7 @@ async function createIframeHTML(
 interface BuildPackageResult {
   packageDir: string;
   estimatedSnapsCount?: number;
+  resolvedSkip?: Array<{ component: string; variant?: string }>;
 }
 
 async function injectSkippedIntoIframe(
@@ -95,10 +96,11 @@ async function buildPackage(
   }
 
   if (integration.type === 'storybook') {
-    return await buildStorybookPackage({
+    const result = await buildStorybookPackage({
       ...integration,
       ...(skip === undefined ? {} : { skip }),
     });
+    return result;
   }
 
   throw new Error(`Unsupported integration type: ${integration.type}`);
@@ -117,6 +119,7 @@ async function validatePackage(packageDir: string): Promise<void> {
 interface PreparePackageResult {
   packagePath: string;
   estimatedSnapsCount?: number;
+  resolvedSkip?: Array<{ component: string; variant?: string }>;
 }
 
 async function preparePackage(
@@ -124,7 +127,7 @@ async function preparePackage(
   logger: Logger,
   skip?: Array<SkipItem>,
 ): Promise<PreparePackageResult> {
-  const { packageDir, estimatedSnapsCount } = await buildPackage(config, logger, skip);
+  const { packageDir, estimatedSnapsCount, resolvedSkip } = await buildPackage(config, logger, skip);
 
   await validatePackage(packageDir);
 
@@ -142,13 +145,21 @@ async function preparePackage(
   if (estimatedSnapsCount != null) {
     result.estimatedSnapsCount = estimatedSnapsCount;
   }
+  if (resolvedSkip !== undefined) {
+    result.resolvedSkip = resolvedSkip;
+  }
   return result;
+}
+
+export interface PrepareSnapRequestsResult {
+  snapRequestIds: Array<number>;
+  resolvedSkip?: Array<{ component: string; variant?: string }>;
 }
 
 export default async function prepareSnapRequests(
   config: ConfigWithDefaults,
   skip?: Array<SkipItem>,
-): Promise<Array<number>> {
+): Promise<PrepareSnapRequestsResult> {
   const logger = new Logger();
   const prepareResult =
     config.integration.type === 'pages'
@@ -163,7 +174,7 @@ export default async function prepareSnapRequests(
     }...`,
   );
   const outerStartTime = Date.now();
-  const results: Array<number> = [];
+  const snapRequestIds: Array<number> = [];
   await Promise.all(
     targetNames.map(async (name) => {
       const startTime = Date.now();
@@ -193,13 +204,17 @@ export default async function prepareSnapRequests(
         targetParams.pages = config.integration.pages;
       }
 
-      const snapRequestIds = await target.execute(targetParams, config);
+      const ids = await target.execute(targetParams, config);
       logger.start(`  - ${logTag(config.project)}${name}`, { startTime });
       logger.success();
-      results.push(...snapRequestIds);
+      snapRequestIds.push(...ids);
     }),
   );
   logger.start(undefined, { startTime: outerStartTime });
   logger.success();
-  return results;
+  const result: PrepareSnapRequestsResult = { snapRequestIds };
+  if (prepareResult?.resolvedSkip !== undefined) {
+    result.resolvedSkip = prepareResult.resolvedSkip;
+  }
+  return result;
 }
