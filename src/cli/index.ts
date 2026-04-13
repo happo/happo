@@ -368,6 +368,17 @@ async function handleDefaultCommand(
         return;
       }
 
+      if (
+        config.integration.type !== 'storybook' &&
+        skip.some((item) => 'storyFile' in item)
+      ) {
+        logger.error(
+          `[HAPPO] storyFile items in --skip are only supported for the storybook integration (current integration: '${config.integration.type}')`,
+        );
+        process.exitCode = 1;
+        return;
+      }
+
       const findBaselineReport = (
         await import('../network/findBaselineReport.ts')
       ).default;
@@ -383,7 +394,7 @@ async function handleDefaultCommand(
     // Prepare the snap requests for the job. This includes bundling static
     // assets and uploading them. Only pass the skip list when we have a
     // baseline to borrow the skipped examples from.
-    const snapRequestIds = await prepareSnapRequests(config, skip);
+    const { snapRequestIds, resolvedSkip } = await prepareSnapRequests(config, skip);
 
     let allSnapRequestIds = snapRequestIds;
 
@@ -391,9 +402,11 @@ async function handleDefaultCommand(
       const createExtendsReportSnapRequest = (
         await import('../network/createExtendsReportSnapRequest.ts')
       ).default;
+      // Use storybook-resolved skip (storyFile items expanded to component names)
+      // if available, otherwise fall back to the raw skip list.
       const extendsRequestId = await createExtendsReportSnapRequest(
         baselineSha,
-        skip,
+        resolvedSkip ?? skip,
         config,
       );
       allSnapRequestIds = [...snapRequestIds, extendsRequestId];

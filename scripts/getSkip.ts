@@ -1,13 +1,16 @@
 /**
- * Outputs a --skip JSON argument, cycling through a set of examples based on
- * the current day of the week so that a different example is skipped on each
- * day.
+ * Outputs a --skip JSON argument with two items, cycling through a set of
+ * examples based on the current day of the week so that different examples
+ * are skipped on each day.
+ *
+ * - One item uses the `component` form to skip a specific variant.
+ * - One item uses the `storyFile` form to skip all stories in a file.
  *
  * Usage:
  *   node scripts/getSkip.ts
  */
 
-const examples = [
+const componentExamples = [
   { component: 'Stories', variant: 'Button With Text [white]' },
   { component: 'Stories', variant: 'Misc Large [white]' },
   { component: 'Stories', variant: 'Button Firefox Only [white]' },
@@ -17,7 +20,13 @@ const examples = [
   { component: 'Stories', variant: 'Lazy [white]' },
 ];
 
-const day = new Date().getDay(); // 0 (Sun) – 6 (Sat)
-const skipped = examples[day % examples.length];
+const storyFileExamples = [
+  { storyFile: './src/storybook/__tests__/storybook-app/Interactive.stories.ts' },
+  { storyFile: './src/storybook/__tests__/storybook-app/Story.stories.ts' },
+];
 
-process.stdout.write(JSON.stringify([skipped]));
+const day = new Date().getDay(); // 0 (Sun) – 6 (Sat)
+const componentItem = componentExamples[day % componentExamples.length];
+const storyFileItem = storyFileExamples[day % storyFileExamples.length];
+
+process.stdout.write(JSON.stringify([componentItem, storyFileItem]));

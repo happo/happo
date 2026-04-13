@@ -79,7 +79,6 @@ export interface WindowWithHappo extends Window {
 
 export type Logger = Pick<Console, 'log' | 'error'>;
 
-export interface SkipItem {
-  component: string;
-  variant?: string;
-}
+export type SkipItem =
+  | { component: string; variant?: string }
+  | { storyFile: string };

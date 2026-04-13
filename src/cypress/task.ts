@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 import Controller, { type SnapshotRegistrationParams } from '../e2e/controller.ts';
 import { parseSkip } from '../isomorphic/parseSkip.ts';
+import type { SkipItem } from '../isomorphic/types.ts';
 
 const controller = new Controller();
 let disabledLogged = false;
@@ -44,7 +45,7 @@ function getCleanupTimeframe({
 
 interface HappoScreenshotConfig {
   autoApplyPseudoStateAttributes: boolean;
-  skip: Array<{ component: string; variant?: string }>;
+  skip: Array<SkipItem>;
 }
 
 interface HappoTask {
