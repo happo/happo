@@ -36,7 +36,7 @@ export function validateSkip(json: string): Array<SkipItem> {
  * Parses a JSON string into an array of SkipItems. Returns an empty array on
  * any parse error or if the value is not a valid array of SkipItems.
  */
-export function parseSkip(json: string | undefined): Array<SkipItem> {
+export function parseSkip(json?: string): Array<SkipItem> {
   if (!json) return [];
   try {
     return validateSkip(json);
