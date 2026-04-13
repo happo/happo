@@ -6,7 +6,7 @@ import {
   isInSkipSet,
   type SkipSet,
   toSkipSet,
-} from '../isomorphic/parseSkippedExamples.ts';
+} from '../isomorphic/parseSkip.ts';
 import type { TakeDOMSnapshotOptions } from '../isomorphic/types.ts';
 import chunked from './chunked.ts';
 
@@ -207,14 +207,14 @@ Cypress.Commands.add(
     };
 
     if (cachedAutoApplyPseudoStateAttributes === null) {
-      cy.task<{ autoApplyPseudoStateAttributes: boolean; skippedExamples: Array<{ component: string; variant?: string }> } | null>(
+      cy.task<{ autoApplyPseudoStateAttributes: boolean; skip: Array<{ component: string; variant?: string }> } | null>(
         'happoGetIntegrationConfig',
         null,
         { ...taskOptions, log: false },
       ).then((happoSettings) => {
         cachedAutoApplyPseudoStateAttributes =
           happoSettings?.autoApplyPseudoStateAttributes ?? false;
-        cachedSkipSet = toSkipSet(happoSettings?.skippedExamples ?? []);
+        cachedSkipSet = toSkipSet(happoSettings?.skip ?? []);
         if (isInSkipSet(cachedSkipSet, component, variant)) {
           return;
         }

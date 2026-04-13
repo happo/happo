@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 
 import Controller, { type SnapshotRegistrationParams } from '../e2e/controller.ts';
-import { parseSkippedExamples } from '../isomorphic/parseSkippedExamples.ts';
+import { parseSkip } from '../isomorphic/parseSkip.ts';
 
 const controller = new Controller();
 let disabledLogged = false;
@@ -44,7 +44,7 @@ function getCleanupTimeframe({
 
 interface HappoScreenshotConfig {
   autoApplyPseudoStateAttributes: boolean;
-  skippedExamples: Array<{ component: string; variant?: string }>;
+  skip: Array<{ component: string; variant?: string }>;
 }
 
 interface HappoTask {
@@ -146,21 +146,21 @@ const task: HappoTask = {
   happoGetIntegrationConfig(): HappoScreenshotConfig {
     const integration = controller.config?.integration;
     let rawSkipped: string | undefined;
-    const skippedFilePath = process.env.HAPPO_SKIPPED_EXAMPLES_FILE;
+    const skippedFilePath = process.env.HAPPO_SKIP_FILE;
     if (skippedFilePath) {
       try {
         rawSkipped = fs.readFileSync(skippedFilePath, 'utf8');
       } catch (e) {
-        console.warn('[HAPPO] Failed to read HAPPO_SKIPPED_EXAMPLES_FILE:', e);
+        console.warn('[HAPPO] Failed to read HAPPO_SKIP_FILE:', e);
       }
     }
-    const skippedExamples = parseSkippedExamples(rawSkipped);
+    const skip = parseSkip(rawSkipped);
     return {
       autoApplyPseudoStateAttributes:
         integration?.type === 'cypress'
           ? (integration.autoApplyPseudoStateAttributes ?? false)
           : false,
-      skippedExamples,
+      skip,
     };
   },
 

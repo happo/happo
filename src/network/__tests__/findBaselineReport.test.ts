@@ -57,7 +57,7 @@ beforeEach(async () => {
     fallbackShas: ['fallback-sha-1', 'fallback-sha-2'],
     githubToken: undefined,
     ci: false,
-    skippedExamples: undefined,
+    skip: undefined,
   };
 
   makeHappoAPIRequestImpl = async () => ({ sha: 'baseline-sha-123' });

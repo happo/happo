@@ -57,7 +57,7 @@ export async function finalizeAll({
   environment,
   logger,
 }: FinalizeAllOptions): Promise<void> {
-  const { afterSha, nonce, skippedExamples: skippedExamplesJSON } = environment;
+  const { afterSha, nonce, skip: skipJSON } = environment;
 
   if (!nonce) {
     throw new Error('[HAPPO] Missing --nonce argument');
@@ -66,19 +66,19 @@ export async function finalizeAll({
   const body: {
     project?: string | undefined;
     nonce: string;
-    skippedExamples: Array<Example>;
+    skip: Array<Example>;
   } = {
     project: happoConfig.project,
     nonce,
-    skippedExamples: [],
+    skip: [],
   };
 
-  if (skippedExamplesJSON) {
+  if (skipJSON) {
     try {
-      const skippedExamples = JSON.parse(skippedExamplesJSON);
-      body.skippedExamples = skippedExamples;
+      const skipItems = JSON.parse(skipJSON);
+      body.skip = skipItems;
     } catch (e) {
-      logger.error('Error when parsing --skippedExamples', skippedExamplesJSON);
+      logger.error('Error when parsing --skip', skipJSON);
       throw e;
     }
   }
@@ -228,7 +228,7 @@ export default async function runWithWrapper(
   environment: EnvironmentResult,
   logger: Logger,
   configFilePath: string,
-  skippedExamplesJSON?: string,
+  skipJSON?: string,
 ): Promise<number> {
   allRequestIds = new Set<number>();
   const e2eServer = await startE2EServer(environment, happoConfig);
@@ -240,13 +240,13 @@ export default async function runWithWrapper(
   }
 
   // Write skipped examples to a temp file to avoid env var size limits.
-  let skippedExamplesFilePath: string | undefined;
-  if (skippedExamplesJSON) {
-    skippedExamplesFilePath = path.join(
+  let skipFilePath: string | undefined;
+  if (skipJSON) {
+    skipFilePath = path.join(
       os.tmpdir(),
       `happo-skipped-${process.pid}.json`,
     );
-    await fs.promises.writeFile(skippedExamplesFilePath, skippedExamplesJSON, 'utf8');
+    await fs.promises.writeFile(skipFilePath, skipJSON, 'utf8');
   }
 
   try {
@@ -259,8 +259,8 @@ export default async function runWithWrapper(
         HAPPO_API_SECRET: happoConfig.apiSecret,
       };
 
-      if (skippedExamplesFilePath) {
-        childEnv.HAPPO_SKIPPED_EXAMPLES_FILE = skippedExamplesFilePath;
+      if (skipFilePath) {
+        childEnv.HAPPO_SKIP_FILE = skipFilePath;
       }
 
       const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
@@ -307,8 +307,8 @@ export default async function runWithWrapper(
   } finally {
     allRequestIds.clear();
     await e2eServer.close();
-    if (skippedExamplesFilePath) {
-      await fs.promises.unlink(skippedExamplesFilePath).catch(() => {
+    if (skipFilePath) {
+      await fs.promises.unlink(skipFilePath).catch(() => {
         // Ignore errors — the file may already be gone.
       });
     }

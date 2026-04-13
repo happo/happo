@@ -803,8 +803,8 @@ describe('main', () => {
         assert(makeHappoAPIRequestMock.mock.callCount() > 0);
       });
 
-      it('sends skippedExamples in the finalize request body when --skippedExamples is set', async () => {
-        const skippedExamples = [
+      it('sends skip in the finalize request body when --skip is set', async () => {
+        const skip = [
           { component: 'Button', variant: 'primary', target: 'chrome' },
         ];
         await main(
@@ -818,8 +818,8 @@ describe('main', () => {
             'test-sha',
             '--nonce',
             'test-nonce',
-            '--skippedExamples',
-            JSON.stringify(skippedExamples),
+            '--skip',
+            JSON.stringify(skip),
           ],
           logger,
         );
@@ -829,13 +829,13 @@ describe('main', () => {
         );
         assert.ok(finalizeCall, 'expected a finalize API call');
         assert.deepStrictEqual(
-          (finalizeCall.arguments[0]?.body as { skippedExamples: unknown })
-            ?.skippedExamples,
-          skippedExamples,
+          (finalizeCall.arguments[0]?.body as { skip: unknown })
+            ?.skip,
+          skip,
         );
       });
 
-      it('sends an empty skippedExamples array when --skippedExamples is not set', async () => {
+      it('sends an empty skip array when --skip is not set', async () => {
         await main(
           [
             'npx',
@@ -856,8 +856,8 @@ describe('main', () => {
         );
         assert.ok(finalizeCall, 'expected a finalize API call');
         assert.deepStrictEqual(
-          (finalizeCall.arguments[0]?.body as { skippedExamples: unknown })
-            ?.skippedExamples,
+          (finalizeCall.arguments[0]?.body as { skip: unknown })
+            ?.skip,
           [],
         );
       });

@@ -44,7 +44,7 @@ export interface EnvironmentResult {
   fallbackShas: Array<string> | undefined;
   githubToken: string | undefined;
   ci: boolean;
-  skippedExamples: string | undefined;
+  skip: string | undefined;
 }
 
 const envKeys: ReadonlyArray<string> = [
@@ -640,7 +640,7 @@ export default async function resolveEnvironment(
     fallbackShas: resolveFallbackShas(cliArgs, nonNullBeforeSha),
     githubToken: cliArgs.githubToken,
     ci: !!env.CI,
-    skippedExamples: cliArgs.skippedExamples,
+    skip: cliArgs.skip,
   };
 
   if (debugMode) {

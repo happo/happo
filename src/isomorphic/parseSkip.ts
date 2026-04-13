@@ -20,11 +20,11 @@ function isSkipItem(item: unknown): item is SkipItem {
  * Parses and validates a JSON string, returning an array of SkipItems.
  * Throws a TypeError if the JSON is invalid or not an array of SkipItems.
  */
-export function validateSkippedExamples(json: string): Array<SkipItem> {
+export function validateSkip(json: string): Array<SkipItem> {
   const parsed: unknown = JSON.parse(json);
   if (!Array.isArray(parsed) || !parsed.every(isSkipItem)) {
     throw new TypeError(
-      '--skippedExamples must be a JSON array of {component, variant?} objects',
+      '--skip must be a JSON array of {component, variant?} objects',
     );
   }
   return parsed;
@@ -34,10 +34,10 @@ export function validateSkippedExamples(json: string): Array<SkipItem> {
  * Parses a JSON string into an array of SkipItems. Returns an empty array on
  * any parse error or if the value is not a valid array of SkipItems.
  */
-export function parseSkippedExamples(json: string | undefined): Array<SkipItem> {
+export function parseSkip(json: string | undefined): Array<SkipItem> {
   if (!json) return [];
   try {
-    return validateSkippedExamples(json);
+    return validateSkip(json);
   } catch {
     return [];
   }

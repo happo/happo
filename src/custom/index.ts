@@ -1,8 +1,8 @@
 import {
   isInSkipSet,
-  parseSkippedExamples,
+  parseSkip,
   toSkipSet,
-} from '../isomorphic/parseSkippedExamples.ts';
+} from '../isomorphic/parseSkip.ts';
 import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
 
 interface HappoStaticExample extends NextExampleResult {
@@ -52,7 +52,7 @@ const happoStatic = {
             ? null
             : document.getElementById('happo-skipped');
         const skipSet = toSkipSet(
-          parseSkippedExamples(happoSkippedEl?.textContent ?? undefined),
+          parseSkip(happoSkippedEl?.textContent ?? undefined),
         );
 
         while (true) {

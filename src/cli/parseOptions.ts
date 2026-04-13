@@ -101,7 +101,7 @@ export const parseOptions = {
     type: 'string',
   },
 
-  skippedExamples: {
+  skip: {
     type: 'string',
   },
 } as const;

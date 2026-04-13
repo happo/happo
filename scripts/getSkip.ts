@@ -1,10 +1,10 @@
 /**
- * Outputs a --skippedExamples JSON argument, cycling through a set of
- * examples based on the current day of the week so that a different example
- * is skipped on each day.
+ * Outputs a --skip JSON argument, cycling through a set of examples based on
+ * the current day of the week so that a different example is skipped on each
+ * day.
  *
  * Usage:
- *   node scripts/getSkippedExamples.ts
+ *   node scripts/getSkip.ts
  */
 
 const examples = [

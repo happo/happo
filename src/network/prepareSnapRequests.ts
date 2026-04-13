@@ -76,15 +76,15 @@ async function injectSkippedIntoIframe(
 async function buildPackage(
   { integration }: ConfigWithDefaults,
   logger: Logger,
-  skippedExamples?: Array<SkipItem>,
+  skip?: Array<SkipItem>,
 ): Promise<BuildPackageResult> {
   if (integration.type === 'custom') {
     const { rootDir, entryPoint, estimatedSnapsCount } = await integration.build();
     await createIframeHTML(rootDir, entryPoint, logger);
 
-    if (skippedExamples && skippedExamples.length > 0) {
+    if (skip && skip.length > 0) {
       const iframePath = path.join(rootDir, 'iframe.html');
-      await injectSkippedIntoIframe(iframePath, skippedExamples);
+      await injectSkippedIntoIframe(iframePath, skip);
     }
 
     const result: BuildPackageResult = { packageDir: rootDir };
@@ -97,7 +97,7 @@ async function buildPackage(
   if (integration.type === 'storybook') {
     return await buildStorybookPackage({
       ...integration,
-      ...(skippedExamples === undefined ? {} : { skippedExamples }),
+      ...(skip === undefined ? {} : { skip }),
     });
   }
 
@@ -122,9 +122,9 @@ interface PreparePackageResult {
 async function preparePackage(
   config: ConfigWithDefaults,
   logger: Logger,
-  skippedExamples?: Array<SkipItem>,
+  skip?: Array<SkipItem>,
 ): Promise<PreparePackageResult> {
-  const { packageDir, estimatedSnapsCount } = await buildPackage(config, logger, skippedExamples);
+  const { packageDir, estimatedSnapsCount } = await buildPackage(config, logger, skip);
 
   await validatePackage(packageDir);
 
@@ -147,13 +147,13 @@ async function preparePackage(
 
 export default async function prepareSnapRequests(
   config: ConfigWithDefaults,
-  skippedExamples?: Array<SkipItem>,
+  skip?: Array<SkipItem>,
 ): Promise<Array<number>> {
   const logger = new Logger();
   const prepareResult =
     config.integration.type === 'pages'
       ? null
-      : await preparePackage(config, logger, skippedExamples);
+      : await preparePackage(config, logger, skip);
 
   const targetNames = Object.keys(config.targets);
   const tl = targetNames.length;

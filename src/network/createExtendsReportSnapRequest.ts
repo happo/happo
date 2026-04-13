@@ -4,7 +4,7 @@ import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
 
 export default async function createExtendsReportSnapRequest(
   extendsSha: string,
-  skippedExamples: Array<SkipItem>,
+  skip: Array<SkipItem>,
   config: ConfigWithDefaults,
 ): Promise<number> {
   const result = await makeHappoAPIRequest(
@@ -12,7 +12,7 @@ export default async function createExtendsReportSnapRequest(
       path: '/api/snap-requests/extends-report',
       method: 'POST',
       body: {
-        extendedSnaps: skippedExamples,
+        extendedSnaps: skip,
         extendsSha,
         project: config.project,
       },

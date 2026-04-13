@@ -22,7 +22,7 @@ mock.module('../makeHappoAPIRequest.ts', {
 let config: ConfigWithDefaults;
 let createExtendsReportSnapRequest: typeof import('../createExtendsReportSnapRequest.ts').default;
 
-const skippedExamples: Array<SkipItem> = [
+const skip: Array<SkipItem> = [
   { component: 'Button', variant: 'Primary' },
   { component: 'Button', variant: 'Secondary' },
 ];
@@ -48,7 +48,7 @@ beforeEach(async () => {
 
 describe('createExtendsReportSnapRequest', () => {
   it('posts to the extends-report endpoint', async () => {
-    await createExtendsReportSnapRequest('baseline-sha', skippedExamples, config);
+    await createExtendsReportSnapRequest('baseline-sha', skip, config);
 
     assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
     const call = makeHappoAPIRequestMock.mock.calls[0];
@@ -58,7 +58,7 @@ describe('createExtendsReportSnapRequest', () => {
   });
 
   it('sends extendedSnaps, extendsSha, and project in the request body', async () => {
-    await createExtendsReportSnapRequest('baseline-sha', skippedExamples, config);
+    await createExtendsReportSnapRequest('baseline-sha', skip, config);
 
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
@@ -68,7 +68,7 @@ describe('createExtendsReportSnapRequest', () => {
       project?: string;
     };
     assert.ok(body);
-    assert.deepStrictEqual(body.extendedSnaps, skippedExamples);
+    assert.deepStrictEqual(body.extendedSnaps, skip);
     assert.strictEqual(body.extendsSha, 'baseline-sha');
     assert.strictEqual(body.project, 'test-project');
   });
@@ -76,7 +76,7 @@ describe('createExtendsReportSnapRequest', () => {
   it('returns the requestId from the response', async () => {
     const result = await createExtendsReportSnapRequest(
       'baseline-sha',
-      skippedExamples,
+      skip,
       config,
     );
 
@@ -97,7 +97,7 @@ describe('createExtendsReportSnapRequest', () => {
     makeHappoAPIRequestImpl = async () => ({ status: 'ok' });
 
     await assert.rejects(
-      () => createExtendsReportSnapRequest('baseline-sha', skippedExamples, config),
+      () => createExtendsReportSnapRequest('baseline-sha', skip, config),
       /Invalid response from extends-report snap request API/,
     );
   });
@@ -106,7 +106,7 @@ describe('createExtendsReportSnapRequest', () => {
     makeHappoAPIRequestImpl = async () => ({ requestId: 'not-a-number' });
 
     await assert.rejects(
-      () => createExtendsReportSnapRequest('baseline-sha', skippedExamples, config),
+      () => createExtendsReportSnapRequest('baseline-sha', skip, config),
       /Invalid response from extends-report snap request API/,
     );
   });
@@ -117,7 +117,7 @@ describe('createExtendsReportSnapRequest', () => {
     };
 
     await assert.rejects(
-      () => createExtendsReportSnapRequest('baseline-sha', skippedExamples, config),
+      () => createExtendsReportSnapRequest('baseline-sha', skip, config),
       /network failure/,
     );
   });

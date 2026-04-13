@@ -61,7 +61,7 @@ beforeEach(async () => {
     fallbackShas: ['test-sha'],
     githubToken: 'test-token',
     ci: false,
-    skippedExamples: undefined,
+    skip: undefined,
   };
 
   makeHappoAPIRequestImpl = async () => {

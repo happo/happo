@@ -95,9 +95,9 @@ export default async function buildStorybookPackage({
   staticDir,
   outputDir = '.out',
   usePrebuiltPackage = false,
-  skippedExamples,
+  skip,
 }: Omit<StorybookIntegration, 'type'> & {
-  skippedExamples?: Array<SkipItem>;
+  skip?: Array<SkipItem>;
 }): Promise<BuildStorybookPackageResult> {
   if (!usePrebuiltPackage) {
     await buildStorybook({ configDir, staticDir, outputDir });
@@ -121,7 +121,7 @@ export default async function buildStorybookPackage({
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <script type="text/javascript">window.__IS_HAPPO_RUN = true;</script>
             <script type="text/javascript">window.happoSkipped = ${JSON.stringify(
-              skippedExamples ?? [],
+              skip ?? [],
             )};</script>
           `,
       ),

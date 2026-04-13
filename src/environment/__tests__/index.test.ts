@@ -627,17 +627,17 @@ describe('resolveEnvironment', () => {
     assert.ok(result.message !== undefined);
   });
 
-  it('passes skippedExamples from CLI args into the environment result', async () => {
+  it('passes skip from CLI args into the environment result', async () => {
     initGitRepo();
-    const skippedExamples = '[{"component":"Button","variant":"primary","target":"chrome"}]';
-    const result = await resolveEnvironment({ skippedExamples }, {});
-    assert.equal(result.skippedExamples, skippedExamples);
+    const skip = '[{"component":"Button","variant":"primary","target":"chrome"}]';
+    const result = await resolveEnvironment({ skip }, {});
+    assert.equal(result.skip, skip);
   });
 
-  it('sets skippedExamples to undefined when not provided', async () => {
+  it('sets skip to undefined when not provided', async () => {
     initGitRepo();
     const result = await resolveEnvironment({}, {});
-    assert.equal(result.skippedExamples, undefined);
+    assert.equal(result.skip, undefined);
   });
 
   it('rejects if the link is not a valid URL', async () => {

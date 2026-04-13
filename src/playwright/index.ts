@@ -16,9 +16,9 @@ import { test as base } from '@playwright/test';
 import Controller from '../e2e/controller.ts';
 import {
   isInSkipSet,
-  parseSkippedExamples,
+  parseSkip,
   toSkipSet,
-} from '../isomorphic/parseSkippedExamples.ts';
+} from '../isomorphic/parseSkip.ts';
 
 const pathToBrowserBuild = path.resolve(
   import.meta.dirname,
@@ -108,11 +108,11 @@ export const test: TestType<
         ? (integration.autoApplyPseudoStateAttributes ?? false)
         : false;
 
-    const skippedFilePath = process.env.HAPPO_SKIPPED_EXAMPLES_FILE;
+    const skippedFilePath = process.env.HAPPO_SKIP_FILE;
     const rawSkipped = skippedFilePath
       ? fs.readFileSync(skippedFilePath, 'utf8')
       : undefined;
-    const skipSet = toSkipSet(parseSkippedExamples(rawSkipped));
+    const skipSet = toSkipSet(parseSkip(rawSkipped));
 
     const happoScreenshot: ScreenshotFunction = async (
       handleOrLocator,

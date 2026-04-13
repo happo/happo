@@ -75,7 +75,7 @@
     "test:playwright": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.playwright.config.ts e2e -- playwright test",
     "test:playwright:nonce": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.playwright-nonce.config.ts --nonce $HAPPO_NONCE e2e -- playwright test && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.playwright-nonce.config.ts --nonce $HAPPO_NONCE finalize",
     "test:storybook": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.storybook.config.ts",
-    "test:storybook:skipped": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.storybook.config.ts --project storybook-skipped --skippedExamples \"$(node ./scripts/getSkippedExamples.ts)\"",
+    "test:storybook:skipped": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.storybook.config.ts --project storybook-skipped --skip \"$(node ./scripts/getSkip.ts)\"",
     "test:pages": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.pages.config.ts",
     "tsc": "tsc --build tsconfig.json"
   },
