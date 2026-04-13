@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { describe, it } from 'node:test';
+import { describe, it, mock } from 'node:test';
 
 import resolveStoryFileItems, {
   type StorybookIndexEntry,
@@ -75,19 +75,17 @@ describe('resolveStoryFileItems', () => {
   });
 
   it('warns and skips storyFile items not found in the index', () => {
-    const warnings: Array<string> = [];
-    const originalWarn = console.warn;
-    console.warn = (msg: string) => { warnings.push(msg); };
+    const warnMock = mock.method(console, 'warn', () => {});
     try {
       const result = resolveStoryFileItems(
         [{ storyFile: 'src/NotFound.stories.tsx' }],
         entries,
       );
       assert.deepStrictEqual(result, []);
-      assert.strictEqual(warnings.length, 1);
-      assert.match(warnings[0] ?? '', /NotFound/);
+      assert.strictEqual(warnMock.mock.callCount(), 1);
+      assert.match(String(warnMock.mock.calls[0]?.arguments[0]), /NotFound/);
     } finally {
-      console.warn = originalWarn;
+      warnMock.mock.restore();
     }
   });
 
@@ -97,15 +95,13 @@ describe('resolveStoryFileItems', () => {
   });
 
   it('returns empty array when entries are empty', () => {
-    const warnings: Array<string> = [];
-    const originalWarn = console.warn;
-    console.warn = (msg: string) => { warnings.push(msg); };
+    const warnMock = mock.method(console, 'warn', () => {});
     try {
       const result = resolveStoryFileItems([{ storyFile: 'src/Button.stories.tsx' }], {});
       assert.deepStrictEqual(result, []);
-      assert.strictEqual(warnings.length, 1);
+      assert.strictEqual(warnMock.mock.callCount(), 1);
     } finally {
-      console.warn = originalWarn;
+      warnMock.mock.restore();
     }
   });
 });

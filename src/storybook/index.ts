@@ -149,9 +149,7 @@ export default async function buildStorybookPackage({
         `<head>
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <script type="text/javascript">window.__IS_HAPPO_RUN = true;</script>
-            <script type="text/javascript">window.happoSkipped = ${JSON.stringify(
-              resolvedSkip ?? [],
-            )};</script>
+            <script type="text/javascript">window.happoSkipped = ${JSON.stringify(resolvedSkip ?? []).replaceAll(/<\/script>/gi, String.raw`<\/script>`)};</script>
           `,
       ),
     );

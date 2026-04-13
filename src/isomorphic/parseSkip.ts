@@ -26,7 +26,7 @@ export function validateSkip(json: string): Array<SkipItem> {
   const parsed: unknown = JSON.parse(json);
   if (!Array.isArray(parsed) || !parsed.every(isSkipItem)) {
     throw new TypeError(
-      '--skip must be a JSON array of {component, variant?} or {storyFile, variant?} objects',
+      '--skip must be a JSON array of {component, variant?} or {storyFile} objects',
     );
   }
   return parsed;
