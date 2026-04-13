@@ -6,6 +6,7 @@ export interface StorybookIndexEntry {
   type: string;
   importPath?: string;
   title?: string;
+  name?: string;
 }
 
 /**

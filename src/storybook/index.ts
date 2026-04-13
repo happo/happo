@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { StorybookIntegration } from '../config/index.ts';
+import { isInSkipSet, toSkipSet } from '../isomorphic/parseSkip.ts';
 import type { SkipItem } from '../isomorphic/types.ts';
 import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
@@ -127,10 +128,17 @@ export default async function buildStorybookPackage({
       };
       const entries = indexData.entries ?? indexData.stories ?? {};
 
-      estimatedSnapsCount = Object.values(entries).filter((e) => e.type === 'story').length;
+      const storyEntries = Object.values(entries).filter((e) => e.type === 'story');
+      estimatedSnapsCount = storyEntries.length;
 
       if (skip !== undefined) {
         resolvedSkip = resolveStoryFileItems(skip, entries);
+        // Adjust the count so auto-chunking reflects only the stories that
+        // will actually be rendered (skipped examples don't need a chunk slot).
+        const skipSet = toSkipSet(resolvedSkip);
+        estimatedSnapsCount = storyEntries.filter(
+          (e) => !isInSkipSet(skipSet, e.title ?? '', e.name ?? ''),
+        ).length;
       }
     } catch (error) {
       console.warn('[HAPPO] Failed to read Storybook index.json:', error);

@@ -26,4 +26,23 @@ describe('happoStorybookPlugin', () => {
     // 22 stories across Story.stories.ts (20) and Interactive.stories.ts (2)
     assert.strictEqual(estimatedSnapsCount, 22);
   });
+
+  describe('with --skip', () => {
+    it('reduces estimatedSnapsCount when skipping a whole component', async () => {
+      // Interactive has 2 stories (Demo + Interactive Throws Error)
+      const result = await happoStorybookPlugin({
+        usePrebuiltPackage: true,
+        skip: [{ component: 'Interactive' }],
+      });
+      assert.strictEqual(result.estimatedSnapsCount, 20);
+    });
+
+    it('reduces estimatedSnapsCount when skipping a single variant', async () => {
+      const result = await happoStorybookPlugin({
+        usePrebuiltPackage: true,
+        skip: [{ component: 'Stories', variant: 'Lazy' }],
+      });
+      assert.strictEqual(result.estimatedSnapsCount, 21);
+    });
+  });
 });
