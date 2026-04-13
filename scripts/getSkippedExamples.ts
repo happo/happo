@@ -8,13 +8,13 @@
  */
 
 const examples = [
-  { component: 'Stories', variant: 'ButtonWithText' },
-  { component: 'Stories', variant: 'MiscLarge' },
-  { component: 'Stories', variant: 'ButtonFirefoxOnly' },
-  { component: 'Stories', variant: 'Portal' },
-  { component: 'Stories', variant: 'ButtonWithImage' },
-  { component: 'Stories', variant: 'ButtonWithSomeEmoji' },
-  { component: 'Stories', variant: 'Lazy' },
+  { component: 'Stories', variant: 'ButtonWithText [white]' },
+  { component: 'Stories', variant: 'MiscLarge [white]' },
+  { component: 'Stories', variant: 'ButtonFirefoxOnly [white]' },
+  { component: 'Stories', variant: 'Portal [white]' },
+  { component: 'Stories', variant: 'ButtonWithImage [white]' },
+  { component: 'Stories', variant: 'ButtonWithSomeEmoji [white]' },
+  { component: 'Stories', variant: 'Lazy [white]' },
 ];
 
 const day = new Date().getDay(); // 0 (Sun) – 6 (Sat)
