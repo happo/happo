@@ -48,9 +48,9 @@ const happoStatic = {
 
       nextExample: async () => {
         const happoSkippedEl =
-          typeof document !== 'undefined'
-            ? document.getElementById('happo-skipped')
-            : null;
+          typeof document === 'undefined'
+            ? null
+            : document.getElementById('happo-skipped');
         const skipSet = toSkipSet(
           parseSkippedExamples(happoSkippedEl?.textContent ?? undefined),
         );
