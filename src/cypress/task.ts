@@ -1,4 +1,5 @@
 import Controller, { type SnapshotRegistrationParams } from '../e2e/controller.ts';
+import { parseSkippedExamples } from '../isomorphic/parseSkippedExamples.ts';
 
 const controller = new Controller();
 let disabledLogged = false;
@@ -142,27 +143,7 @@ const task: HappoTask = {
 
   happoGetIntegrationConfig(): HappoScreenshotConfig {
     const integration = controller.config?.integration;
-    let skippedExamples: Array<{ component: string; variant?: string }> = [];
-    if (process.env.HAPPO_SKIPPED_EXAMPLES) {
-      try {
-        const parsed: unknown = JSON.parse(process.env.HAPPO_SKIPPED_EXAMPLES);
-        if (
-          Array.isArray(parsed) &&
-          parsed.every(
-            (item): item is { component: string; variant?: string } =>
-              typeof item === 'object' &&
-              item !== null &&
-              typeof (item as Record<string, unknown>).component === 'string' &&
-              ((item as Record<string, unknown>).variant === undefined ||
-                typeof (item as Record<string, unknown>).variant === 'string'),
-          )
-        ) {
-          skippedExamples = parsed;
-        }
-      } catch {
-        // ignore parse errors
-      }
-    }
+    const skippedExamples = parseSkippedExamples(process.env.HAPPO_SKIPPED_EXAMPLES);
     return {
       autoApplyPseudoStateAttributes:
         integration?.type === 'cypress'

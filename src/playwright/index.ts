@@ -14,6 +14,11 @@ import type {
 import { test as base } from '@playwright/test';
 
 import Controller from '../e2e/controller.ts';
+import {
+  isInSkipSet,
+  parseSkippedExamples,
+  toSkipSet,
+} from '../isomorphic/parseSkippedExamples.ts';
 
 const pathToBrowserBuild = path.resolve(
   import.meta.dirname,
@@ -103,28 +108,7 @@ export const test: TestType<
         ? (integration.autoApplyPseudoStateAttributes ?? false)
         : false;
 
-    const partialSkipped: Array<{ component: string; variant?: string }> = (() => {
-      if (!process.env.HAPPO_SKIPPED_EXAMPLES) return [];
-      try {
-        const parsed: unknown = JSON.parse(process.env.HAPPO_SKIPPED_EXAMPLES);
-        if (
-          Array.isArray(parsed) &&
-          parsed.every(
-            (item): item is { component: string; variant?: string } =>
-              typeof item === 'object' &&
-              item !== null &&
-              typeof (item as Record<string, unknown>).component === 'string' &&
-              ((item as Record<string, unknown>).variant === undefined ||
-                typeof (item as Record<string, unknown>).variant === 'string'),
-          )
-        ) {
-          return parsed;
-        }
-        return [];
-      } catch {
-        return [];
-      }
-    })();
+    const skipSet = toSkipSet(parseSkippedExamples(process.env.HAPPO_SKIPPED_EXAMPLES));
 
     const happoScreenshot: ScreenshotFunction = async (
       handleOrLocator,
@@ -151,7 +135,7 @@ export const test: TestType<
         throw new Error('Missing `variant`');
       }
 
-      if (partialSkipped.some((item) => item.component === component && (item.variant === undefined || item.variant === variant))) {
+      if (isInSkipSet(skipSet, component, variant)) {
         return;
       }
 

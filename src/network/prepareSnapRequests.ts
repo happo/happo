@@ -2,10 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
-import type { SkipItem } from '../isomorphic/types.ts';
 import RemoteBrowserTarget, {
   type ExecuteParams,
 } from '../config/RemoteBrowserTarget.ts';
+import type { SkipItem } from '../isomorphic/types.ts';
 import buildStorybookPackage from '../storybook/index.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
@@ -62,7 +62,8 @@ async function injectSkippedIntoIframe(
   skipped: Array<SkipItem>,
 ): Promise<void> {
   const content = await fs.promises.readFile(iframePath, 'utf8');
-  const skippedScript = `<script type="text/javascript">window.happoSkipped = ${JSON.stringify(skipped)};</script>`;
+  const skippedJson = JSON.stringify(skipped).replaceAll(/<\/script>/gi, String.raw`<\/script>`);
+  const skippedScript = `<script type="application/json" id="happo-skipped">${skippedJson}</script>`;
   const injected = content.replace(/<head\b[^>]*>/i, (match) => `${match}${skippedScript}`);
   if (injected === content) {
     throw new Error(

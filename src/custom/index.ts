@@ -1,3 +1,8 @@
+import {
+  isInSkipSet,
+  parseSkippedExamples,
+  toSkipSet,
+} from '../isomorphic/parseSkippedExamples.ts';
 import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
 
 interface HappoStaticExample extends NextExampleResult {
@@ -42,7 +47,13 @@ const happoStatic = {
       },
 
       nextExample: async () => {
-        const happoSkipped = (globalThis as { happoSkipped?: Array<{ component: string; variant: string }> }).happoSkipped;
+        const happoSkippedEl =
+          typeof document !== 'undefined'
+            ? document.getElementById('happo-skipped')
+            : null;
+        const skipSet = toSkipSet(
+          parseSkippedExamples(happoSkippedEl?.textContent ?? undefined),
+        );
 
         while (true) {
           const example = examples[currentIndex];
@@ -52,14 +63,7 @@ const happoStatic = {
             return;
           }
 
-          if (
-            Array.isArray(happoSkipped) &&
-            happoSkipped.some(
-              (item) =>
-                item.component === example.component &&
-                (item.variant === undefined || item.variant === example.variant),
-            )
-          ) {
+          if (isInSkipSet(skipSet, example.component, example.variant)) {
             currentIndex++;
             continue;
           }

@@ -28,6 +28,7 @@ export default async function findBaselineReport(
     if (result && 'sha' in result && typeof result.sha === 'string') {
       return result.sha;
     }
+    throw new Error(`Unexpected response from find-baseline API: ${JSON.stringify(result)}`);
   } catch (e) {
     logger.error('[HAPPO] Failed to find baseline report:', e);
   }

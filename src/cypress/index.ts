@@ -2,6 +2,11 @@ import applyConstructedStylesPatch, {
   isExtendedWindow,
 } from '../browser/applyConstructedStylesPatch.ts';
 import takeDOMSnapshot from '../browser/takeDOMSnapshot.ts';
+import {
+  isInSkipSet,
+  type SkipSet,
+  toSkipSet,
+} from '../isomorphic/parseSkippedExamples.ts';
 import type { TakeDOMSnapshotOptions } from '../isomorphic/types.ts';
 import chunked from './chunked.ts';
 
@@ -105,7 +110,7 @@ let config: CypressConfig = {
 
 // Cached so the happoGetIntegrationConfig task is called at most once per run.
 let cachedAutoApplyPseudoStateAttributes: boolean | null = null;
-let cachedSkippedExamples: Array<{ component: string; variant: string }> | null = null;
+let cachedSkipSet: SkipSet | null = null;
 
 export const configure = (userConfig?: Partial<CypressConfig>): void => {
   config = { ...config, ...userConfig };
@@ -202,21 +207,21 @@ Cypress.Commands.add(
     };
 
     if (cachedAutoApplyPseudoStateAttributes === null) {
-      cy.task<{ autoApplyPseudoStateAttributes: boolean; skippedExamples: Array<{ component: string; variant: string }> } | null>(
+      cy.task<{ autoApplyPseudoStateAttributes: boolean; skippedExamples: Array<{ component: string; variant?: string }> } | null>(
         'happoGetIntegrationConfig',
         null,
         { ...taskOptions, log: false },
       ).then((happoSettings) => {
         cachedAutoApplyPseudoStateAttributes =
           happoSettings?.autoApplyPseudoStateAttributes ?? false;
-        cachedSkippedExamples = happoSettings?.skippedExamples ?? [];
-        if (cachedSkippedExamples.some((item) => item.component === component && (item.variant === undefined || item.variant === variant))) {
+        cachedSkipSet = toSkipSet(happoSettings?.skippedExamples ?? []);
+        if (isInSkipSet(cachedSkipSet, component, variant)) {
           return;
         }
         takeSnapshot(cachedAutoApplyPseudoStateAttributes);
       });
     } else {
-      if (cachedSkippedExamples?.some((item) => item.component === component && (item.variant === undefined || item.variant === variant))) {
+      if (cachedSkipSet && isInSkipSet(cachedSkipSet, component, variant)) {
         return;
       }
       takeSnapshot(cachedAutoApplyPseudoStateAttributes);
