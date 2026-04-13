@@ -368,6 +368,17 @@ async function handleDefaultCommand(
         return;
       }
 
+      if (
+        config.integration.type !== 'storybook' &&
+        skip.some((item) => 'storyFile' in item)
+      ) {
+        logger.error(
+          `[HAPPO] storyFile items in --skip are only supported for the storybook integration (current integration: '${config.integration.type}')`,
+        );
+        process.exitCode = 1;
+        return;
+      }
+
       const findBaselineReport = (
         await import('../network/findBaselineReport.ts')
       ).default;

@@ -677,6 +677,68 @@ describe('main', () => {
       });
     });
 
+    describe('--skip', () => {
+      it('fails when storyFile items are used with a non-storybook integration', async () => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `export default {
+            integration: {
+              type: 'custom',
+              build: async () => ({
+                rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
+                entryPoint: 'bundle.js',
+              }),
+            },
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          };`,
+        );
+
+        await main(
+          [
+            'npx',
+            'happo',
+            '--skip',
+            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+          ],
+          logger,
+        );
+
+        assert.strictEqual(process.exitCode, 1);
+        assert.strictEqual(logger.error.mock.callCount(), 1);
+        assert.match(
+          logger.error.mock.calls[0]?.arguments[0],
+          /storyFile.*storybook/,
+        );
+      });
+
+      it('does not log a storyFile error when storyFile items are used with the storybook integration', async () => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `export default {
+            integration: { type: 'storybook' },
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          };`,
+        );
+
+        await main(
+          [
+            'npx',
+            'happo',
+            '--skip',
+            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+          ],
+          logger,
+        );
+
+        const storyFileErrors = logger.error.mock.calls.filter((c) =>
+          String(c.arguments[0]).includes('storyFile'),
+        );
+        assert.strictEqual(storyFileErrors.length, 0);
+      });
+    });
+
     describe('dashdash command', () => {
       it('fails when no dashdash is provided', async () => {
         await main(['npx', 'happo', '--'], logger);
