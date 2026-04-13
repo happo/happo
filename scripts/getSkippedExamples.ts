@@ -8,12 +8,12 @@
  */
 
 const examples = [
-  { component: 'Stories', variant: 'ButtonWithText [white]' },
-  { component: 'Stories', variant: 'MiscLarge [white]' },
-  { component: 'Stories', variant: 'ButtonFirefoxOnly [white]' },
+  { component: 'Stories', variant: 'Button With Text [white]' },
+  { component: 'Stories', variant: 'Misc Large [white]' },
+  { component: 'Stories', variant: 'Button Firefox Only [white]' },
   { component: 'Stories', variant: 'Portal [white]' },
-  { component: 'Stories', variant: 'ButtonWithImage [white]' },
-  { component: 'Stories', variant: 'ButtonWithSomeEmoji [white]' },
+  { component: 'Stories', variant: 'Button With Image [white]' },
+  { component: 'Stories', variant: 'Button With Some Emoji [white]' },
   { component: 'Stories', variant: 'Lazy [white]' },
 ];
 
