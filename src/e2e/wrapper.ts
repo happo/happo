@@ -1,5 +1,8 @@
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
 import http from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
 
 import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
@@ -235,6 +238,17 @@ export default async function runWithWrapper(
   if (!job) {
     throw new Error('Failed to create Happo job');
   }
+
+  // Write skipped examples to a temp file to avoid env var size limits.
+  let skippedExamplesFilePath: string | undefined;
+  if (skippedExamplesJSON) {
+    skippedExamplesFilePath = path.join(
+      os.tmpdir(),
+      `happo-skipped-${process.pid}.json`,
+    );
+    await fs.promises.writeFile(skippedExamplesFilePath, skippedExamplesJSON, 'utf8');
+  }
+
   try {
     const exitCode = await new Promise<number>((resolve, reject) => {
       const childEnv: Record<string, string | undefined> = {
@@ -245,8 +259,8 @@ export default async function runWithWrapper(
         HAPPO_API_SECRET: happoConfig.apiSecret,
       };
 
-      if (skippedExamplesJSON) {
-        childEnv.HAPPO_SKIPPED_EXAMPLES = skippedExamplesJSON;
+      if (skippedExamplesFilePath) {
+        childEnv.HAPPO_SKIPPED_EXAMPLES_FILE = skippedExamplesFilePath;
       }
 
       const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
@@ -293,5 +307,10 @@ export default async function runWithWrapper(
   } finally {
     allRequestIds.clear();
     await e2eServer.close();
+    if (skippedExamplesFilePath) {
+      await fs.promises.unlink(skippedExamplesFilePath).catch(() => {
+        // Ignore errors — the file may already be gone.
+      });
+    }
   }
 }

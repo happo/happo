@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { StorybookIntegration } from '../config/index.ts';
+import type { SkipItem } from '../isomorphic/types.ts';
 import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
 import getStorybookStoryCount from './getStorybookStoryCount.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
@@ -96,7 +97,7 @@ export default async function buildStorybookPackage({
   usePrebuiltPackage = false,
   skippedExamples,
 }: Omit<StorybookIntegration, 'type'> & {
-  skippedExamples?: Array<{ component: string; variant?: string }>;
+  skippedExamples?: Array<SkipItem>;
 }): Promise<BuildStorybookPackageResult> {
   if (!usePrebuiltPackage) {
     await buildStorybook({ configDir, staticDir, outputDir });

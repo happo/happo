@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+
 import Controller, { type SnapshotRegistrationParams } from '../e2e/controller.ts';
 import { parseSkippedExamples } from '../isomorphic/parseSkippedExamples.ts';
 
@@ -143,15 +145,13 @@ const task: HappoTask = {
 
   happoGetIntegrationConfig(): HappoScreenshotConfig {
     const integration = controller.config?.integration;
-    const rawSkipped = process.env.HAPPO_SKIPPED_EXAMPLES;
-    if (rawSkipped) {
+    let rawSkipped: string | undefined;
+    const skippedFilePath = process.env.HAPPO_SKIPPED_EXAMPLES_FILE;
+    if (skippedFilePath) {
       try {
-        const p: unknown = JSON.parse(rawSkipped);
-        if (!Array.isArray(p)) {
-          console.warn('[HAPPO] HAPPO_SKIPPED_EXAMPLES is not a JSON array, will be ignored:', rawSkipped);
-        }
-      } catch {
-        console.warn('[HAPPO] HAPPO_SKIPPED_EXAMPLES is not valid JSON, will be ignored:', rawSkipped);
+        rawSkipped = fs.readFileSync(skippedFilePath, 'utf8');
+      } catch (e) {
+        console.warn('[HAPPO] Failed to read HAPPO_SKIPPED_EXAMPLES_FILE:', e);
       }
     }
     const skippedExamples = parseSkippedExamples(rawSkipped);

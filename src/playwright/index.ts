@@ -108,7 +108,11 @@ export const test: TestType<
         ? (integration.autoApplyPseudoStateAttributes ?? false)
         : false;
 
-    const skipSet = toSkipSet(parseSkippedExamples(process.env.HAPPO_SKIPPED_EXAMPLES));
+    const skippedFilePath = process.env.HAPPO_SKIPPED_EXAMPLES_FILE;
+    const rawSkipped = skippedFilePath
+      ? fs.readFileSync(skippedFilePath, 'utf8')
+      : undefined;
+    const skipSet = toSkipSet(parseSkippedExamples(rawSkipped));
 
     const happoScreenshot: ScreenshotFunction = async (
       handleOrLocator,

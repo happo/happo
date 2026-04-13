@@ -7,6 +7,29 @@ import type { SkipItem } from './types.ts';
  */
 export type SkipSet = readonly [componentOnly: Set<string>, componentVariant: Set<string>];
 
+function isSkipItem(item: unknown): item is SkipItem {
+  if (typeof item !== 'object' || item === null) return false;
+  const record = item as Record<string, unknown>;
+  return (
+    typeof record['component'] === 'string' &&
+    (record['variant'] === undefined || typeof record['variant'] === 'string')
+  );
+}
+
+/**
+ * Parses and validates a JSON string, returning an array of SkipItems.
+ * Throws a TypeError if the JSON is invalid or not an array of SkipItems.
+ */
+export function validateSkippedExamples(json: string): Array<SkipItem> {
+  const parsed: unknown = JSON.parse(json);
+  if (!Array.isArray(parsed) || !parsed.every(isSkipItem)) {
+    throw new TypeError(
+      '--skippedExamples must be a JSON array of {component, variant?} objects',
+    );
+  }
+  return parsed;
+}
+
 /**
  * Parses a JSON string into an array of SkipItems. Returns an empty array on
  * any parse error or if the value is not a valid array of SkipItems.
@@ -14,24 +37,10 @@ export type SkipSet = readonly [componentOnly: Set<string>, componentVariant: Se
 export function parseSkippedExamples(json: string | undefined): Array<SkipItem> {
   if (!json) return [];
   try {
-    const parsed: unknown = JSON.parse(json);
-    if (
-      Array.isArray(parsed) &&
-      parsed.every(
-        (item): item is SkipItem =>
-          typeof item === 'object' &&
-          item !== null &&
-          typeof (item as Record<string, unknown>).component === 'string' &&
-          ((item as Record<string, unknown>).variant === undefined ||
-            typeof (item as Record<string, unknown>).variant === 'string'),
-      )
-    ) {
-      return parsed;
-    }
+    return validateSkippedExamples(json);
   } catch {
-    // ignore parse errors
+    return [];
   }
-  return [];
 }
 
 /**

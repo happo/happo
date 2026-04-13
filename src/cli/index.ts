@@ -5,6 +5,7 @@ import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
+import { validateSkippedExamples } from '../isomorphic/parseSkippedExamples.ts';
 import type { Logger, SkipItem } from '../isomorphic/types.ts';
 import type { ParsedCLIArgs } from './parseOptions.ts';
 import { parseOptions } from './parseOptions.ts';
@@ -244,29 +245,12 @@ export async function main(
     if (args.dashdashCommandParts) {
       let validatedSkippedExamplesJSON: string | undefined;
       if (environment.skippedExamples) {
-        let parsed: unknown;
         try {
-          parsed = JSON.parse(environment.skippedExamples);
+          validateSkippedExamples(environment.skippedExamples);
         } catch (e) {
-          logger.error('[HAPPO] Failed to parse --skippedExamples JSON:', e);
-          process.exitCode = 1;
-          return;
-        }
-        if (
-          !Array.isArray(parsed) ||
-          !parsed.every(
-            (item) => {
-              if (typeof item !== 'object' || item === null) return false;
-              const r = item as Record<string, unknown>;
-              return (
-                typeof r.component === 'string' &&
-                (r.variant === undefined || typeof r.variant === 'string')
-              );
-            },
-          )
-        ) {
           logger.error(
-            '[HAPPO] --skippedExamples must be a JSON array of {component, variant?} objects',
+            '[HAPPO] Invalid --skippedExamples:',
+            e instanceof Error ? e.message : String(e),
           );
           process.exitCode = 1;
           return;
@@ -373,34 +357,16 @@ async function handleDefaultCommand(
         return;
       }
 
-      let parsed: unknown;
       try {
-        parsed = JSON.parse(environment.skippedExamples);
+        skippedExamples = validateSkippedExamples(environment.skippedExamples);
       } catch (e) {
-        logger.error('[HAPPO] Failed to parse --skippedExamples JSON:', e);
-        process.exitCode = 1;
-        return;
-      }
-
-      if (
-        !Array.isArray(parsed) ||
-        !parsed.every((item): item is SkipItem => {
-          if (typeof item !== 'object' || item === null) return false;
-          const r = item as Record<string, unknown>;
-          return (
-            typeof r.component === 'string' &&
-            (r.variant === undefined || typeof r.variant === 'string')
-          );
-        })
-      ) {
         logger.error(
-          '[HAPPO] --skippedExamples must be a JSON array of {component, variant?} objects',
+          '[HAPPO] Invalid --skippedExamples:',
+          e instanceof Error ? e.message : String(e),
         );
         process.exitCode = 1;
         return;
       }
-
-      skippedExamples = parsed;
 
       const findBaselineReport = (
         await import('../network/findBaselineReport.ts')
