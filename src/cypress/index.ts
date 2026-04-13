@@ -210,13 +210,13 @@ Cypress.Commands.add(
         cachedAutoApplyPseudoStateAttributes =
           happoSettings?.autoApplyPseudoStateAttributes ?? false;
         cachedSkippedExamples = happoSettings?.skippedExamples ?? [];
-        if (cachedSkippedExamples.some((item) => item.component === component && item.variant === variant)) {
+        if (cachedSkippedExamples.some((item) => item.component === component && (item.variant === undefined || item.variant === variant))) {
           return;
         }
         takeSnapshot(cachedAutoApplyPseudoStateAttributes);
       });
     } else {
-      if (cachedSkippedExamples?.some((item) => item.component === component && item.variant === variant)) {
+      if (cachedSkippedExamples?.some((item) => item.component === component && (item.variant === undefined || item.variant === variant))) {
         return;
       }
       takeSnapshot(cachedAutoApplyPseudoStateAttributes);

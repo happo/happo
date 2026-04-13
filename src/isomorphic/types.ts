@@ -81,5 +81,5 @@ export type Logger = Pick<Console, 'log' | 'error'>;
 
 export interface SkipItem {
   component: string;
-  variant: string;
+  variant?: string;
 }

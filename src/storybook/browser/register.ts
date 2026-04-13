@@ -378,7 +378,7 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
     if (
       globalThis.happoSkipped &&
       globalThis.happoSkipped.some(
-        (item) => item.component === component && item.variant === variant,
+        (item) => item.component === component && (item.variant === undefined || item.variant === variant),
       )
     ) {
       console.log(`Skipping ${component}, ${variant} since it is in the skip list`);

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
+import type { SkipItem } from '../isomorphic/types.ts';
 import RemoteBrowserTarget, {
   type ExecuteParams,
 } from '../config/RemoteBrowserTarget.ts';
@@ -58,7 +59,7 @@ interface BuildPackageResult {
 
 async function injectSkippedIntoIframe(
   iframePath: string,
-  skipped: Array<{ component: string; variant: string }>,
+  skipped: Array<SkipItem>,
 ): Promise<void> {
   const content = await fs.promises.readFile(iframePath, 'utf8');
   const skippedScript = `<script type="text/javascript">window.happoSkipped = ${JSON.stringify(skipped)};</script>`;
@@ -74,7 +75,7 @@ async function injectSkippedIntoIframe(
 async function buildPackage(
   { integration }: ConfigWithDefaults,
   logger: Logger,
-  skippedExamples?: Array<{ component: string; variant: string }>,
+  skippedExamples?: Array<SkipItem>,
 ): Promise<BuildPackageResult> {
   if (integration.type === 'custom') {
     const { rootDir, entryPoint, estimatedSnapsCount } = await integration.build();
@@ -120,7 +121,7 @@ interface PreparePackageResult {
 async function preparePackage(
   config: ConfigWithDefaults,
   logger: Logger,
-  skippedExamples?: Array<{ component: string; variant: string }>,
+  skippedExamples?: Array<SkipItem>,
 ): Promise<PreparePackageResult> {
   const { packageDir, estimatedSnapsCount } = await buildPackage(config, logger, skippedExamples);
 
@@ -145,7 +146,7 @@ async function preparePackage(
 
 export default async function prepareSnapRequests(
   config: ConfigWithDefaults,
-  skippedExamples?: Array<{ component: string; variant: string }>,
+  skippedExamples?: Array<SkipItem>,
 ): Promise<Array<number>> {
   const logger = new Logger();
   const prepareResult =

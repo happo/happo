@@ -255,15 +255,18 @@ export async function main(
         if (
           !Array.isArray(parsed) ||
           !parsed.every(
-            (item) =>
-              typeof item === 'object' &&
-              item !== null &&
-              typeof (item as Record<string, unknown>).component === 'string' &&
-              typeof (item as Record<string, unknown>).variant === 'string',
+            (item) => {
+              if (typeof item !== 'object' || item === null) return false;
+              const r = item as Record<string, unknown>;
+              return (
+                typeof r.component === 'string' &&
+                (r.variant === undefined || typeof r.variant === 'string')
+              );
+            },
           )
         ) {
           logger.error(
-            '[HAPPO] --skippedExamples must be a JSON array of {component, variant} objects',
+            '[HAPPO] --skippedExamples must be a JSON array of {component, variant?} objects',
           );
           process.exitCode = 1;
           return;
@@ -381,16 +384,17 @@ async function handleDefaultCommand(
 
       if (
         !Array.isArray(parsed) ||
-        !parsed.every(
-          (item): item is SkipItem =>
-            typeof item === 'object' &&
-            item !== null &&
-            typeof (item as Record<string, unknown>).component === 'string' &&
-            typeof (item as Record<string, unknown>).variant === 'string',
-        )
+        !parsed.every((item): item is SkipItem => {
+          if (typeof item !== 'object' || item === null) return false;
+          const r = item as Record<string, unknown>;
+          return (
+            typeof r.component === 'string' &&
+            (r.variant === undefined || typeof r.variant === 'string')
+          );
+        })
       ) {
         logger.error(
-          '[HAPPO] --skippedExamples must be a JSON array of {component, variant} objects',
+          '[HAPPO] --skippedExamples must be a JSON array of {component, variant?} objects',
         );
         process.exitCode = 1;
         return;

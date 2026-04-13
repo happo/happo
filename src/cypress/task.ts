@@ -41,7 +41,7 @@ function getCleanupTimeframe({
 
 interface HappoScreenshotConfig {
   autoApplyPseudoStateAttributes: boolean;
-  skippedExamples: Array<{ component: string; variant: string }>;
+  skippedExamples: Array<{ component: string; variant?: string }>;
 }
 
 interface HappoTask {
@@ -142,18 +142,19 @@ const task: HappoTask = {
 
   happoGetIntegrationConfig(): HappoScreenshotConfig {
     const integration = controller.config?.integration;
-    let skippedExamples: Array<{ component: string; variant: string }> = [];
+    let skippedExamples: Array<{ component: string; variant?: string }> = [];
     if (process.env.HAPPO_SKIPPED_EXAMPLES) {
       try {
         const parsed: unknown = JSON.parse(process.env.HAPPO_SKIPPED_EXAMPLES);
         if (
           Array.isArray(parsed) &&
           parsed.every(
-            (item): item is { component: string; variant: string } =>
+            (item): item is { component: string; variant?: string } =>
               typeof item === 'object' &&
               item !== null &&
-              typeof item.component === 'string' &&
-              typeof item.variant === 'string',
+              typeof (item as Record<string, unknown>).component === 'string' &&
+              ((item as Record<string, unknown>).variant === undefined ||
+                typeof (item as Record<string, unknown>).variant === 'string'),
           )
         ) {
           skippedExamples = parsed;

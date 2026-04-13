@@ -96,7 +96,7 @@ export default async function buildStorybookPackage({
   usePrebuiltPackage = false,
   skippedExamples,
 }: Omit<StorybookIntegration, 'type'> & {
-  skippedExamples?: Array<{ component: string; variant: string }>;
+  skippedExamples?: Array<{ component: string; variant?: string }>;
 }): Promise<BuildStorybookPackageResult> {
   if (!usePrebuiltPackage) {
     await buildStorybook({ configDir, staticDir, outputDir });

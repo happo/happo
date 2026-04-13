@@ -56,7 +56,8 @@ const happoStatic = {
             Array.isArray(happoSkipped) &&
             happoSkipped.some(
               (item) =>
-                item.component === example.component && item.variant === example.variant,
+                item.component === example.component &&
+                (item.variant === undefined || item.variant === example.variant),
             )
           ) {
             currentIndex++;
