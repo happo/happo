@@ -78,6 +78,7 @@
     "test:storybook:skipped": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.storybook.config.ts --project storybook-skipped --skip \"$(node ./scripts/getSkip.ts)\"",
     "test:storybook:only": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.storybook.config.ts --project storybook-only --only \"$(node ./scripts/getOnly.ts)\"",
     "test:pages": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.pages.config.ts",
+    "release": "set -a && source .env && set +a && release-with-ease",
     "tsc": "tsc --build tsconfig.json"
   },
   "browserslist": {
@@ -135,6 +136,7 @@
     "react-error-boundary": "^6.0.0",
     "storybook": "^10.0.1",
     "typescript": "^6.0.2",
+    "release-with-ease": "^2.1.0",
     "typescript-eslint": "^8.57.2"
   },
   "dependencies": {

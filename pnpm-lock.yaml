@@ -117,6 +117,9 @@ importers:
       react-error-boundary:
         specifier: ^6.0.0
         version: 6.1.1(react@19.2.5)
+      release-with-ease:
+        specifier: ^2.1.0
+        version: 2.1.0
       storybook:
         specifier: ^10.0.1
         version: 10.3.5(@testing-library/dom@10.4.1)(prettier@3.8.2)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -2327,6 +2330,10 @@ packages:
 
   regjsparser@0.13.0:
     resolution: {integrity: sha512-NZQZdC5wOE/H3UT28fVGL+ikOZcEzfMGk/c3iN9UGxzWHMa1op7274oyiUVrAG4B2EuFhus8SvkaYnhvW92p9Q==}
+    hasBin: true
+
+  release-with-ease@2.1.0:
+    resolution: {integrity: sha512-9AhNaAtSp8IR+XMZ3bymP4rPHEJpF/r2SCiQ6WJ3h0ob/v2allUiTVcUa8FRcRlPvh8beCSB4Pi3ajSp5IoRZg==}
     hasBin: true
 
   request-progress@3.0.0:
@@ -4859,6 +4866,8 @@ snapshots:
   regjsparser@0.13.0:
     dependencies:
       jsesc: 3.1.0
+
+  release-with-ease@2.1.0: {}
 
   request-progress@3.0.0:
     dependencies:
