@@ -132,6 +132,9 @@ Options:
   --skip <json> JSON array of {component, variant} objects to skip in this run and borrow from the nearest baseline report instead
   --only <json> JSON array of {component} or {storyFile} objects to include in this run (all other stories are skipped); only supported for the Storybook integration
 
+Finalize command options:
+  --skippedExamples <json> JSON array of {component, variant, target} objects to skip when finalizing; borrowed from the nearest baseline report
+
 Flake command options:
   --allProjects         List flakes across all projects (default: current project)
   --format <format>     Output format for flake command (default: "human", use "json" for raw output)
@@ -164,7 +167,7 @@ Examples:
 
   happo finalize
   happo finalize --nonce my-unique-nonce
-  happo finalize --skip '[{"component":"Button","variant":"primary","target":"chrome"}]'
+  happo finalize --skippedExamples '[{"component":"Button","variant":"primary","target":"chrome"}]'
 
   happo flake
   happo flake --allProjects
@@ -272,7 +275,10 @@ export async function main(
     }
 
     if (command === 'finalize') {
-      await handleFinalizeCommand(config, environment, logger);
+      const finalizeEnvironment = args.values.skippedExamples
+        ? { ...environment, skip: args.values.skippedExamples }
+        : environment;
+      await handleFinalizeCommand(config, finalizeEnvironment, logger);
       return;
     }
 
