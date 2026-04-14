@@ -5,8 +5,9 @@ import type { ConfigWithDefaults } from '../config/index.ts';
 import { findConfigFile, loadConfigFile } from '../config/loadConfig.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import resolveEnvironment from '../environment/index.ts';
+import { validateOnly } from '../isomorphic/parseOnly.ts';
 import { validateSkip } from '../isomorphic/parseSkip.ts';
-import type { Logger, SkipItem } from '../isomorphic/types.ts';
+import type { Logger, OnlyItem, SkipItem } from '../isomorphic/types.ts';
 import type { ParsedCLIArgs } from './parseOptions.ts';
 import { parseOptions } from './parseOptions.ts';
 import type { Reporter } from './telemetry.ts';
@@ -129,6 +130,7 @@ Options:
   --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
   --githubToken <token> GitHub token to use for posting Happo statuses as comments. Use in combination with the \`githubApiUrl\` configuration option. (default: auto-detected from environment)
   --skip <json> JSON array of {component, variant} objects to skip in this run and borrow from the nearest baseline report instead
+  --only <json> JSON array of {component} or {storyFile} objects to include in this run (all other stories are skipped); only supported for the Storybook integration
 
 Flake command options:
   --allProjects         List flakes across all projects (default: current project)
@@ -158,6 +160,7 @@ Examples:
   happo -- playwright test
 
   happo --skip '[{"component":"Button","variant":"Primary"}]'
+  happo --only '[{"component":"Button"},{"storyFile":"./src/Input.stories.tsx"}]'
 
   happo finalize
   happo finalize --nonce my-unique-nonce
@@ -391,10 +394,34 @@ async function handleDefaultCommand(
       }
     }
 
+    // When --only is set, validate and apply it (storybook only).
+    let only: Array<OnlyItem> | undefined;
+
+    if (environment.only) {
+      if (config.integration.type !== 'storybook') {
+        logger.error(
+          `[HAPPO] --only is not supported for integration type '${config.integration.type}'. Supported types: storybook`,
+        );
+        process.exitCode = 1;
+        return;
+      }
+
+      try {
+        only = validateOnly(environment.only);
+      } catch (e) {
+        logger.error(
+          '[HAPPO] Invalid --only:',
+          e instanceof Error ? e.message : String(e),
+        );
+        process.exitCode = 1;
+        return;
+      }
+    }
+
     // Prepare the snap requests for the job. This includes bundling static
     // assets and uploading them. Only pass the skip list when we have a
     // baseline to borrow the skipped examples from.
-    const { snapRequestIds, resolvedSkip } = await prepareSnapRequests(config, skip);
+    const { snapRequestIds, resolvedSkip } = await prepareSnapRequests(config, skip, only);
 
     let allSnapRequestIds = snapRequestIds;
 

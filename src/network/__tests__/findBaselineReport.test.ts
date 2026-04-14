@@ -58,6 +58,7 @@ beforeEach(async () => {
     githubToken: undefined,
     ci: false,
     skip: undefined,
+    only: undefined,
   };
 
   makeHappoAPIRequestImpl = async () => ({ sha: 'baseline-sha-123' });
