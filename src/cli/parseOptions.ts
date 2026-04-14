@@ -104,6 +104,10 @@ export const parseOptions = {
   skip: {
     type: 'string',
   },
+
+  only: {
+    type: 'string',
+  },
 } as const;
 
 export type ParsedCLIArgs = ReturnType<

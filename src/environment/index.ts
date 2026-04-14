@@ -45,6 +45,7 @@ export interface EnvironmentResult {
   githubToken: string | undefined;
   ci: boolean;
   skip: string | undefined;
+  only: string | undefined;
 }
 
 const envKeys: ReadonlyArray<string> = [
@@ -641,6 +642,7 @@ export default async function resolveEnvironment(
     githubToken: cliArgs.githubToken,
     ci: !!env.CI,
     skip: cliArgs.skip,
+    only: cliArgs.only,
   };
 
   if (debugMode) {

@@ -6,7 +6,7 @@ import type {
   NextExampleResult,
   WindowHappo,
 } from '../../isomorphic/types.ts';
-import type { SkipItems } from '../isomorphic/types.ts';
+import type { OnlyItems, SkipItems } from '../isomorphic/types.ts';
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
 
 interface HappoTime {
@@ -17,6 +17,7 @@ interface HappoTime {
 declare global {
   var happoTime: HappoTime | undefined;
   var happoSkipped: SkipItems | undefined;
+  var happoOnly: OnlyItems | null | undefined;
   var __IS_HAPPO_RUN: boolean | undefined;
   var __STORYBOOK_CLIENT_API__:
     | {
@@ -382,6 +383,14 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       )
     ) {
       console.log(`Skipping ${component}, ${variant} since it is in the skip list`);
+      return { component, variant, skipped: true };
+    }
+
+    if (
+      globalThis.happoOnly &&
+      !globalThis.happoOnly.some((item) => item.component === component)
+    ) {
+      console.log(`Skipping ${component}, ${variant} since it is not in the only list`);
       return { component, variant, skipped: true };
     }
 

@@ -5,7 +5,7 @@ import type { ConfigWithDefaults } from '../config/index.ts';
 import RemoteBrowserTarget, {
   type ExecuteParams,
 } from '../config/RemoteBrowserTarget.ts';
-import type { SkipItem } from '../isomorphic/types.ts';
+import type { OnlyItem, SkipItem } from '../isomorphic/types.ts';
 import buildStorybookPackage from '../storybook/index.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
@@ -78,6 +78,7 @@ async function buildPackage(
   { integration }: ConfigWithDefaults,
   logger: Logger,
   skip?: Array<SkipItem>,
+  only?: Array<OnlyItem>,
 ): Promise<BuildPackageResult> {
   if (integration.type === 'custom') {
     const { rootDir, entryPoint, estimatedSnapsCount } = await integration.build();
@@ -99,6 +100,7 @@ async function buildPackage(
     const result = await buildStorybookPackage({
       ...integration,
       ...(skip === undefined ? {} : { skip }),
+      ...(only === undefined ? {} : { only }),
     });
     return result;
   }
@@ -126,8 +128,9 @@ async function preparePackage(
   config: ConfigWithDefaults,
   logger: Logger,
   skip?: Array<SkipItem>,
+  only?: Array<OnlyItem>,
 ): Promise<PreparePackageResult> {
-  const { packageDir, estimatedSnapsCount, resolvedSkip } = await buildPackage(config, logger, skip);
+  const { packageDir, estimatedSnapsCount, resolvedSkip } = await buildPackage(config, logger, skip, only);
 
   await validatePackage(packageDir);
 
@@ -159,12 +162,13 @@ export interface PrepareSnapRequestsResult {
 export default async function prepareSnapRequests(
   config: ConfigWithDefaults,
   skip?: Array<SkipItem>,
+  only?: Array<OnlyItem>,
 ): Promise<PrepareSnapRequestsResult> {
   const logger = new Logger();
   const prepareResult =
     config.integration.type === 'pages'
       ? null
-      : await preparePackage(config, logger, skip);
+      : await preparePackage(config, logger, skip, only);
 
   const targetNames = Object.keys(config.targets);
   const tl = targetNames.length;

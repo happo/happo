@@ -62,6 +62,7 @@ beforeEach(async () => {
     githubToken: 'test-token',
     ci: false,
     skip: undefined,
+    only: undefined,
   };
 
   makeHappoAPIRequestImpl = async () => {

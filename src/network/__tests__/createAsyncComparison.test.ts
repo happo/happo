@@ -70,6 +70,7 @@ beforeEach(async () => {
     githubToken: undefined,
     debugMode: false,
     skip: undefined,
+    only: undefined,
   };
 
   makeHappoAPIRequestMock.mock.resetCalls();
