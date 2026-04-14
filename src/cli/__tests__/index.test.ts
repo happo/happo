@@ -865,7 +865,7 @@ describe('main', () => {
         assert(makeHappoAPIRequestMock.mock.callCount() > 0);
       });
 
-      it('sends skip in the finalize request body when --skip is set', async () => {
+      it('sends skip in the finalize request body when --skippedExamples is set', async () => {
         const skip = [
           { component: 'Button', variant: 'primary', target: 'chrome' },
         ];
@@ -880,7 +880,7 @@ describe('main', () => {
             'test-sha',
             '--nonce',
             'test-nonce',
-            '--skip',
+            '--skippedExamples',
             JSON.stringify(skip),
           ],
           logger,
@@ -897,7 +897,7 @@ describe('main', () => {
         );
       });
 
-      it('sends an empty skip array when --skip is not set', async () => {
+      it('sends an empty skip array when --skippedExamples is not set', async () => {
         await main(
           [
             'npx',
