@@ -10,12 +10,12 @@ export interface StorybookIndexEntry {
 }
 
 /**
- * Resolves `storyFile` skip items to component-based skip items using the
+ * Resolves `file` skip items to component-based skip items using the
  * Storybook `index.json` entries. Items that already have a `component` are
  * passed through unchanged.
  *
  * Path matching is done by normalising both the `importPath` from the index
- * and the user-supplied `storyFile` (stripping a leading `./`), with an
+ * and the user-supplied `file` (stripping a leading `./`), with an
  * absolute-path fallback via `path.resolve`.
  */
 export default function resolveStoryFileItems(
@@ -42,12 +42,12 @@ export default function resolveStoryFileItems(
       continue;
     }
 
-    const normalizedFile = normalizeImportPath(item.storyFile);
+    const normalizedFile = normalizeImportPath(item.file);
     let components = fileToComponents.get(normalizedFile);
 
     if (!components) {
       // Fall back to absolute path comparison
-      const resolvedFile = path.resolve(item.storyFile);
+      const resolvedFile = path.resolve(item.file);
       for (const [normalizedImport, titles] of fileToComponents) {
         if (path.resolve(normalizedImport) === resolvedFile) {
           components = titles;
@@ -62,7 +62,7 @@ export default function resolveStoryFileItems(
       }
     } else {
       console.warn(
-        `[HAPPO] Could not find any stories for storyFile '${item.storyFile}' in the Storybook index`,
+        `[HAPPO] Could not find any stories for file '${item.file}' in the Storybook index`,
       );
     }
   }

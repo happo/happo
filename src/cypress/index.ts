@@ -111,6 +111,7 @@ let config: CypressConfig = {
 // Cached so the happoGetIntegrationConfig task is called at most once per run.
 let cachedAutoApplyPseudoStateAttributes: boolean | null = null;
 let cachedSkipSet: SkipSet | null = null;
+let cachedFileItems: Array<{ file: string }> | null = null;
 
 export const configure = (userConfig?: Partial<CypressConfig>): void => {
   config = { ...config, ...userConfig };
@@ -215,13 +216,39 @@ Cypress.Commands.add(
         cachedAutoApplyPseudoStateAttributes =
           happoSettings?.autoApplyPseudoStateAttributes ?? false;
         cachedSkipSet = toSkipSet(happoSettings?.skip ?? []);
-        if (isInSkipSet(cachedSkipSet, component, variant)) {
+        cachedFileItems = (happoSettings?.skip ?? []).filter(
+          (item): item is { file: string } => 'file' in item,
+        );
+        const skipByComponent = isInSkipSet(cachedSkipSet, component, variant);
+        const skipByFile = cachedFileItems.some(
+          (item) => item.file === Cypress.spec.absolute,
+        );
+        if (skipByComponent || skipByFile) {
+          if (skipByFile) {
+            cy.task(
+              'happoRecordResolvedSkip',
+              { component, variant },
+              { ...taskOptions, log: false },
+            );
+          }
           return;
         }
         takeSnapshot(cachedAutoApplyPseudoStateAttributes);
       });
     } else {
-      if (cachedSkipSet && isInSkipSet(cachedSkipSet, component, variant)) {
+      const skipByComponent =
+        cachedSkipSet !== null && isInSkipSet(cachedSkipSet, component, variant);
+      const skipByFile =
+        cachedFileItems !== null &&
+        cachedFileItems.some((item) => item.file === Cypress.spec.absolute);
+      if (skipByComponent || skipByFile) {
+        if (skipByFile) {
+          cy.task(
+            'happoRecordResolvedSkip',
+            { component, variant },
+            { ...taskOptions, log: false },
+          );
+        }
         return;
       }
       takeSnapshot(cachedAutoApplyPseudoStateAttributes);

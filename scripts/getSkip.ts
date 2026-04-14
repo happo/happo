@@ -4,7 +4,7 @@
  * are skipped on each day.
  *
  * - One item uses the `component` form to skip a specific variant.
- * - One item uses the `storyFile` form to skip all stories in a file.
+ * - One item uses the `file` form to skip all stories in a file.
  *
  * Usage:
  *   node scripts/getSkip.ts
@@ -20,13 +20,13 @@ const componentExamples = [
   { component: 'Stories', variant: 'Lazy [white]' },
 ];
 
-const storyFileExamples = [
-  { storyFile: './src/storybook/__tests__/storybook-app/Interactive.stories.ts' },
-  { storyFile: './src/storybook/__tests__/storybook-app/Story.stories.ts' },
+const fileExamples = [
+  { file: './src/storybook/__tests__/storybook-app/Interactive.stories.ts' },
+  { file: './src/storybook/__tests__/storybook-app/Story.stories.ts' },
 ];
 
 const day = new Date().getDay(); // 0 (Sun) – 6 (Sat)
 const componentItem = componentExamples[day % componentExamples.length];
-const storyFileItem = storyFileExamples[day % storyFileExamples.length];
+const fileItem = fileExamples[day % fileExamples.length];
 
-process.stdout.write(JSON.stringify([componentItem, storyFileItem]));
+process.stdout.write(JSON.stringify([componentItem, fileItem]));

@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import path from 'node:path';
 
 import Controller, { type SnapshotRegistrationParams } from '../e2e/controller.ts';
 import { parseSkip } from '../isomorphic/parseSkip.ts';
@@ -63,6 +64,7 @@ interface HappoTask {
     isLast: boolean;
   }): Promise<null>;
   happoGetIntegrationConfig(): HappoScreenshotConfig;
+  happoRecordResolvedSkip(params: { component: string; variant: string }): null;
   handleBeforeSpec(): Promise<void>;
 }
 
@@ -74,6 +76,7 @@ const task: HappoTask = {
       happoRegisterSnapshot: task.happoRegisterSnapshot,
       happoRegisterBase64Image: task.happoRegisterBase64Image,
       happoGetIntegrationConfig: task.happoGetIntegrationConfig,
+      happoRecordResolvedSkip: task.happoRecordResolvedSkip,
     });
     on('before:spec', task.handleBeforeSpec);
     on('after:spec', task.handleAfterSpec);
@@ -155,7 +158,11 @@ const task: HappoTask = {
         console.warn('[HAPPO] Failed to read HAPPO_SKIP_FILE:', e);
       }
     }
-    const skip = parseSkip(rawSkipped);
+    // Resolve file item paths to absolute so the browser side can compare
+    // them directly to Cypress.spec.absolute.
+    const skip = parseSkip(rawSkipped).map((item): SkipItem =>
+      'file' in item ? { file: path.resolve(item.file) } : item,
+    );
     return {
       autoApplyPseudoStateAttributes:
         integration?.type === 'cypress'
@@ -163,6 +170,22 @@ const task: HappoTask = {
           : false,
       skip,
     };
+  },
+
+  happoRecordResolvedSkip({ component, variant }: { component: string; variant: string }): null {
+    const resolvedSkipFilePath = process.env.HAPPO_RESOLVED_SKIP_FILE;
+    if (resolvedSkipFilePath) {
+      try {
+        fs.appendFileSync(
+          resolvedSkipFilePath,
+          JSON.stringify({ component, variant }) + '\n',
+          'utf8',
+        );
+      } catch (e) {
+        console.warn('[HAPPO] Failed to write to HAPPO_RESOLVED_SKIP_FILE:', e);
+      }
+    }
+    return null;
   },
 
   async handleBeforeSpec(): Promise<void> {

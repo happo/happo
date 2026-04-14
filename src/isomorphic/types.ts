@@ -81,4 +81,4 @@ export type Logger = Pick<Console, 'log' | 'error'>;
 
 export type SkipItem =
   | { component: string; variant?: string }
-  | { storyFile: string };
+  | { file: string };

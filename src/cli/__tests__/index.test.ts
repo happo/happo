@@ -678,7 +678,7 @@ describe('main', () => {
     });
 
     describe('--skip', () => {
-      it('fails when storyFile items are used with a non-storybook integration', async () => {
+      it('fails when file items are used with a non-storybook integration', async () => {
         tmpfs.writeFile(
           'happo.config.ts',
           `export default {
@@ -699,7 +699,7 @@ describe('main', () => {
             'npx',
             'happo',
             '--skip',
-            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+            JSON.stringify([{ file: './src/Button.stories.tsx' }]),
           ],
           logger,
         );
@@ -708,11 +708,11 @@ describe('main', () => {
         assert.strictEqual(logger.error.mock.callCount(), 1);
         assert.match(
           logger.error.mock.calls[0]?.arguments[0],
-          /storyFile.*storybook/,
+          /file.*storybook/,
         );
       });
 
-      it('does not log a storyFile error when storyFile items are used with the storybook integration', async () => {
+      it('does not log a file error when file items are used with the storybook integration', async () => {
         tmpfs.writeFile(
           'happo.config.ts',
           `export default {
@@ -727,15 +727,15 @@ describe('main', () => {
             'npx',
             'happo',
             '--skip',
-            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+            JSON.stringify([{ file: './src/Button.stories.tsx' }]),
           ],
           logger,
         );
 
-        const storyFileErrors = logger.error.mock.calls.filter((c) =>
-          String(c.arguments[0]).includes('storyFile'),
+        const fileErrors = logger.error.mock.calls.filter((c) =>
+          String(c.arguments[0]).includes('file items'),
         );
-        assert.strictEqual(storyFileErrors.length, 0);
+        assert.strictEqual(fileErrors.length, 0);
       });
     });
 

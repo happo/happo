@@ -115,7 +115,7 @@ export default async function buildStorybookPackage({
   try {
     const iframeContent = await fs.promises.readFile(iframePath, 'utf8');
 
-    // Read index.json once to compute story count and resolve storyFile items.
+    // Read index.json once to compute story count and resolve file items.
     let estimatedSnapsCount: number | undefined;
     let resolvedSkip: Array<{ component: string; variant?: string }> | undefined;
 
