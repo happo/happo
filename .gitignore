@@ -16,3 +16,4 @@ test-results/
 tmp
 tsconfig.tsbuildinfo
 types
+.env
