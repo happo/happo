@@ -44,22 +44,20 @@ runs:
           echo "PR title response: ${PR_TITLE_RESPONSE}"
 
           PR_TITLE=$(echo $PR_TITLE_RESPONSE | jq -r '.title')
-          PR_AUTHOR=$(echo $PR_TITLE_RESPONSE | jq -r '.user.login')
 
           LINK="${{ github.event.pull_request.html_url }}"
-          MESSAGE="$PR_TITLE by @${PR_AUTHOR} in ${LINK}"
+          MESSAGE="$PR_TITLE"
           CURRENT_SHA="${{ github.event.pull_request.head.sha }}"
         else
           # No PR, use commit URL and message
-          COMMIT_RESPONSE=$(curl -s \
+          COMMIT_MESSAGE=$(curl -s \
             -H "Authorization: token ${{ inputs.github-token }}" \
-            "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.event.after }}")
-          COMMIT_MESSAGE=$(echo $COMMIT_RESPONSE | jq -r '.commit.message' | head -n 1)
-          COMMIT_AUTHOR=$(echo $COMMIT_RESPONSE | jq -r '.author.login')
+            "https://api.github.com/repos/${{ github.repository }}/commits/${{ github.event.after }}" \
+            | jq -r '.commit.message' | head -n 1)
 
           PREVIOUS_SHA="${{ github.event.after }}"
           LINK="https://github.com/${{ github.repository }}/commit/${{ github.event.after }}"
-          MESSAGE="$COMMIT_MESSAGE by @${COMMIT_AUTHOR} in ${LINK}"
+          MESSAGE="$COMMIT_MESSAGE"
           CURRENT_SHA="${{ github.event.after }}"
         fi
 
