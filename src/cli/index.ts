@@ -416,6 +416,20 @@ async function handleDefaultCommand(
         process.exitCode = 1;
         return;
       }
+
+      // Find a baseline to borrow the excluded stories from, unless --skip
+      // already resolved one.
+      if (!baselineSha) {
+        const findBaselineReport = (
+          await import('../network/findBaselineReport.ts')
+        ).default;
+        baselineSha = await findBaselineReport(environment, config, logger);
+        if (!baselineSha) {
+          logger.log(
+            '[HAPPO] No baseline report found for --only run. Excluded stories will not be borrowed from a baseline.',
+          );
+        }
+      }
     }
 
     // Prepare the snap requests for the job. This includes bundling static
@@ -434,6 +448,18 @@ async function handleDefaultCommand(
       const extendsRequestId = await createExtendsReportSnapRequest(
         baselineSha,
         resolvedSkip ?? skip,
+        config,
+      );
+      allSnapRequestIds = [...snapRequestIds, extendsRequestId];
+    } else if (only && baselineSha && resolvedSkip && resolvedSkip.length > 0) {
+      const createExtendsReportSnapRequest = (
+        await import('../network/createExtendsReportSnapRequest.ts')
+      ).default;
+      // resolvedSkip here is the complement of the only list — all components
+      // that were excluded and should be borrowed from the baseline.
+      const extendsRequestId = await createExtendsReportSnapRequest(
+        baselineSha,
+        resolvedSkip,
         config,
       );
       allSnapRequestIds = [...snapRequestIds, extendsRequestId];

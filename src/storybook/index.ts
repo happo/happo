@@ -160,6 +160,16 @@ export default async function buildStorybookPackage({
           estimatedSnapsCount = storyEntries.filter((e) =>
             onlyComponents.has(e.title ?? ''),
           ).length;
+
+          // Compute the complement: all components NOT in the only list.
+          // These will be borrowed from the baseline via an extends-report.
+          const allComponents = new Set<string>();
+          for (const e of storyEntries) {
+            if (e.title) allComponents.add(e.title);
+          }
+          resolvedSkip = [...allComponents]
+            .filter((c) => !onlyComponents.has(c))
+            .map((component) => ({ component }));
         }
       }
     } catch (error) {
