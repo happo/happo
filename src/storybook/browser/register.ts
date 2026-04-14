@@ -17,7 +17,7 @@ interface HappoTime {
 declare global {
   var happoTime: HappoTime | undefined;
   var happoSkipped: SkipItems | undefined;
-  var happoOnly: OnlyItems | undefined;
+  var happoOnly: OnlyItems | null | undefined;
   var __IS_HAPPO_RUN: boolean | undefined;
   var __STORYBOOK_CLIENT_API__:
     | {

@@ -148,10 +148,19 @@ export default async function buildStorybookPackage({
         resolvedOnly = resolveStoryFileItems(only as Array<SkipItem>, entries).map(
           ({ component }) => ({ component }),
         );
-        // Adjust the count so auto-chunking reflects only the stories that
-        // will actually be rendered (only matching examples need a chunk slot).
-        const onlyComponents = new Set(resolvedOnly.map((item) => item.component));
-        estimatedSnapsCount = storyEntries.filter((e) => onlyComponents.has(e.title ?? '')).length;
+        if (resolvedOnly.length === 0) {
+          console.warn(
+            '[HAPPO] --only: no matching stories found in Storybook index. Generating a full report instead.',
+          );
+          resolvedOnly = undefined;
+        } else {
+          // Adjust the count so auto-chunking reflects only the stories that
+          // will actually be rendered (only matching examples need a chunk slot).
+          const onlyComponents = new Set(resolvedOnly.map((item) => item.component));
+          estimatedSnapsCount = storyEntries.filter((e) =>
+            onlyComponents.has(e.title ?? ''),
+          ).length;
+        }
       }
     } catch (error) {
       console.warn('[HAPPO] Failed to read Storybook index.json:', error);
@@ -162,8 +171,13 @@ export default async function buildStorybookPackage({
         );
       }
       if (only !== undefined) {
-        resolvedOnly = only
-          .filter((item): item is { component: string } => 'component' in item);
+        // Fall back to component-only items; if none remain, leave resolvedOnly
+        // undefined so the browser-side filtering is disabled and a full report
+        // is generated rather than an empty one.
+        const componentOnly = only.filter(
+          (item): item is { component: string } => 'component' in item,
+        );
+        resolvedOnly = componentOnly.length > 0 ? componentOnly : undefined;
       }
     }
 

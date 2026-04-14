@@ -45,4 +45,29 @@ describe('happoStorybookPlugin', () => {
       assert.strictEqual(result.estimatedSnapsCount, 21);
     });
   });
+
+  describe('with --only', () => {
+    it('reduces estimatedSnapsCount to the matched component', async () => {
+      // Interactive has 2 stories (Demo + Interactive Throws Error)
+      const result = await happoStorybookPlugin({
+        usePrebuiltPackage: true,
+        only: [{ component: 'Interactive' }],
+      });
+      assert.strictEqual(result.estimatedSnapsCount, 2);
+    });
+
+    it('reduces estimatedSnapsCount when matching via storyFile', async () => {
+      // Story.stories.ts has 20 stories under the Stories component
+      const result = await happoStorybookPlugin({
+        usePrebuiltPackage: true,
+        only: [
+          {
+            storyFile:
+              './src/storybook/__tests__/storybook-app/Story.stories.ts',
+          },
+        ],
+      });
+      assert.strictEqual(result.estimatedSnapsCount, 20);
+    });
+  });
 });
