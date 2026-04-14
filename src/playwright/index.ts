@@ -112,7 +112,12 @@ export const test: TestType<
     const rawSkipped = skippedFilePath
       ? fs.readFileSync(skippedFilePath, 'utf8')
       : undefined;
-    const skipSet = toSkipSet(parseSkip(rawSkipped));
+    const parsedSkip = parseSkip(rawSkipped);
+    const skipSet = toSkipSet(parsedSkip);
+    const fileItems = parsedSkip
+      .filter((item): item is { file: string } => 'file' in item)
+      .map((item) => ({ file: path.resolve(item.file) }));
+    const resolvedSkipFilePath = process.env.HAPPO_RESOLVED_SKIP_FILE;
 
     const happoScreenshot: ScreenshotFunction = async (
       handleOrLocator,
@@ -137,6 +142,22 @@ export const test: TestType<
       }
       if (!variant) {
         throw new Error('Missing `variant`');
+      }
+
+      const testFile = base.info().file;
+      if (fileItems.some((item) => item.file === testFile)) {
+        if (resolvedSkipFilePath) {
+          try {
+            fs.appendFileSync(
+              resolvedSkipFilePath,
+              JSON.stringify({ component, variant }) + '\n',
+              'utf8',
+            );
+          } catch {
+            // Ignore write errors
+          }
+        }
+        return;
       }
 
       if (isInSkipSet(skipSet, component, variant)) {

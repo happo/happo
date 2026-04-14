@@ -37,17 +37,17 @@ describe('resolveStoryFileItems', () => {
     assert.deepStrictEqual(result, [{ component: 'Button', variant: 'Primary' }]);
   });
 
-  it('resolves storyFile to component name', () => {
+  it('resolves file to component name', () => {
     const result = resolveStoryFileItems(
-      [{ storyFile: './src/Button.stories.tsx' }],
+      [{ file: './src/Button.stories.tsx' }],
       entries,
     );
     assert.deepStrictEqual(result, [{ component: 'Button' }]);
   });
 
-  it('resolves storyFile without leading ./', () => {
+  it('resolves file without leading ./', () => {
     const result = resolveStoryFileItems(
-      [{ storyFile: 'src/Input.stories.tsx' }],
+      [{ file: 'src/Input.stories.tsx' }],
       entries,
     );
     assert.deepStrictEqual(result, [{ component: 'Input' }]);
@@ -56,16 +56,16 @@ describe('resolveStoryFileItems', () => {
   it('returns one entry per unique component title, not per story', () => {
     // Button has two stories but one title — should produce one resolved item
     const result = resolveStoryFileItems(
-      [{ storyFile: 'src/Button.stories.tsx' }],
+      [{ file: 'src/Button.stories.tsx' }],
       entries,
     );
     assert.strictEqual(result.length, 1);
     assert.strictEqual(result[0]?.component, 'Button');
   });
 
-  it('handles a mix of component and storyFile items', () => {
+  it('handles a mix of component and file items', () => {
     const result = resolveStoryFileItems(
-      [{ component: 'Card', variant: 'Default' }, { storyFile: 'src/Input.stories.tsx' }],
+      [{ component: 'Card', variant: 'Default' }, { file: 'src/Input.stories.tsx' }],
       entries,
     );
     assert.deepStrictEqual(result, [
@@ -74,11 +74,11 @@ describe('resolveStoryFileItems', () => {
     ]);
   });
 
-  it('warns and skips storyFile items not found in the index', () => {
+  it('warns and skips file items not found in the index', () => {
     const warnMock = mock.method(console, 'warn', () => {});
     try {
       const result = resolveStoryFileItems(
-        [{ storyFile: 'src/NotFound.stories.tsx' }],
+        [{ file: 'src/NotFound.stories.tsx' }],
         entries,
       );
       assert.deepStrictEqual(result, []);
@@ -97,7 +97,7 @@ describe('resolveStoryFileItems', () => {
   it('returns empty array when entries are empty', () => {
     const warnMock = mock.method(console, 'warn', () => {});
     try {
-      const result = resolveStoryFileItems([{ storyFile: 'src/Button.stories.tsx' }], {});
+      const result = resolveStoryFileItems([{ file: 'src/Button.stories.tsx' }], {});
       assert.deepStrictEqual(result, []);
       assert.strictEqual(warnMock.mock.callCount(), 1);
     } finally {

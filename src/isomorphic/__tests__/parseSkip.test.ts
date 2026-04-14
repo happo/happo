@@ -14,40 +14,40 @@ describe('validateSkip', () => {
     assert.deepStrictEqual(result, [{ component: 'Button' }]);
   });
 
-  it('accepts storyFile items', () => {
+  it('accepts file items', () => {
     const result = validateSkip(
-      JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+      JSON.stringify([{ file: './src/Button.stories.tsx' }]),
     );
-    assert.deepStrictEqual(result, [{ storyFile: './src/Button.stories.tsx' }]);
+    assert.deepStrictEqual(result, [{ file: './src/Button.stories.tsx' }]);
   });
 
-  it('rejects storyFile items with variant', () => {
+  it('rejects file items with variant', () => {
     assert.throws(
       () =>
         validateSkip(
-          JSON.stringify([{ storyFile: './src/Button.stories.tsx', variant: 'Primary' }]),
+          JSON.stringify([{ file: './src/Button.stories.tsx', variant: 'Primary' }]),
         ),
       TypeError,
     );
   });
 
-  it('accepts a mix of component and storyFile items', () => {
+  it('accepts a mix of component and file items', () => {
     const items = [
       { component: 'Button', variant: 'Primary' },
-      { storyFile: './src/Input.stories.tsx' },
+      { file: './src/Input.stories.tsx' },
     ];
     const result = validateSkip(JSON.stringify(items));
     assert.deepStrictEqual(result, items);
   });
 
-  it('rejects items with both component and storyFile', () => {
+  it('rejects items with both component and file', () => {
     assert.throws(
-      () => validateSkip(JSON.stringify([{ component: 'Button', storyFile: './foo.tsx' }])),
+      () => validateSkip(JSON.stringify([{ component: 'Button', file: './foo.tsx' }])),
       TypeError,
     );
   });
 
-  it('rejects items with neither component nor storyFile', () => {
+  it('rejects items with neither component nor file', () => {
     assert.throws(
       () => validateSkip(JSON.stringify([{ variant: 'Primary' }])),
       TypeError,
@@ -68,7 +68,7 @@ describe('validateSkip', () => {
       assert.fail('expected an error');
     } catch (e) {
       assert.ok(e instanceof TypeError);
-      assert.match(e.message, /storyFile/);
+      assert.match(e.message, /file/);
       assert.match(e.message, /component/);
     }
   });
@@ -86,7 +86,7 @@ describe('parseSkip', () => {
   it('returns parsed items for valid JSON', () => {
     const items = [
       { component: 'Button' },
-      { storyFile: './src/Input.stories.tsx' },
+      { file: './src/Input.stories.tsx' },
     ];
     assert.deepStrictEqual(parseSkip(JSON.stringify(items)), items);
   });
@@ -103,16 +103,16 @@ describe('toSkipSet', () => {
     assert.ok(!isInSkipSet(set, 'Button', 'Secondary'));
   });
 
-  it('ignores storyFile items', () => {
-    const set = toSkipSet([{ storyFile: './src/Button.stories.tsx' }]);
+  it('ignores file items', () => {
+    const set = toSkipSet([{ file: './src/Button.stories.tsx' }]);
     // No component-based entries, so nothing is skipped
     assert.ok(!isInSkipSet(set, 'Button', 'Primary'));
   });
 
-  it('handles a mix of component and storyFile items', () => {
+  it('handles a mix of component and file items', () => {
     const set = toSkipSet([
       { component: 'Card' },
-      { storyFile: './src/Button.stories.tsx' },
+      { file: './src/Button.stories.tsx' },
     ]);
     assert.ok(isInSkipSet(set, 'Card', 'Default'));
     assert.ok(!isInSkipSet(set, 'Button', 'Primary'));

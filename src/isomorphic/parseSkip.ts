@@ -11,9 +11,9 @@ function isSkipItem(item: unknown): item is SkipItem {
   if (typeof item !== 'object' || item === null) return false;
   const record = item as Record<string, unknown>;
   const hasComponent = typeof record['component'] === 'string';
-  const hasStoryFile = typeof record['storyFile'] === 'string';
-  if (hasComponent && hasStoryFile) return false;
-  if (hasStoryFile) return record['variant'] === undefined;
+  const hasFile = typeof record['file'] === 'string';
+  if (hasComponent && hasFile) return false;
+  if (hasFile) return record['variant'] === undefined;
   if (hasComponent) return record['variant'] === undefined || typeof record['variant'] === 'string';
   return false;
 }
@@ -26,7 +26,7 @@ export function validateSkip(json: string): Array<SkipItem> {
   const parsed: unknown = JSON.parse(json);
   if (!Array.isArray(parsed) || !parsed.every(isSkipItem)) {
     throw new TypeError(
-      '--skip must be a JSON array of {component, variant?} or {storyFile} objects',
+      '--skip must be a JSON array of {component, variant?} or {file} objects',
     );
   }
   return parsed;
@@ -47,7 +47,7 @@ export function parseSkip(json?: string): Array<SkipItem> {
 
 /**
  * Converts an array of SkipItems into a SkipSet for efficient lookups.
- * Items with a `storyFile` key (unresolved) are silently ignored.
+ * Items with a `file` key (unresolved) are silently ignored.
  */
 export function toSkipSet(items: Array<SkipItem>): SkipSet {
   const componentOnly = new Set<string>();

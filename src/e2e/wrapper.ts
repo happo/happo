@@ -6,6 +6,7 @@ import path from 'node:path';
 
 import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
+import { parseSkip } from '../isomorphic/parseSkip.ts';
 import cancelJob from '../network/cancelJob.ts';
 import createAsyncComparison from '../network/createAsyncComparison.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
@@ -75,8 +76,42 @@ export async function finalizeAll({
 
   if (skipJSON) {
     try {
-      const skipItems = JSON.parse(skipJSON);
-      body.skip = skipItems;
+      const rawItems = parseSkip(skipJSON);
+      const componentItems = rawItems.filter(
+        (item): item is { component: string; variant?: string } => 'component' in item,
+      );
+      const fileItems = rawItems.filter((item): item is { file: string } => 'file' in item);
+
+      let resolvedItems: Array<{ component: string; variant: string }> = [];
+      if (fileItems.length > 0 && nonce) {
+        const resolvedFilePath = path.join(
+          os.tmpdir(),
+          `happo-resolved-skip-${nonce}.json`,
+        );
+        try {
+          const content = fs.readFileSync(resolvedFilePath, 'utf8');
+          const lines = content.trim().split('\n').filter(Boolean);
+          const parsed = lines.map(
+            (line) => JSON.parse(line) as { component: string; variant: string },
+          );
+          // Deduplicate
+          const seen = new Set<string>();
+          resolvedItems = parsed.filter((item) => {
+            const key = `${item.component}\0${item.variant}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          fs.unlinkSync(resolvedFilePath);
+        } catch {
+          // No resolved file — file items can't be borrowed from baseline
+        }
+      }
+
+      body.skip = [
+        ...componentItems,
+        ...resolvedItems,
+      ] as Array<Example>;
     } catch (e) {
       logger.error('Error when parsing --skip', skipJSON);
       throw e;
@@ -249,6 +284,16 @@ export default async function runWithWrapper(
     await fs.promises.writeFile(skipFilePath, skipJSON, 'utf8');
   }
 
+  // Create a path for recording resolved skip items (file items → component items).
+  // Keyed by nonce so the finalize command can find it on the same machine.
+  const hasFileItems =
+    skipJSON !== undefined &&
+    parseSkip(skipJSON).some((item) => 'file' in item);
+  const resolvedSkipFilePath =
+    hasFileItems && environment.nonce
+      ? path.join(os.tmpdir(), `happo-resolved-skip-${environment.nonce}.json`)
+      : undefined;
+
   try {
     const exitCode = await new Promise<number>((resolve, reject) => {
       const childEnv: Record<string, string | undefined> = {
@@ -261,6 +306,10 @@ export default async function runWithWrapper(
 
       if (skipFilePath) {
         childEnv.HAPPO_SKIP_FILE = skipFilePath;
+      }
+
+      if (resolvedSkipFilePath) {
+        childEnv.HAPPO_RESOLVED_SKIP_FILE = resolvedSkipFilePath;
       }
 
       const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
@@ -310,6 +359,11 @@ export default async function runWithWrapper(
     if (skipFilePath) {
       await fs.promises.unlink(skipFilePath).catch(() => {
         // Ignore errors — the file may already be gone.
+      });
+    }
+    if (resolvedSkipFilePath) {
+      await fs.promises.unlink(resolvedSkipFilePath).catch(() => {
+        // Ignore errors — finalize may have already cleaned it up.
       });
     }
   }

@@ -370,10 +370,10 @@ async function handleDefaultCommand(
 
       if (
         config.integration.type !== 'storybook' &&
-        skip.some((item) => 'storyFile' in item)
+        skip.some((item) => 'file' in item)
       ) {
         logger.error(
-          `[HAPPO] storyFile items in --skip are only supported for the storybook integration (current integration: '${config.integration.type}')`,
+          `[HAPPO] file items in --skip are only supported for the storybook integration (current integration: '${config.integration.type}')`,
         );
         process.exitCode = 1;
         return;
@@ -402,7 +402,7 @@ async function handleDefaultCommand(
       const createExtendsReportSnapRequest = (
         await import('../network/createExtendsReportSnapRequest.ts')
       ).default;
-      // Use storybook-resolved skip (storyFile items expanded to component names)
+      // Use storybook-resolved skip (file items expanded to component names)
       // if available, otherwise fall back to the raw skip list.
       const extendsRequestId = await createExtendsReportSnapRequest(
         baselineSha,
