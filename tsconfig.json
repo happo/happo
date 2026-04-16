@@ -1,11 +1,5 @@
 {
   "files": [],
-  "compilerOptions": {
-    // Cypress webpack resolves the nearest tsconfig.json for ts-loader. Cypress injects deprecated options (e.g. downlevelIteration); silence until Cypress supports TS 6 without this.
-    // https://github.com/cypress-io/cypress/issues/33385
-    // https://github.com/cypress-io/cypress/issues/33511
-    "ignoreDeprecations": "6.0"
-  },
   "references": [
     { "path": "./tsconfigs/tsconfig.browser.json" },
     { "path": "./tsconfigs/tsconfig.cypress.json" },
