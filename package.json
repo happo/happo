@@ -125,7 +125,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-compat": "^7.0.1",
     "eslint-plugin-depend": "^1.4.0",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
     "eslint-plugin-unicorn": "^64.0.0",
     "jiti": "^2.6.1",
     "jsdom": "^29.0.0",
