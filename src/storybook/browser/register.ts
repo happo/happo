@@ -216,6 +216,23 @@ function filterExamples(
 ): Array<Example> {
   const { chunk, targetName, only } = initConfig;
 
+  if (globalThis.happoOnly) {
+    const happoOnly = globalThis.happoOnly;
+    all = all.filter((e) => happoOnly.some((item) => item.component === e.component));
+  }
+
+  if (globalThis.happoSkipped) {
+    const happoSkipped = globalThis.happoSkipped;
+    all = all.filter(
+      (e) =>
+        !happoSkipped.some(
+          (item) =>
+            item.component === e.component &&
+            (item.variant === undefined || item.variant === e.variant),
+        ),
+    );
+  }
+
   if (chunk) {
     const examplesPerChunk = Math.ceil(all.length / chunk.total);
     const startIndex = chunk.index * examplesPerChunk;
@@ -376,24 +393,6 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
   let variant = rawVariant;
 
   try {
-    if (
-      globalThis.happoSkipped &&
-      globalThis.happoSkipped.some(
-        (item) => item.component === component && (item.variant === undefined || item.variant === variant),
-      )
-    ) {
-      console.log(`Skipping ${component}, ${variant} since it is in the skip list`);
-      return { component, variant, skipped: true };
-    }
-
-    if (
-      globalThis.happoOnly &&
-      !globalThis.happoOnly.some((item) => item.component === component)
-    ) {
-      console.log(`Skipping ${component}, ${variant} since it is not in the only list`);
-      return { component, variant, skipped: true };
-    }
-
     const docsRootElement = document.getElementById('docs-root');
     if (docsRootElement) {
       docsRootElement.dataset.happoIgnore = 'true';
