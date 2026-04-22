@@ -7,10 +7,12 @@ import type { ParsedCLIArgs } from '../cli/parseOptions.ts';
 const NUMBER_OF_COMMITS_TO_FETCH = 50;
 const FULL_SHA_REGEX = /^[a-f0-9]{40}$/i;
 
+// Subset of the GitHub webhook event payload shapes written to GITHUB_EVENT_PATH.
+// See https://docs.github.com/en/webhooks/webhook-events-and-payloads for full schemas.
 interface GitHubEvent {
   pull_request?: {
     html_url: string;
-    title: string;
+    title: string | null;
     base: {
       sha: string;
     };
@@ -18,12 +20,20 @@ interface GitHubEvent {
       sha: string;
     };
   };
-  head_commit?: {
-    url: string;
-  };
+  head_commit?:
+    | {
+        url: string;
+        message?: string;
+      }
+    | null;
   merge_group?: {
     head_sha: string;
     base_sha: string;
+    head_commit?:
+      | {
+          message?: string;
+        }
+      | null;
   };
   repository?: {
     html_url: string;
@@ -231,8 +241,15 @@ async function resolveMessage(
 
   if (GITHUB_EVENT_PATH) {
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
-    if (ghEvent.pull_request) {
-      return ghEvent.pull_request.title;
+    const title = ghEvent.pull_request?.title;
+    if (typeof title === 'string') {
+      return title;
+    }
+    if (ghEvent.head_commit?.message) {
+      return ghEvent.head_commit.message;
+    }
+    if (ghEvent.merge_group?.head_commit?.message) {
+      return ghEvent.merge_group.head_commit.message;
     }
   }
 
