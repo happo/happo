@@ -20,16 +20,20 @@ interface GitHubEvent {
       sha: string;
     };
   };
-  head_commit?: {
-    url: string;
-    message?: string;
-  };
+  head_commit?:
+    | {
+        url: string;
+        message?: string;
+      }
+    | null;
   merge_group?: {
     head_sha: string;
     base_sha: string;
-    head_commit?: {
-      message?: string;
-    };
+    head_commit?:
+      | {
+          message?: string;
+        }
+      | null;
   };
   repository?: {
     html_url: string;
