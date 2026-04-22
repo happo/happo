@@ -129,6 +129,65 @@ it('resolves version from node_modules when using workspace:* protocol', () => {
   assert.strictEqual(version, 9);
 });
 
+it('resolves version from a parent node_modules (workspace hoisting / Yarn PnP-style walk-up)', () => {
+  // The "app" package is nested under packages/app and has no node_modules
+  // of its own — storybook is hoisted to the workspace root. Node's module
+  // resolution (via createRequire) walks up the tree to find it.
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'workspace-root',
+      private: true,
+    }),
+    node_modules: {
+      storybook: {
+        'package.json': JSON.stringify({
+          name: 'storybook',
+          version: '9.2.0',
+        }),
+      },
+    },
+    packages: {
+      app: {
+        'package.json': JSON.stringify({
+          name: 'app',
+          devDependencies: { storybook: 'catalog:' },
+        }),
+      },
+    },
+  });
+
+  const version = getStorybookVersionFromPackageJson(
+    tmpfs.fullPath('packages/app/package.json'),
+  );
+  assert.strictEqual(version, 9);
+});
+
+it("falls back to a direct node_modules read when the package's exports field hides package.json", () => {
+  // With an exports field that does not list "./package.json",
+  // require.resolve('storybook/package.json') throws
+  // ERR_PACKAGE_PATH_NOT_EXPORTED. The fallback should still read the file
+  // directly off disk.
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      devDependencies: { storybook: 'catalog:' },
+    }),
+    node_modules: {
+      storybook: {
+        'package.json': JSON.stringify({
+          name: 'storybook',
+          version: '9.3.0',
+          exports: { '.': './index.js' },
+        }),
+        'index.js': '',
+      },
+    },
+  });
+
+  const version = getStorybookVersionFromPackageJson();
+  assert.strictEqual(version, 9);
+});
+
 it('throws a helpful error when the declared version is unparseable and the package cannot be resolved', () => {
   tmpfs.mock({
     'package.json': JSON.stringify({
