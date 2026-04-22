@@ -188,6 +188,43 @@ it("falls back to a direct node_modules read when the package's exports field hi
   assert.strictEqual(version, 9);
 });
 
+it('resolves version when the package is hoisted AND has an exports field that hides package.json', () => {
+  // Combination case flagged in review: the package is hoisted to a parent
+  // node_modules (so the direct projectRoot/node_modules/<pkg>/package.json
+  // fallback misses) AND its exports field does not expose ./package.json
+  // (so require.resolve('<pkg>/package.json') throws). The walk-up-from-entry
+  // tier must cover this.
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'workspace-root',
+      private: true,
+    }),
+    node_modules: {
+      storybook: {
+        'package.json': JSON.stringify({
+          name: 'storybook',
+          version: '9.4.0',
+          exports: { '.': './index.js' },
+        }),
+        'index.js': '',
+      },
+    },
+    packages: {
+      app: {
+        'package.json': JSON.stringify({
+          name: 'app',
+          devDependencies: { storybook: 'catalog:' },
+        }),
+      },
+    },
+  });
+
+  const version = getStorybookVersionFromPackageJson(
+    tmpfs.fullPath('packages/app/package.json'),
+  );
+  assert.strictEqual(version, 9);
+});
+
 it('throws a helpful error when the declared version is unparseable and the package cannot be resolved', () => {
   tmpfs.mock({
     'package.json': JSON.stringify({
@@ -198,6 +235,6 @@ it('throws a helpful error when the declared version is unparseable and the pack
 
   assert.throws(
     () => getStorybookVersionFromPackageJson(),
-    /Unable to determine Storybook major version/,
+    /Unable to determine installed version of storybook.*Ensure dependencies are installed/s,
   );
 });
