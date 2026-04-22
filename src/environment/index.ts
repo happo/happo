@@ -27,6 +27,9 @@ interface GitHubEvent {
   merge_group?: {
     head_sha: string;
     base_sha: string;
+    head_commit?: {
+      message?: string;
+    };
   };
   repository?: {
     html_url: string;
@@ -240,6 +243,9 @@ async function resolveMessage(
     }
     if (ghEvent.head_commit?.message) {
       return ghEvent.head_commit.message;
+    }
+    if (ghEvent.merge_group?.head_commit?.message) {
+      return ghEvent.merge_group.head_commit.message;
     }
   }
 

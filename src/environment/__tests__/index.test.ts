@@ -599,6 +599,7 @@ describe('resolveEnvironment', () => {
       result.link,
       'https://github.com/Codertocat/Hello-World/commit/ec26c3e57ca3a959ca5aad62de7213c562f8c821',
     );
+    assert.equal(result.message, 'Commit from merge group');
   });
 
   it('resolves the Travis environment', async () => {
