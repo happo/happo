@@ -9,7 +9,7 @@
   "compare": "https://github.com/Codertocat/Hello-World/compare/6113728f27ae...000000000000",
   "commits": [],
   "head_commit": {
-    "__henrics_comment": "For some reason, head_commit is null in the event payload example at https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#push . This has never occured in the wild.",
+    "__henrics_comment": "For some reason, head_commit is null in the event payload example at https://docs.github.com/en/developers/webhooks-and-events/webhook-events-and-payloads#push . This has never occurred in the wild.",
     "url": "https://github.com/foo/bar/commit/0000000000000000000000000000000000000000",
     "message": "Commit from push event"
   },

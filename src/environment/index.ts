@@ -234,8 +234,9 @@ async function resolveMessage(
 
   if (GITHUB_EVENT_PATH) {
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
-    if (ghEvent.pull_request?.title !== null && ghEvent.pull_request?.title !== undefined) {
-      return ghEvent.pull_request.title;
+    const title = ghEvent.pull_request?.title;
+    if (typeof title === 'string') {
+      return title;
     }
     if (ghEvent.head_commit?.message) {
       return ghEvent.head_commit.message;
