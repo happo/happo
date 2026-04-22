@@ -66,6 +66,15 @@ export default async function createAssetPackage(
   await Promise.all(
     urls.map(async (item: AssetUrl) => {
       const { url, baseUrl } = item;
+
+      if (
+        /^(about|blob|javascript|file|chrome|chrome-extension|moz-extension):/i.test(
+          url,
+        )
+      ) {
+        return;
+      }
+
       const isExternalUrl = /^https?:/.test(url);
       const isLocalhost = /\/\/(localhost|127\.0\.0\.1)(:|\/)/.test(url);
 

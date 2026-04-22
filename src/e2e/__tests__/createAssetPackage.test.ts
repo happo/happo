@@ -59,6 +59,90 @@ describe('createAssetPackage', () => {
     assert.equal(pkg.hash, expectedHash);
   });
 
+  it('skips non-fetchable URL schemes', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchCalls: Array<string> = [];
+    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      fetchCalls.push(url);
+      return originalFetch(input, init);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const pkg = await createAssetPackage(
+        [
+          {
+            url: '/sub%20folder/countries-bg.jpeg',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'about:blank',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'About:Blank',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'about:srcdoc',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'blob:http://localhost/abc-123',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'javascript:void(0)',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'JAVASCRIPT:void(0)',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'file:///etc/hosts',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'chrome://version',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'chrome-extension://abcdef/foo.png',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+          {
+            url: 'moz-extension://abcdef/foo.png',
+            baseUrl: `http://localhost:${serverInfo.port}`,
+          },
+        ],
+        { downloadAllAssets: true },
+      );
+
+      const zip = unzipSync(new Uint8Array(pkg.buffer));
+      const entries = Object.keys(zip).toSorted();
+      assert.deepEqual(entries, ['sub folder/countries-bg.jpeg']);
+
+      // Blocked schemes must be filtered out before reaching the network
+      // layer — fetch should only ever be invoked for the valid local asset.
+      const validUrl = `http://localhost:${serverInfo.port}/sub%20folder/countries-bg.jpeg`;
+      const unexpected = fetchCalls.filter((u) => u !== validUrl);
+      assert.deepEqual(
+        unexpected,
+        [],
+        `Unexpected fetches for blocked schemes: ${unexpected.join(', ')}`,
+      );
+      assert.ok(fetchCalls.length >= 1, 'Valid asset should be fetched');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('includes external assets when downloadAllAssets is true', async () => {
     const pkg = await createAssetPackage(
       [
