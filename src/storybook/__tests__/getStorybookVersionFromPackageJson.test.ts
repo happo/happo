@@ -129,7 +129,7 @@ it('resolves version from node_modules when using workspace:* protocol', () => {
   assert.strictEqual(version, 9);
 });
 
-it('throws a helpful error when the declared version is unparseable and node_modules is missing', () => {
+it('throws a helpful error when the declared version is unparseable and the package cannot be resolved', () => {
   tmpfs.mock({
     'package.json': JSON.stringify({
       name: 'test',

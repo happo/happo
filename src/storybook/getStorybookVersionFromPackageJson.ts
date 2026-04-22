@@ -1,19 +1,42 @@
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
+
+function readVersionFrom(filePath: string): string | undefined {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8')).version;
+  } catch {
+    return undefined;
+  }
+}
 
 function readInstalledVersion(
   pkg: string,
   projectRoot: string,
 ): string | undefined {
+  // Prefer Node's module resolution so we work with every layout that Node
+  // itself understands: flat node_modules (npm/yarn classic), pnpm's symlinked
+  // tree, hoisted packages in parent node_modules, and Yarn Plug'n'Play when
+  // the process has PnP hooks installed.
   try {
-    const installedPackageJson = fs.readFileSync(
-      path.join(projectRoot, 'node_modules', pkg, 'package.json'),
-      'utf8',
+    const requireFromProject = createRequire(
+      path.join(projectRoot, 'package.json'),
     );
-    return JSON.parse(installedPackageJson).version;
+    const version = readVersionFrom(
+      requireFromProject.resolve(`${pkg}/package.json`),
+    );
+    if (version) {
+      return version;
+    }
   } catch {
-    return undefined;
+    // Fall through to the direct node_modules lookup below. Some packages
+    // have an `exports` field that does not expose `./package.json`, which
+    // makes require.resolve throw even when the file exists on disk.
   }
+
+  return readVersionFrom(
+    path.join(projectRoot, 'node_modules', pkg, 'package.json'),
+  );
 }
 
 export default function getStorybookVersionFromPackageJson(
@@ -58,6 +81,6 @@ export default function getStorybookVersionFromPackageJson(
   }
 
   throw new Error(
-    `Unable to determine Storybook major version (found "${declaredVersion}" for ${storybookPackage} in package.json and no resolvable version in node_modules)`,
+    `Unable to determine Storybook major version (found "${declaredVersion}" for ${storybookPackage} in package.json and could not resolve the installed package)`,
   );
 }
