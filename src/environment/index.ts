@@ -27,7 +27,9 @@ interface GitHubEvent {
   };
   repository?: {
     html_url: string;
+    default_branch?: string;
   };
+  ref?: string;
   before?: string;
   after?: string;
 }
@@ -401,6 +403,15 @@ async function resolveBeforeSha(
 
     if (ghEvent.merge_group) {
       return ghEvent.merge_group.base_sha;
+    }
+
+    // Don't create a comparison for pushes to the default branch (e.g. a merge commit landing on main).
+    if (
+      ghEvent.ref &&
+      ghEvent.repository?.default_branch &&
+      ghEvent.ref === `refs/heads/${ghEvent.repository.default_branch}`
+    ) {
+      return undefined;
     }
 
     return ghEvent.before;
