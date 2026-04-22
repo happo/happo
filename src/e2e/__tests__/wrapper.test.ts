@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import http from 'node:http';
+import path from 'node:path';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
 import runWithWrapper from '../wrapper.ts';
@@ -45,7 +46,9 @@ before(async () => {
       res.setHeader('Content-Type', 'application/json');
 
       if (req.url?.match(/^\/api\/jobs\//)) {
-        res.end(JSON.stringify({ id: 1, url: `http://localhost:${serverPort}/job/1` }));
+        res.end(
+          JSON.stringify({ id: 1, url: `http://localhost:${serverPort}/job/1` }),
+        );
         return;
       }
 
@@ -86,30 +89,42 @@ beforeEach(() => {
   comparisonEndpointHits = 0;
 });
 
-// A node one-liner that POSTs one snap request ID to the e2e server then exits.
+// Script that POSTs one snap request ID to the e2e server then exits.
+// Using a fixture file avoids cmd.exe quoting issues on Windows.
 const childCommand = [
   process.execPath,
-  '-e',
-  `
-    const http = require('http');
-    const req = http.request(
-      { port: process.env.HAPPO_E2E_PORT, method: 'POST', path: '/' },
-      (res) => { res.resume(); res.on('end', () => process.exit(0)); }
-    );
-    req.write('1\\n');
-    req.end();
-  `,
+  path.join(import.meta.dirname, 'fixtures', 'post-snap-request.cjs'),
 ];
 
 describe('runWithWrapper', () => {
-  it('creates a comparison when beforeSha differs from afterSha', { timeout: 5000 }, async () => {
-    await runWithWrapper(childCommand, happoConfig(), baseEnvironment, console, 'happo.config.js');
-    assert.equal(comparisonEndpointHits, 1);
-  });
+  it(
+    'creates a comparison when beforeSha differs from afterSha',
+    { timeout: 5000 },
+    async () => {
+      await runWithWrapper(
+        childCommand,
+        happoConfig(),
+        baseEnvironment,
+        console,
+        'happo.config.js',
+      );
+      assert.equal(comparisonEndpointHits, 1);
+    },
+  );
 
-  it('skips comparison when beforeSha equals afterSha (default branch build)', { timeout: 5000 }, async () => {
-    const environment = { ...baseEnvironment, beforeSha: AFTER_SHA };
-    await runWithWrapper(childCommand, happoConfig(), environment, console, 'happo.config.js');
-    assert.equal(comparisonEndpointHits, 0);
-  });
+  it(
+    'skips comparison when beforeSha equals afterSha (default branch build)',
+    { timeout: 5000 },
+    async () => {
+      const environment = { ...baseEnvironment, beforeSha: AFTER_SHA };
+      await runWithWrapper(
+        childCommand,
+        happoConfig(),
+        environment,
+        console,
+        'happo.config.js',
+      );
+      assert.equal(comparisonEndpointHits, 0);
+    },
+  );
 });
