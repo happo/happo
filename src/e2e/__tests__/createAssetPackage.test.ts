@@ -61,7 +61,7 @@ describe('createAssetPackage', () => {
 
   it('skips non-fetchable URL schemes', async () => {
     const originalFetch = globalThis.fetch;
-    const fetchCalls: string[] = [];
+    const fetchCalls: Array<string> = [];
     globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
       const url =
         typeof input === 'string'
