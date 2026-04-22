@@ -1,0 +1,12 @@
+{
+  "ref": "refs/heads/main",
+  "before": "1111111111111111111111111111111111111111",
+  "after": "0000000000000000000000000000000000000000",
+  "head_commit": {
+    "url": "https://github.com/Codertocat/Hello-World/commit/0000000000000000000000000000000000000000"
+  },
+  "repository": {
+    "html_url": "https://github.com/Codertocat/Hello-World",
+    "default_branch": "main"
+  }
+}

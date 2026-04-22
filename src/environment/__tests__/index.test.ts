@@ -322,13 +322,29 @@ describe('resolveEnvironment', () => {
     assert.equal(result.link, `https://github.com/foo/bar/commit/${afterSha}`);
     assert.notEqual(result.message, undefined);
 
+    // Try with a push to the default branch (e.g. a merge commit landing on main) — no comparison
+    const pushToMainEventContents = fs.readFileSync(
+      path.resolve(__dirname, 'github_push_to_main_event.json'),
+      'utf8',
+    );
+    const pushToMainEventContentsWithChanges = pushToMainEventContents.replaceAll(
+      '0000000000000000000000000000000000000000',
+      afterSha,
+    );
+    const pushToMainEventPath = tmpfs.fullPath('github_push_to_main_event.json');
+    fs.writeFileSync(pushToMainEventPath, pushToMainEventContentsWithChanges);
+    githubEnv.GITHUB_EVENT_PATH = pushToMainEventPath;
+    result = await resolveEnvironment({}, githubEnv);
+    assert.equal(result.afterSha, afterSha);
+    assert.equal(result.beforeSha, afterSha, 'push to default branch should not create a comparison');
+
     // Try with a workflow_dispatch event
     githubEnv.GITHUB_EVENT_PATH = path.resolve(
       __dirname,
       'github_workflow_dispatch.json',
     );
     result = await resolveEnvironment({}, githubEnv);
-    
+
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, afterSha);
     assert.equal(
