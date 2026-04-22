@@ -66,3 +66,79 @@ it('throws if storybook is not listed as a dependency', () => {
 
   assert.throws(() => getStorybookVersionFromPackageJson(), /not listed/);
 });
+
+it('resolves version from node_modules when using pnpm catalog:', () => {
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      devDependencies: { storybook: 'catalog:' },
+    }),
+    node_modules: {
+      storybook: {
+        'package.json': JSON.stringify({
+          name: 'storybook',
+          version: '9.1.10',
+        }),
+      },
+    },
+  });
+
+  const version = getStorybookVersionFromPackageJson();
+  assert.strictEqual(version, 9);
+});
+
+it('resolves version from node_modules when using a named pnpm catalog', () => {
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      devDependencies: { '@storybook/react': 'catalog:frontend' },
+    }),
+    node_modules: {
+      '@storybook': {
+        react: {
+          'package.json': JSON.stringify({
+            name: '@storybook/react',
+            version: '8.2.1',
+          }),
+        },
+      },
+    },
+  });
+
+  const version = getStorybookVersionFromPackageJson();
+  assert.strictEqual(version, 8);
+});
+
+it('resolves version from node_modules when using workspace:* protocol', () => {
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      devDependencies: { storybook: 'workspace:*' },
+    }),
+    node_modules: {
+      storybook: {
+        'package.json': JSON.stringify({
+          name: 'storybook',
+          version: '9.0.0',
+        }),
+      },
+    },
+  });
+
+  const version = getStorybookVersionFromPackageJson();
+  assert.strictEqual(version, 9);
+});
+
+it('throws a helpful error when the declared version is unparseable and node_modules is missing', () => {
+  tmpfs.mock({
+    'package.json': JSON.stringify({
+      name: 'test',
+      devDependencies: { storybook: 'catalog:' },
+    }),
+  });
+
+  assert.throws(
+    () => getStorybookVersionFromPackageJson(),
+    /Unable to determine Storybook major version/,
+  );
+});
