@@ -68,7 +68,7 @@ export default async function createAssetPackage(
       const { url, baseUrl } = item;
 
       if (
-        /^(about|blob|javascript|file|chrome|chrome-extension|moz-extension):/.test(
+        /^(about|blob|javascript|file|chrome|chrome-extension|moz-extension):/i.test(
           url,
         )
       ) {
