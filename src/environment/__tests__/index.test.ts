@@ -302,6 +302,16 @@ describe('resolveEnvironment', () => {
     assert.equal(result.link, 'https://github.com/Codertocat/Hello-World/pull/2');
     assert.equal(result.message, 'Update the README with new information.');
 
+    // When pull_request.title is null, fall back to git log
+    const prEventWithNullTitle = JSON.parse(prEventContentsWithChanges) as {
+      pull_request: { title: string | null };
+    };
+    prEventWithNullTitle.pull_request.title = null;
+    tmpfs.writeFile('github_pr_null_title_event.json', JSON.stringify(prEventWithNullTitle));
+    githubEnv.GITHUB_EVENT_PATH = tmpfs.fullPath('github_pr_null_title_event.json');
+    result = await resolveEnvironment({}, githubEnv);
+    assert.equal(result.message, 'Add new-branch-file.txt');
+
     // Try with a push event
     // Copy the event file to the temp dir and update the sha to the current sha
     const pushEventContents = fs.readFileSync(
@@ -320,7 +330,7 @@ describe('resolveEnvironment', () => {
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, '6113728f27ae82c7b1a177c8d03f9e96e0adf246');
     assert.equal(result.link, `https://github.com/foo/bar/commit/${afterSha}`);
-    assert.notEqual(result.message, undefined);
+    assert.equal(result.message, 'Commit from push event');
 
     // Try with a push to the default branch (e.g. a merge commit landing on main) — no comparison
     const pushToMainEventContents = fs.readFileSync(
