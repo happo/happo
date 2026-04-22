@@ -59,6 +59,54 @@ describe('createAssetPackage', () => {
     assert.equal(pkg.hash, expectedHash);
   });
 
+  it('skips non-fetchable URL schemes', async () => {
+    const pkg = await createAssetPackage(
+      [
+        {
+          url: '/sub%20folder/countries-bg.jpeg',
+          baseUrl: `http://localhost:${serverInfo.port}`,
+        },
+        {
+          url: 'about:blank',
+          baseUrl: `http://localhost:${serverInfo.port}`,
+        },
+        {
+          url: 'about:srcdoc',
+          baseUrl: `http://localhost:${serverInfo.port}`,
+        },
+        {
+          url: 'blob:http://localhost/abc-123',
+          baseUrl: `http://localhost:${serverInfo.port}`,
+        },
+        {
+          url: 'javascript:void(0)',
+          baseUrl: `http://localhost:${serverInfo.port}`,
+        },
+        {
+          url: 'file:///etc/hosts',
+          baseUrl: `http://localhost:${serverInfo.port}`,
+        },
+        {
+          url: 'chrome://version',
+          baseUrl: `http://localhost:${serverInfo.port}`,
+        },
+        {
+          url: 'chrome-extension://abcdef/foo.png',
+          baseUrl: `http://localhost:${serverInfo.port}`,
+        },
+        {
+          url: 'moz-extension://abcdef/foo.png',
+          baseUrl: `http://localhost:${serverInfo.port}`,
+        },
+      ],
+      { downloadAllAssets: true },
+    );
+
+    const zip = unzipSync(new Uint8Array(pkg.buffer));
+    const entries = Object.keys(zip).toSorted();
+    assert.deepEqual(entries, ['sub folder/countries-bg.jpeg']);
+  });
+
   it('includes external assets when downloadAllAssets is true', async () => {
     const pkg = await createAssetPackage(
       [
