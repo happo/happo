@@ -14,12 +14,9 @@ let comparisonEndpointHits: number;
 const happoConfig = () => ({
   apiKey: 'test-key',
   apiSecret: 'test-secret',
-  targets: {} as Record<string, never>,
-  project: undefined,
-  notify: undefined,
+  targets: {},
   endpoint: `http://localhost:${serverPort}`,
   githubApiUrl: 'https://api.github.com',
-  deepCompare: undefined,
   integration: { type: 'playwright' as const },
 });
 
