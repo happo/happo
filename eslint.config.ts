@@ -13,6 +13,7 @@ const config: Config = defineConfig(
   {
     ignores: [
       '**/test-assets/**',
+      '**/__tests__/fixtures/**',
       '.out/**',
       '.happo-out/**',
       'coverage/**',

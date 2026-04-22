@@ -136,7 +136,7 @@ async function finalizeHappoReport(
 
   const { nonce } = environment;
 
-  if (!nonce) {
+  if (!nonce && environment.beforeSha !== environment.afterSha) {
     // If there is a nonce, the comparison will happen when the finalize
     // command is called.
     const compareResult = await createAsyncComparison(
