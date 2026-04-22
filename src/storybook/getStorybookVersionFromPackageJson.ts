@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
+import * as walk from 'empathic/walk';
+
 function readVersionFrom(filePath: string): string | undefined {
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf8')).version;
@@ -10,31 +12,27 @@ function readVersionFrom(filePath: string): string | undefined {
   }
 }
 
-function findPackageJsonForEntry(
+function findPackageJsonForEntryPath(
   entryPath: string,
-  pkg: string,
+  pkgName: string,
 ): string | undefined {
   // Walk up from a resolved entry file to the nearest package.json whose
-  // `name` matches `pkg`. Node's resolution always places the entry inside
+  // `name` matches `pkgName`. Node's resolution always places the entry inside
   // the package's own tree (even under pnpm's .pnpm virtual store or Yarn
   // PnP's zipfs), so this reliably finds the correct root.
-  let dir = path.dirname(entryPath);
-  while (true) {
+  for (const dir of walk.up(path.dirname(entryPath))) {
     const candidate = path.join(dir, 'package.json');
     try {
       const parsed = JSON.parse(fs.readFileSync(candidate, 'utf8'));
-      if (parsed.name === pkg) {
+      if (parsed.name === pkgName) {
         return candidate;
       }
     } catch {
       // not a readable package.json here; keep walking up
     }
-    const parent = path.dirname(dir);
-    if (parent === dir) {
-      return undefined;
-    }
-    dir = parent;
   }
+
+  return undefined;
 }
 
 function readInstalledVersion(
@@ -70,7 +68,7 @@ function readInstalledVersion(
   // neither tier 1 nor the direct lookup below would work.
   try {
     const entryPath = requireFromProject.resolve(pkg);
-    const pkgJsonPath = findPackageJsonForEntry(entryPath, pkg);
+    const pkgJsonPath = findPackageJsonForEntryPath(entryPath, pkg);
     if (pkgJsonPath) {
       const version = readVersionFrom(pkgJsonPath);
       if (version) {
