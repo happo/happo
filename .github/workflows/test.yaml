@@ -59,6 +59,14 @@ jobs:
       - uses: ./.github/actions/setup-env
       - run: pnpm test:custom
 
+  custom-skipped:
+    runs-on: ubuntu-latest
+    name: Happo Custom (skipped examples)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+      - run: pnpm test:custom:skipped
+
   pages:
     runs-on: ubuntu-latest
     name: Happo Pages
