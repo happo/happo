@@ -23,6 +23,23 @@ const happoStatic = {
       init: ({ targetName, chunk, only }) => {
         currentIndex = 0;
 
+        // Read the skip set from the DOM and filter `examples` once, here
+        // at init time. An example's `render` may replace the entire
+        // document (e.g. `document.open()`/`write()`/`close()`), which
+        // would destroy the `<script id="happo-skipped">` tag injected
+        // into iframe.html. Filtering up front means the skip list is
+        // robust against any DOM mutation an example might perform.
+        const happoSkippedEl =
+          typeof document === 'undefined'
+            ? null
+            : document.getElementById('happo-skipped');
+        const skipSet = toSkipSet(
+          parseSkip(happoSkippedEl?.textContent ?? undefined),
+        );
+        examples = examples.filter(
+          (e) => !isInSkipSet(skipSet, e.component, e.variant),
+        );
+
         if (only) {
           examples = examples.filter(
             (e) => e.component === only.component && e.variant === only.variant,
@@ -47,41 +64,24 @@ const happoStatic = {
       },
 
       nextExample: async () => {
-        const happoSkippedEl =
-          typeof document === 'undefined'
-            ? null
-            : document.getElementById('happo-skipped');
-        const skipSet = toSkipSet(
-          parseSkip(happoSkippedEl?.textContent ?? undefined),
-        );
+        const example = examples[currentIndex];
 
-        while (true) {
-          const example = examples[currentIndex];
-
-          if (!example) {
-            // we're done
-            return;
-          }
-
-          if (isInSkipSet(skipSet, example.component, example.variant)) {
-            currentIndex++;
-            continue;
-          }
-
-          if (example.render) {
-            await example.render();
-          }
-          currentIndex++;
-
-          const clone = {
-            component: example.component,
-            variant: example.variant,
-            targets: example.targets,
-            waitForContent: example.waitForContent,
-          };
-
-          return clone;
+        if (!example) {
+          // we're done
+          return;
         }
+
+        if (example.render) {
+          await example.render();
+        }
+        currentIndex++;
+
+        return {
+          component: example.component,
+          variant: example.variant,
+          targets: example.targets,
+          waitForContent: example.waitForContent,
+        };
       },
     };
   },
