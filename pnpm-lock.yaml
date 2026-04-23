@@ -119,7 +119,7 @@ importers:
         version: 6.1.1(react@19.2.5)
       release-with-ease:
         specifier: ^2.1.0
-        version: 2.3.0
+        version: 2.3.4
       storybook:
         specifier: ^10.0.1
         version: 10.3.5(@testing-library/dom@10.4.1)(prettier@3.8.3)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -2340,8 +2340,8 @@ packages:
     resolution: {integrity: sha512-NZQZdC5wOE/H3UT28fVGL+ikOZcEzfMGk/c3iN9UGxzWHMa1op7274oyiUVrAG4B2EuFhus8SvkaYnhvW92p9Q==}
     hasBin: true
 
-  release-with-ease@2.3.0:
-    resolution: {integrity: sha512-aLt3RPqUd8Qb26ACDF4tgQoaRPtnixgzIO6/qrrfaZ38ZcvHORQHwJ0IJ/P4RFqaYlbzpN8EhPwzSu+RVD0ztQ==}
+  release-with-ease@2.3.4:
+    resolution: {integrity: sha512-fKeZUKDXkbTv57x7To1RXXskjXNOQFCON7qBPPunEfs9dGD1TdQKOMR+lt9IJKyJ07XwEOMAyXtf2pU/Re3S6A==}
     hasBin: true
 
   request-progress@3.0.0:
@@ -4884,7 +4884,7 @@ snapshots:
     dependencies:
       jsesc: 3.1.0
 
-  release-with-ease@2.3.0: {}
+  release-with-ease@2.3.4: {}
 
   request-progress@3.0.0:
     dependencies:
