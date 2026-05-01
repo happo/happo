@@ -10,7 +10,7 @@ env:
   FORCE_COLOR: 1
   HAPPO_API_KEY: ${{ secrets.HAPPO_API_KEY }}
   HAPPO_API_SECRET: ${{ secrets.HAPPO_API_SECRET }}
-  PNPM_STORE_DIR: ./.cache/pnpm
+  pnpm_config_store_dir: ./.cache/pnpm
 
 jobs:
   test:
