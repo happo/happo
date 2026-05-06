@@ -175,11 +175,15 @@ export default async function prepareSnapRequests(
       throw new Error('--only is not supported for the pages integration');
     }
     const { resolvedSkip } = await buildPackage(config, logger, skip, only);
-    const result: PrepareSnapRequestsResult = { snapRequestIds: [] };
-    if (resolvedSkip !== undefined) {
-      result.resolvedSkip = resolvedSkip;
+    if (!resolvedSkip || resolvedSkip.length === 0) {
+      // Without a component list we can't construct a meaningful
+      // extends-report, and the alternative would be an async report with
+      // zero snap requests. Surface the failure instead.
+      throw new Error(
+        'Empty --only run could not enumerate any components from the build. An empty --only run requires a readable Storybook index.json (or equivalent) to know which components to borrow from the baseline.',
+      );
     }
-    return result;
+    return { snapRequestIds: [], resolvedSkip };
   }
 
   const prepareResult =
