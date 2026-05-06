@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
 import packageJson from '../../../package.json' with { type: 'json' };
 import type { ConfigWithDefaults } from '../../config/index.ts';
-import type { RequestAttributes } from '../../network/makeHappoAPIRequest.ts';
 import type makeHappoAPIRequest from '../../network/makeHappoAPIRequest.ts';
+import type { RequestAttributes } from '../../network/makeHappoAPIRequest.ts';
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import withOverrides from '../../test-utils/withOverrides.ts';
 

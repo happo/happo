@@ -12,10 +12,11 @@ type Config = ReturnType<typeof defineConfig>;
 const config: Config = defineConfig(
   {
     ignores: [
-      '**/test-assets/**',
       '**/__tests__/fixtures/**',
-      '.out/**',
+      '**/test-assets/**',
+      '.claude/**',
       '.happo-out/**',
+      '.out/**',
       'coverage/**',
       'dist/**',
       'playwright-report/**',
