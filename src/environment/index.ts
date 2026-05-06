@@ -228,6 +228,11 @@ async function resolveAuthorEmail(
   return res.stdout.trim();
 }
 
+function firstLine(message: string): string {
+  const newlineIndex = message.indexOf('\n');
+  return newlineIndex === -1 ? message : message.slice(0, newlineIndex);
+}
+
 async function resolveMessage(
   cliArgs: ParsedCLIArgs,
   env: Record<string, string | undefined>,
@@ -246,10 +251,10 @@ async function resolveMessage(
       return title;
     }
     if (ghEvent.head_commit?.message) {
-      return ghEvent.head_commit.message;
+      return firstLine(ghEvent.head_commit.message);
     }
     if (ghEvent.merge_group?.head_commit?.message) {
-      return ghEvent.merge_group.head_commit.message;
+      return firstLine(ghEvent.merge_group.head_commit.message);
     }
   }
 
