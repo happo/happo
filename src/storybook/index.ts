@@ -145,31 +145,42 @@ export default async function buildStorybookPackage({
       }
 
       if (only !== undefined) {
-        resolvedOnly = resolveStoryFileItems(only as Array<SkipItem>, entries).map(
-          ({ component }) => ({ component }),
-        );
-        if (resolvedOnly.length === 0) {
-          console.warn(
-            '[HAPPO] --only: no matching stories found in Storybook index. Generating a full report instead.',
-          );
-          resolvedOnly = undefined;
-        } else {
-          // Adjust the count so auto-chunking reflects only the stories that
-          // will actually be rendered (only matching examples need a chunk slot).
-          const onlyComponents = new Set(resolvedOnly.map((item) => item.component));
-          estimatedSnapsCount = storyEntries.filter((e) =>
-            onlyComponents.has(e.title ?? ''),
-          ).length;
-
-          // Compute the complement: all components NOT in the only list.
-          // These will be borrowed from the baseline via an extends-report.
+        if (only.length === 0) {
+          // Empty --only: nothing is rendered locally; every component is
+          // borrowed from the baseline via an extends-report.
           const allComponents = new Set<string>();
           for (const e of storyEntries) {
             if (e.title) allComponents.add(e.title);
           }
-          resolvedSkip = [...allComponents]
-            .filter((c) => !onlyComponents.has(c))
-            .map((component) => ({ component }));
+          resolvedSkip = [...allComponents].map((component) => ({ component }));
+          estimatedSnapsCount = 0;
+        } else {
+          resolvedOnly = resolveStoryFileItems(only as Array<SkipItem>, entries).map(
+            ({ component }) => ({ component }),
+          );
+          if (resolvedOnly.length === 0) {
+            console.warn(
+              '[HAPPO] --only: no matching stories found in Storybook index. Generating a full report instead.',
+            );
+            resolvedOnly = undefined;
+          } else {
+            // Adjust the count so auto-chunking reflects only the stories that
+            // will actually be rendered (only matching examples need a chunk slot).
+            const onlyComponents = new Set(resolvedOnly.map((item) => item.component));
+            estimatedSnapsCount = storyEntries.filter((e) =>
+              onlyComponents.has(e.title ?? ''),
+            ).length;
+
+            // Compute the complement: all components NOT in the only list.
+            // These will be borrowed from the baseline via an extends-report.
+            const allComponents = new Set<string>();
+            for (const e of storyEntries) {
+              if (e.title) allComponents.add(e.title);
+            }
+            resolvedSkip = [...allComponents]
+              .filter((c) => !onlyComponents.has(c))
+              .map((component) => ({ component }));
+          }
         }
       }
     } catch (error) {

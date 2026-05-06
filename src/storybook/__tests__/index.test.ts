@@ -69,5 +69,18 @@ describe('happoStorybookPlugin', () => {
       });
       assert.strictEqual(result.estimatedSnapsCount, 20);
     });
+
+    it('treats an empty --only array as "borrow everything from baseline"', async () => {
+      const result = await happoStorybookPlugin({
+        usePrebuiltPackage: true,
+        only: [],
+      });
+      assert.strictEqual(result.estimatedSnapsCount, 0);
+      // resolvedSkip should contain every component in the storybook so the
+      // extends-report can borrow them all from the baseline.
+      assert.ok(result.resolvedSkip);
+      const components = new Set(result.resolvedSkip.map((s) => s.component));
+      assert.deepStrictEqual(components, new Set(['Stories', 'Interactive']));
+    });
   });
 });

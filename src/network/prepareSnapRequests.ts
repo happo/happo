@@ -165,6 +165,23 @@ export default async function prepareSnapRequests(
   only?: Array<OnlyItem>,
 ): Promise<PrepareSnapRequestsResult> {
   const logger = new Logger();
+
+  // An empty --only array means: render nothing locally and borrow the entire
+  // report from the baseline via an extends-report. Build the package only to
+  // enumerate components for the extends-report; skip upload and target
+  // execution.
+  if (only !== undefined && only.length === 0) {
+    if (config.integration.type === 'pages') {
+      throw new Error('--only is not supported for the pages integration');
+    }
+    const { resolvedSkip } = await buildPackage(config, logger, skip, only);
+    const result: PrepareSnapRequestsResult = { snapRequestIds: [] };
+    if (resolvedSkip !== undefined) {
+      result.resolvedSkip = resolvedSkip;
+    }
+    return result;
+  }
+
   const prepareResult =
     config.integration.type === 'pages'
       ? null
