@@ -246,10 +246,10 @@ async function resolveMessage(
       return title;
     }
     if (ghEvent.head_commit?.message) {
-      return ghEvent.head_commit.message;
+      return ghEvent.head_commit.message.split('\n')[0];
     }
     if (ghEvent.merge_group?.head_commit?.message) {
-      return ghEvent.merge_group.head_commit.message;
+      return ghEvent.merge_group.head_commit.message.split('\n')[0];
     }
   }
 

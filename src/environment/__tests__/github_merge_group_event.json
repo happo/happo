@@ -3,7 +3,7 @@
     "head_sha": "ec26c3e57ca3a959ca5aad62de7213c562f8c821",
     "base_sha": "f95f852bd8fca8fcc58a9a2d6c842781e32a215e",
     "head_commit": {
-      "message": "Commit from merge group"
+      "message": "Commit from merge group\n\nThis is the body of the commit message.\nIt can span multiple lines."
     }
   },
   "repository": {
