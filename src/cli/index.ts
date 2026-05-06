@@ -430,7 +430,15 @@ async function handleDefaultCommand(
           await import('../network/findBaselineReport.ts')
         ).default;
         baselineSha = await findBaselineReport(environment, config, logger);
-        if (!baselineSha) {
+      }
+
+      if (!baselineSha) {
+        if (only.length === 0) {
+          logger.log(
+            '[HAPPO] No baseline report found for empty --only run. Generating a full report instead.',
+          );
+          only = undefined;
+        } else {
           logger.log(
             '[HAPPO] No baseline report found for --only run. Excluded stories will not be borrowed from a baseline.',
           );

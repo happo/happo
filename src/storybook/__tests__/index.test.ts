@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { before, describe, it } from 'node:test';
 
@@ -68,6 +69,64 @@ describe('happoStorybookPlugin', () => {
         ],
       });
       assert.strictEqual(result.estimatedSnapsCount, 20);
+    });
+
+    it('treats an empty --only array as "borrow everything from baseline"', async () => {
+      const result = await happoStorybookPlugin({
+        usePrebuiltPackage: true,
+        only: [],
+      });
+      assert.strictEqual(result.estimatedSnapsCount, 0);
+      // resolvedSkip should contain every component in the storybook so the
+      // extends-report can borrow them all from the baseline.
+      assert.ok(result.resolvedSkip);
+      const components = new Set(result.resolvedSkip.map((s) => s.component));
+      assert.deepStrictEqual(components, new Set(['Stories', 'Interactive']));
+    });
+
+    it('with empty --only, components no longer present locally are not borrowed', async () => {
+      // Simulate "Interactive" being deleted from the local Storybook by
+      // pointing the plugin at a temp copy of the prebuilt package whose
+      // index.json has had the Interactive entries removed. The extends-report
+      // should only borrow components that still exist locally, so deleted
+      // stories stay deleted.
+      const tempDir = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), 'happo-only-empty-deleted-'),
+      );
+      try {
+        await fs.promises.copyFile(
+          path.join(packageDir, 'iframe.html'),
+          path.join(tempDir, 'iframe.html'),
+        );
+        const indexContent = await fs.promises.readFile(
+          path.join(packageDir, 'index.json'),
+          'utf8',
+        );
+        const indexData = JSON.parse(indexContent) as {
+          entries?: Record<string, { title?: string }>;
+        };
+        const filteredEntries: Record<string, unknown> = {};
+        for (const [id, entry] of Object.entries(indexData.entries ?? {})) {
+          if (entry.title !== 'Interactive') {
+            filteredEntries[id] = entry;
+          }
+        }
+        await fs.promises.writeFile(
+          path.join(tempDir, 'index.json'),
+          JSON.stringify({ ...indexData, entries: filteredEntries }),
+        );
+
+        const result = await happoStorybookPlugin({
+          usePrebuiltPackage: true,
+          outputDir: tempDir,
+          only: [],
+        });
+        assert.ok(result.resolvedSkip);
+        const components = new Set(result.resolvedSkip.map((s) => s.component));
+        assert.deepStrictEqual(components, new Set(['Stories']));
+      } finally {
+        await fs.promises.rm(tempDir, { recursive: true, force: true });
+      }
     });
   });
 });
