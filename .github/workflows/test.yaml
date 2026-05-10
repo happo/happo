@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Test (Node ${{ matrix.node-version }} on ${{ matrix.os }})
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
         with:
           node-version: ${{ matrix.node-version }}
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Orchestrate Happo Job
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/orchestrate-happo
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Cypress
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
       - uses: ./.github/actions/setup-cypress
       - run: pnpm test:cypress
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Happo Custom
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
       - run: pnpm test:custom
 
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Happo Custom (skipped examples)
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
       - run: pnpm test:custom:skipped
 
@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Happo Pages
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
       - run: pnpm test:pages
 
@@ -87,7 +87,7 @@ jobs:
 
     name: Storybook v${{ matrix.version }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
       - if: matrix.dependencies != ''
         run: pnpm add -D ${{ matrix.dependencies }}
@@ -99,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Storybook (skipped examples)
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
       - run: pnpm test:storybook:skipped
 
@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Storybook (only examples)
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
       - run: pnpm test:storybook:only
 
@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Playwright
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-env
@@ -126,7 +126,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Playwright (nonce)
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-env
@@ -139,7 +139,7 @@ jobs:
     runs-on: ubuntu-latest
     name: TypeScript
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
       - run: pnpm tsc
 
@@ -147,6 +147,6 @@ jobs:
     runs-on: ubuntu-latest
     name: ESLint
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
       - run: pnpm lint
