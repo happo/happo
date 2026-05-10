@@ -6,6 +6,8 @@ updates:
     directory: '/'
     schedule:
       interval: daily
+    cooldown:
+      default-days: 2
     groups:
       patches-and-minors:
         update-types:
@@ -17,3 +19,16 @@ updates:
           - 'eslint'
           - 'eslint-*'
           - '@eslint/*'
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: daily
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        update-types:
+          - 'patch'
+          - 'minor'
+          - 'major'
