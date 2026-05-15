@@ -215,11 +215,8 @@ export default async function prepareSnapRequests(
 
       const targetParams: ExecuteParams = {
         targetName: name,
+        failOnWaitForTimeout: config.failOnWaitForTimeout,
       };
-
-      if (config.failOnWaitForTimeout !== undefined) {
-        targetParams.failOnWaitForTimeout = config.failOnWaitForTimeout;
-      }
 
       if (prepareResult) {
         targetParams.staticPackage = prepareResult.packagePath;

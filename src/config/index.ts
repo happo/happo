@@ -430,6 +430,7 @@ export interface ConfigWithDefaults extends Config {
   endpoint: NonNullable<Config['endpoint']>;
   githubApiUrl: NonNullable<Config['githubApiUrl']>;
   targets: Record<string, TargetWithDefaults>;
+  failOnWaitForTimeout: NonNullable<Config['failOnWaitForTimeout']>;
 }
 
 export function defineConfig(config: Config): Config {

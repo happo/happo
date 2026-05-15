@@ -1076,7 +1076,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `failOnWaitForTimeout` in config file \S+: must be a boolean, got: "yes"/,
+        /Invalid `failOnWaitForTimeout` in config file \S+: must be a boolean, got: 'yes'/,
       );
     });
 

@@ -55,6 +55,7 @@ beforeEach(async () => {
     integration: {
       type: 'storybook',
     },
+    failOnWaitForTimeout: true,
   };
 
   environment = {

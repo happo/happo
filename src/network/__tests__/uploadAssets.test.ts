@@ -59,6 +59,7 @@ beforeEach(() => {
       type: 'custom',
       build: async () => ({ rootDir: './custom', entryPoint: 'index.js' }),
     },
+    failOnWaitForTimeout: true,
   };
 
   buffer = Buffer.from('test content') as Buffer<ArrayBuffer>;

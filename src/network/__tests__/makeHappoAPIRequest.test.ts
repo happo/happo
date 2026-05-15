@@ -136,6 +136,7 @@ beforeEach(() => {
     endpoint: 'http://localhost:8990',
     apiKey: 'foo',
     apiSecret: 'bar',
+    failOnWaitForTimeout: true,
   };
 });
 

@@ -47,6 +47,7 @@ beforeEach(async () => {
         entryPoint: 'index.js',
       }),
     },
+    failOnWaitForTimeout: true,
   };
 
   environment = {

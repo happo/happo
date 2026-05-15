@@ -43,6 +43,7 @@ beforeEach(async () => {
     project: 'test-project',
     targets: {},
     integration: { type: 'storybook' },
+    failOnWaitForTimeout: true,
   };
 
   environment = {
