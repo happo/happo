@@ -309,6 +309,19 @@ export async function loadConfigFile(
     }
   }
 
+  if (
+    config.failOnWaitForTimeout !== undefined &&
+    typeof config.failOnWaitForTimeout !== 'boolean'
+  ) {
+    throw new TypeError(
+      `Invalid \`failOnWaitForTimeout\` in config file ${configFilePath}: must be a boolean, got: ${JSON.stringify(config.failOnWaitForTimeout)}.`,
+    );
+  }
+
+  if (config.failOnWaitForTimeout === undefined) {
+    config.failOnWaitForTimeout = true;
+  }
+
   const configWithDefaults = {
     endpoint: DEFAULT_ENDPOINT,
     githubApiUrl: 'https://api.github.com',

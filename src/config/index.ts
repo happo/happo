@@ -105,12 +105,26 @@ export interface Page {
   title: string;
 
   /**
-   * Wait for the content to appear on the page before taking the screenshot.
+   * Wait for the given text content to appear on the page before taking the
+   * screenshot.
+   *
+   * If the content does not appear within the worker's timeout, the snap
+   * fails with a clear error so that stale content strings are surfaced
+   * immediately. Set the top-level `failOnWaitForTimeout: false` option in
+   * your Happo config to restore the legacy behavior of warning and
+   * screenshotting whatever is on the page anyway.
    */
   waitForContent?: string;
 
   /**
-   * Wait for a condition to be true before taking the screenshot.
+   * Wait for an element matching the given selector to appear in the DOM
+   * before taking the screenshot.
+   *
+   * If the selector is not found within the worker's timeout, the snap
+   * fails with a clear error so that stale selectors are surfaced
+   * immediately. Set the top-level `failOnWaitForTimeout: false` option in
+   * your Happo config to restore the legacy behavior of warning and
+   * screenshotting whatever is on the page anyway.
    */
   waitForSelector?: string;
 }
@@ -228,6 +242,27 @@ export interface Config {
    * An object with settings for deep compare.
    */
   deepCompare?: DeepCompareSettings;
+
+  /**
+   * Controls how a Happo worker handles a per-example or per-page
+   * `waitForContent` or `waitForSelector` that times out.
+   *
+   * When `true` (the default), the worker fails the snap with a clear error
+   * so that stale selectors and content strings (e.g. text that no longer
+   * renders after a copy change) are surfaced immediately instead of
+   * producing silent multi-second waits on every run.
+   *
+   * Set to `false` to restore the legacy behavior, where a timeout only
+   * emits a warning in the worker logs and the screenshot is taken anyway.
+   *
+   * It is recommended to always leave this set to `true`. If you encounter
+   * a failure, the preferred fix is to update the offending `waitForContent`
+   * or `waitForSelector` value so that it matches the rendered output.
+   * Setting this option to `false` should be a last resort.
+   *
+   * @default true
+   */
+  failOnWaitForTimeout?: boolean;
 }
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';

@@ -217,6 +217,10 @@ export default async function prepareSnapRequests(
         targetName: name,
       };
 
+      if (config.failOnWaitForTimeout !== undefined) {
+        targetParams.failOnWaitForTimeout = config.failOnWaitForTimeout;
+      }
+
       if (prepareResult) {
         targetParams.staticPackage = prepareResult.packagePath;
 
