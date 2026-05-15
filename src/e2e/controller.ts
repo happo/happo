@@ -348,6 +348,7 @@ class Controller {
           globalCSS,
           assetsPackage: assetsPath,
           snapPayloads: snapshotsForTarget,
+          failOnWaitForTimeout: this.happoConfig.failOnWaitForTimeout,
         },
         this.happoConfig,
       );

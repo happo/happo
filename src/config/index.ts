@@ -105,12 +105,28 @@ export interface Page {
   title: string;
 
   /**
-   * Wait for the content to appear on the page before taking the screenshot.
+   * Wait for the given text content to appear on the page before taking the
+   * screenshot.
+   *
+   * When the top-level `failOnWaitForTimeout` option is `true` (the
+   * default), the snap fails with a clear error if the content does not
+   * appear within the worker's timeout, so that stale content strings are
+   * surfaced immediately. When `failOnWaitForTimeout` is `false`, a
+   * timeout only emits a warning in the worker logs and the screenshot is
+   * taken anyway.
    */
   waitForContent?: string;
 
   /**
-   * Wait for a condition to be true before taking the screenshot.
+   * Wait for an element matching the given selector to appear in the DOM
+   * before taking the screenshot.
+   *
+   * When the top-level `failOnWaitForTimeout` option is `true` (the
+   * default), the snap fails with a clear error if the selector is not
+   * found within the worker's timeout, so that stale selectors are
+   * surfaced immediately. When `failOnWaitForTimeout` is `false`, a
+   * timeout only emits a warning in the worker logs and the screenshot is
+   * taken anyway.
    */
   waitForSelector?: string;
 }
@@ -228,6 +244,27 @@ export interface Config {
    * An object with settings for deep compare.
    */
   deepCompare?: DeepCompareSettings;
+
+  /**
+   * Controls how a Happo worker handles a per-example or per-page
+   * `waitForContent` or `waitForSelector` that times out.
+   *
+   * When `true` (the default), the worker fails the snap with a clear error
+   * so that stale selectors and content strings (e.g. text that no longer
+   * renders after a copy change) are surfaced immediately instead of
+   * producing silent multi-second waits on every run.
+   *
+   * Set to `false` to restore the legacy behavior, where a timeout only
+   * emits a warning in the worker logs and the screenshot is taken anyway.
+   *
+   * It is recommended to always leave this set to `true`. If you encounter
+   * a failure, the preferred fix is to update the offending `waitForContent`
+   * or `waitForSelector` value so that it matches the rendered output.
+   * Setting this option to `false` should be a last resort.
+   *
+   * @default true
+   */
+  failOnWaitForTimeout?: boolean;
 }
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';
@@ -393,6 +430,7 @@ export interface ConfigWithDefaults extends Config {
   endpoint: NonNullable<Config['endpoint']>;
   githubApiUrl: NonNullable<Config['githubApiUrl']>;
   targets: Record<string, TargetWithDefaults>;
+  failOnWaitForTimeout: NonNullable<Config['failOnWaitForTimeout']>;
 }
 
 export function defineConfig(config: Config): Config {

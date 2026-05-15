@@ -76,6 +76,12 @@ export interface ExecuteParams {
    * optimal number of parallel chunks.
    */
   estimatedSnapsCount?: number;
+
+  /**
+   * When true, the worker fails the snap if `waitForContent` or
+   * `waitForSelector` times out instead of silently warning.
+   */
+  failOnWaitForTimeout?: boolean;
 }
 
 function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
@@ -108,6 +114,7 @@ function buildChunkItem({
   staticPackage,
   assetsPackage,
   targetName,
+  failOnWaitForTimeout,
 }: {
   slice?: Array<unknown> | undefined;
   chunk?: Chunk | undefined;
@@ -120,6 +127,7 @@ function buildChunkItem({
   staticPackage: string | undefined;
   assetsPackage: string | undefined;
   targetName: string | undefined;
+  failOnWaitForTimeout: boolean | undefined;
 }): ChunkItem {
   const payloadString = JSON.stringify({
     viewport,
@@ -132,6 +140,7 @@ function buildChunkItem({
     assetsPackage,
     pages: pageSlice,
     extendsSha: pageSlice ? pageSlice.extendsSha : undefined,
+    failOnWaitForTimeout,
   });
 
   const payloadHash = createHash(payloadString + (pageSlice ? Math.random() : ''));
@@ -235,6 +244,7 @@ export default class RemoteBrowserTarget {
       pages,
       targetName,
       estimatedSnapsCount,
+      failOnWaitForTimeout,
     }: ExecuteParams,
     config: ConfigWithDefaults,
   ): Promise<Array<number>> {
@@ -247,6 +257,7 @@ export default class RemoteBrowserTarget {
       staticPackage,
       assetsPackage,
       targetName,
+      failOnWaitForTimeout,
     };
 
     // Build all chunk items up front

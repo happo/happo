@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { inspect } from 'node:util';
 
 import { any as findAny } from 'empathic/find';
 
@@ -307,6 +308,23 @@ export async function loadConfigFile(
     if (!config.deepCompare.diffAlgorithm) {
       config.deepCompare.diffAlgorithm = 'color-delta';
     }
+  }
+
+  if (
+    config.failOnWaitForTimeout !== undefined &&
+    typeof config.failOnWaitForTimeout !== 'boolean'
+  ) {
+    // Use `util.inspect` rather than `JSON.stringify` so that values which
+    // can't be serialized (BigInts, circular objects, etc.) still produce
+    // the intended "must be a boolean" validation error instead of an
+    // unrelated serialization failure.
+    throw new TypeError(
+      `Invalid \`failOnWaitForTimeout\` in config file ${configFilePath}: must be a boolean, got: ${inspect(config.failOnWaitForTimeout)}.`,
+    );
+  }
+
+  if (config.failOnWaitForTimeout === undefined) {
+    config.failOnWaitForTimeout = true;
   }
 
   const configWithDefaults = {

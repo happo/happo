@@ -1058,4 +1058,67 @@ describe('loadConfigFile', () => {
       );
     });
   });
+
+  describe('failOnWaitForTimeout validation', () => {
+    it('throws an error if failOnWaitForTimeout is not a boolean', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            failOnWaitForTimeout: 'yes',
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `failOnWaitForTimeout` in config file \S+: must be a boolean, got: 'yes'/,
+      );
+    });
+
+    it('accepts failOnWaitForTimeout: false', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            failOnWaitForTimeout: false,
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+      assert.strictEqual(config.failOnWaitForTimeout, false);
+    });
+
+    it('defaults failOnWaitForTimeout to true when not provided', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+      assert.strictEqual(config.failOnWaitForTimeout, true);
+    });
+  });
 });

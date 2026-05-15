@@ -36,6 +36,7 @@ beforeEach(async () => {
     project: 'test-project',
     targets: {},
     integration: { type: 'storybook' },
+    failOnWaitForTimeout: true,
   };
 
   makeHappoAPIRequestImpl = async () => ({ requestId: 42 });

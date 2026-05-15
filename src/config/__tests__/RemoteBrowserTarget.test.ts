@@ -164,6 +164,7 @@ describe('RemoteBrowserTarget', () => {
         endpoint: `http://localhost:${address.port}`,
         apiKey: 'test-key',
         apiSecret: 'test-secret',
+        failOnWaitForTimeout: true,
       };
     });
 
@@ -423,6 +424,62 @@ describe('RemoteBrowserTarget', () => {
         for (const [i, call] of individualCalls.entries()) {
           assert.deepStrictEqual(call.payload.chunk, { index: i, total: 2 });
         }
+      });
+    });
+
+    describe('with failOnWaitForTimeout', () => {
+      it('flows failOnWaitForTimeout: true into each item payload (bulk path)', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            estimatedSnapsCount: 200,
+            targetName: 'chrome',
+            failOnWaitForTimeout: true,
+          },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 1);
+        const items = bulkCalls[0]?.items ?? [];
+        assert.strictEqual(items.length, 2);
+        for (const item of items) {
+          const payload = JSON.parse(item.payloadString as string) as {
+            failOnWaitForTimeout?: unknown;
+          };
+          assert.strictEqual(payload.failOnWaitForTimeout, true);
+        }
+      });
+
+      it('flows failOnWaitForTimeout: false into the item payload', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            targetName: 'chrome',
+            failOnWaitForTimeout: false,
+          },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 1);
+        assert.strictEqual(bulkCalls[0]?.items.length, 1);
+        const payload = JSON.parse(
+          bulkCalls[0]?.items[0]?.payloadString as string,
+        ) as { failOnWaitForTimeout?: unknown };
+        assert.strictEqual(payload.failOnWaitForTimeout, false);
+      });
+
+      it('omits failOnWaitForTimeout from the payload when not provided', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 1);
+        assert.strictEqual(bulkCalls[0]?.items.length, 1);
+        const payload = JSON.parse(
+          bulkCalls[0]?.items[0]?.payloadString as string,
+        ) as Record<string, unknown>;
+        assert.strictEqual('failOnWaitForTimeout' in payload, false);
       });
     });
 
