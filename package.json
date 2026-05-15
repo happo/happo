@@ -135,9 +135,9 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-error-boundary": "^6.0.0",
+    "release-with-ease": "^2.4.0",
     "storybook": "^10.0.1",
     "typescript": "^6.0.2",
-    "release-with-ease": "^2.1.0",
     "typescript-eslint": "^8.57.2"
   },
   "dependencies": {
