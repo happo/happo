@@ -108,11 +108,12 @@ export interface Page {
    * Wait for the given text content to appear on the page before taking the
    * screenshot.
    *
-   * If the content does not appear within the worker's timeout, the snap
-   * fails with a clear error so that stale content strings are surfaced
-   * immediately. Set the top-level `failOnWaitForTimeout: false` option in
-   * your Happo config to restore the legacy behavior of warning and
-   * screenshotting whatever is on the page anyway.
+   * When the top-level `failOnWaitForTimeout` option is `true` (the
+   * default), the snap fails with a clear error if the content does not
+   * appear within the worker's timeout, so that stale content strings are
+   * surfaced immediately. When `failOnWaitForTimeout` is `false`, a
+   * timeout only emits a warning in the worker logs and the screenshot is
+   * taken anyway.
    */
   waitForContent?: string;
 
@@ -120,11 +121,12 @@ export interface Page {
    * Wait for an element matching the given selector to appear in the DOM
    * before taking the screenshot.
    *
-   * If the selector is not found within the worker's timeout, the snap
-   * fails with a clear error so that stale selectors are surfaced
-   * immediately. Set the top-level `failOnWaitForTimeout: false` option in
-   * your Happo config to restore the legacy behavior of warning and
-   * screenshotting whatever is on the page anyway.
+   * When the top-level `failOnWaitForTimeout` option is `true` (the
+   * default), the snap fails with a clear error if the selector is not
+   * found within the worker's timeout, so that stale selectors are
+   * surfaced immediately. When `failOnWaitForTimeout` is `false`, a
+   * timeout only emits a warning in the worker logs and the screenshot is
+   * taken anyway.
    */
   waitForSelector?: string;
 }
