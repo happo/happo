@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { inspect } from 'node:util';
 
 import limitConcur from 'limit-concur';
 
@@ -509,8 +510,12 @@ class Controller {
       }
 
       if (typeof target !== 'object' || target === null) {
+        // Use `util.inspect` rather than `JSON.stringify` so that values which
+        // can't be serialized (BigInts, circular objects, etc.) still produce
+        // the intended validation error instead of an unrelated serialization
+        // failure.
         throw new TypeError(
-          `Invalid target: expected a string or an object of the form { name, viewport, type }. Received ${typeof target}: ${JSON.stringify(target)}`,
+          `Invalid target: expected a string or an object of the form { name, viewport, type }. Received ${typeof target}: ${inspect(target)}`,
         );
       }
 
@@ -528,7 +533,7 @@ class Controller {
         throw new Error(
           `Invalid dynamic target: missing required field(s) ${missing
             .map((m) => `\`${m}\``)
-            .join(', ')}${hint}. Received fields: [${received.join(', ')}]. Full value: ${JSON.stringify(target)}`,
+            .join(', ')}${hint}. Received fields: [${received.join(', ')}]. Full value: ${inspect(target)}`,
         );
       }
 
