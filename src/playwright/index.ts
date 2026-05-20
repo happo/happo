@@ -80,9 +80,18 @@ export const test: TestType<
   ],
 
   _happoForEachTest: [
-    async ({}, use) => {
+    async ({}, use, testInfo) => {
       specCounter++;
+      const start = Date.now();
       await use();
+      const end = Date.now();
+
+      // If this attempt didn't pass, drop any snapshots it registered so a
+      // retry (or terminal failure) doesn't leave duplicates in the report.
+      if (testInfo.status !== testInfo.expectedStatus) {
+        controller.removeSnapshotsMadeBetween({ start, end });
+      }
+
       if (specCounter % BATCH_SIZE === 0) {
         // Send batch of 4 screenshots to Happo
         await controller.finish();
@@ -181,6 +190,7 @@ export const test: TestType<
 
       await controller.registerSnapshot({
         ...snapshot,
+        timestamp: Date.now(),
         component,
         variant,
         ...rest,
