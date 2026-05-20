@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { inspect } from 'node:util';
 
 import limitConcur from 'limit-concur';
 
@@ -505,33 +506,47 @@ class Controller {
     for (const target of targets) {
       if (typeof target === 'string') {
         result.push(target);
+        continue;
       }
 
-      if (
-        typeof target === 'object' &&
-        target.name &&
-        target.viewport &&
-        target.type
-      ) {
-        if (!this.happoConfig) {
-          throw new Error('Happo config not initialized');
-        }
-
-        if (this.happoConfig.targets[target.name]) {
-          // already added
-        } else {
-          const targetName = target.name;
-          const constructedTarget: TargetWithDefaults = {
-            viewport: target.viewport,
-            type: target.type,
-            __dynamic: true,
-          };
-          // add dynamic target
-          this.happoConfig.targets[targetName] = constructedTarget;
-        }
-
-        result.push(target.name);
+      if (typeof target !== 'object' || target === null) {
+        // Use `util.inspect` rather than `JSON.stringify` so that values which
+        // can't be serialized (BigInts, circular objects, etc.) still produce
+        // the intended validation error instead of an unrelated serialization
+        // failure.
+        throw new TypeError(
+          `Invalid target: expected a string or an object of the form { name, viewport, type }. Received ${typeof target}: ${inspect(target)}`,
+        );
       }
+
+      const missing: Array<string> = [];
+      if (!target.name) missing.push('name');
+      if (!target.viewport) missing.push('viewport');
+      if (!target.type) missing.push('type');
+
+      if (missing.length > 0) {
+        const received = Object.keys(target);
+        const hint =
+          'browserType' in target || 'browser' in target
+            ? ' (the `browser`/`browserType` field was renamed to `type`)'
+            : '';
+        throw new Error(
+          `Invalid dynamic target: missing required field(s) ${missing
+            .map((m) => `\`${m}\``)
+            .join(', ')}${hint}. Received fields: [${received.join(', ')}]. Full value: ${inspect(target)}`,
+        );
+      }
+
+      if (!this.happoConfig.targets[target.name]) {
+        const constructedTarget: TargetWithDefaults = {
+          viewport: target.viewport,
+          type: target.type,
+          __dynamic: true,
+        };
+        this.happoConfig.targets[target.name] = constructedTarget;
+      }
+
+      result.push(target.name);
     }
 
     return result;

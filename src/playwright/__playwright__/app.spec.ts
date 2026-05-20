@@ -34,7 +34,7 @@ test('basic test', async ({ page, happoScreenshot }) => {
     variant: 'default',
     targets: [
       'chrome',
-      { name: 'firefox-small', browser: 'firefox', viewport: '400x800' },
+      { name: 'firefox-small', type: 'firefox', viewport: '400x800' },
     ],
   });
 
