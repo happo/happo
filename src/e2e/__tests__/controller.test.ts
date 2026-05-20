@@ -213,6 +213,46 @@ describe('Controller', () => {
     ]);
   });
 
+  it('registers a snapshot with an inline dynamic target', async () => {
+    const controller = new Controller();
+    await controller.init();
+
+    await controller.registerSnapshot({
+      html: '<div>Test</div>',
+      assetUrls: [],
+      component: 'Button',
+      variant: 'primary',
+      cssBlocks: [],
+      targets: [{ name: 'firefox-small', type: 'firefox', viewport: '400x800' }],
+    });
+
+    assert.deepStrictEqual(controller.snapshotsList[0]?.targets, ['firefox-small']);
+    assert.deepStrictEqual(controller.config?.targets['firefox-small'], {
+      viewport: '400x800',
+      type: 'firefox',
+      __dynamic: true,
+    });
+  });
+
+  it('throws when a dynamic target object is missing required fields', async () => {
+    const controller = new Controller();
+    await controller.init();
+
+    await assert.rejects(
+      () =>
+        controller.registerSnapshot({
+          html: '<div>Test</div>',
+          assetUrls: [],
+          component: 'Button',
+          variant: 'primary',
+          cssBlocks: [],
+          // @ts-expect-error: deliberately malformed
+          targets: [{ name: 'firefox-small', browser: 'firefox', viewport: '400x800' }],
+        }),
+      /Invalid dynamic target: missing required field\(s\) `type`.*`browser`\/`browserType` field was renamed to `type`/s,
+    );
+  });
+
   it('init() returns false and finish() is a no-op when happo is disabled (no HAPPO_E2E_PORT)', async () => {
     const savedPort = process.env.HAPPO_E2E_PORT;
     delete process.env.HAPPO_E2E_PORT;
