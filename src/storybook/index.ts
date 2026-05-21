@@ -14,9 +14,9 @@ const { HAPPO_DEBUG } = process.env;
 function resolveBuildCommandParts() {
   const version = getStorybookVersionFromPackageJson();
 
-  if (version < 9) {
+  if (version < 8) {
     throw new Error(
-      `Storybook v${version} is not supported. Please update storybook to v9 or later.`,
+      `Storybook v${version} is not supported. Please update storybook to v8 or later.`,
     );
   }
 
