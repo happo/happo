@@ -17,6 +17,7 @@ const config: Config = defineConfig(
       '.claude/**',
       '.happo-out/**',
       '.out/**',
+      '.out-v8/**',
       'coverage/**',
       'dist/**',
       'playwright-report/**',
