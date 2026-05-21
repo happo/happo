@@ -1,4 +1,4 @@
-// NOTE: This file is intentionally duplicated as addon-v8.ts. The two files
+// NOTE: This file is intentionally duplicated as addon.ts. The two files
 // are identical except for the manager-api import path: Storybook v8 exposes
 // it at 'storybook/internal/manager-api' while v9+ use 'storybook/manager-api'.
 // No single path works across all three major versions (v8/v9/v10), and the
@@ -12,7 +12,7 @@ import {
   useChannel,
   useParameter,
   useStorybookState,
-} from 'storybook/manager-api';
+} from 'storybook/internal/manager-api';
 
 const ADDON_ID = 'happo';
 const PANEL_ID = `${ADDON_ID}/panel`;

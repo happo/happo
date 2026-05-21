@@ -1,5 +1,5 @@
 import { createElement, type ReactNode, useEffect } from 'react';
-import { addons, makeDecorator } from 'storybook/preview-api';
+import { addons, makeDecorator } from 'storybook/internal/preview-api';
 
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
 
