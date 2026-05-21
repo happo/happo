@@ -81,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup-env
-      - run: pnpm add -D storybook@8 @storybook/builder-vite@8 @storybook/react-vite@8
+      - run: pnpm add -D storybook@8 @storybook/react@8 @storybook/builder-vite@8 @storybook/react-vite@8
       - run: pnpm test:storybook:v8
 
   storybook:
