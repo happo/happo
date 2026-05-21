@@ -1,3 +1,9 @@
+// NOTE: This file is intentionally duplicated as addon.ts. The two files
+// are identical except for the manager-api import path: Storybook v8 exposes
+// it at 'storybook/internal/manager-api' while v9+ use 'storybook/manager-api'.
+// No single path works across all three major versions (v8/v9/v10), and the
+// React hooks used here can't be cleanly injected to share an implementation,
+// so the duplication is kept explicit. Keep the two files in sync.
 import { createElement, useEffect, useState } from 'react';
 import { AddonPanel } from 'storybook/internal/components';
 import {
