@@ -16,7 +16,10 @@ autoInstallPeers: true
 savePrefix: ''
 dedupePeerDependents: true
 
-# Bypass the default 1-day minimumReleaseAge for packages we publish
-# ourselves, so we can install fresh versions immediately after release.
+# Match dependabot npm cooldown (default-days: 2 in .github/dependabot.yml)
+minimumReleaseAge: 2880
+
+# Bypass minimumReleaseAge for packages we publish ourselves, so we can
+# install fresh versions immediately after release.
 minimumReleaseAgeExclude:
   - release-with-ease
