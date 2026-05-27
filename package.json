@@ -110,7 +110,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.55.1",
-    "@reporters/github": "^1.11.0",
+    "@reporters/github": "^2.0.0",
     "@storybook/builder-vite": "^10.0.1",
     "@storybook/react-vite": "^10.0.1",
     "@types/async-retry": "^1.4.9",
