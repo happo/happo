@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Test (Node ${{ matrix.node-version }} on ${{ matrix.os }})
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
         with:
           node-version: ${{ matrix.node-version }}
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Orchestrate Happo Job
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/orchestrate-happo
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Cypress
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - uses: ./.github/actions/setup-cypress
       - run: pnpm test:cypress
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Happo Custom
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - run: pnpm test:custom
 
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Happo Custom (skipped examples)
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - run: pnpm test:custom:skipped
 
@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Happo Pages
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - run: pnpm test:pages
 
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Storybook v8
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - run: pnpm add -D storybook@8 @storybook/react@8 @storybook/builder-vite@8 @storybook/react-vite@8
       - run: pnpm test:storybook:v8
@@ -96,7 +96,7 @@ jobs:
 
     name: Storybook v${{ matrix.version }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - if: matrix.dependencies != ''
         run: pnpm add -D ${{ matrix.dependencies }}
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Storybook (skipped examples)
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - run: pnpm test:storybook:skipped
 
@@ -116,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Storybook (only examples)
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - run: pnpm test:storybook:only
 
@@ -124,7 +124,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Playwright
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-env
@@ -135,7 +135,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Playwright (nonce)
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-env
@@ -148,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     name: TypeScript
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - run: pnpm tsc
 
@@ -156,6 +156,6 @@ jobs:
     runs-on: ubuntu-latest
     name: ESLint
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: ./.github/actions/setup-env
       - run: pnpm lint
