@@ -41,7 +41,7 @@ importers:
         version: 1.61.1
       '@reporters/github':
         specifier: ^2.0.0
-        version: 2.0.1
+        version: 2.0.2
       '@storybook/builder-vite':
         specifier: ^10.0.1
         version: 10.4.6(esbuild@0.28.1)(rollup@4.62.2)(storybook@10.4.6(@testing-library/dom@10.4.1)(@types/react@19.2.17)(prettier@3.9.4)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(vite@7.1.12(@types/node@24.13.2)(jiti@2.7.0))
@@ -957,8 +957,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@reporters/github@2.0.1':
-    resolution: {integrity: sha512-bOrxLp0b763IQ+Mv3RqxPxUQA94KgAig88zY0W+A42wx8wBX2w5p9ZEQEcHV2fZvj7PGR8Rh0mw8aReRj3XEpw==}
+  '@reporters/github@2.0.2':
+    resolution: {integrity: sha512-j8sLwKkyCi8EE3yHOpWNYd3Ig8Irnxju3v2yntEPcukcvQTTAAz6iT4opdQ+/g22PqPbT/Mqstsb1HK8YQburw==}
 
   '@rollup/pluginutils@5.4.0':
     resolution: {integrity: sha512-MfPp06CjRLfXQ3wY0R8vJDYBy/MvVcc9OulEfR0B8Iv9ko+GCNaRZ+EpJYFl27LhKsZK0o420sYCRHCjfCgeUg==}
@@ -2333,6 +2333,10 @@ packages:
     resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
     engines: {node: '>=12'}
 
+  picomatch@4.0.5:
+    resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
+    engines: {node: '>=12'}
+
   pify@2.3.0:
     resolution: {integrity: sha512-udgsAY+fTnvv7kI7aaxbqwWNb0AHiB0qBO89PZKPkoTmGOgdbrHDKD+0B2X4uTfJ/FT1R09r9gTsjUjNJotuog==}
     engines: {node: '>=0.10.0'}
@@ -2754,8 +2758,8 @@ packages:
   undici-types@7.25.0:
     resolution: {integrity: sha512-AXNgS1Byr27fTI+2bsPEkV9CxkT8H6xNyRI68b3TatlZo3RkzlqQBLL+w7SmGPVpokjHbcuNVQUWE7FRTg+LRA==}
 
-  undici@6.26.0:
-    resolution: {integrity: sha512-4yqz8a3n5HmGTlsbADNtr/dJlhkh/55Rq798G6ibiULcXbDtaLpTl1pvdqcbFfeoj3iSi52lePFM7h9H21cw/A==}
+  undici@6.27.0:
+    resolution: {integrity: sha512-YmfV3YnEDzXRC5lZ2jWtWWHKGUm1zIt8AhesR1tens+HTNv+YZlN/dp6G727LOvMJ8xjP9Be7Y2Sdr96LDm+pg==}
     engines: {node: '>=18.17'}
 
   undici@7.25.0:
@@ -2915,7 +2919,7 @@ snapshots:
   '@actions/http-client@4.0.1':
     dependencies:
       tunnel: 0.0.6
-      undici: 6.26.0
+      undici: 6.27.0
 
   '@actions/io@3.0.2': {}
 
@@ -3516,7 +3520,7 @@ snapshots:
     dependencies:
       playwright: 1.61.1
 
-  '@reporters/github@2.0.1':
+  '@reporters/github@2.0.2':
     dependencies:
       '@actions/core': 3.0.1
       stack-utils: 2.0.6
@@ -4465,6 +4469,10 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.4
 
+  fdir@6.5.0(picomatch@4.0.5):
+    optionalDependencies:
+      picomatch: 4.0.5
+
   fflate@0.8.3: {}
 
   file-entry-cache@8.0.0:
@@ -4950,6 +4958,8 @@ snapshots:
 
   picomatch@4.0.4: {}
 
+  picomatch@4.0.5: {}
+
   pify@2.3.0: {}
 
   playwright-core@1.61.1: {}
@@ -5366,7 +5376,7 @@ snapshots:
 
   undici-types@7.25.0: {}
 
-  undici@6.26.0: {}
+  undici@6.27.0: {}
 
   undici@7.25.0: {}
 
@@ -5404,8 +5414,8 @@ snapshots:
   vite@7.1.12(@types/node@24.13.2)(jiti@2.7.0):
     dependencies:
       esbuild: 0.25.12
-      fdir: 6.5.0(picomatch@4.0.4)
-      picomatch: 4.0.4
+      fdir: 6.5.0(picomatch@4.0.5)
+      picomatch: 4.0.5
       postcss: 8.5.16
       rollup: 4.62.2
       tinyglobby: 0.2.17
