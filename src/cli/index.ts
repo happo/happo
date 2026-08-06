@@ -528,8 +528,10 @@ async function handleFinalizeCommand(
   logger: Logger,
 ): Promise<void> {
   logger.log('Finalizing happo report...');
-  logger.log('Config:', config);
-  logger.log('Environment:', environment);
+  if (environment.debugMode) {
+    logger.log('Config:', config);
+    logger.log('Environment:', environment);
+  }
 
   try {
     const finalizeAll = (await import('../e2e/wrapper.ts')).finalizeAll;
@@ -632,9 +634,11 @@ async function handleE2ECommand(
   }
 
   logger.log('Setting up happo wrapper for Cypress and Playwright...');
-  logger.log('Config:', config);
-  logger.log('Environment:', environment);
-  logger.log('Dashdash command parts:', dashdashCommandParts);
+  if (environment.debugMode) {
+    logger.log('Config:', config);
+    logger.log('Environment:', environment);
+    logger.log('Dashdash command parts:', dashdashCommandParts);
+  }
 
   const runWithWrapper = (await import('../e2e/wrapper.ts')).default;
   const exitCode = await runWithWrapper(
