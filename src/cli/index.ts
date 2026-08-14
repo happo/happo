@@ -339,13 +339,17 @@ async function handleDefaultCommand(
 ): Promise<void> {
   logger.log('Running happo tests...');
 
-  const [startJob, createAsyncComparison, createAsyncReport, prepareSnapRequests] =
-    await Promise.all([
-      (await import('../network/startJob.ts')).default,
-      (await import('../network/createAsyncComparison.ts')).default,
-      (await import('../network/createAsyncReport.ts')).default,
-      (await import('../network/prepareSnapRequests.ts')).default,
-    ]);
+  const [
+    { default: startJob },
+    { default: createAsyncComparison },
+    { default: createAsyncReport },
+    { default: prepareSnapRequests },
+  ] = await Promise.all([
+    import('../network/startJob.ts'),
+    import('../network/createAsyncComparison.ts'),
+    import('../network/createAsyncReport.ts'),
+    import('../network/prepareSnapRequests.ts'),
+  ]);
 
   // Tell Happo that we are about to run a job
   await startJob(config, environment, logger);
