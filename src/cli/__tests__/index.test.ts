@@ -866,9 +866,7 @@ describe('main', () => {
       });
 
       it('sends skip in the finalize request body when --skippedExamples is set', async () => {
-        const skip = [
-          { component: 'Button', variant: 'primary', target: 'chrome' },
-        ];
+        const skip = [{ component: 'Button', variant: 'primary', target: 'chrome' }];
         await main(
           [
             'npx',
@@ -891,8 +889,7 @@ describe('main', () => {
         );
         assert.ok(finalizeCall, 'expected a finalize API call');
         assert.deepStrictEqual(
-          (finalizeCall.arguments[0]?.body as { skip: unknown })
-            ?.skip,
+          (finalizeCall.arguments[0]?.body as { skip: unknown })?.skip,
           skip,
         );
       });
@@ -918,16 +915,32 @@ describe('main', () => {
         );
         assert.ok(finalizeCall, 'expected a finalize API call');
         assert.deepStrictEqual(
-          (finalizeCall.arguments[0]?.body as { skip: unknown })
-            ?.skip,
+          (finalizeCall.arguments[0]?.body as { skip: unknown })?.skip,
           [],
         );
       });
 
       describe('cancelling the Happo job', () => {
+        // The cancel message depends on whether we are running in CI and on
+        // whether we can resolve a CI job URL, so clear everything the
+        // environment module reads for those. Empty strings rather than
+        // `undefined` because assigning to `process.env` stringifies values,
+        // which would turn `undefined` into a truthy `'undefined'`.
         withOverrides(
           () => process.env,
-          () => ({}),
+          () => ({
+            BUILD_BUILDID: '',
+            CI: '',
+            CIRCLE_BUILD_URL: '',
+            GITHUB_REPOSITORY: '',
+            GITHUB_RUN_ATTEMPT: '',
+            GITHUB_RUN_ID: '',
+            GITHUB_SERVER_URL: '',
+            SYSTEM_TEAMFOUNDATIONCOLLECTIONURI: '',
+            SYSTEM_TEAMPROJECT: '',
+            TRAVIS_BUILD_WEB_URL: '',
+            TRAVIS_JOB_WEB_URL: '',
+          }),
         );
 
         it('cancels the Happo job when the command fails', async () => {

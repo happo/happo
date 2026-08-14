@@ -20,20 +20,16 @@ interface GitHubEvent {
       sha: string;
     };
   };
-  head_commit?:
-    | {
-        url: string;
-        message?: string;
-      }
-    | null;
+  head_commit?: {
+    url: string;
+    message?: string;
+  } | null;
   merge_group?: {
     head_sha: string;
     base_sha: string;
-    head_commit?:
-      | {
-          message?: string;
-        }
-      | null;
+    head_commit?: {
+      message?: string;
+    } | null;
   };
   repository?: {
     html_url: string;
@@ -240,7 +236,9 @@ function resolveCIJobUrl(
   } = env;
 
   if (GITHUB_REPOSITORY && GITHUB_RUN_ID) {
-    const serverUrl = GITHUB_SERVER_URL || 'https://github.com';
+    // Enterprise setups sometimes configure the server URL with a trailing
+    // slash, which would double up with the one we add below.
+    const serverUrl = (GITHUB_SERVER_URL || 'https://github.com').replace(/\/$/, '');
     const runUrl = `${serverUrl}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`;
     return GITHUB_RUN_ATTEMPT ? `${runUrl}/attempts/${GITHUB_RUN_ATTEMPT}` : runUrl;
   }
