@@ -56,18 +56,24 @@ export interface EnvironmentResult {
   fallbackShas: Array<string> | undefined;
   githubToken: string | undefined;
   ci: boolean;
+  ciJobUrl: string | undefined;
   skip: string | undefined;
   only: string | undefined;
 }
 
 const envKeys: ReadonlyArray<string> = [
+  'BUILD_BUILDID',
   'BUILD_REPOSITORY_URI',
   'BUILD_SOURCEVERSION',
+  'CIRCLE_BUILD_URL',
   'CIRCLE_PROJECT_REPONAME',
   'CIRCLE_PROJECT_USERNAME',
   'CIRCLE_SHA1',
   'CI_PULL_REQUEST',
   'GITHUB_EVENT_PATH',
+  'GITHUB_REPOSITORY',
+  'GITHUB_RUN_ATTEMPT',
+  'GITHUB_RUN_ID',
   'GITHUB_SERVER_URL',
   'GITHUB_SHA',
   'HAPPO_DEBUG',
@@ -75,8 +81,12 @@ const envKeys: ReadonlyArray<string> = [
   'SYSTEM_PULLREQUEST_SOURCEBRANCH',
   'SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI',
   'SYSTEM_PULLREQUEST_TARGETBRANCH',
+  'SYSTEM_TEAMFOUNDATIONCOLLECTIONURI',
+  'SYSTEM_TEAMPROJECT',
+  'TRAVIS_BUILD_WEB_URL',
   'TRAVIS_COMMIT',
   'TRAVIS_COMMIT_RANGE',
+  'TRAVIS_JOB_WEB_URL',
   'TRAVIS_PULL_REQUEST',
   'TRAVIS_PULL_REQUEST_SHA',
   'TRAVIS_REPO_SLUG',
@@ -197,6 +207,55 @@ async function resolveLink(
 
   if (CIRCLE_PROJECT_USERNAME && CIRCLE_PROJECT_REPONAME && CIRCLE_SHA1) {
     return `${githubBase}/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1}`;
+  }
+
+  return undefined;
+}
+
+/**
+ * Resolve a URL pointing at the logs for the CI job we are running in. This is
+ * used to point developers at the full output when something goes wrong.
+ */
+function resolveCIJobUrl(
+  env: Record<string, string | undefined>,
+): string | undefined {
+  const {
+    // https://learn.microsoft.com/en-us/azure/devops/pipelines/build/variables
+    BUILD_BUILDID,
+    SYSTEM_TEAMFOUNDATIONCOLLECTIONURI,
+    SYSTEM_TEAMPROJECT,
+
+    // https://circleci.com/docs/reference/variables/
+    CIRCLE_BUILD_URL,
+
+    // https://docs.github.com/en/actions/reference/workflows-and-actions/variables#default-environment-variables
+    GITHUB_REPOSITORY,
+    GITHUB_RUN_ATTEMPT,
+    GITHUB_RUN_ID,
+    GITHUB_SERVER_URL,
+
+    // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+    TRAVIS_BUILD_WEB_URL,
+    TRAVIS_JOB_WEB_URL,
+  } = env;
+
+  if (GITHUB_REPOSITORY && GITHUB_RUN_ID) {
+    const serverUrl = GITHUB_SERVER_URL || 'https://github.com';
+    const runUrl = `${serverUrl}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`;
+    return GITHUB_RUN_ATTEMPT ? `${runUrl}/attempts/${GITHUB_RUN_ATTEMPT}` : runUrl;
+  }
+
+  if (CIRCLE_BUILD_URL) {
+    return CIRCLE_BUILD_URL;
+  }
+
+  if (TRAVIS_JOB_WEB_URL || TRAVIS_BUILD_WEB_URL) {
+    return TRAVIS_JOB_WEB_URL || TRAVIS_BUILD_WEB_URL;
+  }
+
+  if (SYSTEM_TEAMFOUNDATIONCOLLECTIONURI && SYSTEM_TEAMPROJECT && BUILD_BUILDID) {
+    const collectionUri = SYSTEM_TEAMFOUNDATIONCOLLECTIONURI.replace(/\/$/, '');
+    return `${collectionUri}/${SYSTEM_TEAMPROJECT}/_build/results?buildId=${BUILD_BUILDID}`;
   }
 
   return undefined;
@@ -674,6 +733,7 @@ export default async function resolveEnvironment(
     fallbackShas: resolveFallbackShas(cliArgs, nonNullBeforeSha),
     githubToken: cliArgs.githubToken,
     ci: !!env.CI,
+    ciJobUrl: resolveCIJobUrl(env),
     skip: cliArgs.skip,
     only: cliArgs.only,
   };

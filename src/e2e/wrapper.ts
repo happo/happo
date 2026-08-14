@@ -8,6 +8,7 @@ import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import cancelJob from '../network/cancelJob.ts';
 import createAsyncComparison from '../network/createAsyncComparison.ts';
+import formatFailureMessage from '../network/formatFailureMessage.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
 import startJob, { type StartJobResult } from '../network/startJob.ts';
@@ -285,12 +286,18 @@ export default async function runWithWrapper(
           }
         } else {
           logger.error(
-            'Command failed with exit code ${code}. Cancelling Happo job.',
+            `[HAPPO] Command failed with exit code ${code}: ${dashdashCommandParts.join(' ')}. Cancelling Happo job. See the output above for details about the failure.`,
           );
           try {
             await cancelJob(
               'failure',
-              `${e2eIntegration.type} run failed`,
+              formatFailureMessage({
+                integrationType: e2eIntegration.type,
+                command: dashdashCommandParts,
+                // `code` is null when the command was killed by a signal.
+                exitCode: code ?? undefined,
+                environment,
+              }),
               happoConfig,
               environment,
               logger,

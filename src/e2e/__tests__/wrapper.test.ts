@@ -34,6 +34,7 @@ const baseEnvironment = {
   fallbackShas: undefined,
   githubToken: undefined,
   ci: false,
+  ciJobUrl: undefined,
   skip: undefined,
   only: undefined,
 };

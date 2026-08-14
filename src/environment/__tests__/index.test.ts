@@ -667,6 +667,80 @@ describe('resolveEnvironment', () => {
     assert.equal(result.skip, undefined);
   });
 
+  describe('ciJobUrl', () => {
+    it('is undefined when not running in a known CI environment', async () => {
+      initGitRepo();
+      const result = await resolveEnvironment({}, {});
+      assert.equal(result.ciJobUrl, undefined);
+    });
+
+    it('resolves a GitHub Actions run URL', async () => {
+      initGitRepo();
+      const result = await resolveEnvironment(
+        {},
+        {
+          GITHUB_SERVER_URL: 'https://github.com',
+          GITHUB_REPOSITORY: 'happo/happo',
+          GITHUB_RUN_ID: '123',
+          GITHUB_RUN_ATTEMPT: '2',
+        },
+      );
+      assert.equal(
+        result.ciJobUrl,
+        'https://github.com/happo/happo/actions/runs/123/attempts/2',
+      );
+    });
+
+    it('defaults the GitHub server URL and omits the attempt when unknown', async () => {
+      initGitRepo();
+      const result = await resolveEnvironment(
+        {},
+        { GITHUB_REPOSITORY: 'happo/happo', GITHUB_RUN_ID: '123' },
+      );
+      assert.equal(
+        result.ciJobUrl,
+        'https://github.com/happo/happo/actions/runs/123',
+      );
+    });
+
+    it('resolves a CircleCI build URL', async () => {
+      initGitRepo();
+      const result = await resolveEnvironment(
+        {},
+        { CIRCLE_BUILD_URL: 'https://circleci.com/gh/happo/happo/456' },
+      );
+      assert.equal(result.ciJobUrl, 'https://circleci.com/gh/happo/happo/456');
+    });
+
+    it('prefers the Travis job URL over the build URL', async () => {
+      initGitRepo();
+      const result = await resolveEnvironment(
+        {},
+        {
+          TRAVIS_BUILD_WEB_URL: 'https://travis-ci.com/happo/happo/builds/1',
+          TRAVIS_JOB_WEB_URL: 'https://travis-ci.com/happo/happo/jobs/2',
+        },
+      );
+      assert.equal(result.ciJobUrl, 'https://travis-ci.com/happo/happo/jobs/2');
+    });
+
+    it('resolves an Azure Pipelines build URL', async () => {
+      initGitRepo();
+      const result = await resolveEnvironment(
+        {},
+        {
+          SYSTEM_TEAMFOUNDATIONCOLLECTIONURI: 'https://dev.azure.com/happo/',
+          SYSTEM_TEAMPROJECT: 'happo',
+          BUILD_BUILDID: '789',
+        },
+      );
+      assert.equal(
+        result.ciJobUrl,
+        'https://dev.azure.com/happo/happo/_build/results?buildId=789',
+      );
+    });
+  });
+
   it('rejects if the link is not a valid URL', async () => {
     const link = 'not a url';
 

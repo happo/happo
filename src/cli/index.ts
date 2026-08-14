@@ -426,9 +426,8 @@ async function handleDefaultCommand(
       // Find a baseline to borrow the excluded stories from, unless --skip
       // already resolved one.
       if (!baselineSha) {
-        const findBaselineReport = (
-          await import('../network/findBaselineReport.ts')
-        ).default;
+        const findBaselineReport = (await import('../network/findBaselineReport.ts'))
+          .default;
         baselineSha = await findBaselineReport(environment, config, logger);
       }
 
@@ -515,8 +514,21 @@ async function handleDefaultCommand(
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     logger.error(`${config.integration.type} run failed: ${message}`, e);
-    const cancelJob = (await import('../network/cancelJob.ts')).default;
-    await cancelJob('failure', message, config, environment, logger);
+    const [cancelJob, formatFailureMessage] = await Promise.all([
+      (await import('../network/cancelJob.ts')).default,
+      (await import('../network/formatFailureMessage.ts')).default,
+    ]);
+    await cancelJob(
+      'failure',
+      formatFailureMessage({
+        integrationType: config.integration.type,
+        error: message,
+        environment,
+      }),
+      config,
+      environment,
+      logger,
+    );
     process.exitCode = 1;
     return;
   }

@@ -960,9 +960,21 @@ describe('main', () => {
             cancelRequest.arguments[0]?.path,
             '/api/jobs/foobar/barfoo/cancel',
           );
-          assert.strictEqual(
-            (cancelRequest.arguments[0]?.body as { message: string })?.message,
-            'cypress run failed',
+          const { message } = cancelRequest.arguments[0]?.body as {
+            message: string;
+          };
+          // Happo only keeps the first line of the message.
+          assert.doesNotMatch(message, /[\r\n]/);
+          // The exit code from `ls` differs between platforms, and the temp
+          // directory path is long enough that the command gets truncated, so
+          // we only check the shape of the message.
+          assert.match(
+            message,
+            /^Cypress run failed: "ls .+" exited with code \d+\./,
+          );
+          assert.match(
+            message,
+            /Review the happo command output in your terminal for the full details\.$/,
           );
         });
 
