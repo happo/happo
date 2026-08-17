@@ -67,6 +67,7 @@ beforeEach(async () => {
     notify: undefined,
     fallbackShas: undefined,
     ci: false,
+    ciJobUrl: undefined,
     nonce: undefined,
     githubToken: undefined,
     debugMode: false,

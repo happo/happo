@@ -62,6 +62,7 @@ beforeEach(async () => {
     fallbackShas: ['test-sha'],
     githubToken: 'test-token',
     ci: false,
+    ciJobUrl: undefined,
     skip: undefined,
     only: undefined,
   };

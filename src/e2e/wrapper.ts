@@ -8,6 +8,7 @@ import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import cancelJob from '../network/cancelJob.ts';
 import createAsyncComparison from '../network/createAsyncComparison.ts';
+import formatFailureMessage from '../network/formatFailureMessage.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
 import startJob, { type StartJobResult } from '../network/startJob.ts';
@@ -242,10 +243,7 @@ export default async function runWithWrapper(
   // Write skipped examples to a temp file to avoid env var size limits.
   let skipFilePath: string | undefined;
   if (skipJSON) {
-    skipFilePath = path.join(
-      os.tmpdir(),
-      `happo-skipped-${process.pid}.json`,
-    );
+    skipFilePath = path.join(os.tmpdir(), `happo-skipped-${process.pid}.json`);
     await fs.promises.writeFile(skipFilePath, skipJSON, 'utf8');
   }
 
@@ -275,33 +273,49 @@ export default async function runWithWrapper(
 
       const e2eIntegration = happoConfig.integration;
       assertE2EIntegration(e2eIntegration);
-      child.on('close', async (code: number) => {
-        if (code === 0 || e2eIntegration.allowFailures) {
-          try {
-            await finalizeHappoReport(happoConfig, environment, job, logger);
-          } catch (e) {
-            logger.error('Failed to finalize Happo report', e);
-            return reject(e);
-          }
-        } else {
-          logger.error(
-            'Command failed with exit code ${code}. Cancelling Happo job.',
-          );
-          try {
-            await cancelJob(
-              'failure',
-              `${e2eIntegration.type} run failed`,
-              happoConfig,
-              environment,
-              logger,
+      // `code` is null when the command was terminated by a signal, in which
+      // case `signal` says which one.
+      child.on(
+        'close',
+        async (code: number | null, signal: NodeJS.Signals | null) => {
+          if (code === 0 || e2eIntegration.allowFailures) {
+            try {
+              await finalizeHappoReport(happoConfig, environment, job, logger);
+            } catch (e) {
+              logger.error('Failed to finalize Happo report', e);
+              return reject(e);
+            }
+          } else {
+            const reason =
+              code === null
+                ? `was terminated by ${signal ?? 'a signal'}`
+                : `failed with exit code ${code}`;
+            logger.error(
+              `[HAPPO] Command ${reason}: ${dashdashCommandParts.join(' ')}. Cancelling Happo job. See the output above for details about the failure.`,
             );
-          } catch (e) {
-            logger.error('Failed to cancel Happo job', e);
-            return reject(e);
+            try {
+              await cancelJob(
+                'failure',
+                formatFailureMessage({
+                  integrationType: e2eIntegration.type,
+                  command: dashdashCommandParts,
+                  exitCode: code ?? undefined,
+                  environment,
+                }),
+                happoConfig,
+                environment,
+                logger,
+              );
+            } catch (e) {
+              logger.error('Failed to cancel Happo job', e);
+              return reject(e);
+            }
           }
-        }
-        resolve(code);
-      });
+          // A signal-terminated command has no exit code of its own, but it
+          // still needs to fail the happo run.
+          resolve(code ?? 1);
+        },
+      );
     });
     return exitCode;
   } finally {

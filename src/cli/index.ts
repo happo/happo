@@ -339,13 +339,17 @@ async function handleDefaultCommand(
 ): Promise<void> {
   logger.log('Running happo tests...');
 
-  const [startJob, createAsyncComparison, createAsyncReport, prepareSnapRequests] =
-    await Promise.all([
-      (await import('../network/startJob.ts')).default,
-      (await import('../network/createAsyncComparison.ts')).default,
-      (await import('../network/createAsyncReport.ts')).default,
-      (await import('../network/prepareSnapRequests.ts')).default,
-    ]);
+  const [
+    { default: startJob },
+    { default: createAsyncComparison },
+    { default: createAsyncReport },
+    { default: prepareSnapRequests },
+  ] = await Promise.all([
+    import('../network/startJob.ts'),
+    import('../network/createAsyncComparison.ts'),
+    import('../network/createAsyncReport.ts'),
+    import('../network/prepareSnapRequests.ts'),
+  ]);
 
   // Tell Happo that we are about to run a job
   await startJob(config, environment, logger);
@@ -388,9 +392,8 @@ async function handleDefaultCommand(
         return;
       }
 
-      const findBaselineReport = (
-        await import('../network/findBaselineReport.ts')
-      ).default;
+      const findBaselineReport = (await import('../network/findBaselineReport.ts'))
+        .default;
       baselineSha = await findBaselineReport(environment, config, logger);
       if (!baselineSha) {
         logger.log(
@@ -426,9 +429,8 @@ async function handleDefaultCommand(
       // Find a baseline to borrow the excluded stories from, unless --skip
       // already resolved one.
       if (!baselineSha) {
-        const findBaselineReport = (
-          await import('../network/findBaselineReport.ts')
-        ).default;
+        const findBaselineReport = (await import('../network/findBaselineReport.ts'))
+          .default;
         baselineSha = await findBaselineReport(environment, config, logger);
       }
 
@@ -449,7 +451,11 @@ async function handleDefaultCommand(
     // Prepare the snap requests for the job. This includes bundling static
     // assets and uploading them. Only pass the skip list when we have a
     // baseline to borrow the skipped examples from.
-    const { snapRequestIds, resolvedSkip } = await prepareSnapRequests(config, skip, only);
+    const { snapRequestIds, resolvedSkip } = await prepareSnapRequests(
+      config,
+      skip,
+      only,
+    );
 
     let allSnapRequestIds = snapRequestIds;
 
@@ -515,8 +521,22 @@ async function handleDefaultCommand(
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     logger.error(`${config.integration.type} run failed: ${message}`, e);
-    const cancelJob = (await import('../network/cancelJob.ts')).default;
-    await cancelJob('failure', message, config, environment, logger);
+    const [{ default: cancelJob }, { default: formatFailureMessage }] =
+      await Promise.all([
+        import('../network/cancelJob.ts'),
+        import('../network/formatFailureMessage.ts'),
+      ]);
+    await cancelJob(
+      'failure',
+      formatFailureMessage({
+        integrationType: config.integration.type,
+        error: message,
+        environment,
+      }),
+      config,
+      environment,
+      logger,
+    );
     process.exitCode = 1;
     return;
   }
