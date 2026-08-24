@@ -79,10 +79,11 @@ export async function finalizeAll({
       const skipItems = JSON.parse(skipJSON);
       body.skip = skipItems;
     } catch (e) {
-      logger.error('Error when parsing --skip', skipJSON);
+      logger.error('Error when parsing --skippedExamples', skipJSON);
       throw e;
     }
   }
+
   await makeHappoAPIRequest(
     {
       path: `/api/async-reports/${afterSha}/finalize`,

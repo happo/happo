@@ -920,6 +920,7 @@ describe('main', () => {
         );
       });
 
+
       describe('cancelling the Happo job', () => {
         // The cancel message depends on whether we are running in CI and on
         // whether we can resolve a CI job URL, so clear everything the
