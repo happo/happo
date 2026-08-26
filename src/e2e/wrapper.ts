@@ -6,8 +6,11 @@ import path from 'node:path';
 
 import type { ConfigWithDefaults, E2EIntegration } from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
+import { validateSkip } from '../isomorphic/parseSkip.ts';
+import type { SkipItem } from '../isomorphic/types.ts';
 import cancelJob from '../network/cancelJob.ts';
 import createAsyncComparison from '../network/createAsyncComparison.ts';
+import createSkipExtendsRequest from '../network/createSkipExtendsRequest.ts';
 import formatFailureMessage from '../network/formatFailureMessage.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import postGitHubComment from '../network/postGitHubComment.ts';
@@ -39,12 +42,6 @@ async function postAsyncReport(
   );
 }
 
-type Example = {
-  component: string;
-  variant: string;
-  target: string;
-};
-
 type Logger = Pick<Console, 'log' | 'error'>;
 
 interface FinalizeAllOptions {
@@ -64,30 +61,42 @@ export async function finalizeAll({
     throw new Error('[HAPPO] Missing --nonce argument');
   }
 
-  const body: {
-    project?: string | undefined;
-    nonce: string;
-    skip: Array<Example>;
-  } = {
-    project: happoConfig.project,
-    nonce,
-    skip: [],
-  };
-
   if (skipJSON) {
+    let skip: Array<SkipItem>;
     try {
-      const skipItems = JSON.parse(skipJSON);
-      body.skip = skipItems;
+      skip = validateSkip(skipJSON, '--skippedExamples');
     } catch (e) {
-      logger.error('Error when parsing --skip', skipJSON);
+      logger.error(
+        '[HAPPO] Invalid --skippedExamples:',
+        e instanceof Error ? e.message : String(e),
+      );
       throw e;
     }
+
+    // Borrow the skipped examples from the baseline via an extends-report,
+    // the same way the storybook/custom integrations do for --skip. The
+    // request is attached to the async report (keyed by nonce) before we
+    // finalize, so that the report is complete by the time it is built.
+    const extendsRequestId = await createSkipExtendsRequest(
+      skip,
+      happoConfig,
+      environment,
+      logger,
+    );
+
+    if (extendsRequestId !== undefined) {
+      await postAsyncReport([extendsRequestId], environment, happoConfig);
+    }
   }
+
   await makeHappoAPIRequest(
     {
       path: `/api/async-reports/${afterSha}/finalize`,
       method: 'POST',
-      body,
+      body: {
+        project: happoConfig.project,
+        nonce,
+      },
     },
     happoConfig,
     { retryCount: 3 },
@@ -120,13 +129,37 @@ async function finalizeHappoReport(
   environment: EnvironmentResult,
   job: StartJobResult,
   logger: Logger,
+  skip?: Array<SkipItem>,
 ) {
   if (!allRequestIds.size) {
     logger.log(`[HAPPO] No snapshots were recorded. Ignoring.`);
     return;
   }
+
+  const requestIds = [...allRequestIds];
+
+  // Only borrow when this run finalizes the report. With a nonce, the report
+  // spans several parallel runs and is finalized by a separate `happo
+  // finalize` call — borrowing here would attach one extends-report per shard
+  // and duplicate the borrowed snapshots.
+  if (skip && skip.length > 0 && !environment.nonce) {
+    // Borrow the examples we skipped during the run from the baseline. Without
+    // a nonce the report is finalized by the POST below, so the extends-report
+    // has to be part of that same call.
+    const extendsRequestId = await createSkipExtendsRequest(
+      skip,
+      happoConfig,
+      environment,
+      logger,
+    );
+
+    if (extendsRequestId !== undefined) {
+      requestIds.push(extendsRequestId);
+    }
+  }
+
   const reportResult = await postAsyncReport(
-    [...allRequestIds],
+    requestIds,
     environment,
     happoConfig,
   );
@@ -232,6 +265,14 @@ export default async function runWithWrapper(
   skipJSON?: string,
 ): Promise<number> {
   allRequestIds = new Set<number>();
+
+  // Validate before starting the e2e server or creating the job, so that a
+  // malformed skip list doesn't leave a listening server and an uncancelled
+  // job behind.
+  const skip: Array<SkipItem> | undefined = skipJSON
+    ? validateSkip(skipJSON)
+    : undefined;
+
   const e2eServer = await startE2EServer(environment, happoConfig);
   logger.log(`[HAPPO] Listening on port ${e2eServer.port}`);
 
@@ -280,7 +321,13 @@ export default async function runWithWrapper(
         async (code: number | null, signal: NodeJS.Signals | null) => {
           if (code === 0 || e2eIntegration.allowFailures) {
             try {
-              await finalizeHappoReport(happoConfig, environment, job, logger);
+              await finalizeHappoReport(
+                happoConfig,
+                environment,
+                job,
+                logger,
+                skip,
+              );
             } catch (e) {
               logger.error('Failed to finalize Happo report', e);
               return reject(e);
