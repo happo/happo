@@ -18,6 +18,7 @@ interface Logger {
 let logger: Logger;
 let main: (argv: Array<string>, logger: Logger) => Promise<void>;
 let flakeResponseOverride: object | null = null;
+let findBaselineResponseOverride: object | null = null;
 const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
   async (request: RequestAttributes, config: ConfigWithDefaults) => {
     const { url, path } = request;
@@ -30,6 +31,10 @@ const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
 
     if (fetchURL.includes('/api/jobs')) {
       return { id: 99, url: 'https://happo.io/api/jobs/99' };
+    }
+
+    if (fetchURL.includes('/find-baseline')) {
+      return findBaselineResponseOverride ?? { sha: 'baseline-sha' };
     }
 
     if (fetchURL.includes('/api/snap-requests/bulk')) {
@@ -162,6 +167,7 @@ beforeEach(async () => {
   });
 
   makeHappoAPIRequestMock.mock.resetCalls();
+  findBaselineResponseOverride = null;
   postGitHubCommentMock.mock.resetCalls();
 });
 
@@ -865,8 +871,8 @@ describe('main', () => {
         assert(makeHappoAPIRequestMock.mock.callCount() > 0);
       });
 
-      it('sends skip in the finalize request body when --skippedExamples is set', async () => {
-        const skip = [{ component: 'Button', variant: 'primary', target: 'chrome' }];
+      it('borrows skipped examples from the baseline via an extends-report when --skippedExamples is set', async () => {
+        const skip = [{ component: 'Button', variant: 'primary' }];
         await main(
           [
             'npx',
@@ -875,7 +881,7 @@ describe('main', () => {
             '--afterSha',
             'test-sha',
             '--beforeSha',
-            'test-sha',
+            'before-sha',
             '--nonce',
             'test-nonce',
             '--skippedExamples',
@@ -884,17 +890,54 @@ describe('main', () => {
           logger,
         );
         assert.equal(process.exitCode, 0);
+
+        const extendsCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
+          call.arguments[0]?.path?.includes('/snap-requests/extends-report'),
+        );
+        assert.ok(extendsCall, 'expected an extends-report API call');
+        const extendsBody = extendsCall.arguments[0]?.body as {
+          extendsSha: string;
+          extendedSnaps: unknown;
+        };
+        assert.strictEqual(extendsBody.extendsSha, 'baseline-sha');
+        assert.deepStrictEqual(extendsBody.extendedSnaps, skip);
+
+        // The extends-report request has to be attached to the nonced async
+        // report before it is finalized, or it will not be part of the report.
+        const attachCall = makeHappoAPIRequestMock.mock.calls.find(
+          (call) =>
+            call.arguments[0]?.path === '/api/async-reports/test-sha' &&
+            (call.arguments[0]?.body as { requestIds?: Array<number> })
+              ?.requestIds?.length,
+        );
+        assert.ok(attachCall, 'expected the extends-report to be attached');
+        assert.deepStrictEqual(
+          (attachCall.arguments[0]?.body as { requestIds: Array<number> })
+            .requestIds,
+          [123],
+        );
+        assert.strictEqual(
+          (attachCall.arguments[0]?.body as { nonce: string }).nonce,
+          'test-nonce',
+        );
+
         const finalizeCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
           call.arguments[0]?.path?.includes('/finalize'),
         );
         assert.ok(finalizeCall, 'expected a finalize API call');
-        assert.deepStrictEqual(
-          (finalizeCall.arguments[0]?.body as { skip: unknown })?.skip,
-          skip,
+        // The old placeholder mechanism is gone — sending both would duplicate
+        // the borrowed snapshots.
+        assert.ok(
+          !('skippedExamples' in (finalizeCall.arguments[0]?.body as object)),
+          'finalize body should not carry skippedExamples',
+        );
+        assert.ok(
+          !('skip' in (finalizeCall.arguments[0]?.body as object)),
+          'finalize body should not carry skip',
         );
       });
 
-      it('sends an empty skip array when --skippedExamples is not set', async () => {
+      it('does not create an extends-report when --skippedExamples is not set', async () => {
         await main(
           [
             'npx',
@@ -903,20 +946,69 @@ describe('main', () => {
             '--afterSha',
             'test-sha',
             '--beforeSha',
-            'test-sha',
+            'before-sha',
             '--nonce',
             'test-nonce',
           ],
           logger,
         );
         assert.equal(process.exitCode, 0);
+        const extendsCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
+          call.arguments[0]?.path?.includes('/snap-requests/extends-report'),
+        );
+        assert.strictEqual(extendsCall, undefined);
+      });
+
+      it('finalizes without borrowing when no baseline report is found', async () => {
+        findBaselineResponseOverride = {};
+        await main(
+          [
+            'npx',
+            'happo',
+            'finalize',
+            '--afterSha',
+            'test-sha',
+            '--beforeSha',
+            'before-sha',
+            '--nonce',
+            'test-nonce',
+            '--skippedExamples',
+            JSON.stringify([{ component: 'Button', variant: 'primary' }]),
+          ],
+          logger,
+        );
+        assert.equal(process.exitCode, 0);
+
+        const extendsCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
+          call.arguments[0]?.path?.includes('/snap-requests/extends-report'),
+        );
+        assert.strictEqual(extendsCall, undefined);
+
         const finalizeCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
           call.arguments[0]?.path?.includes('/finalize'),
         );
-        assert.ok(finalizeCall, 'expected a finalize API call');
-        assert.deepStrictEqual(
-          (finalizeCall.arguments[0]?.body as { skip: unknown })?.skip,
-          [],
+        assert.ok(finalizeCall, 'expected a finalize API call anyway');
+      });
+
+      it('rejects storyFile items in --skippedExamples', async () => {
+        await main(
+          [
+            'npx',
+            'happo',
+            'finalize',
+            '--afterSha',
+            'test-sha',
+            '--nonce',
+            'test-nonce',
+            '--skippedExamples',
+            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+          ],
+          logger,
+        );
+        assert.strictEqual(process.exitCode, 1);
+        assert.match(
+          String(logger.error.mock.calls[0]?.arguments[0]),
+          /storyFile.*not supported/,
         );
       });
 

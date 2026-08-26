@@ -11,6 +11,8 @@ const AFTER_SHA = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2';
 let server: http.Server;
 let serverPort: number;
 let comparisonEndpointHits: number;
+let requests: Array<{ url: string; body: unknown }>;
+let baselineSha: string | null;
 
 const happoConfig = () => ({
   apiKey: 'test-key',
@@ -46,6 +48,35 @@ before(async () => {
       // would otherwise keep the event loop alive and hang the test process.
       res.setHeader('Connection', 'close');
       res.setHeader('Content-Type', 'application/json');
+
+      const chunks: Array<Buffer> = [];
+      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      req.on('end', () => {
+        const raw = Buffer.concat(chunks).toString();
+        let body: unknown;
+        try {
+          body = raw ? JSON.parse(raw) : undefined;
+        } catch {
+          body = raw;
+        }
+        requests.push({ url: req.url ?? '', body });
+      });
+
+      if (req.url?.match(/\/find-baseline$/)) {
+        if (!baselineSha) {
+          // The real API 404s when there is no baseline report.
+          res.statusCode = 404;
+          res.end(JSON.stringify({ error: 'No baseline report found' }));
+          return;
+        }
+        res.end(JSON.stringify({ sha: baselineSha }));
+        return;
+      }
+
+      if (req.url?.match(/^\/api\/snap-requests\/extends-report/)) {
+        res.end(JSON.stringify({ requestId: 4242 }));
+        return;
+      }
 
       if (req.url?.match(/^\/api\/jobs\//)) {
         res.end(
@@ -89,6 +120,8 @@ after(() => {
 
 beforeEach(() => {
   comparisonEndpointHits = 0;
+  requests = [];
+  baselineSha = 'baseline-sha';
 });
 
 // Script that POSTs one snap request ID to the e2e server then exits.
@@ -127,6 +160,113 @@ describe('runWithWrapper', () => {
         'happo.config.js',
       );
       assert.equal(comparisonEndpointHits, 0);
+    },
+  );
+
+  it(
+    'borrows skipped examples from the baseline via an extends-report',
+    { timeout: 5000 },
+    async () => {
+      const skip = [{ component: 'Button', variant: 'Primary' }];
+      await runWithWrapper(
+        childCommand,
+        happoConfig(),
+        baseEnvironment,
+        console,
+        'happo.config.js',
+        JSON.stringify(skip),
+      );
+
+      const extendsRequest = requests.find((r) =>
+        r.url.includes('/snap-requests/extends-report'),
+      );
+      assert.ok(extendsRequest, 'expected an extends-report request');
+      assert.deepStrictEqual(
+        (extendsRequest.body as { extendedSnaps: unknown }).extendedSnaps,
+        skip,
+      );
+      assert.strictEqual(
+        (extendsRequest.body as { extendsSha: string }).extendsSha,
+        'baseline-sha',
+      );
+
+      // Without a nonce the async report is finalized by this POST, so the
+      // extends-report id has to be included in it.
+      const reportRequest = requests.find(
+        (r) => r.url === `/api/async-reports/${AFTER_SHA}`,
+      );
+      assert.ok(reportRequest, 'expected an async report request');
+      assert.ok(
+        (reportRequest.body as { requestIds: Array<number> }).requestIds.includes(
+          4242,
+        ),
+        'expected the extends-report id in the async report',
+      );
+    },
+  );
+
+  it(
+    'does not create an extends-report when there is no skip list',
+    { timeout: 5000 },
+    async () => {
+      await runWithWrapper(
+        childCommand,
+        happoConfig(),
+        baseEnvironment,
+        console,
+        'happo.config.js',
+      );
+
+      assert.strictEqual(
+        requests.find((r) => r.url.includes('/extends-report')),
+        undefined,
+      );
+    },
+  );
+
+  it(
+    'still posts the report when no baseline is found',
+    { timeout: 5000 },
+    async () => {
+      baselineSha = null;
+      await runWithWrapper(
+        childCommand,
+        happoConfig(),
+        baseEnvironment,
+        console,
+        'happo.config.js',
+        JSON.stringify([{ component: 'Button', variant: 'Primary' }]),
+      );
+
+      assert.strictEqual(
+        requests.find((r) => r.url.includes('/extends-report')),
+        undefined,
+      );
+      assert.ok(
+        requests.find((r) => r.url === `/api/async-reports/${AFTER_SHA}`),
+        'expected an async report request anyway',
+      );
+    },
+  );
+
+  it(
+    'does not borrow when a nonce is set (the finalize call does it instead)',
+    { timeout: 5000 },
+    async () => {
+      const environment = { ...baseEnvironment, nonce: 'test-nonce' };
+      await runWithWrapper(
+        childCommand,
+        happoConfig(),
+        environment,
+        console,
+        'happo.config.js',
+        JSON.stringify([{ component: 'Button', variant: 'Primary' }]),
+      );
+
+      assert.strictEqual(
+        requests.find((r) => r.url.includes('/extends-report')),
+        undefined,
+      );
     },
   );
 });

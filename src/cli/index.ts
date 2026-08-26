@@ -133,7 +133,7 @@ Options:
   --only <json> JSON array of {component} or {storyFile} objects to include in this run (all other stories are skipped); only supported for the Storybook integration
 
 Finalize command options:
-  --skippedExamples <json> JSON array of {component, variant, target} objects to skip when finalizing; borrowed from the nearest baseline report
+  --skippedExamples <json> JSON array of {component, variant} objects that were skipped during the run; borrowed from the nearest baseline report
 
 Flake command options:
   --allProjects         List flakes across all projects (default: current project)
@@ -167,7 +167,7 @@ Examples:
 
   happo finalize
   happo finalize --nonce my-unique-nonce
-  happo finalize --skippedExamples '[{"component":"Button","variant":"primary","target":"chrome"}]'
+  happo finalize --skippedExamples '[{"component":"Button","variant":"Primary"}]'
 
   happo flake
   happo flake --allProjects
@@ -251,12 +251,20 @@ export async function main(
     if (args.dashdashCommandParts) {
       let validatedSkipJSON: string | undefined;
       if (environment.skip) {
+        let skipItems: Array<SkipItem>;
         try {
-          validateSkip(environment.skip);
+          skipItems = validateSkip(environment.skip);
         } catch (e) {
           logger.error(
             '[HAPPO] Invalid --skip:',
             e instanceof Error ? e.message : String(e),
+          );
+          process.exitCode = 1;
+          return;
+        }
+        if (skipItems.some((item) => 'storyFile' in item)) {
+          logger.error(
+            `[HAPPO] storyFile items in --skip are only supported for the storybook integration (current integration: '${config.integration.type}')`,
           );
           process.exitCode = 1;
           return;
@@ -275,8 +283,31 @@ export async function main(
     }
 
     if (command === 'finalize') {
-      const finalizeEnvironment = args.values.skippedExamples
-        ? { ...environment, skip: args.values.skippedExamples }
+      const finalizeSkipJSON = args.values.skippedExamples ?? environment.skip;
+
+      if (finalizeSkipJSON) {
+        let skipItems: Array<SkipItem>;
+        try {
+          skipItems = validateSkip(finalizeSkipJSON);
+        } catch (e) {
+          logger.error(
+            '[HAPPO] Invalid --skippedExamples:',
+            e instanceof Error ? e.message : String(e),
+          );
+          process.exitCode = 1;
+          return;
+        }
+        if (skipItems.some((item) => 'storyFile' in item)) {
+          logger.error(
+            '[HAPPO] storyFile items are not supported in --skippedExamples. Use {component, variant} instead.',
+          );
+          process.exitCode = 1;
+          return;
+        }
+      }
+
+      const finalizeEnvironment = finalizeSkipJSON
+        ? { ...environment, skip: finalizeSkipJSON }
         : environment;
       await handleFinalizeCommand(config, finalizeEnvironment, logger);
       return;
