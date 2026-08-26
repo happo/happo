@@ -718,6 +718,67 @@ describe('main', () => {
         );
       });
 
+      it('is aliased by --skippedExamples on the default command', async () => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `export default {
+            integration: { type: 'storybook' },
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          };`,
+        );
+
+        // --skippedExamples used to be parsed and then silently dropped here,
+        // producing a full run with no skipping and no error.
+        await main(
+          [
+            'npx',
+            'happo',
+            '--skippedExamples',
+            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+          ],
+          logger,
+        );
+
+        const storyFileErrors = logger.error.mock.calls.filter((c) =>
+          String(c.arguments[0]).includes('storyFile'),
+        );
+        assert.strictEqual(storyFileErrors.length, 0);
+      });
+
+      it('names the flag the user actually passed in error messages', async () => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `export default {
+            integration: {
+              type: 'custom',
+              build: async () => ({
+                rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
+                entryPoint: 'bundle.js',
+              }),
+            },
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          };`,
+        );
+
+        await main(
+          [
+            'npx',
+            'happo',
+            '--skippedExamples',
+            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+          ],
+          logger,
+        );
+
+        assert.strictEqual(process.exitCode, 1);
+        assert.match(
+          String(logger.error.mock.calls[0]?.arguments[0]),
+          /storyFile items in --skippedExamples/,
+        );
+      });
+
       it('does not log a storyFile error when storyFile items are used with the storybook integration', async () => {
         tmpfs.writeFile(
           'happo.config.ts',
@@ -988,6 +1049,61 @@ describe('main', () => {
           call.arguments[0]?.path?.includes('/finalize'),
         );
         assert.ok(finalizeCall, 'expected a finalize API call anyway');
+      });
+
+      it('accepts --skip as an alias on the finalize command', async () => {
+        const skip = [{ component: 'Button', variant: 'primary' }];
+        await main(
+          [
+            'npx',
+            'happo',
+            'finalize',
+            '--afterSha',
+            'test-sha',
+            '--beforeSha',
+            'before-sha',
+            '--nonce',
+            'test-nonce',
+            '--skip',
+            JSON.stringify(skip),
+          ],
+          logger,
+        );
+        assert.equal(process.exitCode, 0);
+        const extendsCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
+          call.arguments[0]?.path?.includes('/snap-requests/extends-report'),
+        );
+        assert.ok(extendsCall, 'expected an extends-report API call');
+        assert.deepStrictEqual(
+          (extendsCall.arguments[0]?.body as { extendedSnaps: unknown })
+            .extendedSnaps,
+          skip,
+        );
+      });
+
+      it('fails when both --skip and --skippedExamples are given', async () => {
+        const skip = JSON.stringify([{ component: 'Button' }]);
+        await main(
+          [
+            'npx',
+            'happo',
+            'finalize',
+            '--afterSha',
+            'test-sha',
+            '--nonce',
+            'test-nonce',
+            '--skip',
+            skip,
+            '--skippedExamples',
+            skip,
+          ],
+          logger,
+        );
+        assert.strictEqual(process.exitCode, 1);
+        assert.match(
+          String(logger.error.mock.calls[0]?.arguments[0]),
+          /Use either --skip or --skippedExamples, not both/,
+        );
       });
 
       it('rejects storyFile items in --skippedExamples', async () => {
