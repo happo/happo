@@ -13,9 +13,11 @@ import findBaselineReport from './findBaselineReport.ts';
  * so the resulting report is complete on its own rather than relying on the
  * comparison to fill in the gaps.
  *
- * Returns undefined when there is nothing to borrow or no baseline report to
- * borrow from. In the latter case the skipped examples will show up as deleted
- * in the comparison, so we log about it.
+ * Returns undefined when there is nothing to borrow, or when no baseline could
+ * be resolved. findBaselineReport() reports both "there is no baseline" and
+ * "the lookup failed" as undefined (it logs the underlying error itself), so
+ * the message here has to cover both. Either way the skipped examples will show
+ * up as deleted in the comparison, which is worth saying out loud.
  */
 export default async function createSkipExtendsRequest(
   skip: Array<SkipItem>,
@@ -33,7 +35,7 @@ export default async function createSkipExtendsRequest(
 
   if (!baselineSha) {
     logger.log(
-      '[HAPPO] No baseline report found to borrow skipped examples from. They will show up as deleted in the comparison.',
+      '[HAPPO] Could not resolve a baseline report to borrow skipped examples from. They will show up as deleted in the comparison.',
     );
     return undefined;
   }

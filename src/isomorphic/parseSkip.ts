@@ -21,12 +21,15 @@ function isSkipItem(item: unknown): item is SkipItem {
 /**
  * Parses and validates a JSON string, returning an array of SkipItems.
  * Throws a TypeError if the JSON is invalid or not an array of SkipItems.
+ *
+ * `flag` names the option in the error message, so that callers reached via
+ * the --skippedExamples alias don't report the wrong flag name.
  */
-export function validateSkip(json: string): Array<SkipItem> {
+export function validateSkip(json: string, flag = '--skip'): Array<SkipItem> {
   const parsed: unknown = JSON.parse(json);
   if (!Array.isArray(parsed) || !parsed.every(isSkipItem)) {
     throw new TypeError(
-      '--skip must be a JSON array of {component, variant?} or {storyFile} objects',
+      `${flag} must be a JSON array of {component, variant?} or {storyFile} objects`,
     );
   }
   return parsed;

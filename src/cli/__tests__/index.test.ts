@@ -1081,6 +1081,29 @@ describe('main', () => {
         );
       });
 
+      it('names --skippedExamples in the validator error, not --skip', async () => {
+        await main(
+          [
+            'npx',
+            'happo',
+            'finalize',
+            '--afterSha',
+            'test-sha',
+            '--nonce',
+            'test-nonce',
+            '--skippedExamples',
+            JSON.stringify([{ nope: true }]),
+          ],
+          logger,
+        );
+        assert.strictEqual(process.exitCode, 1);
+        const message = logger.error.mock.calls
+          .map((c) => c.arguments.join(' '))
+          .join('\n');
+        assert.match(message, /--skippedExamples must be a JSON array/);
+        assert.doesNotMatch(message, /--skip must be a JSON array/);
+      });
+
       it('fails when both --skip and --skippedExamples are given', async () => {
         const skip = JSON.stringify([{ component: 'Button' }]);
         await main(

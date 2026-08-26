@@ -64,9 +64,12 @@ export async function finalizeAll({
   if (skipJSON) {
     let skip: Array<SkipItem>;
     try {
-      skip = validateSkip(skipJSON);
+      skip = validateSkip(skipJSON, '--skippedExamples');
     } catch (e) {
-      logger.error('[HAPPO] Invalid --skippedExamples', skipJSON);
+      logger.error(
+        '[HAPPO] Invalid --skippedExamples:',
+        e instanceof Error ? e.message : String(e),
+      );
       throw e;
     }
 
@@ -262,6 +265,14 @@ export default async function runWithWrapper(
   skipJSON?: string,
 ): Promise<number> {
   allRequestIds = new Set<number>();
+
+  // Validate before starting the e2e server or creating the job, so that a
+  // malformed skip list doesn't leave a listening server and an uncancelled
+  // job behind.
+  const skip: Array<SkipItem> | undefined = skipJSON
+    ? validateSkip(skipJSON)
+    : undefined;
+
   const e2eServer = await startE2EServer(environment, happoConfig);
   logger.log(`[HAPPO] Listening on port ${e2eServer.port}`);
 
@@ -272,9 +283,7 @@ export default async function runWithWrapper(
 
   // Write skipped examples to a temp file to avoid env var size limits.
   let skipFilePath: string | undefined;
-  let skip: Array<SkipItem> | undefined;
   if (skipJSON) {
-    skip = validateSkip(skipJSON);
     skipFilePath = path.join(os.tmpdir(), `happo-skipped-${process.pid}.json`);
     await fs.promises.writeFile(skipFilePath, skipJSON, 'utf8');
   }

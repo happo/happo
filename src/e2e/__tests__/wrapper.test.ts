@@ -250,6 +250,28 @@ describe('runWithWrapper', () => {
   );
 
   it(
+    'rejects an invalid skip list before starting the e2e server or job',
+    { timeout: 5000 },
+    async () => {
+      await assert.rejects(
+        runWithWrapper(
+          childCommand,
+          happoConfig(),
+          baseEnvironment,
+          console,
+          'happo.config.js',
+          '[{"nope":true}]',
+        ),
+        /must be a JSON array/,
+      );
+
+      // Nothing external should have been created, so there is no listening
+      // server left behind and no job to cancel.
+      assert.deepStrictEqual(requests, []);
+    },
+  );
+
+  it(
     'does not borrow when a nonce is set (the finalize call does it instead)',
     { timeout: 5000 },
     async () => {

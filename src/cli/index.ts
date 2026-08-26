@@ -129,7 +129,7 @@ Options:
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
   --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
   --githubToken <token> GitHub token to use for posting Happo statuses as comments. Use in combination with the \`githubApiUrl\` configuration option. (default: auto-detected from environment)
-  --skip <json> JSON array of {component, variant} objects to skip and borrow from the nearest baseline report instead. On the finalize command these are the examples that were already skipped during the run. Also available as --skippedExamples (the two are aliases; pass only one)
+  --skip <json> JSON array of {component, variant?} objects to skip and borrow from the nearest baseline report instead (omit variant to skip every variant of the component). On the finalize command these are the examples that were already skipped during the run. Also available as --skippedExamples (the two are aliases; pass only one)
   --only <json> JSON array of {component} or {storyFile} objects to include in this run (all other stories are skipped); only supported for the Storybook integration
 
 Flake command options:
@@ -264,7 +264,7 @@ export async function main(
       if (environment.skip) {
         let skipItems: Array<SkipItem>;
         try {
-          skipItems = validateSkip(environment.skip);
+          skipItems = validateSkip(environment.skip, skipFlag);
         } catch (e) {
           logger.error(
             `[HAPPO] Invalid ${skipFlag}:`,
@@ -297,7 +297,7 @@ export async function main(
       if (environment.skip) {
         let skipItems: Array<SkipItem>;
         try {
-          skipItems = validateSkip(environment.skip);
+          skipItems = validateSkip(environment.skip, skipFlag);
         } catch (e) {
           logger.error(
             `[HAPPO] Invalid ${skipFlag}:`,
@@ -308,7 +308,7 @@ export async function main(
         }
         if (skipItems.some((item) => 'storyFile' in item)) {
           logger.error(
-            `[HAPPO] storyFile items are not supported in ${skipFlag} for the finalize command. Use {component, variant} instead.`,
+            `[HAPPO] storyFile items are not supported in ${skipFlag} for the finalize command. Use {component, variant?} instead.`,
           );
           process.exitCode = 1;
           return;
@@ -409,7 +409,7 @@ async function handleDefaultCommand(
       }
 
       try {
-        skip = validateSkip(environment.skip);
+        skip = validateSkip(environment.skip, skipFlag);
       } catch (e) {
         logger.error(
           `[HAPPO] Invalid ${skipFlag}:`,
