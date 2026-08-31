@@ -1,9 +1,8 @@
 import assert from 'node:assert';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import { unzipSync } from 'fflate';
-
 import type { ServerInfo } from '../../network/startServer.ts';
+import { archiveEntryNames } from '../../test-utils/readArchive.ts';
 import startTestServer from '../../test-utils/startTestServer.ts';
 import createAssetPackage from '../createAssetPackage.ts';
 
@@ -15,10 +14,16 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await serverInfo.close();
+  delete process.env.HAPPO_ARCHIVE_FORMAT;
 });
 
 describe('createAssetPackage', () => {
   it('creates an asset package', async () => {
+    // Pinned to zip so the expected hashes below keep testing what they always
+    // have. The equivalent guarantee for zstd is covered by the golden-hash
+    // test in utils/__tests__/deterministicArchive.test.ts.
+    process.env.HAPPO_ARCHIVE_FORMAT = 'zip';
+
     const pkg = await createAssetPackage(
       [
         {
@@ -41,8 +46,7 @@ describe('createAssetPackage', () => {
       { downloadAllAssets: false },
     );
 
-    const zip = unzipSync(new Uint8Array(pkg.buffer));
-    const entries = Object.keys(zip).toSorted();
+    const entries = archiveEntryNames(pkg.buffer).toSorted();
     assert.equal(entries.length, 3);
     assert.deepEqual(
       entries,
@@ -124,8 +128,7 @@ describe('createAssetPackage', () => {
         { downloadAllAssets: true },
       );
 
-      const zip = unzipSync(new Uint8Array(pkg.buffer));
-      const entries = Object.keys(zip).toSorted();
+      const entries = archiveEntryNames(pkg.buffer).toSorted();
       assert.deepEqual(entries, ['sub folder/countries-bg.jpeg']);
 
       // Blocked schemes must be filtered out before reaching the network
@@ -158,8 +161,7 @@ describe('createAssetPackage', () => {
       { downloadAllAssets: true },
     );
 
-    const zip = unzipSync(new Uint8Array(pkg.buffer));
-    const entries = Object.keys(zip).toSorted();
+    const entries = archiveEntryNames(pkg.buffer).toSorted();
     assert.equal(entries.length, 2);
     assert.deepEqual(
       entries,

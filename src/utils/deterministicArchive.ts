@@ -1,12 +1,62 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
+import zlib from 'node:zlib';
 
 import type { Zippable } from 'fflate';
 import { zip } from 'fflate';
 
 import createHash from './createHash.ts';
+import createTar from './createTar.ts';
 import validateArchive from './validateArchive.ts';
+
+export type ArchiveFormat = 'zip' | 'zstd';
+
+// Level 9 is the point where the size curve flattens out: higher levels cost
+// several times the CPU for about another percent. It is also well clear of
+// the fast levels, whose output changed between zstd 1.5.6 and 1.5.7 — we need
+// the same input to produce the same bytes on every machine, because that is
+// what makes the hash below a usable dedupe key.
+const ZSTD_COMPRESSION_LEVEL = 9;
+
+/**
+ * zstd landed in Node's `zlib` in 22.15.0 and 23.8.0. Older versions still run
+ * happo in plenty of CI setups, so we feature-detect rather than check the
+ * version, and fall back to zip when it isn't there.
+ */
+function isZstdSupported(): boolean {
+  return typeof zlib.zstdCompressSync === 'function';
+}
+
+/**
+ * `HAPPO_ARCHIVE_FORMAT=zip` forces the old format. This is an escape hatch:
+ * it lets a user work around a problem with zstd packages without downgrading
+ * the package.
+ */
+function resolveFormat(): ArchiveFormat {
+  const requested = process.env.HAPPO_ARCHIVE_FORMAT;
+
+  if (requested === 'zip') {
+    return 'zip';
+  }
+
+  if (requested === 'zstd') {
+    if (!isZstdSupported()) {
+      throw new Error(
+        `HAPPO_ARCHIVE_FORMAT is set to "zstd", but this version of Node (${process.version}) does not support zstd compression. Node 22.15.0 or 23.8.0 and later are supported.`,
+      );
+    }
+    return 'zstd';
+  }
+
+  if (requested !== undefined && requested !== '') {
+    throw new Error(
+      `Unknown HAPPO_ARCHIVE_FORMAT: "${requested}". Valid values are "zip" and "zstd".`,
+    );
+  }
+
+  return isZstdSupported() ? 'zstd' : 'zip';
+}
 
 // Normalize path separators to forward slashes for cross-platform consistency.
 // path.relative() returns backslashes on Windows; callers may also pass names
@@ -34,6 +84,7 @@ export interface ArchiveContentEntry {
 interface ArchiveResult {
   buffer: Buffer<ArrayBuffer>;
   hash: string;
+  format: ArchiveFormat;
 }
 
 interface ArchiveEntry {
@@ -133,6 +184,64 @@ async function contentToUint8Array(
   return streamToUint8Array(content);
 }
 
+interface EntryData {
+  name: string;
+  data: Uint8Array;
+}
+
+/**
+ * Builds a tar archive compressed as a single zstd frame.
+ *
+ * Compressing the archive as a whole (rather than each entry separately, the
+ * way zip does) lets zstd find redundancy between files, which is where most
+ * of the size win over zip comes from.
+ *
+ * Compression must be one-shot: streaming zstd produces different bytes
+ * depending on how the input happens to be chunked, which would break the
+ * content hash.
+ */
+function createZstdArchive(entryDataList: Array<EntryData>): Buffer<ArrayBuffer> {
+  const tar = createTar(entryDataList);
+
+  return zlib.zstdCompressSync(tar, {
+    params: {
+      [zlib.constants.ZSTD_c_compressionLevel]: ZSTD_COMPRESSION_LEVEL,
+    },
+  }) as Buffer<ArrayBuffer>;
+}
+
+/**
+ * Builds a zip archive. Used when the running Node doesn't support zstd, and
+ * when a user forces it with HAPPO_ARCHIVE_FORMAT=zip.
+ */
+async function createZipArchive(
+  entryDataList: Array<EntryData>,
+): Promise<Buffer<ArrayBuffer>> {
+  // Build zipData object in sorted order to ensure deterministic zip creation
+  const zipData: Zippable = {};
+  for (const entry of entryDataList) {
+    zipData[entry.name] = [
+      entry.data,
+      {
+        mtime: FILE_CREATION_DATE,
+        level: 6,
+      },
+    ];
+  }
+
+  const zipBuffer = await new Promise<Uint8Array>((resolve, reject) => {
+    zip(zipData, { level: 6 }, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+
+  return Buffer.from(zipBuffer);
+}
+
 /**
  * Creates a deterministic archive of the given files
  *
@@ -160,11 +269,6 @@ export default async function deterministicArchive(
   const entries: Array<ArchiveEntry> = [];
 
   // Collect all entries with their data first
-  interface EntryData {
-    name: string;
-    data: Uint8Array;
-  }
-
   const entryDataList: Array<EntryData> = [];
 
   // Process files from disk
@@ -193,30 +297,14 @@ export default async function deterministicArchive(
   // Use simple string comparison instead of localeCompare for cross-platform determinism
   entryDataList.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
-  // Build zipData object in sorted order to ensure deterministic zip creation
-  const zipData: Zippable = {};
-  for (const entry of entryDataList) {
-    zipData[entry.name] = [
-      entry.data,
-      {
-        mtime: FILE_CREATION_DATE,
-        level: 6,
-      },
-    ];
-  }
+  const format = resolveFormat();
+  const buffer =
+    format === 'zstd'
+      ? createZstdArchive(entryDataList)
+      : await createZipArchive(entryDataList);
 
-  const zipBuffer = await new Promise<Uint8Array>((resolve, reject) => {
-    zip(zipData, { level: 6 }, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
-  });
-  const buffer = Buffer.from(zipBuffer);
   validateArchive(buffer.length, entries);
   const hash = createHash(buffer);
 
-  return { buffer, hash };
+  return { buffer, hash, format };
 }
