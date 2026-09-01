@@ -5,7 +5,10 @@ import type { ReadableStream } from 'node:stream/web';
 import mime from 'mime-types';
 
 import fetchWithRetry from '../network/fetchWithRetry.ts';
-import type { ArchiveContentEntry } from '../utils/deterministicArchive.ts';
+import type {
+  ArchiveContentEntry,
+  ArchiveFormat,
+} from '../utils/deterministicArchive.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import makeAbsolute from './makeAbsolute.ts';
 
@@ -48,7 +51,11 @@ function getFileSuffixFromMimeType(mimeType = ''): string {
 export default async function createAssetPackage(
   urls: Array<AssetUrl>,
   { downloadAllAssets }: { downloadAllAssets?: boolean },
-): Promise<{ buffer: Buffer<ArrayBuffer>; hash: string }> {
+): Promise<{
+  buffer: Buffer<ArrayBuffer>;
+  hash: string;
+  format: ArchiveFormat;
+}> {
   const { HAPPO_DEBUG } = process.env;
 
   if (HAPPO_DEBUG) {

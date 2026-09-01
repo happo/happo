@@ -134,12 +134,13 @@ async function preparePackage(
 
   await validatePackage(packageDir);
 
-  const { buffer, hash } = await deterministicArchive([packageDir]);
+  const { buffer, hash, format } = await deterministicArchive([packageDir]);
   const packagePath = await uploadAssets(
     buffer,
     {
       hash,
       logger,
+      format,
     },
     config,
   );

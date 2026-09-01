@@ -16,6 +16,7 @@ import fetchWithRetry from '../network/fetchWithRetry.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import uploadAssets from '../network/uploadAssets.ts';
 import createHash from '../utils/createHash.ts';
+import type { ArchiveFormat } from '../utils/deterministicArchive.ts';
 import convertBase64FileToReal from './convertBase64FileToReal.ts';
 import type { AssetUrl } from './createAssetPackage.ts';
 import createAssetPackage from './createAssetPackage.ts';
@@ -230,9 +231,11 @@ class Controller {
   async uploadAssetsIfNeeded({
     buffer,
     hash,
+    format,
   }: {
     buffer: Buffer<ArrayBuffer>;
     hash: string;
+    format: ArchiveFormat;
   }): Promise<string> {
     this.assertHappoConfig();
 
@@ -245,6 +248,7 @@ class Controller {
       {
         hash,
         logger: console,
+        format,
       },
       this.happoConfig,
     );
@@ -285,11 +289,11 @@ class Controller {
     const uniqueUrls = getUniqueUrls(allUrls);
     assertIntegrationIsE2E(this.happoConfig.integration);
     const downloadAllAssets = this.happoConfig.integration.downloadAllAssets;
-    const { buffer, hash } = await createAssetPackage(uniqueUrls, {
+    const { buffer, hash, format } = await createAssetPackage(uniqueUrls, {
       downloadAllAssets: downloadAllAssets ?? false,
     });
 
-    const assetsPath = await this.uploadAssetsIfNeeded({ buffer, hash });
+    const assetsPath = await this.uploadAssetsIfNeeded({ buffer, hash, format });
 
     const globalCSS = this.allCssBlocks.map((block) => ({
       id: block.key,

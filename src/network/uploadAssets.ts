@@ -3,8 +3,13 @@ import { createHash } from 'node:crypto';
 import retry from 'async-retry';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
+import type { ArchiveFormat } from '../utils/deterministicArchive.ts';
 import { logTag } from '../utils/Logger.ts';
 import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
+
+// What Happo has always signed asset uploads with. Servers that predate zstd
+// packages don't tell us what to use, so this is also our fallback.
+const DEFAULT_CONTENT_TYPE = 'application/zip';
 
 // Type definitions
 interface Logger {
@@ -15,6 +20,18 @@ interface Logger {
 interface UploadAssetsOptions {
   hash: string;
   logger: Logger;
+  format: ArchiveFormat;
+}
+
+/**
+ * Older Happo servers don't know about anything but zip, so we only ask for a
+ * different format when we actually produced one. They ignore the unknown
+ * query parameter and hand back a zip-flavored signed URL, which still accepts
+ * the upload — the worker identifies packages by their magic bytes, not by
+ * name — so a new client keeps working against an old server.
+ */
+function formatQuery(format: ArchiveFormat): string {
+  return format === 'zip' ? '' : `?format=${format}`;
 }
 
 export default async function uploadAssets(
@@ -23,12 +40,13 @@ export default async function uploadAssets(
   config: ConfigWithDefaults,
 ): Promise<string> {
   const { project } = config;
-  const { hash, logger } = options;
+  const { hash, logger, format } = options;
+  const query = formatQuery(format);
 
   // First we need to get the signed URL from Happo.
   const signedUrlRes = await makeHappoAPIRequest(
     {
-      path: `/api/snap-requests/assets/${hash}/signed-url`,
+      path: `/api/snap-requests/assets/${hash}/signed-url${query}`,
       method: 'GET',
     },
     config,
@@ -56,6 +74,13 @@ export default async function uploadAssets(
 
   const { signedUrl } = signedUrlRes;
 
+  // The signed URL commits to a Content-Type, so we have to send back exactly
+  // what the server signed with rather than picking one ourselves.
+  const contentType =
+    'contentType' in signedUrlRes && typeof signedUrlRes.contentType === 'string'
+      ? signedUrlRes.contentType
+      : DEFAULT_CONTENT_TYPE;
+
   // Upload the assets to the signed URL using node's built-in fetch with
   // retries
   await retry(
@@ -64,7 +89,7 @@ export default async function uploadAssets(
         method: 'PUT',
         body: buffer,
         headers: {
-          'Content-Type': 'application/zip',
+          'Content-Type': contentType,
         },
         signal: AbortSignal.timeout(60_000),
       });
@@ -113,7 +138,7 @@ export default async function uploadAssets(
   // Finally, we need to tell Happo that we've uploaded the assets.
   const finalizeRes = await makeHappoAPIRequest(
     {
-      path: `/api/snap-requests/assets/${hash}/signed-url/finalize`,
+      path: `/api/snap-requests/assets/${hash}/signed-url/finalize${query}`,
       method: 'POST',
     },
     config,

@@ -23,22 +23,26 @@ before(async () => {
   server = http.createServer((req, res) => {
     res.setHeader('Content-Type', 'application/json');
 
+    // Route on the path alone, the way a real server does — asset uploads pass
+    // the archive format as a query parameter.
+    const path = req.url?.split('?')[0];
+
     // happo-e2e callback endpoint used by Controller.processSnapRequestIds
-    if (req.url === '/' && req.method === 'POST') {
+    if (path === '/' && req.method === 'POST') {
       // Echo back success; body content is not important for these tests.
       res.end(JSON.stringify({ ok: true }));
       return;
     }
 
     if (
-      req.url?.startsWith('/api/snap-requests/assets/') &&
-      req.url?.endsWith('/signed-url')
+      path?.startsWith('/api/snap-requests/assets/') &&
+      path.endsWith('/signed-url')
     ) {
       res.end(JSON.stringify({ path: '/path/to/asset', uploadedAt: '2021-01-01' }));
       return;
     }
 
-    if (req.url?.startsWith('/api/snap-requests/bulk')) {
+    if (path?.startsWith('/api/snap-requests/bulk')) {
       let body = '';
 
       req.on('data', (chunk: Buffer) => {
@@ -69,7 +73,7 @@ before(async () => {
     }
 
     // Fallback for individual snap-requests (non-bulk)
-    if (req.url?.startsWith('/api/snap-requests')) {
+    if (path?.startsWith('/api/snap-requests')) {
       res.end(JSON.stringify({ requestId: requestId++ }));
       return;
     }
