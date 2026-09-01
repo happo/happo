@@ -200,8 +200,10 @@ interface EntryData {
  * depending on how the input happens to be chunked, which would break the
  * content hash.
  */
-function createZstdArchive(entryDataList: Array<EntryData>): Buffer<ArrayBuffer> {
-  const tar = createTar(entryDataList);
+async function createZstdArchive(
+  entryDataList: Array<EntryData>,
+): Promise<Buffer<ArrayBuffer>> {
+  const tar = await createTar(entryDataList);
 
   return zlib.zstdCompressSync(tar, {
     params: {
@@ -300,7 +302,7 @@ export default async function deterministicArchive(
   const format = resolveFormat();
   const buffer =
     format === 'zstd'
-      ? createZstdArchive(entryDataList)
+      ? await createZstdArchive(entryDataList)
       : await createZipArchive(entryDataList);
 
   validateArchive(buffer.length, entries);

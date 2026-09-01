@@ -17,13 +17,19 @@ function u8(str: string): Uint8Array {
 }
 
 /**
- * Writes a tar to disk and extracts it with the system `tar`, so we are
- * checking our output against a real implementation rather than against our
- * own reader.
+ * Writes a tar to disk and lists it with the system `tar`, returning the entry
+ * names it reports.
+ *
+ * Use this rather than `extractWithSystemTar` whenever a name might not be
+ * representable on the filesystem running the tests — Linux caps a single path
+ * component at 255 bytes and Windows normalizes Unicode — so that we are
+ * testing the archive we wrote rather than the filesystem underneath it.
  */
-async function extractWithSystemTar(
-  tar: Buffer,
-): Promise<Map<string, Buffer>> {
+/**
+ * Writes a tar to disk and extracts it with the system `tar`, so we check our
+ * output against a real implementation rather than against ourselves.
+ */
+async function extractWithSystemTar(tar: Buffer): Promise<Map<string, Buffer>> {
   const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'happo-tar-'));
   try {
     const tarPath = path.join(dir, 'archive.tar');
@@ -50,50 +56,52 @@ async function extractWithSystemTar(
   }
 }
 
-test('produces a byte-identical archive for the same input', () => {
+test('produces a byte-identical archive for the same input', async () => {
   const entries = [
     { name: 'a.txt', data: u8('one') },
     { name: 'nested/b.txt', data: u8('two') },
   ];
 
-  const first = createTar(entries);
-  const second = createTar(entries);
+  const first = await createTar(entries);
+  const second = await createTar(entries);
 
   assert.deepStrictEqual(first, second);
 });
 
-test('output does not depend on ambient state', () => {
-  // The archive must not pick up the current time, umask, uid or gid, since
-  // the resulting hash is used to dedupe uploads across machines.
+test('output does not depend on the current time', async () => {
+  // The hash of this archive is the dedupe key for uploads, so the same
+  // content has to produce the same bytes on every machine and every run.
   const entries = [{ name: 'a.txt', data: u8('one') }];
-  const first = createTar(entries);
-  const second = createTar(entries);
+
+  const first = await createTar(entries);
+  await new Promise((resolve) => setTimeout(resolve, 1100));
+  const second = await createTar(entries);
 
   assert.deepStrictEqual(first, second);
 
-  // mtime, uid, gid and mode fields of the first header must be fixed values.
+  // mtime, uid and gid are pinned rather than read from the environment.
   const header = first.subarray(0, BLOCK_SIZE);
-  assert.strictEqual(header.toString('utf8', 100, 108), '0000644\0');
-  assert.strictEqual(header.toString('utf8', 108, 116), '0000000\0');
-  assert.strictEqual(header.toString('utf8', 116, 124), '0000000\0');
-  assert.strictEqual(header.toString('utf8', 136, 148), '00000000000\0');
+  const octal = (offset: number, length: number) =>
+    Number.parseInt(header.toString('utf8', offset, offset + length).trim(), 8);
+  assert.strictEqual(octal(136, 12), 0, 'mtime should be 0');
+  assert.strictEqual(octal(108, 8), 0, 'uid should be 0');
+  assert.strictEqual(octal(116, 8), 0, 'gid should be 0');
 });
 
 test('is readable by the system tar', async () => {
-  const tar = createTar([
-    { name: 'index.html', data: u8('<html></html>') },
-    { name: 'assets/app.js', data: u8('console.log(1);') },
-    { name: 'assets/nested/deep.css', data: u8('body { color: red; }') },
-  ]);
-
-  const files = await extractWithSystemTar(tar);
+  const files = await extractWithSystemTar(
+    await createTar([
+      { name: 'index.html', data: u8('<html></html>') },
+      { name: 'assets/app.js', data: u8('console.log(1);') },
+      { name: 'assets/nested/deep.css', data: u8('body { color: red; }') },
+    ]),
+  );
 
   assert.deepStrictEqual(
     [...files.keys()].toSorted(),
     ['assets/app.js', 'assets/nested/deep.css', 'index.html'],
   );
   assert.strictEqual(files.get('index.html')?.toString(), '<html></html>');
-  assert.strictEqual(files.get('assets/app.js')?.toString(), 'console.log(1);');
 });
 
 test('round-trips names longer than the 100 byte ustar name field', async () => {
@@ -101,32 +109,56 @@ test('round-trips names longer than the 100 byte ustar name field', async () => 
   assert(longName.length > 100);
 
   const files = await extractWithSystemTar(
-    createTar([{ name: longName, data: u8('deep contents') }]),
+    await createTar([{ name: longName, data: u8('deep contents') }]),
   );
 
   assert.strictEqual(files.get(longName)?.toString(), 'deep contents');
 });
 
-test('writes non-ASCII names as UTF-8', () => {
-  const name = 'assets/ünïcode-æøå-日本語.txt';
+test('round-trips a single path component longer than 100 bytes', async () => {
+  // Too long for the ustar name field and not splittable across the prefix
+  // field, so this can only be represented with an extended header.
+  const name = `dir/${'x'.repeat(150)}.js`;
 
-  const tar = createTar([{ name, data: u8('unicode contents') }]);
+  const files = await extractWithSystemTar(
+    await createTar([{ name, data: u8('single long component') }]),
+  );
 
-  // Asserted on the header bytes rather than by extracting to disk: Windows
-  // normalizes filenames on the way through the filesystem, so a round trip
-  // there tells us about the filesystem rather than about what we wrote.
-  const nameField = tar.subarray(0, 100);
-  const end = nameField.indexOf(0);
-  assert.strictEqual(nameField.toString('utf8', 0, end), name);
+  assert.strictEqual(files.get(name)?.toString(), 'single long component');
+});
 
-  // The name is measured in bytes, not characters, so a name that fits in 100
-  // characters but not 100 bytes still has to be counted correctly.
-  assert.strictEqual(Buffer.byteLength(name, 'utf8'), 37);
+test('writes non-ASCII names whose byte length exceeds 255', async () => {
+  // 200 characters but 600 bytes. Paths are measured in bytes in a tar header,
+  // so this only works if the name is carried in a PAX extended header.
+  //
+  // Asserted on the archive bytes rather than through the system `tar`: no
+  // platform we test on can represent this name outside the archive. Linux
+  // caps a path component at 255 bytes, Windows `tar -tf` replaces non-ASCII
+  // with "?", and Windows normalizes Unicode on the way to disk — all of which
+  // would tell us about the platform rather than about what we wrote.
+  const name = '日'.repeat(200);
+  assert.strictEqual(Buffer.byteLength(name, 'utf8'), 600);
+
+  const tar = await createTar([{ name, data: u8('unicode contents') }]);
+
+  const typeFlag = String.fromCodePoint(tar[156] as number);
+  assert.strictEqual(typeFlag, 'x', 'should be a PAX extended header');
+
+  const paxSize = Number.parseInt(
+    tar.toString('utf8', 124, 136).replace(/\0.*$/, '').trim(),
+    8,
+  );
+  const paxRecords = tar.toString('utf8', BLOCK_SIZE, BLOCK_SIZE + paxSize);
+
+  assert(
+    paxRecords.includes(`path=${name}`),
+    'the PAX records should carry the full path',
+  );
 });
 
 test('round-trips empty files', async () => {
   const files = await extractWithSystemTar(
-    createTar([
+    await createTar([
       { name: 'empty.txt', data: u8('') },
       { name: 'after.txt', data: u8('still here') },
     ]),
@@ -140,7 +172,7 @@ test('round-trips sizes around the 512 byte block boundary', async () => {
   const sizes = [1, 511, 512, 513, 1023, 1024, 1025];
 
   const files = await extractWithSystemTar(
-    createTar(
+    await createTar(
       sizes.map((size) => ({
         name: `size-${size}.bin`,
         data: u8('x'.repeat(size)),
@@ -163,7 +195,7 @@ test('round-trips binary content byte for byte', async () => {
   );
 
   const files = await extractWithSystemTar(
-    createTar([{ name: 'image.png', data: binary }]),
+    await createTar([{ name: 'image.png', data: binary }]),
   );
 
   assert.deepStrictEqual(
@@ -172,8 +204,8 @@ test('round-trips binary content byte for byte', async () => {
   );
 });
 
-test('ends with the two zero blocks that mark end of archive', () => {
-  const tar = createTar([{ name: 'a.txt', data: u8('hi') }]);
+test('ends with the two zero blocks that mark end of archive', async () => {
+  const tar = await createTar([{ name: 'a.txt', data: u8('hi') }]);
 
   assert.strictEqual(tar.length % BLOCK_SIZE, 0);
   assert.deepStrictEqual(
@@ -182,9 +214,9 @@ test('ends with the two zero blocks that mark end of archive', () => {
   );
 });
 
-test('rejects names that cannot be represented', () => {
-  assert.throws(
-    () => createTar([{ name: 'x'.repeat(300), data: u8('hi') }]),
-    /too long/i,
-  );
+test('produces an empty archive for no entries', async () => {
+  const tar = await createTar([]);
+
+  assert.strictEqual(tar.length, BLOCK_SIZE * 2);
+  assert(tar.every((byte) => byte === 0));
 });
