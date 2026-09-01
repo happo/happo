@@ -17,17 +17,12 @@ function u8(str: string): Uint8Array {
 }
 
 /**
- * Writes a tar to disk and lists it with the system `tar`, returning the entry
- * names it reports.
- *
- * Use this rather than `extractWithSystemTar` whenever a name might not be
- * representable on the filesystem running the tests — Linux caps a single path
- * component at 255 bytes and Windows normalizes Unicode — so that we are
- * testing the archive we wrote rather than the filesystem underneath it.
- */
-/**
  * Writes a tar to disk and extracts it with the system `tar`, so we check our
  * output against a real implementation rather than against ourselves.
+ *
+ * Only usable for names the host filesystem can represent — Linux caps a
+ * single path component at 255 bytes and Windows normalizes Unicode. Assert on
+ * the archive bytes instead when a name cannot survive a trip through disk.
  */
 async function extractWithSystemTar(tar: Buffer): Promise<Map<string, Buffer>> {
   const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'happo-tar-'));

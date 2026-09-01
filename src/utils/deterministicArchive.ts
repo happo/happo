@@ -209,7 +209,7 @@ async function createZstdArchive(
     params: {
       [zlib.constants.ZSTD_c_compressionLevel]: ZSTD_COMPRESSION_LEVEL,
     },
-  }) as Buffer<ArrayBuffer>;
+  });
 }
 
 /**

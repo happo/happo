@@ -49,5 +49,5 @@ export default async function createTar(
     })),
   );
 
-  return Buffer.from(packed) as Buffer<ArrayBuffer>;
+  return Buffer.from(packed);
 }
