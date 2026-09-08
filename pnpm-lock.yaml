@@ -30,8 +30,8 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
       modern-tar:
-        specifier: 0.8.4
-        version: 0.8.4
+        specifier: 0.8.5
+        version: 0.8.5
       srcset:
         specifier: ^5.0.3
         version: 5.0.3
@@ -2245,8 +2245,8 @@ packages:
     resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
     engines: {node: '>=16 || 14 >=14.17'}
 
-  modern-tar@0.8.4:
-    resolution: {integrity: sha512-gN54ddmyzEg10orwZ2u4OOv+bjpMWdIl5jIkodK97bMq8QBSL5c0D7YX0lT1Ooz+99S7+PvFbnxzdjgHo1r41g==}
+  modern-tar@0.8.5:
+    resolution: {integrity: sha512-snEhs+6G5Tjd4I7tLCDOaoln2RgE0bD19RzEKgvgK2hZ5VKy3MpLhLTZ2fWpXSTg4K2cyPwp+VHATFJhxfnOeA==}
     engines: {node: '>=18.0.0'}
 
   module-replacements@2.11.0:
@@ -4872,7 +4872,7 @@ snapshots:
 
   minipass@7.1.3: {}
 
-  modern-tar@0.8.4: {}
+  modern-tar@0.8.5: {}
 
   module-replacements@2.11.0: {}
 
