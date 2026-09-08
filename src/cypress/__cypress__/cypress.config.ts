@@ -17,7 +17,7 @@ const config: ReturnType<typeof defineConfig> = defineConfig({
       const serverInfo = await startServer(path.join(__dirname, 'fixtures'));
 
       // Pass the port to the test environment
-      config.env.SERVER_PORT = serverInfo.port;
+      config.expose.SERVER_PORT = serverInfo.port;
 
       on('after:run', () => {
         serverInfo.close();

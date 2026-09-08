@@ -1,6 +1,6 @@
 describe('happo spec', () => {
   it('passes', () => {
-    cy.visit(`http://localhost:${Cypress.env('SERVER_PORT')}/index.html`);
+    cy.visit(`http://localhost:${Cypress.expose('SERVER_PORT')}/index.html`);
 
     cy.get('main').happoScreenshot({
       component: 'main',
