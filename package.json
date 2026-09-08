@@ -149,7 +149,7 @@
     "jose": "^6.2.10",
     "limit-concur": "^4.0.0",
     "mime-types": "^3.0.2",
-    "modern-tar": "0.8.4",
+    "modern-tar": "0.8.5",
     "srcset": "^5.0.3"
   },
   "storybook": {
