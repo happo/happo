@@ -445,6 +445,11 @@ interface BaseTarget {
    * per-page for the `pages` integration) merge over the target's, field by
    * field.
    *
+   * Set a nested `prefersReducedMotion` to override the target's
+   * `prefersReducedMotion` for just this capture, in either direction (e.g.
+   * `animate: { mode: 'auto', prefersReducedMotion: false }` to let an
+   * animation run even though the target prefers reduced motion).
+   *
    * Not supported on `ios-safari` or `ipad-safari` targets.
    *
    * @experimental This option and its shape are still evolving and may
@@ -468,6 +473,9 @@ interface DesktopTarget extends BaseTarget {
   /**
    * By default, Happo makes the browser prefer reduced motion when rendering
    * the UI. Set `prefersReducedMotion: false` to disable this behavior.
+   *
+   * To override this for a single `animate` capture instead of the whole
+   * target, set `prefersReducedMotion` inside that snap's `animate` options.
    */
   prefersReducedMotion?: boolean;
 

@@ -829,6 +829,34 @@ describe('loadConfigFile', () => {
         maxFrames: 60,
       });
     });
+
+    it('allows a nested prefersReducedMotion override and passes it through unchanged', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              chrome: {
+                type: 'chrome',
+                viewport: '1024x768',
+                animate: { mode: 'auto', prefersReducedMotion: false },
+              },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.targets['chrome']?.animate, {
+        mode: 'auto',
+        prefersReducedMotion: false,
+      });
+    });
   });
 
   describe('deepCompare validation', () => {

@@ -178,6 +178,25 @@ export interface AnimateOptions {
    * @default 4_000_000
    */
   maxBytes?: number;
+
+  /**
+   * Overrides the target's `prefersReducedMotion` setting for just this
+   * capture, in either direction. `null` (the default) inherits the
+   * target's setting.
+   *
+   * A page that honours `prefers-reduced-motion` typically turns its own
+   * animation off, which leaves `animate` with nothing to step through and
+   * it quietly falls back to a still. Since targets prefer reduced motion
+   * by default, set `prefersReducedMotion: false` here to switch it off for
+   * this capture so the animation actually runs.
+   *
+   * Reduced motion sometimes only trims an animation rather than removing
+   * it outright, and that trimmed version can be worth capturing on its
+   * own — this is opt-in rather than automatic for that reason.
+   *
+   * @default null
+   */
+  prefersReducedMotion?: boolean | null;
 }
 
 /**
