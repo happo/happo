@@ -82,6 +82,14 @@ export interface ExecuteParams {
    * `waitForSelector` times out instead of silently warning.
    */
   failOnWaitForTimeout?: boolean;
+
+  /**
+   * When true, the worker renders each story by navigating to
+   * `iframe.html?id=<storyId>` instead of paging through stories in a
+   * single page load. Only takes effect for Storybook-style static
+   * packages. See `StorybookIntegration.navigatePerStory`.
+   */
+  storybookNavigatePerStory?: boolean;
 }
 
 function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
@@ -115,6 +123,7 @@ function buildChunkItem({
   assetsPackage,
   targetName,
   failOnWaitForTimeout,
+  storybookNavigatePerStory,
 }: {
   slice?: Array<unknown> | undefined;
   chunk?: Chunk | undefined;
@@ -128,6 +137,7 @@ function buildChunkItem({
   assetsPackage: string | undefined;
   targetName: string | undefined;
   failOnWaitForTimeout: boolean | undefined;
+  storybookNavigatePerStory: boolean | undefined;
 }): ChunkItem {
   const payloadString = JSON.stringify({
     viewport,
@@ -141,6 +151,7 @@ function buildChunkItem({
     pages: pageSlice,
     extendsSha: pageSlice ? pageSlice.extendsSha : undefined,
     failOnWaitForTimeout,
+    storybookNavigatePerStory,
   });
 
   const payloadHash = createHash(payloadString + (pageSlice ? Math.random() : ''));
@@ -245,6 +256,7 @@ export default class RemoteBrowserTarget {
       targetName,
       estimatedSnapsCount,
       failOnWaitForTimeout,
+      storybookNavigatePerStory,
     }: ExecuteParams,
     config: ConfigWithDefaults,
   ): Promise<Array<number>> {
@@ -258,6 +270,7 @@ export default class RemoteBrowserTarget {
       assetsPackage,
       targetName,
       failOnWaitForTimeout,
+      storybookNavigatePerStory,
     };
 
     // Build all chunk items up front

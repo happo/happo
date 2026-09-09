@@ -231,6 +231,13 @@ export default async function prepareSnapRequests(
         targetParams.pages = config.integration.pages;
       }
 
+      if (
+        config.integration.type === 'storybook' &&
+        config.integration.navigatePerStory === true
+      ) {
+        targetParams.storybookNavigatePerStory = true;
+      }
+
       const ids = await target.execute(targetParams, config);
       logger.start(`  - ${logTag(config.project)}${name}`, { startTime });
       logger.success();

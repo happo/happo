@@ -30,6 +30,24 @@ export interface StorybookIntegration {
    * sure that files are built to the outputDir.
    */
   usePrebuiltPackage?: boolean;
+
+  /**
+   * When `true`, each story is rendered by navigating directly to
+   * `iframe.html?id=<storyId>` instead of loading `iframe.html` once and
+   * paging through stories client-side.
+   *
+   * This is slower (one navigation per story) but gives every story a fresh
+   * page load, which can help with Storybooks where state leaks between
+   * stories (e.g. through global CSS, singletons, or other side effects that
+   * the default in-page navigation doesn't reset).
+   *
+   * Requires an `index.json` or `stories.json` file in the built Storybook
+   * package. If missing, Happo falls back to the default navigation
+   * strategy.
+   *
+   * @default false
+   */
+  navigatePerStory?: boolean;
 }
 
 interface BaseE2EIntegration {
