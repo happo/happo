@@ -233,7 +233,7 @@ export default async function prepareSnapRequests(
 
       if (
         config.integration.type === 'storybook' &&
-        config.integration.navigatePerStory
+        config.integration.navigatePerStory === true
       ) {
         targetParams.storybookNavigatePerStory = true;
       }

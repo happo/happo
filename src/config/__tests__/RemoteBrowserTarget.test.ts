@@ -506,6 +506,24 @@ describe('RemoteBrowserTarget', () => {
         }
       });
 
+      it('flows storybookNavigatePerStory: false into the item payload', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            targetName: 'chrome',
+            storybookNavigatePerStory: false,
+          },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 1);
+        assert.strictEqual(bulkCalls[0]?.items.length, 1);
+        const payload = JSON.parse(
+          bulkCalls[0]?.items[0]?.payloadString as string,
+        ) as { storybookNavigatePerStory?: unknown };
+        assert.strictEqual(payload.storybookNavigatePerStory, false);
+      });
+
       it('omits storybookNavigatePerStory from the payload when not provided', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
