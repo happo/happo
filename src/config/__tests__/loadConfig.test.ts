@@ -684,6 +684,153 @@ describe('loadConfigFile', () => {
     assert.strictEqual(config.targets['chrome']?.allowPointerEvents, false);
   });
 
+  describe('animate validation', () => {
+    it('throws an error when animate: true is set on an ios-safari target', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              mobile: {
+                type: 'ios-safari',
+                animate: true,
+              },
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `animate` in config file \S+: animated snapshots are not supported on "ios-safari" targets/,
+      );
+    });
+
+    it('throws an error when animate: "auto" is set on an ipad-safari target', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              tablet: {
+                type: 'ipad-safari',
+                animate: 'auto',
+              },
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `animate` in config file \S+: animated snapshots are not supported on "ipad-safari" targets/,
+      );
+    });
+
+    it('throws an error when a trigger is set on an ios-safari target, even without an explicit mode', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              mobile: {
+                type: 'ios-safari',
+                animate: {
+                  trigger: { selector: '.toast', action: 'addClass', value: 'is-open' },
+                },
+              },
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `animate` in config file \S+: animated snapshots are not supported on "ios-safari" targets/,
+      );
+    });
+
+    it('allows animate: false on an ios-safari target', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              mobile: {
+                type: 'ios-safari',
+                animate: false,
+              },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.strictEqual(config.targets['mobile']?.animate, false);
+    });
+
+    it('allows animate: { mode: "off" } on an ipad-safari target', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              tablet: {
+                type: 'ipad-safari',
+                animate: { mode: 'off' },
+              },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.targets['tablet']?.animate, { mode: 'off' });
+    });
+
+    it('allows animate on a desktop target and passes it through unchanged', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              chrome: {
+                type: 'chrome',
+                viewport: '1024x768',
+                animate: { mode: 'auto', fps: 15, maxFrames: 60 },
+              },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.targets['chrome']?.animate, {
+        mode: 'auto',
+        fps: 15,
+        maxFrames: 60,
+      });
+    });
+  });
+
   describe('deepCompare validation', () => {
     it('accepts valid deepCompare settings', async () => {
       tmpfs.mock({

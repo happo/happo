@@ -109,6 +109,30 @@ async function getFallbackApiToken(
   return undefined;
 }
 
+/**
+ * Determines whether a target's `animate` setting would actually trigger
+ * animated snapshot capture, accounting for the shorthands (`true`,
+ * `false`, `'auto'`) as well as a trigger implicitly turning capture on.
+ */
+function isAnimateEnabled(animate: TargetWithDefaults['animate']): boolean {
+  if (animate === undefined || animate === false) {
+    return false;
+  }
+
+  if (animate === true || animate === 'auto') {
+    return true;
+  }
+
+  if (typeof animate === 'object' && animate !== null) {
+    if (animate.trigger) {
+      return true;
+    }
+    return animate.mode !== undefined && animate.mode !== 'off';
+  }
+
+  return false;
+}
+
 function validateDeepCompareSettings(
   deepCompare: DeepCompareSettings,
   configFilePath: string,
@@ -299,6 +323,15 @@ export async function loadConfigFile(
     target.freezeAnimations = target.freezeAnimations || 'last-frame';
     target.prefersReducedMotion = target.prefersReducedMotion ?? true;
     target.allowPointerEvents = target.allowPointerEvents ?? true;
+
+    if (
+      (target.type === 'ios-safari' || target.type === 'ipad-safari') &&
+      isAnimateEnabled(target.animate)
+    ) {
+      throw new TypeError(
+        `Invalid \`animate\` in config file ${configFilePath}: animated snapshots are not supported on "${target.type}" targets. Remove \`animate\` from this target, or capture it in a Playwright-driven browser (chrome, firefox, edge, or safari) instead.`,
+      );
+    }
   }
 
   // Validate deepCompare settings if present
