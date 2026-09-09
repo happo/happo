@@ -483,6 +483,44 @@ describe('RemoteBrowserTarget', () => {
       });
     });
 
+    describe('with storybookNavigatePerStory', () => {
+      it('flows storybookNavigatePerStory: true into each item payload (bulk path)', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            estimatedSnapsCount: 200,
+            targetName: 'chrome',
+            storybookNavigatePerStory: true,
+          },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 1);
+        const items = bulkCalls[0]?.items ?? [];
+        assert.strictEqual(items.length, 2);
+        for (const item of items) {
+          const payload = JSON.parse(item.payloadString as string) as {
+            storybookNavigatePerStory?: unknown;
+          };
+          assert.strictEqual(payload.storybookNavigatePerStory, true);
+        }
+      });
+
+      it('omits storybookNavigatePerStory from the payload when not provided', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 1);
+        assert.strictEqual(bulkCalls[0]?.items.length, 1);
+        const payload = JSON.parse(
+          bulkCalls[0]?.items[0]?.payloadString as string,
+        ) as Record<string, unknown>;
+        assert.strictEqual('storybookNavigatePerStory' in payload, false);
+      });
+    });
+
     describe('when bulk endpoint responds with invalid shape', () => {
       beforeEach(() => {
         simulateBulkInvalidShape = true;
