@@ -96,6 +96,7 @@ Each target supports advanced options like:
 - Maximum dimensions
 - Color scheme preferences
 - Settings for silencing animations
+- Animated (APNG) snapshot capture via `animate` (experimental, not supported on `ios-safari`/`ipad-safari`)
 
 ## 🤝 Contributing
 

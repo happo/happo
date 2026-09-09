@@ -2,6 +2,7 @@ import type { Channel } from 'storybook/internal/channels';
 import type { StoryStore } from 'storybook/internal/preview-api';
 
 import type {
+  AnimateConfig,
   InitConfig,
   NextExampleResult,
   WindowHappo,
@@ -58,6 +59,7 @@ interface Example {
   afterScreenshot: HookFunction;
   targets: Array<string>;
   theme?: string;
+  animate: AnimateConfig | undefined;
 }
 
 let renderTimeoutMs = 2000;
@@ -162,6 +164,7 @@ async function getExamples(): Promise<Array<Example>> {
       let afterScreenshot;
       let targets;
       let themes;
+      let animate;
       if (typeof parameters.happo === 'object' && parameters.happo !== null) {
         delay = parameters.happo.delay || defaultDelay;
         waitForContent = parameters.happo.waitForContent;
@@ -170,6 +173,7 @@ async function getExamples(): Promise<Array<Example>> {
         afterScreenshot = parameters.happo.afterScreenshot;
         targets = parameters.happo.targets;
         themes = parameters.happo.themes;
+        animate = parameters.happo.animate;
       }
       return {
         component: kind,
@@ -182,6 +186,7 @@ async function getExamples(): Promise<Array<Example>> {
         afterScreenshot,
         targets,
         themes,
+        animate,
       };
     })
     .filter(isDefined)
@@ -387,6 +392,7 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
     waitFor,
     beforeScreenshot,
     theme,
+    animate,
   } = example;
 
   let pausedAtStep;
@@ -469,7 +475,7 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       highlightsRootElement.dataset.happoIgnore = 'true';
     }
 
-    return { component, variant, waitForContent };
+    return { component, variant, waitForContent, animate };
   } catch (e) {
     console.warn(e);
     return { component, variant };

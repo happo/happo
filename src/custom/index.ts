@@ -81,6 +81,7 @@ const happoStatic = {
           variant: example.variant,
           targets: example.targets,
           waitForContent: example.waitForContent,
+          animate: example.animate,
         };
       },
     };

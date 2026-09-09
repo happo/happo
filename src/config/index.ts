@@ -1,3 +1,12 @@
+import type { AnimateConfig } from '../isomorphic/types.ts';
+
+export type {
+  AnimateConfig,
+  AnimateMode,
+  AnimateOptions,
+  AnimateTrigger,
+} from '../isomorphic/types.ts';
+
 export interface StorybookIntegration {
   type: 'storybook';
 
@@ -129,6 +138,17 @@ export interface Page {
    * taken anyway.
    */
   waitForSelector?: string;
+
+  /**
+   * Capture an animated (APNG) snapshot of this page by stepping its
+   * animations through a series of explicit times and encoding the frames
+   * into a single file. Merges over the target's `animate` setting, field by
+   * field. See the `animate` option on targets for details.
+   *
+   * @experimental This option and its shape are still evolving and may
+   * change in a future release.
+   */
+  animate?: AnimateConfig;
 }
 
 interface PagesIntegration {
@@ -387,6 +407,32 @@ interface BaseTarget {
    * frame.
    */
   freezeAnimations?: 'last-frame' | 'first-frame';
+
+  /**
+   * Capture animated (APNG) snapshots by stepping a page's animations
+   * through a series of explicit times and encoding the frames into a
+   * single file. The result is a valid plain PNG as well as an APNG: frame 0
+   * is the default image, so anything that doesn't understand animated PNGs
+   * sees the first frame and behaves exactly as it does for a normal
+   * snapshot.
+   *
+   * Shorthands: `animate: true` means `{ mode: 'always' }`, `animate: false`
+   * means `{ mode: 'off' }`, and `animate: 'auto'` means `{ mode: 'auto' }`.
+   *
+   * `'auto'` captures only the snapshots that have an animation Happo can
+   * drive, and leaves everything else as a still, so it's safe to turn on
+   * for a whole target without paying for every static story.
+   *
+   * Per-story options (set via `parameters.happo.animate` in Storybook, or
+   * per-page for the `pages` integration) merge over the target's, field by
+   * field.
+   *
+   * Not supported on `ios-safari` or `ipad-safari` targets.
+   *
+   * @experimental This option and its shape are still evolving and may
+   * change in a future release.
+   */
+  animate?: AnimateConfig;
 }
 
 interface MobileSafariTarget extends BaseTarget {
