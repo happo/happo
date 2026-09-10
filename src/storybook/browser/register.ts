@@ -2,6 +2,8 @@ import type { Channel } from 'storybook/internal/channels';
 import type { StoryStore } from 'storybook/internal/preview-api';
 
 import type {
+  AnimateConfig,
+  AnimateOptions,
   AnimationDriver,
   InitConfig,
   NextExampleResult,
@@ -495,7 +497,12 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       highlightsRootElement.dataset.happoIgnore = 'true';
     }
 
-    return { component, variant, waitForContent, animate };
+    return {
+      component,
+      variant,
+      waitForContent,
+      animate: withoutHooks(animate),
+    };
   } catch (e) {
     console.warn(e);
     return { component, variant };
@@ -553,6 +560,22 @@ export function setThemeSwitcher(
 
 export function setShouldWaitForCompletedEvent(swfce: boolean): void {
   shouldWaitForCompletedEvent = swfce;
+}
+
+/**
+ * A story's `animate` without its hooks, for the example result that goes to
+ * the worker. The hooks already reached the page through
+ * `happoAnimate.beforeRender()`, and functions can't travel to the worker.
+ */
+function withoutHooks(
+  animate: StoryAnimateConfig | undefined,
+): AnimateConfig | undefined {
+  if (!animate || typeof animate !== 'object') {
+    return animate;
+  }
+  return Object.fromEntries(
+    Object.entries(animate).filter(([, value]) => typeof value !== 'function'),
+  ) as AnimateOptions;
 }
 
 /**
