@@ -273,6 +273,19 @@ export interface AnimateOptions {
   drivers?: Array<string> | null;
 
   /**
+   * Capture animations that start one another, one stage at a time: capture
+   * the current stage, let it finish so its completion handlers run, and
+   * wait up to `waitMs` for the next one. All stages go into one APNG. Stops
+   * at `max`, when nothing follows, or when what follows looks like
+   * something already captured. Pair with `expect: { minStages }`.
+   *
+   * A number is short for `{ max }`.
+   *
+   * @default { max: 1, waitMs: 1000 }
+   */
+  stages?: number | AnimateStages;
+
+  /**
    * Story-level only. Runs right before the story renders, inside its
    * motion environment -- for undoing whatever a harness does to keep
    * stills still (e.g. a shim that makes `element.animate()` zero
@@ -318,6 +331,10 @@ export interface AnimateTrace {
   frameTimes: Array<number>;
   /** Distinct frames in the encoded APNG. */
   frameCount: number;
+  /** How many stages were captured. See `stages`. */
+  stageCount: number;
+  /** What each stage found. */
+  stages: Array<Pick<AnimateTrace, 'animationCount' | 'durationMs' | 'animations'>>;
 }
 
 /**
@@ -338,6 +355,11 @@ export interface AnimationDriverHandle {
   pause?: () => void;
   /** Hands it back after the capture. */
   release?: () => void;
+  /**
+   * How to end it when a stage is done, e.g. play a Lottie out so its
+   * `complete` handler runs. Without one it's seeked to its end.
+   */
+  finish?: () => void | Promise<void>;
   /** `true` for a loop, which is sampled half-open. */
   repeats?: boolean;
   /** Shown in the trace. */
@@ -363,6 +385,14 @@ export interface AnimationDriver {
 export interface WindowHappoAnimate {
   beforeRender: (animate: AnimateConfig | undefined) => Promise<boolean>;
   registerDriver: (driver: AnimationDriver) => void;
+}
+
+export interface AnimateStages {
+  /** Most stages to capture. Capped at 16. */
+  max?: number;
+
+  /** How long to wait for the next stage to appear, in milliseconds. */
+  waitMs?: number;
 }
 
 export interface AnimateDiscovery {
@@ -397,6 +427,12 @@ export interface AnimateExpectations {
 
   /** `true` requires the `trigger` to have matched an element. */
   triggered?: boolean;
+
+  /**
+   * At least this many stages captured. A chain that never got past its
+   * first stage otherwise looks like a perfectly good animation of it.
+   */
+  minStages?: number;
 
   /**
    * At least this many animations found by each named driver, e.g.
