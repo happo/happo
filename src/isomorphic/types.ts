@@ -65,7 +65,12 @@ export interface NextExampleResult {
   skipped?: boolean;
   waitForContent?: string | undefined;
   render?: () => Promise<void> | void;
-  animate?: StoryAnimateConfig | undefined;
+  /**
+   * Serializable, like the rest of the result: it goes to the worker. A
+   * Storybook story's hooks reach the page separately, through
+   * `happoAnimate.beforeRender()` -- see `StoryAnimateOptions`.
+   */
+  animate?: AnimateConfig | undefined;
 }
 
 export type AnimateMode = 'off' | 'auto' | 'always';
