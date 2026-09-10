@@ -220,7 +220,9 @@ export interface AnimateOptions {
    *   which do their moving early and then hold still.
    * - `{ times }`: exactly these times, in milliseconds.
    *
-   * Anything but `'uniform'` ignores `fps` and always includes the end state.
+   * Anything but `'uniform'` ignores `fps`. A split always ends on the end
+   * state; `times` are sampled exactly as listed, so the end state is only
+   * included if one of them is at it.
    *
    * @default 'uniform'
    */
