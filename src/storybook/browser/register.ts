@@ -2,12 +2,20 @@ import type { Channel } from 'storybook/internal/channels';
 import type { StoryStore } from 'storybook/internal/preview-api';
 
 import type {
-  AnimateConfig,
   AnimationDriver,
   InitConfig,
   NextExampleResult,
+  StoryAnimateConfig,
   WindowHappo,
   WindowHappoAnimate,
+} from '../../isomorphic/types.ts';
+
+export type {
+  AnimateTrace,
+  AnimationDriver,
+  AnimationDriverHandle,
+  StoryAnimateConfig,
+  StoryAnimateOptions,
 } from '../../isomorphic/types.ts';
 import type { OnlyItems, SkipItems } from '../isomorphic/types.ts';
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
@@ -63,7 +71,7 @@ interface Example {
   afterScreenshot: HookFunction;
   targets: Array<string>;
   theme?: string;
-  animate: AnimateConfig | undefined;
+  animate: StoryAnimateConfig | undefined;
 }
 
 let renderTimeoutMs = 2000;
@@ -552,16 +560,23 @@ export function setShouldWaitForCompletedEvent(swfce: boolean): void {
  * that runs its own frame loop, like Lottie -- in animated snapshots. Does
  * nothing outside a Happo run, so it's safe to call from a Storybook preview.
  *
+ * `discover(root)` should return only the animations under `root`, which is
+ * how a capture is limited to part of the page.
+ *
  * @example
  * registerAnimationDriver({
  *   name: 'lottie',
- *   discover: () =>
- *     lottie.getRegisteredAnimations().map((animation) => ({
- *       target: animation,
- *       durationMs: (animation.totalFrames / animation.frameRate) * 1000,
- *       pause: () => animation.pause(),
- *       seek: (timeMs) => animation.goToAndStop(timeMs, false),
- *     })),
+ *   discover: (root) =>
+ *     lottie
+ *       .getRegisteredAnimations()
+ *       .filter((animation) => root.contains(animation.wrapper))
+ *       .map((animation) => ({
+ *         target: animation,
+ *         element: animation.wrapper,
+ *         durationMs: (animation.totalFrames / animation.frameRate) * 1000,
+ *         pause: () => animation.pause(),
+ *         seek: (timeMs) => animation.goToAndStop(timeMs, false),
+ *       })),
  * });
  */
 export function registerAnimationDriver(driver: AnimationDriver): void {

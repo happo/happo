@@ -7,7 +7,13 @@ export type {
   AnimateMode,
   AnimateOptions,
   AnimateSampling,
+  AnimateTrace,
   AnimateTrigger,
+  AnimationDriver,
+  AnimationDriverHandle,
+  StoryAnimateConfig,
+  StoryAnimateOptions,
+  WindowHappoAnimate,
 } from '../isomorphic/types.ts';
 
 export interface StorybookIntegration {

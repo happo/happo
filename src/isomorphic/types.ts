@@ -65,7 +65,7 @@ export interface NextExampleResult {
   skipped?: boolean;
   waitForContent?: string | undefined;
   render?: () => Promise<void> | void;
-  animate?: AnimateConfig | undefined;
+  animate?: StoryAnimateConfig | undefined;
 }
 
 export type AnimateMode = 'off' | 'auto' | 'always';
@@ -161,14 +161,8 @@ export interface AnimateOptions {
    *
    * Setting a trigger turns capturing on by itself, but it will not override
    * an explicitly set `mode`, including `mode: 'off'`.
-   *
-   * On a story, this can also be a function, which is run on the page. A
-   * function trigger doesn't turn capturing on by itself -- set `mode`.
    */
-  trigger?:
-    | AnimateTrigger
-    | ((context: { rootElement: HTMLElement }) => void | Promise<void>)
-    | null;
+  trigger?: AnimateTrigger | null;
 
   /**
    * APNG `num_plays`. `0` loops forever.
@@ -284,12 +278,33 @@ export interface AnimateOptions {
    * @default { max: 1, waitMs: 1000 }
    */
   stages?: number | AnimateStages;
+}
+
+/**
+ * `animate` as a Storybook story sets it, in `parameters.happo.animate`.
+ *
+ * On top of everything a target or page can set, a story can bring hooks.
+ * They run on the page, next to the story: target and page configuration is
+ * serialized before it reaches the worker, and functions don't survive that,
+ * so only a story can have them.
+ */
+export interface StoryAnimateOptions extends Omit<AnimateOptions, 'trigger'> {
+  /**
+   * What to do to the page in order to start the animation -- the same as a
+   * target's `trigger`, or a function that is run on the page. A story's
+   * trigger replaces the target's. A function trigger doesn't turn capturing
+   * on by itself; set `mode`.
+   */
+  trigger?:
+    | AnimateTrigger
+    | ((context: { rootElement: HTMLElement }) => void | Promise<void>)
+    | null;
 
   /**
-   * Story-level only. Runs right before the story renders, inside its
-   * motion environment -- for undoing whatever a harness does to keep
-   * stills still (e.g. a shim that makes `element.animate()` zero
-   * duration). Return a function to undo it after the screenshot.
+   * Runs right before the story renders, inside its motion environment --
+   * for undoing whatever a harness does to keep stills still (e.g. a shim
+   * that makes `element.animate()` zero duration). Return a function to undo
+   * it after the screenshot.
    *
    * A hook that throws is reported like a failed `verify`.
    */
@@ -301,11 +316,17 @@ export interface AnimateOptions {
     | Promise<void | (() => void | Promise<void>)>;
 
   /**
-   * Story-level only. Runs after the capture with a trace of what was found.
-   * Throw to fail the capture, the way `onExpectationFailure` says.
+   * Runs after the capture with a trace of what was found. Throw to fail the
+   * capture, the way `onExpectationFailure` says.
    */
   verify?: (trace: AnimateTrace) => void | Promise<void>;
 }
+
+/**
+ * `animate` as a story sets it: see `StoryAnimateOptions`. Shorthands as for
+ * `AnimateConfig`.
+ */
+export type StoryAnimateConfig = StoryAnimateOptions | boolean | 'auto';
 
 /**
  * What an animated capture found, as handed to a story's `verify` hook.
@@ -372,7 +393,8 @@ export interface AnimationDriver {
   /** Used in `drivers` and `expect.drivers`. */
   name: string;
   /**
-   * Returns a handle for each animation under `root`. Called whenever
+   * Returns a handle for each animation under `root` -- only those, since
+   * `root` is how a capture is limited to part of the page. Called whenever
    * Happo looks for animations: once, or every frame of a `discovery`
    * window.
    */
@@ -383,7 +405,7 @@ export interface AnimationDriver {
  * `window.happoAnimate`, set up by the Happo worker during a Happo run.
  */
 export interface WindowHappoAnimate {
-  beforeRender: (animate: AnimateConfig | undefined) => Promise<boolean>;
+  beforeRender: (animate: StoryAnimateConfig | undefined) => Promise<boolean>;
   registerDriver: (driver: AnimationDriver) => void;
 }
 
