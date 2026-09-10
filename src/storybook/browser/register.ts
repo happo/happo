@@ -3,9 +3,21 @@ import type { StoryStore } from 'storybook/internal/preview-api';
 
 import type {
   AnimateConfig,
+  AnimateOptions,
+  AnimationDriver,
   InitConfig,
   NextExampleResult,
+  StoryAnimateConfig,
   WindowHappo,
+  WindowHappoAnimate,
+} from '../../isomorphic/types.ts';
+
+export type {
+  AnimateTrace,
+  AnimationDriver,
+  AnimationDriverHandle,
+  StoryAnimateConfig,
+  StoryAnimateOptions,
 } from '../../isomorphic/types.ts';
 import type { OnlyItems, SkipItems } from '../isomorphic/types.ts';
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
@@ -33,6 +45,8 @@ declare global {
       }
     | undefined;
   var __STORYBOOK_ADDONS_CHANNEL__: Channel | undefined;
+  // Set up by the Happo worker, and only during a Happo run.
+  var happoAnimate: WindowHappoAnimate | undefined;
 }
 
 const time = globalThis.happoTime || {
@@ -59,7 +73,7 @@ interface Example {
   afterScreenshot: HookFunction;
   targets: Array<string>;
   theme?: string;
-  animate: AnimateConfig | undefined;
+  animate: StoryAnimateConfig | undefined;
 }
 
 let renderTimeoutMs = 2000;
@@ -417,6 +431,14 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       }
     }
 
+    // A story that animates has to render in its motion environment: its
+    // reduced-motion override, its `setup` hook, and the worker's capture
+    // styles all have to be in place before it mounts, or it has already
+    // decided how to animate. The worker decides whether the story needs one.
+    if (globalThis.happoAnimate) {
+      await globalThis.happoAnimate.beforeRender(animate);
+    }
+
     const renderResult = await renderStory(
       {
         kind: component,
@@ -475,7 +497,12 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       highlightsRootElement.dataset.happoIgnore = 'true';
     }
 
-    return { component, variant, waitForContent, animate };
+    return {
+      component,
+      variant,
+      waitForContent,
+      animate: withoutHooks(animate),
+    };
   } catch (e) {
     console.warn(e);
     return { component, variant };
@@ -533,6 +560,50 @@ export function setThemeSwitcher(
 
 export function setShouldWaitForCompletedEvent(swfce: boolean): void {
   shouldWaitForCompletedEvent = swfce;
+}
+
+/**
+ * A story's `animate` without its hooks, for the example result that goes to
+ * the worker. The hooks already reached the page through
+ * `happoAnimate.beforeRender()`, and functions can't travel to the worker.
+ */
+function withoutHooks(
+  animate: StoryAnimateConfig | undefined,
+): AnimateConfig | undefined {
+  if (!animate || typeof animate !== 'object') {
+    return animate;
+  }
+  return Object.fromEntries(
+    Object.entries(animate).filter(([, value]) => typeof value !== 'function'),
+  ) as AnimateOptions;
+}
+
+/**
+ * Teaches Happo to capture an animation it can't see on its own -- anything
+ * that runs its own frame loop, like Lottie -- in animated snapshots. Does
+ * nothing outside a Happo run, so it's safe to call from a Storybook preview.
+ *
+ * `discover(root)` should return only the animations under `root`, which is
+ * how a capture is limited to part of the page.
+ *
+ * @example
+ * registerAnimationDriver({
+ *   name: 'lottie',
+ *   discover: (root) =>
+ *     lottie
+ *       .getRegisteredAnimations()
+ *       .filter((animation) => root.contains(animation.wrapper))
+ *       .map((animation) => ({
+ *         target: animation,
+ *         element: animation.wrapper,
+ *         durationMs: (animation.totalFrames / animation.frameRate) * 1000,
+ *         pause: () => animation.pause(),
+ *         seek: (timeMs) => animation.goToAndStop(timeMs, false),
+ *       })),
+ * });
+ */
+export function registerAnimationDriver(driver: AnimationDriver): void {
+  globalThis.happoAnimate?.registerDriver(driver);
 }
 
 export const isHappoRun = (): boolean => globalThis.__IS_HAPPO_RUN ?? false;

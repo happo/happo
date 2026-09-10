@@ -65,6 +65,11 @@ export interface NextExampleResult {
   skipped?: boolean;
   waitForContent?: string | undefined;
   render?: () => Promise<void> | void;
+  /**
+   * Serializable, like the rest of the result: it goes to the worker. A
+   * Storybook story's hooks reach the page separately, through
+   * `happoAnimate.beforeRender()` -- see `StoryAnimateOptions`.
+   */
   animate?: AnimateConfig | undefined;
 }
 
@@ -259,6 +264,134 @@ export interface AnimateOptions {
    * @default 'image'
    */
   onExpectationFailure?: 'image' | 'fail' | 'warn';
+
+  /**
+   * Which drivers registered with `registerAnimationDriver` to use. `null`
+   * (the default) uses all of them.
+   *
+   * @default null
+   */
+  drivers?: Array<string> | null;
+}
+
+/**
+ * `animate` as a Storybook story sets it, in `parameters.happo.animate`.
+ *
+ * On top of everything a target or page can set, a story can bring hooks.
+ * They run on the page, next to the story: target and page configuration is
+ * serialized before it reaches the worker, and functions don't survive that,
+ * so only a story can have them.
+ */
+export interface StoryAnimateOptions extends Omit<AnimateOptions, 'trigger'> {
+  /**
+   * What to do to the page in order to start the animation -- the same as a
+   * target's `trigger`, or a function that is run on the page. A story's
+   * trigger replaces the target's. A function trigger doesn't turn capturing
+   * on by itself; set `mode`.
+   */
+  trigger?:
+    | AnimateTrigger
+    | ((context: { rootElement: HTMLElement }) => void | Promise<void>)
+    | null;
+
+  /**
+   * Runs right before the story renders, inside its motion environment --
+   * for undoing whatever a harness does to keep stills still (e.g. a shim
+   * that makes `element.animate()` zero duration). Return a function to undo
+   * it after the screenshot.
+   *
+   * A hook that throws is reported like a failed `verify`.
+   */
+  setup?: (context: {
+    rootElement: HTMLElement;
+  }) =>
+    | void
+    | (() => void | Promise<void>)
+    | Promise<void | (() => void | Promise<void>)>;
+
+  /**
+   * Runs after the capture with a trace of what was found. Throw to fail the
+   * capture, the way `onExpectationFailure` says.
+   */
+  verify?: (trace: AnimateTrace) => void | Promise<void>;
+}
+
+/**
+ * `animate` as a story sets it: see `StoryAnimateOptions`. Shorthands as for
+ * `AnimateConfig`.
+ */
+export type StoryAnimateConfig = StoryAnimateOptions | boolean | 'auto';
+
+/**
+ * What an animated capture found, as handed to a story's `verify` hook.
+ */
+export interface AnimateTrace {
+  /** Animations found, including the ones drivers found. */
+  animationCount: number;
+  /** SVG roots with SMIL animations. */
+  svgCount: number;
+  /** Animations found per driver, e.g. `{ lottie: 2 }`. */
+  driverCounts: Record<string, number>;
+  /** Up to 20 of the animations found. */
+  animations: Array<{
+    kind: string;
+    name: string | null;
+    target: string | null;
+    startMs: number;
+    endMs: number;
+  }>;
+  /** The capture window, in milliseconds. */
+  durationMs: number;
+  /** The times sampled, in milliseconds. */
+  frameTimes: Array<number>;
+  /** Distinct frames in the encoded APNG. */
+  frameCount: number;
+}
+
+/**
+ * One animation a driver can seek. See `registerAnimationDriver`.
+ */
+export interface AnimationDriverHandle {
+  /**
+   * What the handle drives, e.g. a Lottie instance. Discovery can run once
+   * per frame, and a handle with a `target` seen before is the same
+   * animation found again.
+   */
+  target?: object;
+  /** How long it runs, in milliseconds. */
+  durationMs: number;
+  /** Renders the animation at `timeMs`. Return a promise if that isn't immediate. */
+  seek: (timeMs: number) => void | Promise<void>;
+  /** Stops it moving on its own. */
+  pause?: () => void;
+  /** Hands it back after the capture. */
+  release?: () => void;
+  /** `true` for a loop, which is sampled half-open. */
+  repeats?: boolean;
+  /** Shown in the trace. */
+  name?: string;
+  /** Shown in the trace. */
+  element?: Element;
+}
+
+export interface AnimationDriver {
+  /** Used in `drivers` and `expect.drivers`. */
+  name: string;
+  /**
+   * Returns a handle for each animation under `root` -- only those, since
+   * `root` is how a capture is limited to part of the page. Called whenever
+   * Happo looks for animations: once, or every frame of a `discovery`
+   * window.
+   */
+  discover: (root: Element) => Array<AnimationDriverHandle>;
+}
+
+/**
+ * `window.happoAnimate`, set up by the Happo worker during a Happo run.
+ */
+export interface WindowHappoAnimate {
+  beforeRender: (animate: StoryAnimateConfig | undefined) => Promise<boolean>;
+  registerDriver: (driver: AnimationDriver) => void;
 }
 
 export interface AnimateDiscovery {
@@ -293,6 +426,12 @@ export interface AnimateExpectations {
 
   /** `true` requires the `trigger` to have matched an element. */
   triggered?: boolean;
+
+  /**
+   * At least this many animations found by each named driver, e.g.
+   * `{ lottie: 1 }` so that a Lottie that never mounted fails the capture.
+   */
+  drivers?: Record<string, number>;
 }
 
 /**
