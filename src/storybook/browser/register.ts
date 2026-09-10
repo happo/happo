@@ -3,9 +3,11 @@ import type { StoryStore } from 'storybook/internal/preview-api';
 
 import type {
   AnimateConfig,
+  AnimationDriver,
   InitConfig,
   NextExampleResult,
   WindowHappo,
+  WindowHappoAnimate,
 } from '../../isomorphic/types.ts';
 import type { OnlyItems, SkipItems } from '../isomorphic/types.ts';
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
@@ -33,6 +35,8 @@ declare global {
       }
     | undefined;
   var __STORYBOOK_ADDONS_CHANNEL__: Channel | undefined;
+  // Set up by the Happo worker, and only during a Happo run.
+  var happoAnimate: WindowHappoAnimate | undefined;
 }
 
 const time = globalThis.happoTime || {
@@ -417,6 +421,14 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       }
     }
 
+    // A story that animates has to render in its motion environment: its
+    // reduced-motion override, its `setup` hook, and the worker's capture
+    // styles all have to be in place before it mounts, or it has already
+    // decided how to animate. The worker decides whether the story needs one.
+    if (globalThis.happoAnimate) {
+      await globalThis.happoAnimate.beforeRender(animate);
+    }
+
     const renderResult = await renderStory(
       {
         kind: component,
@@ -533,6 +545,27 @@ export function setThemeSwitcher(
 
 export function setShouldWaitForCompletedEvent(swfce: boolean): void {
   shouldWaitForCompletedEvent = swfce;
+}
+
+/**
+ * Teaches Happo to capture an animation it can't see on its own -- anything
+ * that runs its own frame loop, like Lottie -- in animated snapshots. Does
+ * nothing outside a Happo run, so it's safe to call from a Storybook preview.
+ *
+ * @example
+ * registerAnimationDriver({
+ *   name: 'lottie',
+ *   discover: () =>
+ *     lottie.getRegisteredAnimations().map((animation) => ({
+ *       target: animation,
+ *       durationMs: (animation.totalFrames / animation.frameRate) * 1000,
+ *       pause: () => animation.pause(),
+ *       seek: (timeMs) => animation.goToAndStop(timeMs, false),
+ *     })),
+ * });
+ */
+export function registerAnimationDriver(driver: AnimationDriver): void {
+  globalThis.happoAnimate?.registerDriver(driver);
 }
 
 export const isHappoRun = (): boolean => globalThis.__IS_HAPPO_RUN ?? false;

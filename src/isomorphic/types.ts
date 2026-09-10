@@ -161,8 +161,14 @@ export interface AnimateOptions {
    *
    * Setting a trigger turns capturing on by itself, but it will not override
    * an explicitly set `mode`, including `mode: 'off'`.
+   *
+   * On a story, this can also be a function, which is run on the page. A
+   * function trigger doesn't turn capturing on by itself -- set `mode`.
    */
-  trigger?: AnimateTrigger | null;
+  trigger?:
+    | AnimateTrigger
+    | ((context: { rootElement: HTMLElement }) => void | Promise<void>)
+    | null;
 
   /**
    * APNG `num_plays`. `0` loops forever.
@@ -257,6 +263,106 @@ export interface AnimateOptions {
    * @default 'image'
    */
   onExpectationFailure?: 'image' | 'fail' | 'warn';
+
+  /**
+   * Which drivers registered with `registerAnimationDriver` to use. `null`
+   * (the default) uses all of them.
+   *
+   * @default null
+   */
+  drivers?: Array<string> | null;
+
+  /**
+   * Story-level only. Runs right before the story renders, inside its
+   * motion environment -- for undoing whatever a harness does to keep
+   * stills still (e.g. a shim that makes `element.animate()` zero
+   * duration). Return a function to undo it after the screenshot.
+   *
+   * A hook that throws is reported like a failed `verify`.
+   */
+  setup?: (context: {
+    rootElement: HTMLElement;
+  }) =>
+    | void
+    | (() => void | Promise<void>)
+    | Promise<void | (() => void | Promise<void>)>;
+
+  /**
+   * Story-level only. Runs after the capture with a trace of what was found.
+   * Throw to fail the capture, the way `onExpectationFailure` says.
+   */
+  verify?: (trace: AnimateTrace) => void | Promise<void>;
+}
+
+/**
+ * What an animated capture found, as handed to a story's `verify` hook.
+ */
+export interface AnimateTrace {
+  /** Animations found, including the ones drivers found. */
+  animationCount: number;
+  /** SVG roots with SMIL animations. */
+  svgCount: number;
+  /** Animations found per driver, e.g. `{ lottie: 2 }`. */
+  driverCounts: Record<string, number>;
+  /** Up to 20 of the animations found. */
+  animations: Array<{
+    kind: string;
+    name: string | null;
+    target: string | null;
+    startMs: number;
+    endMs: number;
+  }>;
+  /** The capture window, in milliseconds. */
+  durationMs: number;
+  /** The times sampled, in milliseconds. */
+  frameTimes: Array<number>;
+  /** Distinct frames in the encoded APNG. */
+  frameCount: number;
+}
+
+/**
+ * One animation a driver can seek. See `registerAnimationDriver`.
+ */
+export interface AnimationDriverHandle {
+  /**
+   * What the handle drives, e.g. a Lottie instance. Discovery can run once
+   * per frame, and a handle with a `target` seen before is the same
+   * animation found again.
+   */
+  target?: object;
+  /** How long it runs, in milliseconds. */
+  durationMs: number;
+  /** Renders the animation at `timeMs`. Return a promise if that isn't immediate. */
+  seek: (timeMs: number) => void | Promise<void>;
+  /** Stops it moving on its own. */
+  pause?: () => void;
+  /** Hands it back after the capture. */
+  release?: () => void;
+  /** `true` for a loop, which is sampled half-open. */
+  repeats?: boolean;
+  /** Shown in the trace. */
+  name?: string;
+  /** Shown in the trace. */
+  element?: Element;
+}
+
+export interface AnimationDriver {
+  /** Used in `drivers` and `expect.drivers`. */
+  name: string;
+  /**
+   * Returns a handle for each animation under `root`. Called whenever
+   * Happo looks for animations: once, or every frame of a `discovery`
+   * window.
+   */
+  discover: (root: Element) => Array<AnimationDriverHandle>;
+}
+
+/**
+ * `window.happoAnimate`, set up by the Happo worker during a Happo run.
+ */
+export interface WindowHappoAnimate {
+  beforeRender: (animate: AnimateConfig | undefined) => Promise<boolean>;
+  registerDriver: (driver: AnimationDriver) => void;
 }
 
 export interface AnimateDiscovery {
@@ -291,6 +397,12 @@ export interface AnimateExpectations {
 
   /** `true` requires the `trigger` to have matched an element. */
   triggered?: boolean;
+
+  /**
+   * At least this many animations found by each named driver, e.g.
+   * `{ lottie: 1 }` so that a Lottie that never mounted fails the capture.
+   */
+  drivers?: Record<string, number>;
 }
 
 /**
