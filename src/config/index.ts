@@ -2,8 +2,11 @@ import type { AnimateConfig } from '../isomorphic/types.ts';
 
 export type {
   AnimateConfig,
+  AnimateDiscovery,
+  AnimateExpectations,
   AnimateMode,
   AnimateOptions,
+  AnimateSampling,
   AnimateTrigger,
 } from '../isomorphic/types.ts';
 
@@ -449,6 +452,12 @@ interface BaseTarget {
    * `prefersReducedMotion` for just this capture, in either direction (e.g.
    * `animate: { mode: 'auto', prefersReducedMotion: false }` to let an
    * animation run even though the target prefers reduced motion).
+   *
+   * `discovery` keeps looking for animations that start after the capture
+   * does, `sampling` puts frames where the motion is, `root` limits the
+   * capture to one subtree, and `expect` (with `onExpectationFailure`) makes
+   * a capture that doesn't find what it should show up as a failure rather
+   * than a plausible still.
    *
    * Not supported on `ios-safari` or `ipad-safari` targets.
    *

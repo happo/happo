@@ -857,6 +857,45 @@ describe('loadConfigFile', () => {
         prefersReducedMotion: false,
       });
     });
+
+    it('passes discovery, sampling, root and expectations through unchanged', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              chrome: {
+                type: 'chrome',
+                viewport: '1024x768',
+                animate: {
+                  mode: 'auto',
+                  discovery: { settleMs: 400 },
+                  sampling: { split: 0.5, front: 7, tail: 3 },
+                  root: '#panel',
+                  expect: { minAnimations: 1 },
+                  onExpectationFailure: 'fail',
+                },
+              },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.targets['chrome']?.animate, {
+        mode: 'auto',
+        discovery: { settleMs: 400 },
+        sampling: { split: 0.5, front: 7, tail: 3 },
+        root: '#panel',
+        expect: { minAnimations: 1 },
+        onExpectationFailure: 'fail',
+      });
+    });
   });
 
   describe('deepCompare validation', () => {
