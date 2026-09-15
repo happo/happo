@@ -66,14 +66,23 @@ export async function warnIfDevelopmentModeBuild(
   }
 }
 
+/**
+ * First Storybook version whose `build` command understands `--preview-only`.
+ * Verified against the v8, v9 and v10 CLIs: v8 does not have the flag and
+ * fails the build outright when handed it.
+ */
+const MIN_PREVIEW_ONLY_VERSION = 9;
+
 async function buildStorybook({
   configDir,
   staticDir,
   outputDir,
+  previewOnly,
 }: {
   configDir: string;
   staticDir?: string | undefined;
   outputDir: string;
+  previewOnly?: boolean | undefined;
 }): Promise<void> {
   await fs.promises.rm(outputDir, { recursive: true, force: true });
 
@@ -93,6 +102,24 @@ async function buildStorybook({
 
   if (staticDir) {
     params.push('--static-dir', staticDir);
+  }
+
+  // On by default: Happo only ever loads iframe.html, so the manager UI is
+  // weight nobody asked for unless someone opens the built package by hand.
+  if (previewOnly ?? true) {
+    if (getStorybookVersionFromPackageJson() < MIN_PREVIEW_ONLY_VERSION) {
+      // Ignored rather than fatal: this only ever makes the package smaller,
+      // so failing the whole build over it would trade a working report for
+      // an optimization. Only worth saying out loud when it was asked for --
+      // on the default nobody has done anything to be told about.
+      if (previewOnly === true) {
+        console.warn(
+          `[HAPPO] Ignoring \`previewOnly\` because it needs Storybook v${MIN_PREVIEW_ONLY_VERSION} or later.`,
+        );
+      }
+    } else {
+      params.push('--preview-only');
+    }
   }
 
   let binary = fs.existsSync('yarn.lock') ? 'yarn' : 'npx';
@@ -145,6 +172,10 @@ export default async function buildStorybookPackage({
   staticDir,
   outputDir = '.out',
   usePrebuiltPackage = false,
+  // Left undefined rather than defaulted here: buildStorybook() needs to tell
+  // "asked for it" from "did not say", to decide whether a v8 fallback is
+  // worth a warning.
+  previewOnly,
   skip,
   only,
 }: Omit<StorybookIntegration, 'type'> & {
@@ -157,7 +188,7 @@ export default async function buildStorybookPackage({
   // deleted: a package we did not build is not ours to tidy up.
   await (usePrebuiltPackage
     ? warnIfDevelopmentModeBuild(outputDir)
-    : buildStorybook({ configDir, staticDir, outputDir }));
+    : buildStorybook({ configDir, staticDir, outputDir, previewOnly }));
 
   const iframePath = path.join(outputDir, 'iframe.html');
   if (!fs.existsSync(iframePath)) {
