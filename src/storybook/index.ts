@@ -23,6 +23,49 @@ function resolveBuildCommandParts() {
   return getStorybookBuildCommandParts();
 }
 
+/**
+ * Warns when a Storybook was built with `features.developmentModeForBuild`.
+ *
+ * That flag makes Storybook define `process.env.NODE_ENV` as "development" in
+ * a production build, which ships the development build of the framework --
+ * for React, roughly twice the bundle and a good deal slower than that to
+ * render, since the development build does validation and warning work the
+ * production one compiles away. Happo renders every story, so the cost lands
+ * on every snapshot in the report.
+ *
+ * Read out of Storybook's own `project.json` rather than out of `main.ts`.
+ * That file records the *resolved* configuration, so this works regardless of
+ * how the flag got set and regardless of framework, where parsing an arbitrary
+ * TypeScript config would not.
+ */
+export async function warnIfDevelopmentModeBuild(
+  outputDir: string,
+): Promise<void> {
+  try {
+    const raw = await fs.promises.readFile(
+      path.join(outputDir, 'project.json'),
+      'utf8',
+    );
+    const project = JSON.parse(raw) as {
+      features?: { developmentModeForBuild?: boolean };
+    };
+
+    if (project.features?.developmentModeForBuild) {
+      console.warn(
+        '[HAPPO] This Storybook was built with `features.developmentModeForBuild` ' +
+          'enabled, so it ships the development build of your framework. That is ' +
+          'substantially slower to render, and Happo renders every story — expect ' +
+          'slower jobs and a higher chance of timeouts. Remove the flag from your ' +
+          '`.storybook/main` config to build in production mode.',
+      );
+    }
+  } catch {
+    // Storybook writes project.json on its own schedule, and a prebuilt
+    // package may not carry one at all. A missing or unreadable file means
+    // there is nothing to check, and nothing the user could do with the error.
+  }
+}
+
 async function buildStorybook({
   configDir,
   staticDir,
@@ -70,7 +113,14 @@ async function buildStorybook({
     });
 
     spawned.on('exit', (code) => {
-      if (code === 0) {
+      if (code !== 0) {
+        reject(new Error('Failed to build static storybook package'));
+        return;
+      }
+
+      // Has to happen before the unlink below: project.json is where the
+      // resolved configuration lives, and we delete it rather than ship it.
+      void warnIfDevelopmentModeBuild(outputDir).then(() => {
         try {
           fs.unlinkSync(path.join(outputDir, 'project.json'));
         } catch (error) {
@@ -79,9 +129,7 @@ async function buildStorybook({
           );
         }
         resolve();
-      } else {
-        reject(new Error('Failed to build static storybook package'));
-      }
+      });
     });
   });
 }
@@ -103,9 +151,13 @@ export default async function buildStorybookPackage({
   skip?: Array<SkipItem>;
   only?: Array<OnlyItem>;
 }): Promise<BuildStorybookPackageResult> {
-  if (!usePrebuiltPackage) {
-    await buildStorybook({ configDir, staticDir, outputDir });
-  }
+  // A prebuilt package was built elsewhere, so `buildStorybook()` never got to
+  // look at it -- check it here instead, since the flag costs the same
+  // whoever ran the build. Its project.json is left in place rather than
+  // deleted: a package we did not build is not ours to tidy up.
+  await (usePrebuiltPackage
+    ? warnIfDevelopmentModeBuild(outputDir)
+    : buildStorybook({ configDir, staticDir, outputDir }));
 
   const iframePath = path.join(outputDir, 'iframe.html');
   if (!fs.existsSync(iframePath)) {
