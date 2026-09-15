@@ -165,6 +165,7 @@ export interface BuildStorybookPackageResult {
   packageDir: string;
   estimatedSnapsCount?: number;
   resolvedSkip?: Array<{ component: string; variant?: string }>;
+  resolvedOnly?: Array<{ component: string }>;
 }
 
 export default async function buildStorybookPackage({
@@ -304,6 +305,11 @@ export default async function buildStorybookPackage({
     }
     if (resolvedSkip !== undefined) {
       result.resolvedSkip = resolvedSkip;
+    }
+    // Returned as well as injected into iframe.html: the inline script is for
+    // the browser, and the package metadata needs the same answer.
+    if (resolvedOnly !== undefined) {
+      result.resolvedOnly = resolvedOnly;
     }
     return result;
   } catch (e) {

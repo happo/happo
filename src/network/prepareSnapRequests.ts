@@ -9,6 +9,11 @@ import type { OnlyItem, SkipItem } from '../isomorphic/types.ts';
 import buildStorybookPackage from '../storybook/index.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
+import {
+  createPackageMetadata,
+  PACKAGE_METADATA_FILENAME,
+  type PackageMetadata,
+} from '../utils/packageMetadata.ts';
 import uploadAssets from './uploadAssets.ts';
 
 async function fileExists(path: string): Promise<boolean> {
@@ -56,6 +61,8 @@ interface BuildPackageResult {
   packageDir: string;
   estimatedSnapsCount?: number;
   resolvedSkip?: Array<{ component: string; variant?: string }>;
+  resolvedOnly?: Array<{ component: string }>;
+  integration: PackageMetadata['integration'];
 }
 
 async function injectSkippedIntoIframe(
@@ -89,9 +96,20 @@ async function buildPackage(
       await injectSkippedIntoIframe(iframePath, skip);
     }
 
-    const result: BuildPackageResult = { packageDir: rootDir };
+    const result: BuildPackageResult = {
+      packageDir: rootDir,
+      integration: 'custom',
+    };
     if (estimatedSnapsCount != null) {
       result.estimatedSnapsCount = estimatedSnapsCount;
+    }
+    // A custom build has no story index to resolve against, so what was asked
+    // for is already what applies.
+    if (skip !== undefined) {
+      result.resolvedSkip = skip.filter(
+        (item): item is { component: string; variant?: string } =>
+          'component' in item,
+      );
     }
     return result;
   }
@@ -102,7 +120,7 @@ async function buildPackage(
       ...(skip === undefined ? {} : { skip }),
       ...(only === undefined ? {} : { only }),
     });
-    return result;
+    return { ...result, integration: 'storybook' };
   }
 
   throw new Error(`Unsupported integration type: ${integration.type}`);
@@ -130,11 +148,29 @@ async function preparePackage(
   skip?: Array<SkipItem>,
   only?: Array<OnlyItem>,
 ): Promise<PreparePackageResult> {
-  const { packageDir, estimatedSnapsCount, resolvedSkip } = await buildPackage(config, logger, skip, only);
+  const { packageDir, estimatedSnapsCount, resolvedSkip, resolvedOnly, integration } =
+    await buildPackage(config, logger, skip, only);
 
   await validatePackage(packageDir);
 
-  const { buffer, hash, format } = await deterministicArchive([packageDir]);
+  // Added as archive content rather than written into `packageDir`: that
+  // directory is the user's build output, and this file is ours.
+  const metadata = createPackageMetadata({
+    integration,
+    skipped: resolvedSkip,
+    only: resolvedOnly,
+    estimatedSnapsCount,
+  });
+
+  const { buffer, hash, format } = await deterministicArchive(
+    [packageDir],
+    [
+      {
+        name: PACKAGE_METADATA_FILENAME,
+        content: JSON.stringify(metadata, null, 2),
+      },
+    ],
+  );
   const packagePath = await uploadAssets(
     buffer,
     {
