@@ -325,6 +325,58 @@ describe('RemoteBrowserTarget', () => {
       });
     });
 
+    describe('with allowedHostnames', () => {
+      it('passes the list through to the worker', async () => {
+        // Target options the client has no opinion about ride along in
+        // `otherOptions`; this one is worth pinning because an allowlist that
+        // silently fails to arrive looks exactly like one that allowed
+        // everything.
+        const target = new RemoteBrowserTarget('chrome', {
+          ...baseTarget,
+          allowedHostnames: ['fonts.gstatic.com', '*.mycdn.example.com'],
+        });
+        await target.execute(
+          {
+            snapPayloads: [
+              { component: 'Foo', variant: 'default', html: '<b>hi</b>' },
+            ],
+            targetName: 'chrome',
+          },
+          config,
+        );
+        const payload = JSON.parse(
+          bulkCalls[0]?.items[0]?.payloadString as string,
+        ) as { allowedHostnames?: unknown };
+        assert.deepStrictEqual(payload.allowedHostnames, [
+          'fonts.gstatic.com',
+          '*.mycdn.example.com',
+        ]);
+      });
+
+      it('passes an empty list through rather than dropping it', async () => {
+        // `[]` and "not set" mean opposite things to the worker -- block
+        // everything external, versus block nothing -- so an empty array has
+        // to survive the trip.
+        const target = new RemoteBrowserTarget('chrome', {
+          ...baseTarget,
+          allowedHostnames: [],
+        });
+        await target.execute(
+          {
+            snapPayloads: [
+              { component: 'Foo', variant: 'default', html: '<b>hi</b>' },
+            ],
+            targetName: 'chrome',
+          },
+          config,
+        );
+        const payload = JSON.parse(
+          bulkCalls[0]?.items[0]?.payloadString as string,
+        ) as { allowedHostnames?: unknown };
+        assert.deepStrictEqual(payload.allowedHostnames, []);
+      });
+    });
+
     describe('with explicit chunks exceeding MAX_BULK_ITEMS_PER_REQUEST (batching)', () => {
       it('splits into multiple bulk requests of at most 50 items each (55 chunks → 2 bulk calls)', async () => {
         const target = new RemoteBrowserTarget('chrome', {
