@@ -7,11 +7,9 @@ import RemoteBrowserTarget, {
 } from '../config/RemoteBrowserTarget.ts';
 import type { OnlyItem, SkipItem } from '../isomorphic/types.ts';
 import buildStorybookPackage from '../storybook/index.ts';
-import deterministicArchive from '../utils/deterministicArchive.ts';
 import Logger, { logTag } from '../utils/Logger.ts';
 import {
-  createPackageMetadata,
-  PACKAGE_METADATA_FILENAME,
+  archivePackageWithMetadata,
   type PackageMetadata,
 } from '../utils/packageMetadata.ts';
 import uploadAssets from './uploadAssets.ts';
@@ -63,6 +61,14 @@ interface BuildPackageResult {
   resolvedSkip?: Array<{ component: string; variant?: string }>;
   resolvedOnly?: Array<{ component: string }>;
   integration: PackageMetadata['integration'];
+
+  /**
+   * Whether `estimatedSnapsCount` already accounts for `resolvedSkip` and
+   * `resolvedOnly`. A storybook build recomputes it against the story index; a
+   * custom build hands us a count before we apply anything and gives us no way
+   * to recompute it.
+   */
+  snapsCountReflectsFilters: boolean;
 }
 
 async function injectSkippedIntoIframe(
@@ -99,6 +105,7 @@ async function buildPackage(
     const result: BuildPackageResult = {
       packageDir: rootDir,
       integration: 'custom',
+      snapsCountReflectsFilters: !skip || skip.length === 0,
     };
     if (estimatedSnapsCount != null) {
       result.estimatedSnapsCount = estimatedSnapsCount;
@@ -120,7 +127,11 @@ async function buildPackage(
       ...(skip === undefined ? {} : { skip }),
       ...(only === undefined ? {} : { only }),
     });
-    return { ...result, integration: 'storybook' };
+    return {
+      ...result,
+      integration: 'storybook',
+      snapsCountReflectsFilters: true,
+    };
   }
 
   throw new Error(`Unsupported integration type: ${integration.type}`);
@@ -148,28 +159,29 @@ async function preparePackage(
   skip?: Array<SkipItem>,
   only?: Array<OnlyItem>,
 ): Promise<PreparePackageResult> {
-  const { packageDir, estimatedSnapsCount, resolvedSkip, resolvedOnly, integration } =
-    await buildPackage(config, logger, skip, only);
+  const {
+    packageDir,
+    estimatedSnapsCount,
+    resolvedSkip,
+    resolvedOnly,
+    integration,
+    snapsCountReflectsFilters,
+  } = await buildPackage(config, logger, skip, only);
 
   await validatePackage(packageDir);
 
   // Added as archive content rather than written into `packageDir`: that
   // directory is the user's build output, and this file is ours.
-  const metadata = createPackageMetadata({
-    integration,
-    skipped: resolvedSkip,
-    only: resolvedOnly,
-    estimatedSnapsCount,
-  });
-
-  const { buffer, hash, format } = await deterministicArchive(
-    [packageDir],
-    [
-      {
-        name: PACKAGE_METADATA_FILENAME,
-        content: JSON.stringify(metadata, null, 2),
-      },
-    ],
+  const { buffer, hash, format } = await archivePackageWithMetadata(
+    packageDir,
+    {
+      integration,
+      skipped: resolvedSkip,
+      only: resolvedOnly,
+      // Left out when it does not account for the filters, so that the file
+      // never carries a count a reader would have to second-guess.
+      ...(snapsCountReflectsFilters ? { estimatedSnapsCount } : {}),
+    },
   );
   const packagePath = await uploadAssets(
     buffer,

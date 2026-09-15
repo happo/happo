@@ -5,9 +5,8 @@ import path from 'node:path';
 import { after, before, describe, it } from 'node:test';
 
 import readArchive from '../../test-utils/readArchive.ts';
-import deterministicArchive from '../../utils/deterministicArchive.ts';
 import {
-  createPackageMetadata,
+  archivePackageWithMetadata,
   PACKAGE_METADATA_FILENAME,
   type PackageMetadata,
 } from '../../utils/packageMetadata.ts';
@@ -16,7 +15,12 @@ import happoStorybookPlugin from '../index.ts';
 /**
  * The point of the metadata file is that a worker can read it out of a real
  * package without loading anything, so these build a real Storybook, archive
- * it the way `preparePackage()` does, and read it back out of the archive.
+ * it through the same function `preparePackage()` calls, and read it back out
+ * of the archive.
+ *
+ * Going through `archivePackageWithMetadata()` rather than reproducing its two
+ * calls is the difference between testing that the package ships the file and
+ * testing that a test can build an archive.
  */
 describe('package metadata in a built package', () => {
   let outputDir: string;
@@ -34,23 +38,14 @@ describe('package metadata in a built package', () => {
       skip: [{ component: 'Interactive' }],
     });
 
-    metadata = createPackageMetadata({
+    const archiveResult = await archivePackageWithMetadata(outputDir, {
       integration: 'storybook',
       skipped: result.resolvedSkip,
       only: result.resolvedOnly,
       estimatedSnapsCount: result.estimatedSnapsCount,
     });
-
-    const { buffer } = await deterministicArchive(
-      [outputDir],
-      [
-        {
-          name: PACKAGE_METADATA_FILENAME,
-          content: JSON.stringify(metadata, null, 2),
-        },
-      ],
-    );
-    archived = readArchive(buffer);
+    metadata = archiveResult.metadata;
+    archived = readArchive(archiveResult.buffer);
   });
 
   after(async () => {
@@ -72,6 +67,9 @@ describe('package metadata in a built package', () => {
     assert.strictEqual(parsed.version, 1);
     assert.strictEqual(parsed.integration, 'storybook');
     assert.deepStrictEqual(parsed.skipped, [{ component: 'Interactive' }]);
+    // What landed in the archive is what the helper says it built, rather than
+    // something that happened to look right.
+    assert.deepStrictEqual(parsed, metadata);
   });
 
   it('agrees with the skip list baked into iframe.html', () => {

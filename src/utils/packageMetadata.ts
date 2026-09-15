@@ -1,3 +1,7 @@
+import deterministicArchive, {
+  type ArchiveResult,
+} from './deterministicArchive.ts';
+
 /**
  * A declared description of what a package contains and how it was resolved,
  * shipped alongside the package itself.
@@ -53,7 +57,13 @@ export interface PackageMetadata {
 
   /**
    * How many snapshots this package is expected to produce, after `skipped`
-   * and `only` have been applied. Omitted when it could not be worked out.
+   * and `only` have been applied.
+   *
+   * Omitted when there is no count, and also when there is one that does not
+   * account for the filters -- a custom build reports its count before we
+   * apply `skip`, and has no index for us to recompute it from. A reader can
+   * therefore trust this or not have it, rather than having to know which
+   * integration produced it.
    */
   estimatedSnapsCount?: number;
 }
@@ -76,9 +86,42 @@ export function createPackageMetadata({
     only: only ?? null,
   };
 
-  if (estimatedSnapsCount != null) {
+  // `Number.isFinite` rather than a null check: JSON.stringify turns Infinity
+  // and NaN into `null`, so shipping either would put a value in the file that
+  // contradicts this module's own types and reads as a malformed count.
+  if (estimatedSnapsCount !== undefined && Number.isFinite(estimatedSnapsCount)) {
     metadata.estimatedSnapsCount = estimatedSnapsCount;
   }
 
   return metadata;
+}
+
+/**
+ * Archives a built package together with its metadata file.
+ *
+ * Exists as its own function so the thing that actually ships can be tested.
+ * Reproducing these two calls in a test would prove only that the test can
+ * build an archive, not that `preparePackage()` still puts the file in one.
+ */
+export async function archivePackageWithMetadata(
+  packageDir: string,
+  metadataInput: Parameters<typeof createPackageMetadata>[0],
+): Promise<ArchiveResult & { metadata: PackageMetadata }> {
+  const metadata = createPackageMetadata(metadataInput);
+
+  const result = await deterministicArchive(
+    [packageDir],
+    [
+      {
+        name: PACKAGE_METADATA_FILENAME,
+        content: JSON.stringify(metadata, null, 2),
+        // This name is ours, and a reader trusts what is in it. A file of the
+        // same name in the user's build output must not be shipped in its
+        // place.
+        overwrite: true,
+      },
+    ],
+  );
+
+  return { ...result, metadata };
 }

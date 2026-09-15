@@ -1,7 +1,12 @@
 import assert from 'node:assert';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { it } from 'node:test';
 
+import readArchive from '../../test-utils/readArchive.ts';
 import {
+  archivePackageWithMetadata,
   createPackageMetadata,
   PACKAGE_METADATA_FILENAME,
   PACKAGE_METADATA_VERSION,
@@ -72,4 +77,57 @@ it('survives a JSON round trip, which is how it reaches a reader', () => {
   const serialized = JSON.stringify(metadata, null, 2);
 
   assert.deepStrictEqual(JSON.parse(serialized), metadata);
+});
+
+it('leaves out a count that is not a real number', () => {
+  // JSON.stringify turns Infinity and NaN into `null`, which would put a value
+  // in the shipped file that contradicts the type it claims to be.
+  for (const notANumber of [Number.POSITIVE_INFINITY, Number.NaN]) {
+    const metadata = createPackageMetadata({
+      integration: 'custom',
+      estimatedSnapsCount: notANumber,
+    });
+
+    assert.strictEqual(
+      'estimatedSnapsCount' in metadata,
+      false,
+      `expected ${notANumber} to be left out`,
+    );
+    // Specifically this key: `only: null` is a legitimate part of the file.
+    const serialized = JSON.stringify(metadata);
+    assert.strictEqual(
+      JSON.parse(serialized).estimatedSnapsCount,
+      undefined,
+      'a non-finite count must not reach the file as null',
+    );
+  }
+});
+
+it('wins against a file of the same name in the build output', async () => {
+  // A reader trusts whatever is at this path. Shipping a user's file in its
+  // place would have them read arbitrary content as metadata -- and the
+  // archive prefers files on disk over supplied content by default, so this
+  // needs saying out loud.
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'happo-clash-'));
+  try {
+    await fs.promises.writeFile(
+      path.join(dir, PACKAGE_METADATA_FILENAME),
+      JSON.stringify({ iAm: 'the user own file' }),
+    );
+    await fs.promises.writeFile(path.join(dir, 'iframe.html'), '<html></html>');
+
+    const { buffer } = await archivePackageWithMetadata(dir, {
+      integration: 'storybook',
+      skipped: [{ component: 'Button' }],
+    });
+
+    const shipped = JSON.parse(
+      readArchive(buffer).get(PACKAGE_METADATA_FILENAME)!.toString('utf8'),
+    );
+
+    assert.strictEqual(shipped.iAm, undefined);
+    assert.deepStrictEqual(shipped.skipped, [{ component: 'Button' }]);
+  } finally {
+    await fs.promises.rm(dir, { recursive: true, force: true });
+  }
 });
