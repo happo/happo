@@ -12,18 +12,21 @@ const config: Config = defineConfig({
       type: 'chrome',
       viewport: '1024x768',
       applyPseudoClasses: true,
+      allowedHostnames: [],
     },
 
     chromeSmall: {
       type: 'chrome',
       viewport: '375x667',
       applyPseudoClasses: true,
+      allowedHostnames: [],
     },
 
     accessibility: {
       type: 'accessibility',
       viewport: '375x667',
       applyPseudoClasses: true,
+      allowedHostnames: [],
     },
   },
 });
