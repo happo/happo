@@ -519,6 +519,53 @@ interface DesktopTarget extends BaseTarget {
    * from a Happo run.
    */
   outgoingRequestHeaders?: Array<{ name: string; value: string }>;
+
+  /**
+   * Restrict which hostnames the browser is allowed to make HTTP(S) requests
+   * to while rendering. Anything not covered by the list is refused before it
+   * leaves the browser.
+   *
+   * A snapshot that loads a font, a script, or an image from somewhere else
+   * changes when that somewhere else does, and fails when it is down — so the
+   * fewer hostnames a target needs, the more reproducible its snapshots are.
+   *
+   * Entries are hostnames, matched exactly. Prefix one with `*.` to cover
+   * subdomains — `*.example.com` covers `cdn.example.com` but not
+   * `example.com` itself, so list both if you need both. Ports and paths are
+   * ignored, so `https://example.com/assets` and `example.com` mean the same
+   * thing.
+   *
+   * ```js
+   * allowedHostnames: ['fonts.gstatic.com', '*.mycdn.example.com']
+   * ```
+   *
+   * Requests to the Happo worker's own server — the page being rendered and
+   * everything in your uploaded package — are always allowed and don't belong
+   * in the list. Neither do `data:`/`blob:` URLs, which never hit the network.
+   *
+   * Leave this unset (the default) and nothing is blocked.
+   *
+   * You don't have to guess what to put in the list. Every run already logs
+   * the external hostnames its pages reached for, whether or not a list is
+   * set, so run once without one and read them off the snap-request's logs in
+   * happo.io:
+   *
+   * ```
+   * External requests: 12 to 2 hostnames: fonts.gstatic.com (x11), cdn.example.com
+   * ```
+   *
+   * Once a list is in force the same line splits into what was allowed and
+   * what was blocked, which is what to read when a snapshot is missing
+   * something.
+   *
+   * Not supported on `ios-safari` or `ipad-safari` targets, where the browser
+   * can't be pointed at the proxy that does the blocking. Those targets log
+   * that the option had no effect rather than leaving you to assume it did.
+   *
+   * @experimental This option and its shape are still evolving and may change
+   * in a future release.
+   */
+  allowedHostnames?: Array<string>;
 }
 
 export type Target = MobileSafariTarget | DesktopTarget;
@@ -527,6 +574,9 @@ export interface TargetWithDefaults extends BaseTarget {
   viewport: `${number}x${number}`;
   __dynamic: boolean;
   prefersReducedMotion?: boolean;
+
+  /** See {@link DesktopTarget.allowedHostnames}. */
+  allowedHostnames?: Array<string>;
 }
 
 export interface ConfigWithDefaults extends Config {
