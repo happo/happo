@@ -2,9 +2,18 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { before, describe, it } from 'node:test';
+import { after, before, describe, it } from 'node:test';
 
 import happoStorybookPlugin from '../index.ts';
+
+function directorySize(dir: string): number {
+  let total = 0;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    total += entry.isDirectory() ? directorySize(full) : fs.statSync(full).size;
+  }
+  return total;
+}
 
 describe('happoStorybookPlugin', () => {
   let packageDir: string;
@@ -127,6 +136,79 @@ describe('happoStorybookPlugin', () => {
       } finally {
         await fs.promises.rm(tempDir, { recursive: true, force: true });
       }
+    });
+  });
+
+  describe('previewOnly', () => {
+    let defaultDir: string;
+    let withManagerDir: string;
+
+    before(async () => {
+      defaultDir = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), 'happo-preview-only-'),
+      );
+      withManagerDir = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), 'happo-with-manager-'),
+      );
+      // No `previewOnly` here on purpose: this is what everyone gets.
+      await happoStorybookPlugin({
+        configDir: 'src/storybook/__tests__/storybook-app',
+        outputDir: defaultDir,
+      });
+      await happoStorybookPlugin({
+        configDir: 'src/storybook/__tests__/storybook-app',
+        outputDir: withManagerDir,
+        previewOnly: false,
+      });
+    });
+
+    after(async () => {
+      await fs.promises.rm(defaultDir, { recursive: true, force: true });
+      await fs.promises.rm(withManagerDir, { recursive: true, force: true });
+    });
+
+    it('leaves out the manager UI by default', () => {
+      for (const entry of ['index.html', 'sb-manager', 'sb-addons']) {
+        assert.strictEqual(
+          fs.existsSync(path.join(defaultDir, entry)),
+          false,
+          `expected ${entry} to be absent`,
+        );
+      }
+    });
+
+    it('still builds everything Happo renders from', () => {
+      // Happo never loads the manager, but it does load these -- if
+      // --preview-only ever started dropping one of them, rendering would
+      // break rather than just get smaller.
+      for (const file of ['iframe.html', 'index.json']) {
+        assert.ok(
+          fs.existsSync(path.join(defaultDir, file)),
+          `expected ${file} to exist`,
+        );
+      }
+      assert.ok(
+        fs.readdirSync(path.join(defaultDir, 'assets')).length > 0,
+        'expected preview assets to be built',
+      );
+    });
+
+    it('keeps the manager UI when previewOnly is false', () => {
+      // The opt-out for people who download built packages and open them
+      // locally, where a package without a sidebar is a lot less useful.
+      for (const entry of ['index.html', 'sb-manager']) {
+        assert.ok(
+          fs.existsSync(path.join(withManagerDir, entry)),
+          `expected ${entry} to exist`,
+        );
+      }
+    });
+
+    it('produces a smaller package than one built with the manager', () => {
+      assert.ok(
+        directorySize(defaultDir) < directorySize(withManagerDir),
+        'expected the default package to be smaller than the manager build',
+      );
     });
   });
 });
