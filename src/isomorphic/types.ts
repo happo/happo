@@ -215,14 +215,17 @@ export interface AnimateOptions {
    * Where in the capture window frames are taken.
    *
    * - `'uniform'` (default): evenly, at `fps`.
-   * - `{ split, front, tail }`: `front` frames across the first `split` of
-   *   the window and `tail` across the rest. For springs and overshoots,
-   *   which do their moving early and then hold still.
+   * - `[{ stop, frames }, ...]`: a list of stops, like the colour stops of a
+   *   `linear-gradient`. Each entry spends its `frames` on the stretch of the
+   *   window ending at `stop`, a fraction of the window. For springs and
+   *   overshoots, which do their moving early and then hold still.
    * - `{ times }`: exactly these times, in milliseconds.
    *
-   * Anything but `'uniform'` ignores `fps`. A split always ends on the end
-   * state; `times` are sampled exactly as listed, so the end state is only
-   * included if one of them is at it.
+   * Anything but `'uniform'` ignores `fps`. Stops climb, and the last one is
+   * treated as the end of the window however it is written, so a stopped
+   * capture always ends on the end state; `times` are absolute and sampled
+   * exactly as listed, so the end state is only included if one of them is at
+   * it.
    *
    * @default 'uniform'
    */
@@ -271,18 +274,22 @@ export interface AnimateDiscovery {
 
 export type AnimateSampling =
   | 'uniform'
-  | {
-      /** Where the dense segment ends, as a fraction of the window. */
-      split?: number;
-      /** Frames in the first segment. */
-      front?: number;
-      /** Frames in the second segment, ending on the end state. */
-      tail?: number;
-    }
+  | Array<AnimateSamplingStop>
   | {
       /** Sample times, in milliseconds. */
       times: Array<number>;
     };
+
+export interface AnimateSamplingStop {
+  /**
+   * Where this segment ends, as a fraction of the capture window. Stops climb,
+   * and the last one is treated as 1 however it is written.
+   */
+  stop: number;
+
+  /** Frames spent on this segment. Defaults to 1. */
+  frames?: number;
+}
 
 export interface AnimateExpectations {
   /** At least this many animations found (SMIL roots count). */
@@ -319,9 +326,6 @@ export interface WindowWithHappo extends Window {
 export type Logger = Pick<Console, 'log' | 'error'>;
 
 export type SkipItem =
-  | { component: string; variant?: string }
-  | { storyFile: string };
+  { component: string; variant?: string } | { storyFile: string };
 
-export type OnlyItem =
-  | { component: string }
-  | { storyFile: string };
+export type OnlyItem = { component: string } | { storyFile: string };
