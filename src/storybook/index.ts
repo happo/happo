@@ -23,14 +23,66 @@ function resolveBuildCommandParts() {
   return getStorybookBuildCommandParts();
 }
 
+/**
+ * Warns when a Storybook was built with `features.developmentModeForBuild`.
+ *
+ * That flag makes Storybook define `process.env.NODE_ENV` as "development" in
+ * a production build, which ships the development build of the framework --
+ * for React, roughly twice the bundle and a good deal slower than that to
+ * render, since the development build does validation and warning work the
+ * production one compiles away. Happo renders every story, so the cost lands
+ * on every snapshot in the report.
+ *
+ * Read out of Storybook's own `project.json` rather than out of `main.ts`.
+ * That file records the *resolved* configuration, so this works regardless of
+ * how the flag got set and regardless of framework, where parsing an arbitrary
+ * TypeScript config would not.
+ */
+export async function warnIfDevelopmentModeBuild(
+  outputDir: string,
+): Promise<void> {
+  try {
+    const raw = await fs.promises.readFile(
+      path.join(outputDir, 'project.json'),
+      'utf8',
+    );
+    const project = JSON.parse(raw) as {
+      features?: { developmentModeForBuild?: boolean };
+    };
+
+    if (project.features?.developmentModeForBuild) {
+      console.warn(
+        '[HAPPO] This Storybook was built with `features.developmentModeForBuild` ' +
+          'enabled, so it ships the development build of your framework. That is ' +
+          'substantially slower to render, and Happo renders every story — expect ' +
+          'slower jobs and a higher chance of timeouts. Remove the flag from your ' +
+          '`.storybook/main` config to build in production mode.',
+      );
+    }
+  } catch {
+    // Storybook writes project.json on its own schedule, and a prebuilt
+    // package may not carry one at all. A missing or unreadable file means
+    // there is nothing to check, and nothing the user could do with the error.
+  }
+}
+
+/**
+ * First Storybook version whose `build` command understands `--preview-only`.
+ * Verified against the v8, v9 and v10 CLIs: v8 does not have the flag and
+ * fails the build outright when handed it.
+ */
+const MIN_PREVIEW_ONLY_VERSION = 9;
+
 async function buildStorybook({
   configDir,
   staticDir,
   outputDir,
+  previewOnly,
 }: {
   configDir: string;
   staticDir?: string | undefined;
   outputDir: string;
+  previewOnly?: boolean | undefined;
 }): Promise<void> {
   await fs.promises.rm(outputDir, { recursive: true, force: true });
 
@@ -52,6 +104,24 @@ async function buildStorybook({
     params.push('--static-dir', staticDir);
   }
 
+  // On by default: Happo only ever loads iframe.html, so the manager UI is
+  // weight nobody asked for unless someone opens the built package by hand.
+  if (previewOnly ?? true) {
+    if (getStorybookVersionFromPackageJson() < MIN_PREVIEW_ONLY_VERSION) {
+      // Ignored rather than fatal: this only ever makes the package smaller,
+      // so failing the whole build over it would trade a working report for
+      // an optimization. Only worth saying out loud when it was asked for --
+      // on the default nobody has done anything to be told about.
+      if (previewOnly === true) {
+        console.warn(
+          `[HAPPO] Ignoring \`previewOnly\` because it needs Storybook v${MIN_PREVIEW_ONLY_VERSION} or later.`,
+        );
+      }
+    } else {
+      params.push('--preview-only');
+    }
+  }
+
   let binary = fs.existsSync('yarn.lock') ? 'yarn' : 'npx';
 
   if (buildCommandParts[0].includes('node_modules')) {
@@ -70,7 +140,14 @@ async function buildStorybook({
     });
 
     spawned.on('exit', (code) => {
-      if (code === 0) {
+      if (code !== 0) {
+        reject(new Error('Failed to build static storybook package'));
+        return;
+      }
+
+      // Has to happen before the unlink below: project.json is where the
+      // resolved configuration lives, and we delete it rather than ship it.
+      void warnIfDevelopmentModeBuild(outputDir).then(() => {
         try {
           fs.unlinkSync(path.join(outputDir, 'project.json'));
         } catch (error) {
@@ -79,9 +156,7 @@ async function buildStorybook({
           );
         }
         resolve();
-      } else {
-        reject(new Error('Failed to build static storybook package'));
-      }
+      });
     });
   });
 }
@@ -97,15 +172,23 @@ export default async function buildStorybookPackage({
   staticDir,
   outputDir = '.out',
   usePrebuiltPackage = false,
+  // Left undefined rather than defaulted here: buildStorybook() needs to tell
+  // "asked for it" from "did not say", to decide whether a v8 fallback is
+  // worth a warning.
+  previewOnly,
   skip,
   only,
 }: Omit<StorybookIntegration, 'type'> & {
   skip?: Array<SkipItem>;
   only?: Array<OnlyItem>;
 }): Promise<BuildStorybookPackageResult> {
-  if (!usePrebuiltPackage) {
-    await buildStorybook({ configDir, staticDir, outputDir });
-  }
+  // A prebuilt package was built elsewhere, so `buildStorybook()` never got to
+  // look at it -- check it here instead, since the flag costs the same
+  // whoever ran the build. Its project.json is left in place rather than
+  // deleted: a package we did not build is not ours to tidy up.
+  await (usePrebuiltPackage
+    ? warnIfDevelopmentModeBuild(outputDir)
+    : buildStorybook({ configDir, staticDir, outputDir, previewOnly }));
 
   const iframePath = path.join(outputDir, 'iframe.html');
   if (!fs.existsSync(iframePath)) {

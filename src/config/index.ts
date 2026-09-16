@@ -51,6 +51,23 @@ export interface StorybookIntegration {
    * @default false
    */
   navigatePerStory?: boolean;
+
+  /**
+   * Build the Storybook preview without the manager UI (Storybook's
+   * `--preview-only`), which typically makes the uploaded package several
+   * times smaller.
+   *
+   * Happo only ever loads `iframe.html`, so the manager is dead weight as far
+   * as rendering goes. Set this to `false` if you download built packages and
+   * open them locally to debug: without the manager a package is no longer a
+   * browsable Storybook, and reaching a story means visiting
+   * `iframe.html?id=<storyId>&viewMode=story` by hand.
+   *
+   * Ignored on Storybook v8, which has no `--preview-only` flag.
+   *
+   * @default true
+   */
+  previewOnly?: boolean;
 }
 
 interface BaseE2EIntegration {
