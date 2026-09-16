@@ -7,6 +7,7 @@ export type {
   AnimateMode,
   AnimateOptions,
   AnimateSampling,
+  AnimateSamplingStop,
   AnimateStages,
   AnimateTrace,
   AnimateTrigger,
