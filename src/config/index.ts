@@ -8,6 +8,7 @@ export type {
   AnimateOptions,
   AnimateSampling,
   AnimateSamplingStop,
+  AnimateStages,
   AnimateTrace,
   AnimateTrigger,
   AnimationDriver,
