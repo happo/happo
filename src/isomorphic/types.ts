@@ -197,6 +197,109 @@ export interface AnimateOptions {
    * @default null
    */
   prefersReducedMotion?: boolean | null;
+
+  /**
+   * Keep looking for animations after the capture starts, for the ones that
+   * only start later on their own -- the items of a staggered list mounted on
+   * timers after a trigger, content that arrives after a fetch. Each is taken
+   * over as it appears and keeps its offset in time, so a stagger stays a
+   * stagger.
+   *
+   * A number is short for `{ settleMs }`.
+   *
+   * @default { settleMs: 0, maxFrames: 90 }
+   */
+  discovery?: number | AnimateDiscovery;
+
+  /**
+   * Where in the capture window frames are taken.
+   *
+   * - `'uniform'` (default): evenly, at `fps`.
+   * - `[{ stop, frames }, ...]`: a list of stops, like the colour stops of a
+   *   `linear-gradient`. Each entry spends its `frames` on the stretch of the
+   *   window ending at `stop`, a fraction of the window. For springs and
+   *   overshoots, which do their moving early and then hold still.
+   * - `{ times }`: exactly these times, in milliseconds.
+   *
+   * Anything but `'uniform'` ignores `fps`. Stops climb, and the last one is
+   * treated as the end of the window however it is written, so a stopped
+   * capture always ends on the end state; `times` are absolute and sampled
+   * exactly as listed, so the end state is only included if one of them is at
+   * it.
+   *
+   * @default 'uniform'
+   */
+  sampling?: AnimateSampling;
+
+  /**
+   * CSS selector limiting the capture to the animations inside it, matched
+   * through shadow roots. Nothing is captured when it matches nothing.
+   *
+   * @default null
+   */
+  root?: string | null;
+
+  /**
+   * What a capture has to find to count as having worked. Without this, a
+   * capture that finds nothing quietly falls back to a still -- right for
+   * `mode: 'auto'` across a whole target, wrong for a story that exists to
+   * show an animation. Set to `null` on a story to switch a target's checks
+   * off.
+   *
+   * @default null
+   */
+  expect?: AnimateExpectations | null;
+
+  /**
+   * What happens when `expect` isn't met.
+   *
+   * - `'image'` (default): the snapshot is replaced by an image describing
+   *   the failure and every animation that was found, so it shows up as a
+   *   diff that names itself.
+   * - `'fail'`: the run fails.
+   * - `'warn'`: logged, and whatever was captured is kept.
+   *
+   * @default 'image'
+   */
+  onExpectationFailure?: 'image' | 'fail' | 'warn';
+}
+
+export interface AnimateDiscovery {
+  /** How long to keep looking, in milliseconds. Capped at 10000. */
+  settleMs?: number;
+
+  /** Cap on how many of the page's frames the search may take. */
+  maxFrames?: number;
+}
+
+export type AnimateSampling =
+  | 'uniform'
+  | Array<AnimateSamplingStop>
+  | {
+      /** Sample times, in milliseconds. */
+      times: Array<number>;
+    };
+
+export interface AnimateSamplingStop {
+  /**
+   * Where this segment ends, as a fraction of the capture window. Stops climb,
+   * and the last one is treated as 1 however it is written.
+   */
+  stop: number;
+
+  /** Frames spent on this segment. Defaults to 1. */
+  frames?: number;
+}
+
+export interface AnimateExpectations {
+  /** At least this many animations found (SMIL roots count). */
+  minAnimations?: number;
+
+  /** At least this many distinct frames in the encoded APNG. */
+  minFrames?: number;
+
+  /** `true` requires the `trigger` to have matched an element. */
+  triggered?: boolean;
 }
 
 /**
@@ -223,9 +326,6 @@ export interface WindowWithHappo extends Window {
 export type Logger = Pick<Console, 'log' | 'error'>;
 
 export type SkipItem =
-  | { component: string; variant?: string }
-  | { storyFile: string };
+  { component: string; variant?: string } | { storyFile: string };
 
-export type OnlyItem =
-  | { component: string }
-  | { storyFile: string };
+export type OnlyItem = { component: string } | { storyFile: string };
