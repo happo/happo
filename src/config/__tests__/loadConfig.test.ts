@@ -871,7 +871,10 @@ describe('loadConfigFile', () => {
                 animate: {
                   mode: 'auto',
                   discovery: { settleMs: 400 },
-                  sampling: { split: 0.5, front: 7, tail: 3 },
+                  sampling: [
+                    { stop: 0.5, frames: 7 },
+                    { stop: 1, frames: 3 },
+                  ],
                   root: '#panel',
                   expect: { minAnimations: 1 },
                   onExpectationFailure: 'fail',
@@ -890,7 +893,10 @@ describe('loadConfigFile', () => {
       assert.deepStrictEqual(config.targets['chrome']?.animate, {
         mode: 'auto',
         discovery: { settleMs: 400 },
-        sampling: { split: 0.5, front: 7, tail: 3 },
+        sampling: [
+          { stop: 0.5, frames: 7 },
+          { stop: 1, frames: 3 },
+        ],
         root: '#panel',
         expect: { minAnimations: 1 },
         onExpectationFailure: 'fail',
