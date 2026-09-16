@@ -5,6 +5,19 @@ import baseConfig from './happo.config.ts';
 const config: Config = defineConfig({
   ...baseConfig,
   project: 'pages',
+
+  targets: {
+    ...Object.fromEntries(
+      Object.entries(baseConfig.targets).map(([key, value]) => [
+        key,
+        {
+          ...value,
+          allowedHostnames: ['docs.happo.io'],
+        },
+      ]),
+    ),
+  },
+
   integration: {
     type: 'pages',
     pages: [

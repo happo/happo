@@ -48,15 +48,17 @@ function DataFetchComponent(): ReactNode {
   const [xhr, setXhr] = useState(false);
   const [fetch, setFetch] = useState(false);
   useEffect(() => {
-    const apiUrl = 'https://api.restful-api.dev/objects';
+    // Same-origin files from `public/` (see staticDirs). These stay on the
+    // worker's local server, which is exempt from `allowedHostnames` blocking.
+    const apiUrl = '/objects.json';
     const xhr = new XMLHttpRequest();
     xhr.addEventListener('load', async () => {
       setXhr(true);
-      await globalThis.fetch(`${apiUrl}/2`);
-      await globalThis.fetch(`${apiUrl}/3`);
+      await globalThis.fetch(`${apiUrl}?id=2`);
+      await globalThis.fetch(`${apiUrl}?id=3`);
       setFetch(true);
     });
-    xhr.open('GET', `${apiUrl}/1`, true);
+    xhr.open('GET', `${apiUrl}?id=1`, true);
     xhr.send();
   }, []);
   if (!xhr || !fetch) {
@@ -67,6 +69,38 @@ function DataFetchComponent(): ReactNode {
     null,
     xhr && createElement('li', null, 'XHR ready'),
     fetch && createElement('li', null, 'Fetch ready'),
+  );
+}
+
+function BlockedDataFetchComponent(): ReactNode {
+  const [xhr, setXhr] = useState<'pending' | 'ready' | 'blocked'>('pending');
+  const [fetch, setFetch] = useState<'pending' | 'ready' | 'blocked'>('pending');
+  useEffect(() => {
+    // A CORS-friendly URL that would succeed without an allowlist. Happo
+    // runs with `allowedHostnames: []`, so both requests fail and the
+    // snapshot should show "blocked", not "ready".
+    const apiUrl = 'https://api.restful-api.dev/objects/1';
+
+    const request = new XMLHttpRequest();
+    request.addEventListener('loadend', () => {
+      setXhr(request.status >= 200 && request.status < 300 ? 'ready' : 'blocked');
+    });
+    request.open('GET', apiUrl, true);
+    request.send();
+
+    globalThis.fetch(apiUrl).then(
+      (res) => setFetch(res.ok ? 'ready' : 'blocked'),
+      () => setFetch('blocked'),
+    );
+  }, []);
+  if (xhr === 'pending' || fetch === 'pending') {
+    return createElement('div', null, 'Nothing ready');
+  }
+  return createElement(
+    'ul',
+    null,
+    createElement('li', null, `XHR ${xhr}`),
+    createElement('li', null, `Fetch ${fetch}`),
   );
 }
 
@@ -179,6 +213,9 @@ export const Portal: StoryObj = {
 };
 export const DataFetch: StoryObj = {
   render: (): ReactNode => createElement(DataFetchComponent),
+};
+export const DataFetchBlocked: StoryObj = {
+  render: (): ReactNode => createElement(BlockedDataFetchComponent),
 };
 export const ExecuteAGraphQLMutationAndHandleTheResponseWhenReceived: StoryObj = {
   render: (): ReactNode => createElement('div', null, 'I am done'),

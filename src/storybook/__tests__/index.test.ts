@@ -33,8 +33,8 @@ describe('happoStorybookPlugin', () => {
     // This test ensures getStorybookStoryCount works against the format that
     // the installed version of Storybook actually produces. If Storybook
     // changes its index.json structure, this test will catch it.
-    // 22 stories across Story.stories.ts (20) and Interactive.stories.ts (2)
-    assert.strictEqual(estimatedSnapsCount, 22);
+    // 23 stories across Story.stories.ts (21) and Interactive.stories.ts (2)
+    assert.strictEqual(estimatedSnapsCount, 23);
   });
 
   describe('with --skip', () => {
@@ -44,7 +44,7 @@ describe('happoStorybookPlugin', () => {
         usePrebuiltPackage: true,
         skip: [{ component: 'Interactive' }],
       });
-      assert.strictEqual(result.estimatedSnapsCount, 20);
+      assert.strictEqual(result.estimatedSnapsCount, 21);
     });
 
     it('reduces estimatedSnapsCount when skipping a single variant', async () => {
@@ -52,7 +52,7 @@ describe('happoStorybookPlugin', () => {
         usePrebuiltPackage: true,
         skip: [{ component: 'Stories', variant: 'Lazy' }],
       });
-      assert.strictEqual(result.estimatedSnapsCount, 21);
+      assert.strictEqual(result.estimatedSnapsCount, 22);
     });
   });
 
@@ -67,17 +67,16 @@ describe('happoStorybookPlugin', () => {
     });
 
     it('reduces estimatedSnapsCount when matching via storyFile', async () => {
-      // Story.stories.ts has 20 stories under the Stories component
+      // Story.stories.ts has 21 stories under the Stories component
       const result = await happoStorybookPlugin({
         usePrebuiltPackage: true,
         only: [
           {
-            storyFile:
-              './src/storybook/__tests__/storybook-app/Story.stories.ts',
+            storyFile: './src/storybook/__tests__/storybook-app/Story.stories.ts',
           },
         ],
       });
-      assert.strictEqual(result.estimatedSnapsCount, 20);
+      assert.strictEqual(result.estimatedSnapsCount, 21);
     });
 
     it('treats an empty --only array as "borrow everything from baseline"', async () => {
