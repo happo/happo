@@ -79,9 +79,19 @@ interface FileEntry {
 export interface ArchiveContentEntry {
   name: string;
   content: string | Buffer | fs.ReadStream | Readable;
+
+  /**
+   * Take this name even if a file on disk already claims it.
+   *
+   * Off by default, because a disk file winning is the right answer for
+   * content we are merely supplying a copy of. It is the wrong answer for a
+   * name we reserve and whose contents a reader will trust: without this, a
+   * user file of the same name is shipped in its place and silently believed.
+   */
+  overwrite?: boolean;
 }
 
-interface ArchiveResult {
+export interface ArchiveResult {
   buffer: Buffer<ArrayBuffer>;
   hash: string;
   format: ArchiveFormat;
@@ -272,6 +282,19 @@ export default async function deterministicArchive(
 
   // Collect all entries with their data first
   const entryDataList: Array<EntryData> = [];
+
+  // Claim the reserved names before walking the disk, so that a file of the
+  // same name loses rather than silently displacing content the caller marked
+  // as authoritative. Everything else keeps first-writer-wins, disk first.
+  for (const file of contentToArchiveSorted) {
+    if (file.overwrite) {
+      const normalizedName = normalizeEntryName(file.name);
+      const data = await contentToUint8Array(file.content);
+      entryDataList.push({ name: normalizedName, data });
+      entries.push({ name: normalizedName, size: data.length });
+      seenFiles.add(normalizedName);
+    }
+  }
 
   // Process files from disk
   for (const file of filesToArchiveSorted) {
