@@ -99,6 +99,18 @@ describe('the built package', () => {
     );
   });
 
+  it('is not fooled by a document that only mentions the runtime', async () => {
+    const outputDir = createPackage({
+      iframeContent:
+        '<html><HEAD></HEAD><body>happo-storybook-runtime.js</body></html>',
+    });
+
+    await assert.rejects(
+      buildStorybookPackage({ usePrebuiltPackage: true, outputDir }),
+      /could not add its client runtime/,
+    );
+  });
+
   it('fails when the Storybook contains no stories', async () => {
     const outputDir = createPackage({ index: { v: 5, entries: {} } });
 

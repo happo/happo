@@ -249,7 +249,13 @@ async function assertPackageIsRenderable(
 
   // The injection above is a literal `<head>` replacement, which silently does
   // nothing against an iframe.html that spells its head tag any other way.
-  if (!iframeContent.includes(HAPPO_RUNTIME_FILENAME)) {
+  // Matching the script tag rather than the bare filename keeps a document
+  // that merely mentions the name from passing for one that loads it.
+  const escapedFilename = HAPPO_RUNTIME_FILENAME.replaceAll('.', String.raw`\.`);
+  const runtimeScriptTag = new RegExp(
+    String.raw`<script[^>]+src=["']\./` + escapedFilename + String.raw`["']`,
+  );
+  if (!runtimeScriptTag.test(iframeContent)) {
     throw new Error(
       [
         "Happo could not add its client runtime to your Storybook's iframe.html.",
@@ -275,7 +281,6 @@ async function assertPackageIsRenderable(
         'This usually means one of the following:',
         '  - The `stories` globs in your `.storybook/main` config do not match any files.',
         '  - `configDir` in your Happo config points at the wrong Storybook config directory.',
-        '  - The stories are all excluded by tags or by `parameters.happo: false`.',
         '',
         'See https://docs.happo.io/docs/storybook#troubleshooting for more details.',
       ].join('\n'),
