@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { before, describe, it } from 'node:test';
 
+import buildHappoStorybookRuntime from '../../test-utils/buildHappoStorybookRuntime.ts';
 import happoStorybookPlugin from '../index.ts';
 
 // Stories in storybook-app-v8:
@@ -14,6 +15,7 @@ describe('happoStorybookPlugin (v8-compatible app)', () => {
   let estimatedSnapsCount: number | undefined;
 
   before(async () => {
+    await buildHappoStorybookRuntime();
     ({ packageDir, estimatedSnapsCount } = await happoStorybookPlugin({
       configDir: 'src/storybook/__tests__/storybook-app-v8',
       outputDir: '.out-v8',
