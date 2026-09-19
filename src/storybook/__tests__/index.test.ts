@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, before, describe, it } from 'node:test';
 
+import buildHappoStorybookRuntime from '../../test-utils/buildHappoStorybookRuntime.ts';
 import happoStorybookPlugin from '../index.ts';
 
 function directorySize(dir: string): number {
@@ -20,6 +21,7 @@ describe('happoStorybookPlugin', () => {
   let estimatedSnapsCount: number | undefined;
 
   before(async () => {
+    await buildHappoStorybookRuntime();
     ({ packageDir, estimatedSnapsCount } = await happoStorybookPlugin({
       configDir: 'src/storybook/__tests__/storybook-app',
     }));

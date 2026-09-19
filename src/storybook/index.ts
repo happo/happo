@@ -161,6 +161,133 @@ async function buildStorybook({
   });
 }
 
+/**
+ * Name the Happo client runtime is copied under, inside the built package.
+ * Distinctive on purpose: it sits next to whatever the user's own build
+ * emitted, and must not collide with it.
+ */
+const HAPPO_RUNTIME_FILENAME = 'happo-storybook-runtime.js';
+
+/**
+ * Locates the standalone (IIFE) build of `browser/register.ts`.
+ *
+ * Two layouts to cover: the published package, where this file is
+ * `dist/storybook/index.js` and the runtime sits beside it, and this repo,
+ * where tests import `src/storybook/index.ts` directly and the runtime is
+ * still only ever produced into `dist/`.
+ */
+function resolveHappoRuntimeBundle(): string {
+  const dirname = import.meta.dirname;
+  const candidates = [
+    path.resolve(dirname, 'standalone', 'register.js'),
+    path.resolve(
+      dirname,
+      '..',
+      '..',
+      'dist',
+      'storybook',
+      'standalone',
+      'register.js',
+    ),
+  ];
+
+  const found = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!found) {
+    throw new Error(
+      `Could not find the Happo Storybook runtime (looked in ${candidates.join(', ')}). ` +
+        'This is a bug in the `happo` package — please report it at ' +
+        'https://github.com/happo/happo/issues.',
+    );
+  }
+
+  return found;
+}
+
+/**
+ * Copies the Happo client runtime into the built package.
+ *
+ * The runtime is what defines `window.happo`, which is what the Happo worker
+ * drives the Storybook with. Shipping it inside the package — rather than
+ * relying on the user having added `import 'happo/storybook/register'` to
+ * their `.storybook/preview` file — is what makes the integration work
+ * without that step.
+ *
+ * A project that also imports the runtime itself — from `.storybook/preview`,
+ * or from a story file reaching for `forceHappoScreenshot` — ends up with a
+ * second copy of it in the preview bundle. That is fine, and deliberately so:
+ * the two copies share their run state through `globalThis`, so whichever one
+ * `window.happo` points at by the time the worker calls it is looking at the
+ * same run. See `RegisterState` in `browser/register.ts`.
+ */
+async function installHappoRuntime(outputDir: string): Promise<void> {
+  await fs.promises.copyFile(
+    resolveHappoRuntimeBundle(),
+    path.join(outputDir, HAPPO_RUNTIME_FILENAME),
+  );
+}
+
+/**
+ * Last look at the package before it is archived and uploaded.
+ *
+ * Everything checked here fails the same way once the package reaches a
+ * worker: the job sits in the queue, renders nothing, and comes back with a
+ * timeout or an empty report several minutes later. Checking locally turns
+ * that into an error on the developer's own terminal, before any of it is
+ * uploaded or any quota is spent.
+ */
+async function assertPackageIsRenderable(
+  outputDir: string,
+  {
+    checkStoryCount,
+    estimatedSnapsCount,
+  }: { checkStoryCount: boolean; estimatedSnapsCount: number | undefined },
+): Promise<void> {
+  const iframeContent = await fs.promises.readFile(
+    path.join(outputDir, 'iframe.html'),
+    'utf8',
+  );
+
+  // The injection above is a literal `<head>` replacement, which silently does
+  // nothing against an iframe.html that spells its head tag any other way.
+  // Matching the script tag rather than the bare filename keeps a document
+  // that merely mentions the name from passing for one that loads it.
+  const escapedFilename = HAPPO_RUNTIME_FILENAME.replaceAll('.', String.raw`\.`);
+  const runtimeScriptTag = new RegExp(
+    String.raw`<script[^>]+src=["']\./` + escapedFilename + String.raw`["']`,
+  );
+  if (!runtimeScriptTag.test(iframeContent)) {
+    throw new Error(
+      [
+        "Happo could not add its client runtime to your Storybook's iframe.html.",
+        '',
+        'Without it the Happo worker has nothing to drive your stories with, and the job ' +
+          'would fail with "Timed out while waiting for window.happo" several minutes from now.',
+        '',
+        `The file Happo tried to modify is ${path.join(outputDir, 'iframe.html')}. It is expected ` +
+          'to contain a literal `<head>` tag, which this one does not.',
+        '',
+        'See https://docs.happo.io/docs/storybook#troubleshooting for more details.',
+      ].join('\n'),
+    );
+  }
+
+  if (checkStoryCount && estimatedSnapsCount === 0) {
+    throw new Error(
+      [
+        'Your Storybook built successfully, but it does not contain any stories.',
+        '',
+        'Happo takes one screenshot per story, so this run would produce an empty report.',
+        '',
+        'This usually means one of the following:',
+        '  - The `stories` globs in your `.storybook/main` config do not match any files.',
+        '  - `configDir` in your Happo config points at the wrong Storybook config directory.',
+        '',
+        'See https://docs.happo.io/docs/storybook#troubleshooting for more details.',
+      ].join('\n'),
+    );
+  }
+}
+
 export interface BuildStorybookPackageResult {
   packageDir: string;
   estimatedSnapsCount?: number;
@@ -196,6 +323,8 @@ export default async function buildStorybookPackage({
       'Failed to build static storybook package (missing iframe.html)',
     );
   }
+
+  let built: BuildStorybookPackageResult;
 
   try {
     const iframeContent = await fs.promises.readFile(iframePath, 'utf8');
@@ -285,6 +414,8 @@ export default async function buildStorybookPackage({
       }
     }
 
+    await installHappoRuntime(outputDir);
+
     await fs.promises.writeFile(
       iframePath,
       iframeContent.replace(
@@ -294,6 +425,7 @@ export default async function buildStorybookPackage({
             <script type="text/javascript">window.__IS_HAPPO_RUN = true;</script>
             <script type="text/javascript">window.happoSkipped = ${JSON.stringify(resolvedSkip ?? []).replaceAll(/<\/script>/gi, String.raw`<\/script>`)};</script>
             <script type="text/javascript">window.happoOnly = ${JSON.stringify(resolvedOnly ?? null).replaceAll(/<\/script>/gi, String.raw`<\/script>`)};</script>
+            <script type="text/javascript" src="./${HAPPO_RUNTIME_FILENAME}"></script>
           `,
       ),
     );
@@ -305,9 +437,21 @@ export default async function buildStorybookPackage({
     if (resolvedSkip !== undefined) {
       result.resolvedSkip = resolvedSkip;
     }
-    return result;
+    built = result;
   } catch (e) {
     console.error(e);
     throw e;
   }
+
+  // Outside the try on purpose: the catch above logs before rethrowing, and
+  // these errors are written to be read once, by the person who ran the CLI.
+  await assertPackageIsRenderable(outputDir, {
+    // A package built with --skip or --only is *meant* to render fewer
+    // stories than it contains, all the way down to none of them, so an
+    // empty count says nothing about whether the setup works.
+    checkStoryCount: skip === undefined && only === undefined,
+    estimatedSnapsCount: built.estimatedSnapsCount,
+  });
+
+  return built;
 }

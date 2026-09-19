@@ -12,6 +12,7 @@ interface EntryConfig {
   packages?: 'bundle' | 'external';
   format?: 'esm' | 'iife';
   executable?: boolean;
+  sourcemap?: boolean;
 }
 
 const DIST_CONFIGS: Array<EntryConfig> = [
@@ -49,6 +50,24 @@ const DIST_CONFIGS: Array<EntryConfig> = [
     ],
     outdir: 'dist/storybook/browser',
     platform: 'browser',
+  },
+
+  {
+    // A second build of the same register entry, as a self-contained IIFE.
+    // `buildStorybookPackage()` copies this one into the package and links it
+    // from `iframe.html`, so the Happo client runtime is there whether or not
+    // the user imported it from their `.storybook/preview` file. register.ts
+    // reaches Storybook through globals only (every one of its Storybook
+    // imports is `import type`), so it works as a plain script.
+    entryPoints: ['src/storybook/browser/register.ts'],
+    outdir: 'dist/storybook/standalone',
+    platform: 'browser',
+    packages: 'bundle',
+    format: 'iife',
+
+    // This file is copied into the customer's package, where a sibling .map
+    // would not be, so a sourceMappingURL comment would only ever 404.
+    sourcemap: false,
   },
 
   {
@@ -93,7 +112,7 @@ async function main() {
       bundle: true,
 
       // https://esbuild.github.io/api/#sourcemap
-      sourcemap: 'linked',
+      sourcemap: config.sourcemap === false ? false : 'linked',
 
       // https://esbuild.github.io/api/#packages
       packages: config.packages ?? 'external',
