@@ -71,8 +71,6 @@ export interface StorybookIntegration {
    * browsable Storybook, and reaching a story means visiting
    * `iframe.html?id=<storyId>&viewMode=story` by hand.
    *
-   * Ignored on Storybook v8, which has no `--preview-only` flag.
-   *
    * @default true
    */
   previewOnly?: boolean;

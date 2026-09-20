@@ -44,7 +44,6 @@ const DIST_CONFIGS: Array<EntryConfig> = [
   {
     entryPoints: [
       'src/storybook/browser/addon.ts',
-      'src/storybook/browser/addon-v8.ts',
       'src/storybook/browser/decorator.ts',
       'src/storybook/browser/register.ts',
     ],

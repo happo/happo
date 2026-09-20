@@ -64,10 +64,10 @@ export async function finalizeAll({
   if (skipJSON) {
     let skip: Array<SkipItem>;
     try {
-      skip = validateSkip(skipJSON, '--skippedExamples');
+      skip = validateSkip(skipJSON);
     } catch (e) {
       logger.error(
-        '[HAPPO] Invalid --skippedExamples:',
+        '[HAPPO] Invalid --skip:',
         e instanceof Error ? e.message : String(e),
       );
       throw e;

@@ -732,7 +732,7 @@ export default async function resolveEnvironment(
     githubToken: cliArgs.githubToken,
     ci: !!env.CI,
     ciJobUrl: resolveCIJobUrl(env),
-    skip: cliArgs.skip ?? cliArgs.skippedExamples,
+    skip: cliArgs.skip,
     only: cliArgs.only,
   };
 

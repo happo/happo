@@ -40,15 +40,14 @@ describe('RemoteBrowserTarget', () => {
      */
     let bulkCalls: Array<{ items: Array<Record<string, unknown>> }> = [];
     /**
-     * Calls to /api/snap-requests (individual, multipart fallback).
+     * Calls to /api/snap-requests (individual, multipart per-item retry).
      */
     let individualCalls: Array<{
       fields: Record<string, Array<string> | undefined>;
       payload: Record<string, unknown>;
     }> = [];
     /**
-     * When true the server returns 404 for bulk requests, triggering the
-     * individual-request fallback path.
+     * When true the server returns 404 for bulk requests.
      */
     let simulateBulkNotSupported = false;
     /**
@@ -59,8 +58,8 @@ describe('RemoteBrowserTarget', () => {
     /**
      * When true the server returns a 200 bulk response with an invalid shape
      * (no "results" array), exercising the "malformed bulk response" path
-     * which is expected to fail fast without falling back to individual
-     * requests, to avoid creating duplicate snap-requests.
+     * which is expected to fail fast rather than sending individual requests,
+     * to avoid creating duplicate snap-requests.
      */
     let simulateBulkInvalidShape = false;
     let config: ConfigWithDefaults;
@@ -435,38 +434,26 @@ describe('RemoteBrowserTarget', () => {
       });
     });
 
-    describe('fallback to individual requests when bulk endpoint returns 404', () => {
+    describe('when the bulk endpoint is unavailable', () => {
       beforeEach(() => {
         simulateBulkNotSupported = true;
       });
 
-      it('falls back and sends one individual request per chunk (200 snaps → 2 chunks)', async () => {
+      it('surfaces the error instead of sending individual requests', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
-        await target.execute(
-          {
-            staticPackage: 'https://example.com/pkg.zip',
-            estimatedSnapsCount: 200,
-            targetName: 'chrome',
-          },
-          config,
+        await assert.rejects(
+          () =>
+            target.execute(
+              {
+                staticPackage: 'https://example.com/pkg.zip',
+                estimatedSnapsCount: 200,
+                targetName: 'chrome',
+              },
+              config,
+            ),
+          /404/,
         );
-        assert.strictEqual(bulkCalls.length, 0);
-        assert.strictEqual(individualCalls.length, 2);
-      });
-
-      it('sets correct chunk metadata in each individual request payload', async () => {
-        const target = new RemoteBrowserTarget('chrome', baseTarget);
-        await target.execute(
-          {
-            staticPackage: 'https://example.com/pkg.zip',
-            estimatedSnapsCount: 200,
-            targetName: 'chrome',
-          },
-          config,
-        );
-        for (const [i, call] of individualCalls.entries()) {
-          assert.deepStrictEqual(call.payload.chunk, { index: i, total: 2 });
-        }
+        assert.strictEqual(individualCalls.length, 0);
       });
     });
 

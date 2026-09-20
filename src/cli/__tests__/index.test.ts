@@ -717,7 +717,7 @@ describe('main', () => {
         );
       });
 
-      it('is aliased by --skippedExamples on the default command', async () => {
+      it('rejects the removed --skippedExamples flag', async () => {
         tmpfs.writeFile(
           'happo.config.ts',
           `export default {
@@ -727,54 +727,20 @@ describe('main', () => {
           };`,
         );
 
-        // --skippedExamples used to be parsed and then silently dropped here,
-        // producing a full run with no skipping and no error.
         await main(
           [
             'npx',
             'happo',
             '--skippedExamples',
-            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
-          ],
-          logger,
-        );
-
-        const storyFileErrors = logger.error.mock.calls.filter((c) =>
-          String(c.arguments[0]).includes('storyFile'),
-        );
-        assert.strictEqual(storyFileErrors.length, 0);
-      });
-
-      it('names the flag the user actually passed in error messages', async () => {
-        tmpfs.writeFile(
-          'happo.config.ts',
-          `export default {
-            integration: {
-              type: 'custom',
-              build: async () => ({
-                rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
-                entryPoint: 'bundle.js',
-              }),
-            },
-            apiKey: 'test-key',
-            apiSecret: 'test-secret',
-          };`,
-        );
-
-        await main(
-          [
-            'npx',
-            'happo',
-            '--skippedExamples',
-            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+            JSON.stringify([{ component: 'Button' }]),
           ],
           logger,
         );
 
         assert.strictEqual(process.exitCode, 1);
         assert.match(
-          String(logger.error.mock.calls[0]?.arguments[0]),
-          /storyFile items in --skippedExamples/,
+          logger.error.mock.calls.map((c) => c.arguments.join(' ')).join('\n'),
+          /--skippedExamples/,
         );
       });
 
@@ -931,7 +897,7 @@ describe('main', () => {
         assert(makeHappoAPIRequestMock.mock.callCount() > 0);
       });
 
-      it('borrows skipped examples from the baseline via an extends-report when --skippedExamples is set', async () => {
+      it('borrows skipped examples from the baseline via an extends-report when --skip is set', async () => {
         const skip = [{ component: 'Button', variant: 'primary' }];
         await main(
           [
@@ -944,7 +910,7 @@ describe('main', () => {
             'before-sha',
             '--nonce',
             'test-nonce',
-            '--skippedExamples',
+            '--skip',
             JSON.stringify(skip),
           ],
           logger,
@@ -997,7 +963,7 @@ describe('main', () => {
         );
       });
 
-      it('does not create an extends-report when --skippedExamples is not set', async () => {
+      it('does not create an extends-report when --skip is not set', async () => {
         await main(
           [
             'npx',
@@ -1032,7 +998,7 @@ describe('main', () => {
             'before-sha',
             '--nonce',
             'test-nonce',
-            '--skippedExamples',
+            '--skip',
             JSON.stringify([{ component: 'Button', variant: 'primary' }]),
           ],
           logger,
@@ -1080,31 +1046,7 @@ describe('main', () => {
         );
       });
 
-      it('names --skippedExamples in the validator error, not --skip', async () => {
-        await main(
-          [
-            'npx',
-            'happo',
-            'finalize',
-            '--afterSha',
-            'test-sha',
-            '--nonce',
-            'test-nonce',
-            '--skippedExamples',
-            JSON.stringify([{ nope: true }]),
-          ],
-          logger,
-        );
-        assert.strictEqual(process.exitCode, 1);
-        const message = logger.error.mock.calls
-          .map((c) => c.arguments.join(' '))
-          .join('\n');
-        assert.match(message, /--skippedExamples must be a JSON array/);
-        assert.doesNotMatch(message, /--skip must be a JSON array/);
-      });
-
-      it('fails when both --skip and --skippedExamples are given', async () => {
-        const skip = JSON.stringify([{ component: 'Button' }]);
+      it('rejects storyFile items in --skip', async () => {
         await main(
           [
             'npx',
@@ -1115,30 +1057,6 @@ describe('main', () => {
             '--nonce',
             'test-nonce',
             '--skip',
-            skip,
-            '--skippedExamples',
-            skip,
-          ],
-          logger,
-        );
-        assert.strictEqual(process.exitCode, 1);
-        assert.match(
-          String(logger.error.mock.calls[0]?.arguments[0]),
-          /Use either --skip or --skippedExamples, not both/,
-        );
-      });
-
-      it('rejects storyFile items in --skippedExamples', async () => {
-        await main(
-          [
-            'npx',
-            'happo',
-            'finalize',
-            '--afterSha',
-            'test-sha',
-            '--nonce',
-            'test-nonce',
-            '--skippedExamples',
             JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
           ],
           logger,

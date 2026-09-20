@@ -94,7 +94,7 @@ Options:
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
   --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
   --githubToken <token> GitHub token to use for posting Happo statuses as comments on the PR. (default: auto-detected from environment)
-  --skip <json> JSON array of {component, variant?} objects to skip and borrow from the nearest baseline report instead (omit variant to skip every variant of the component). On the finalize command these are the examples that were already skipped during the run. Also available as --skippedExamples (the two are aliases; pass only one)
+  --skip <json> JSON array of {component, variant?} objects to skip and borrow from the nearest baseline report instead (omit variant to skip every variant of the component). On the finalize command these are the examples that were already skipped during the run.
   --only <json> JSON array of {component} or {storyFile} objects to include in this run (all other stories are skipped); only supported for the Storybook integration
 
 Flake command options:
@@ -129,7 +129,7 @@ Examples:
 
   happo finalize
   happo finalize --nonce my-unique-nonce
-  happo finalize --skippedExamples '[{"component":"Button","variant":"Primary"}]'
+  happo finalize --skip '[{"component":"Button","variant":"Primary"}]'
   happo finalize --skip '[{"component":"Button","variant":"Primary"}]'
 
   happo flake
@@ -198,22 +198,6 @@ export async function main(
       return;
     }
 
-    if (
-      args.values.skip !== undefined &&
-      args.values.skippedExamples !== undefined
-    ) {
-      logger.error(
-        '[HAPPO] Use either --skip or --skippedExamples, not both. They are two names for the same option.',
-      );
-      process.exitCode = 1;
-      return;
-    }
-
-    // --skip and --skippedExamples are aliases. Report problems using whichever
-    // one the user actually typed.
-    const skipFlag =
-      args.values.skippedExamples === undefined ? '--skip' : '--skippedExamples';
-
     const environment = await resolveEnvironment(args.values);
 
     // Get config file path (use --config if provided, otherwise find default)
@@ -232,10 +216,10 @@ export async function main(
       if (environment.skip) {
         let skipItems: Array<SkipItem>;
         try {
-          skipItems = validateSkip(environment.skip, skipFlag);
+          skipItems = validateSkip(environment.skip);
         } catch (e) {
           logger.error(
-            `[HAPPO] Invalid ${skipFlag}:`,
+            `[HAPPO] Invalid --skip:`,
             e instanceof Error ? e.message : String(e),
           );
           process.exitCode = 1;
@@ -243,7 +227,7 @@ export async function main(
         }
         if (skipItems.some((item) => 'storyFile' in item)) {
           logger.error(
-            `[HAPPO] storyFile items in ${skipFlag} are only supported for the storybook integration (current integration: '${config.integration.type}')`,
+            `[HAPPO] storyFile items in --skip are only supported for the storybook integration (current integration: '${config.integration.type}')`,
           );
           process.exitCode = 1;
           return;
@@ -265,10 +249,10 @@ export async function main(
       if (environment.skip) {
         let skipItems: Array<SkipItem>;
         try {
-          skipItems = validateSkip(environment.skip, skipFlag);
+          skipItems = validateSkip(environment.skip);
         } catch (e) {
           logger.error(
-            `[HAPPO] Invalid ${skipFlag}:`,
+            `[HAPPO] Invalid --skip:`,
             e instanceof Error ? e.message : String(e),
           );
           process.exitCode = 1;
@@ -276,7 +260,7 @@ export async function main(
         }
         if (skipItems.some((item) => 'storyFile' in item)) {
           logger.error(
-            `[HAPPO] storyFile items are not supported in ${skipFlag} for the finalize command. Use {component, variant?} instead.`,
+            `[HAPPO] storyFile items are not supported in --skip for the finalize command. Use {component, variant?} instead.`,
           );
           process.exitCode = 1;
           return;
@@ -321,7 +305,7 @@ export async function main(
     }
 
     if (command === undefined) {
-      await handleDefaultCommand(config, environment, logger, skipFlag);
+      await handleDefaultCommand(config, environment, logger);
       return;
     }
 
@@ -341,7 +325,6 @@ async function handleDefaultCommand(
   config: ConfigWithDefaults,
   environment: EnvironmentResult,
   logger: Logger,
-  skipFlag: string,
 ): Promise<void> {
   logger.log('Running happo tests...');
 
@@ -370,17 +353,17 @@ async function handleDefaultCommand(
       const supportedTypes = ['storybook', 'custom'];
       if (!supportedTypes.includes(config.integration.type)) {
         logger.error(
-          `[HAPPO] ${skipFlag} is not supported for integration type '${config.integration.type}'. Supported types: ${supportedTypes.join(', ')}`,
+          `[HAPPO] --skip is not supported for integration type '${config.integration.type}'. Supported types: ${supportedTypes.join(', ')}`,
         );
         process.exitCode = 1;
         return;
       }
 
       try {
-        skip = validateSkip(environment.skip, skipFlag);
+        skip = validateSkip(environment.skip);
       } catch (e) {
         logger.error(
-          `[HAPPO] Invalid ${skipFlag}:`,
+          `[HAPPO] Invalid --skip:`,
           e instanceof Error ? e.message : String(e),
         );
         process.exitCode = 1;
@@ -392,7 +375,7 @@ async function handleDefaultCommand(
         skip.some((item) => 'storyFile' in item)
       ) {
         logger.error(
-          `[HAPPO] storyFile items in ${skipFlag} are only supported for the storybook integration (current integration: '${config.integration.type}')`,
+          `[HAPPO] storyFile items in --skip are only supported for the storybook integration (current integration: '${config.integration.type}')`,
         );
         process.exitCode = 1;
         return;

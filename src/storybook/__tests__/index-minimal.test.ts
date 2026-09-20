@@ -6,19 +6,19 @@ import { before, describe, it } from 'node:test';
 import buildHappoStorybookRuntime from '../../test-utils/buildHappoStorybookRuntime.ts';
 import happoStorybookPlugin from '../index.ts';
 
-// Stories in storybook-app-v8:
+// Stories in storybook-app-minimal:
 //   Simple: Basic, Excluded, Themed  → 3 story entries in index.json
 const TOTAL_STORIES = 3;
 
-describe('happoStorybookPlugin (v8-compatible app)', () => {
+describe('happoStorybookPlugin (minimal config)', () => {
   let packageDir: string;
   let estimatedSnapsCount: number | undefined;
 
   before(async () => {
     await buildHappoStorybookRuntime();
     ({ packageDir, estimatedSnapsCount } = await happoStorybookPlugin({
-      configDir: 'src/storybook/__tests__/storybook-app-v8',
-      outputDir: '.out-v8',
+      configDir: 'src/storybook/__tests__/storybook-app-minimal',
+      outputDir: '.out-minimal',
     }));
   });
 

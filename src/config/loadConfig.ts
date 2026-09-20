@@ -183,7 +183,7 @@ export async function loadConfigFile(
       // a more helpful error message.
       const extension = path.extname(configFilePath);
       throw new TypeError(
-        `Your Happo config file ${configFilePath} is using an extension that is not supported by this version of Node.js (${extension}). Please use a newer version of Node.js (22.18.0+, 23.6.0+, or 24+).`,
+        `Your Happo config file ${configFilePath} is using an extension that is not supported by this version of Node.js (${extension}). Please use a newer version of Node.js (22.18.0+ or 24+).`,
         { cause: error },
       );
     }
