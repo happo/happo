@@ -130,6 +130,7 @@ beforeEach(() => {
       build: async () => ({
         rootDir: './custom',
         entryPoint: 'index.js',
+        estimatedSnapsCount: 0,
       }),
     },
     endpoint: 'http://localhost:8990',

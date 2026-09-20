@@ -10,6 +10,8 @@ const config: Config = defineConfig({
     build: async () => ({
       rootDir: './tmp/happo-custom',
       entryPoint: 'bundle.js',
+      // The examples registered in src/custom/__happo__/index.ts.
+      estimatedSnapsCount: 6,
     }),
   },
 });

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { inspect } from 'node:util';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
 import RemoteBrowserTarget, {
@@ -74,6 +75,32 @@ async function injectSkippedIntoIframe(
   await fs.promises.writeFile(iframePath, injected);
 }
 
+/**
+ * Happo spreads a custom package across workers based on the number of
+ * snapshots it renders, and only the integration's own `build()` knows that
+ * number. A missing count would quietly render everything on a single worker,
+ * so it is an error rather than a silent loss of parallelism.
+ */
+function assertValidEstimatedSnapsCount(
+  estimatedSnapsCount: unknown,
+): asserts estimatedSnapsCount is number {
+  if (estimatedSnapsCount === undefined) {
+    throw new TypeError(
+      'The `build()` function of your `custom` integration must return an `estimatedSnapsCount`: the number of snapshots the package renders. Happo uses it to decide how many workers to spread the package across, which is what the `chunks` target option used to control. Return it alongside `rootDir` and `entryPoint`, e.g. `{ rootDir, entryPoint, estimatedSnapsCount: examples.length }`.',
+    );
+  }
+
+  if (
+    typeof estimatedSnapsCount !== 'number' ||
+    !Number.isFinite(estimatedSnapsCount) ||
+    estimatedSnapsCount < 0
+  ) {
+    throw new TypeError(
+      `The \`build()\` function of your \`custom\` integration returned an invalid \`estimatedSnapsCount\`: must be a non-negative, finite number, got: ${inspect(estimatedSnapsCount)}.`,
+    );
+  }
+}
+
 async function buildPackage(
   { integration }: ConfigWithDefaults,
   logger: Logger,
@@ -82,6 +109,8 @@ async function buildPackage(
 ): Promise<BuildPackageResult> {
   if (integration.type === 'custom') {
     const { rootDir, entryPoint, estimatedSnapsCount } = await integration.build();
+    assertValidEstimatedSnapsCount(estimatedSnapsCount);
+
     await createIframeHTML(rootDir, entryPoint, logger);
 
     if (skip && skip.length > 0) {
@@ -89,11 +118,7 @@ async function buildPackage(
       await injectSkippedIntoIframe(iframePath, skip);
     }
 
-    const result: BuildPackageResult = { packageDir: rootDir };
-    if (estimatedSnapsCount != null) {
-      result.estimatedSnapsCount = estimatedSnapsCount;
-    }
-    return result;
+    return { packageDir: rootDir, estimatedSnapsCount };
   }
 
   if (integration.type === 'storybook') {

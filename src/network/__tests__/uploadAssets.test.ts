@@ -58,7 +58,11 @@ beforeEach(() => {
     targets: {},
     integration: {
       type: 'custom',
-      build: async () => ({ rootDir: './custom', entryPoint: 'index.js' }),
+      build: async () => ({
+        rootDir: './custom',
+        entryPoint: 'index.js',
+        estimatedSnapsCount: 0,
+      }),
     },
     failOnWaitForTimeout: true,
   };

@@ -128,12 +128,14 @@ interface CustomIntegration {
 
   /**
    * An async function that generates a custom package. Returns an object with
-   * the path to the folder containing the custom files and the path to the
-   * entry point file relative to the root directory.
+   * the path to the folder containing the custom files, the path to the entry
+   * point file relative to the root directory, and the number of snapshots
+   * the package renders.
    *
-   * Return `estimatedSnapsCount` to let Happo parallelize rendering across
-   * multiple workers. Without it, the whole package is rendered by a single
-   * worker.
+   * `estimatedSnapsCount` is how Happo decides to spread the package across
+   * several workers -- only your `build()` knows how many examples it
+   * registered. It does not have to be exact; it is used to pick a number of
+   * chunks, not to validate the run.
    *
    * @example
    * { rootDir: 'dist/custom', entryPoint: 'index.js', estimatedSnapsCount: 42 }
@@ -141,7 +143,7 @@ interface CustomIntegration {
   build: () => Promise<{
     rootDir: string;
     entryPoint: string;
-    estimatedSnapsCount?: number;
+    estimatedSnapsCount: number;
   }>;
 }
 

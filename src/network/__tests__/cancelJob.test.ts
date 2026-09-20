@@ -44,6 +44,7 @@ beforeEach(async () => {
       build: async () => ({
         rootDir: './custom',
         entryPoint: 'index.js',
+        estimatedSnapsCount: 0,
       }),
     },
     failOnWaitForTimeout: true,

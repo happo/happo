@@ -531,12 +531,68 @@ describe('main', () => {
               build: async () => ({
                 rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
                 entryPoint: 'bundle.js',
+                estimatedSnapsCount: 1,
               }),
             },
             apiKey: 'test-key',
             apiSecret: 'test-secret',
           };
           `,
+        );
+      });
+
+      it('fails with a helpful error when build() omits estimatedSnapsCount', async () => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `
+          export default {
+            integration: {
+              type: 'custom',
+              build: async () => ({
+                rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
+                entryPoint: 'bundle.js',
+              }),
+            },
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          };
+          `,
+        );
+
+        await main(['npx', 'happo'], logger);
+
+        assert.strictEqual(process.exitCode, 1);
+        assert.match(
+          logger.error.mock.calls.map((c) => c.arguments.join(' ')).join('\n'),
+          /must return an `estimatedSnapsCount`/,
+        );
+      });
+
+      it('fails with a helpful error when estimatedSnapsCount is not a number', async () => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `
+          export default {
+            integration: {
+              type: 'custom',
+              build: async () => ({
+                rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
+                entryPoint: 'bundle.js',
+                estimatedSnapsCount: 'lots',
+              }),
+            },
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          };
+          `,
+        );
+
+        await main(['npx', 'happo'], logger);
+
+        assert.strictEqual(process.exitCode, 1);
+        assert.match(
+          logger.error.mock.calls.map((c) => c.arguments.join(' ')).join('\n'),
+          /invalid `estimatedSnapsCount`: must be a non-negative, finite number, got: 'lots'/,
         );
       });
 
@@ -592,6 +648,7 @@ describe('main', () => {
               build: async () => ({
                 rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
                 entryPoint: 'bundle.js',
+                estimatedSnapsCount: 1,
               }),
             },
             apiKey: 'test-key',

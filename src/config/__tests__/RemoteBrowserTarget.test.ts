@@ -157,7 +157,11 @@ describe('RemoteBrowserTarget', () => {
         project: 'test',
         integration: {
           type: 'custom',
-          build: async () => ({ rootDir: './custom', entryPoint: 'index.js' }),
+          build: async () => ({
+            rootDir: './custom',
+            entryPoint: 'index.js',
+            estimatedSnapsCount: 0,
+          }),
         },
         endpoint: `http://localhost:${address.port}`,
         apiKey: 'test-key',
