@@ -8,6 +8,7 @@
 .npm
 .out
 .out-v8
+.out-injected-runtime
 /coverage/
 dist
 node_modules
