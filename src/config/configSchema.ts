@@ -235,6 +235,16 @@ const target = v.pipe(
     ),
     ['animate'],
   ),
+  // Block every external request unless the target names the hostnames it
+  // needs. Mobile Safari targets can't be pointed at the proxy that does the
+  // blocking, and a worker handed the option anyway reports that it had no
+  // effect -- so leave those without a list instead of making every run say
+  // so.
+  v.transform((target) =>
+    target.type === 'ios-safari' || target.type === 'ipad-safari'
+      ? target
+      : { ...target, allowedHostnames: target.allowedHostnames ?? [] },
+  ),
 );
 
 const storybookIntegrationEntries = {

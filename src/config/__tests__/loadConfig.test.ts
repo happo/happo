@@ -585,6 +585,7 @@ describe('loadConfigFile', () => {
         freezeAnimations: 'last-frame',
         prefersReducedMotion: true,
         allowPointerEvents: true,
+        allowedHostnames: [],
       },
     });
   });
@@ -671,6 +672,7 @@ describe('loadConfigFile', () => {
         freezeAnimations: 'first-frame',
         prefersReducedMotion: false,
         allowPointerEvents: true,
+        allowedHostnames: [],
       },
       safari: {
         type: 'safari',
@@ -678,6 +680,7 @@ describe('loadConfigFile', () => {
         freezeAnimations: 'last-frame',
         prefersReducedMotion: true,
         allowPointerEvents: true,
+        allowedHostnames: [],
       },
       firefox: {
         type: 'firefox',
@@ -685,6 +688,7 @@ describe('loadConfigFile', () => {
         freezeAnimations: 'first-frame',
         prefersReducedMotion: false,
         allowPointerEvents: true,
+        allowedHostnames: [],
       },
     });
   });
@@ -712,6 +716,82 @@ describe('loadConfigFile', () => {
 
     assert.ok(config);
     assert.strictEqual(config.targets['chrome']?.allowPointerEvents, false);
+  });
+
+  describe('allowedHostnames', () => {
+    it('defaults to an empty list, blocking every external request', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.targets['chrome']?.allowedHostnames, []);
+    });
+
+    it('does not clobber an explicit list', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              chrome: {
+                type: 'chrome',
+                viewport: '1024x768',
+                allowedHostnames: ['fonts.gstatic.com'],
+              },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.targets['chrome']?.allowedHostnames, [
+        'fonts.gstatic.com',
+      ]);
+    });
+
+    it('leaves mobile Safari targets without a list', async () => {
+      // The worker can't point those browsers at the proxy that does the
+      // blocking, and reports that the option had no effect. Defaulting them
+      // to `[]` would put that line in every run for no benefit.
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              iphone: { type: 'ios-safari' },
+              ipad: { type: 'ipad-safari' },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.strictEqual(config.targets['iphone']?.allowedHostnames, undefined);
+      assert.strictEqual(config.targets['ipad']?.allowedHostnames, undefined);
+    });
   });
 
   describe('removed options', () => {
