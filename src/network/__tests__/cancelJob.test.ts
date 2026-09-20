@@ -59,7 +59,6 @@ beforeEach(async () => {
     debugMode: false,
     notify: 'test@example.com',
     fallbackShas: ['test-sha'],
-    githubToken: 'test-token',
     ci: false,
     ciJobUrl: undefined,
     skip: undefined,

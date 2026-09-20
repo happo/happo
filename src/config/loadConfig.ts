@@ -26,7 +26,7 @@ const CONFIG_FILENAMES = [
  */
 const REMOVED_CONFIG_OPTIONS: Record<string, string> = {
   githubApiUrl:
-    'Happo now always posts PR comments through https://api.github.com. If you need comments posted to a GitHub Enterprise instance, install the Happo GitHub app or post the comment yourself using the comparison URL.',
+    'Happo posts PR statuses from the server now, including to GitHub Enterprise instances, so the client no longer posts comments at all. Remove the option.',
 };
 
 /**

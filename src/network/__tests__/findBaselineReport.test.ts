@@ -55,7 +55,6 @@ beforeEach(async () => {
     debugMode: false,
     notify: undefined,
     fallbackShas: ['fallback-sha-1', 'fallback-sha-2'],
-    githubToken: undefined,
     ci: false,
     ciJobUrl: undefined,
     skip: undefined,

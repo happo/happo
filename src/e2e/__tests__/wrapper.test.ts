@@ -33,7 +33,6 @@ const baseEnvironment = {
   debugMode: false,
   notify: undefined,
   fallbackShas: undefined,
-  githubToken: undefined,
   ci: false,
   ciJobUrl: undefined,
   skip: undefined,

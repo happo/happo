@@ -68,7 +68,6 @@ beforeEach(async () => {
     ci: false,
     ciJobUrl: undefined,
     nonce: undefined,
-    githubToken: undefined,
     debugMode: false,
     skip: undefined,
     only: undefined,

@@ -60,10 +60,6 @@ export const parseOptions = {
     type: 'string',
   },
 
-  githubToken: {
-    type: 'string',
-  },
-
   // Flake command options
   allProjects: {
     type: 'boolean',
