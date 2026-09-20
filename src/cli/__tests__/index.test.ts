@@ -305,7 +305,6 @@ describe('main', () => {
           integration: { type: 'custom', build: async () => ({ rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))}, entryPoint: 'bundle.js' }) },
           apiKey: 'test-key',
           apiSecret: 'test-secret',
-          githubApiUrl: 'https://api.github.com',
           targets: {
             chrome: { type: 'chrome', viewport: '1024x768' },
           },
@@ -336,7 +335,6 @@ describe('main', () => {
         call.arguments[0]?.link,
         'https://github.com/owner/repo/pull/123',
       );
-      assert.strictEqual(call.arguments[0]?.githubApiUrl, 'https://api.github.com');
       assert.strictEqual(
         call.arguments[0]?.statusImageUrl,
         'https://happo.io/api/reports/123/status-image',
@@ -354,7 +352,6 @@ describe('main', () => {
           integration: { type: 'custom', build: async () => ({ rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))}, entryPoint: 'bundle.js' }) },
           apiKey: 'test-key',
           apiSecret: 'test-secret',
-          githubApiUrl: 'https://api.github.com',
           targets: {
             chrome: { type: 'chrome', viewport: '1024x768' },
           },

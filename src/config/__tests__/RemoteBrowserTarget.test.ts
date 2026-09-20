@@ -154,7 +154,6 @@ describe('RemoteBrowserTarget', () => {
       simulateBulkInvalidShape = false;
       const address = httpServer.address() as { port: number };
       config = {
-        githubApiUrl: 'https://api.github.com',
         targets: {},
         project: 'test',
         integration: {
@@ -261,53 +260,7 @@ describe('RemoteBrowserTarget', () => {
       });
     });
 
-    describe('with staticPackage, estimatedSnapsCount, and explicit chunks set', () => {
-      it('uses explicit chunks and ignores estimatedSnapsCount (chunks: 1)', async () => {
-        const target = new RemoteBrowserTarget('chrome', {
-          ...baseTarget,
-          chunks: 1,
-        });
-        await target.execute(
-          {
-            staticPackage: 'https://example.com/pkg.zip',
-            estimatedSnapsCount: 200,
-            targetName: 'chrome',
-          },
-          config,
-        );
-        assert.strictEqual(bulkCalls.length, 1);
-        assert.strictEqual(bulkCalls[0]?.items.length, 1);
-        const payload = JSON.parse(
-          bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { chunk?: unknown };
-        assert.strictEqual(payload.chunk, undefined);
-      });
-
-      it('uses explicit chunks and ignores estimatedSnapsCount (chunks: 3)', async () => {
-        const target = new RemoteBrowserTarget('chrome', {
-          ...baseTarget,
-          chunks: 3,
-        });
-        await target.execute(
-          {
-            staticPackage: 'https://example.com/pkg.zip',
-            estimatedSnapsCount: 200,
-            targetName: 'chrome',
-          },
-          config,
-        );
-        assert.strictEqual(bulkCalls.length, 1);
-        assert.strictEqual(bulkCalls[0]?.items.length, 3);
-        for (const [i, item] of (bulkCalls[0]?.items ?? []).entries()) {
-          const payload = JSON.parse(item.payloadString as string) as {
-            chunk: { index: number; total: number };
-          };
-          assert.deepStrictEqual(payload.chunk, { index: i, total: 3 });
-        }
-      });
-    });
-
-    describe('with snapPayloads and estimatedSnapsCount (no staticPackage)', () => {
+    describe('with snapPayloads (no staticPackage)', () => {
       it('sends a single bulk request with one item (estimatedSnapsCount ignored for snapPayloads)', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
@@ -322,6 +275,76 @@ describe('RemoteBrowserTarget', () => {
         );
         assert.strictEqual(bulkCalls.length, 1);
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
+      });
+
+      it('chunks on the number of snap payloads (250 payloads -> 3 chunks)', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            snapPayloads: Array.from({ length: 250 }, (_, i) => ({
+              component: 'Foo',
+              variant: `variant-${i}`,
+              html: '<b>hi</b>',
+            })),
+            targetName: 'chrome',
+          },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 1);
+        const items = bulkCalls[0]?.items ?? [];
+        assert.strictEqual(items.length, 3);
+
+        // Every payload ends up in exactly one chunk.
+        const variants = items.flatMap((item) => {
+          const payload = JSON.parse(item.payloadString as string) as {
+            snapPayloads: Array<{ variant: string }>;
+          };
+          return payload.snapPayloads.map((snap) => snap.variant);
+        });
+        assert.strictEqual(variants.length, 250);
+        assert.strictEqual(new Set(variants).size, 250);
+      });
+    });
+
+    describe('with pages', () => {
+      it('sends a single item when there are few pages', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            pages: [{ url: 'https://example.com', title: 'Example' }],
+            targetName: 'chrome',
+          },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 1);
+        assert.strictEqual(bulkCalls[0]?.items.length, 1);
+      });
+
+      it('chunks on the number of pages (250 pages -> 3 chunks)', async () => {
+        const target = new RemoteBrowserTarget('chrome', baseTarget);
+        await target.execute(
+          {
+            pages: Array.from({ length: 250 }, (_, i) => ({
+              url: `https://example.com/${i}`,
+              title: `Page ${i}`,
+            })),
+            targetName: 'chrome',
+          },
+          config,
+        );
+        assert.strictEqual(bulkCalls.length, 1);
+        const items = bulkCalls[0]?.items ?? [];
+        assert.strictEqual(items.length, 3);
+
+        // Every page ends up in exactly one chunk.
+        const urls = items.flatMap((item) => {
+          const payload = JSON.parse(item.payloadString as string) as {
+            pages: Array<{ url: string }>;
+          };
+          return payload.pages.map((page) => page.url);
+        });
+        assert.strictEqual(urls.length, 250);
+        assert.strictEqual(new Set(urls).size, 250);
       });
     });
 
@@ -374,38 +397,6 @@ describe('RemoteBrowserTarget', () => {
           bulkCalls[0]?.items[0]?.payloadString as string,
         ) as { allowedHostnames?: unknown };
         assert.deepStrictEqual(payload.allowedHostnames, []);
-      });
-    });
-
-    describe('with explicit chunks exceeding MAX_BULK_ITEMS_PER_REQUEST (batching)', () => {
-      it('splits into multiple bulk requests of at most 50 items each (55 chunks → 2 bulk calls)', async () => {
-        const target = new RemoteBrowserTarget('chrome', {
-          ...baseTarget,
-          chunks: 55,
-        });
-        await target.execute(
-          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
-          config,
-        );
-        assert.strictEqual(bulkCalls.length, 2);
-        assert.strictEqual(bulkCalls[0]?.items.length, 50);
-        assert.strictEqual(bulkCalls[1]?.items.length, 5);
-      });
-
-      it('returns the correct number of requestIds across batches', async () => {
-        const target = new RemoteBrowserTarget('chrome', {
-          ...baseTarget,
-          chunks: 55,
-        });
-        const requestIds = await target.execute(
-          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
-          config,
-        );
-        assert.strictEqual(requestIds.length, 55);
-        // Server returns requestId: idx + 1 per batch, so batch 1 → 1..50,
-        // batch 2 → 1..5 in isolation, but positionally mapped to 51..55.
-        assert.deepStrictEqual(requestIds.slice(0, 3), [1, 2, 3]);
-        assert.deepStrictEqual(requestIds.slice(50, 53), [1, 2, 3]);
       });
     });
 

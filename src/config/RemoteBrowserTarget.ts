@@ -12,23 +12,22 @@ const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
 
 /**
  * Maximum number of chunk items sent in a single bulk request.
- * Keeps individual payloads bounded while still protecting against
- * arbitrarily large explicit `chunks` values exceeding server limits.
+ * Keeps individual payloads bounded.
  */
 const MAX_BULK_ITEMS_PER_REQUEST = 50;
 
 /**
- * Compute the number of chunks to use based on an estimated snapshot count.
+ * Compute the number of chunks to use based on a snapshot count.
  *
  * Aims for roughly 100 items per chunk, capped at 20. Returns 1 for
  * non-positive or non-finite inputs.
  */
-function computeDefaultChunks(estimatedSnapCount: number): number {
-  if (!Number.isFinite(estimatedSnapCount) || estimatedSnapCount <= 0) {
+function computeChunks(snapCount: number): number {
+  if (!Number.isFinite(snapCount) || snapCount <= 0) {
     return 1;
   }
 
-  return Math.min(20, Math.ceil(estimatedSnapCount / 100));
+  return Math.min(20, Math.ceil(snapCount / 100));
 }
 
 /**
@@ -72,8 +71,8 @@ export interface ExecuteParams {
 
   /**
    * Total number of snapshots in the package. When provided for staticPackage
-   * requests without explicit chunks, used to automatically determine the
-   * optimal number of parallel chunks.
+   * requests, used to automatically determine the optimal number of parallel
+   * chunks.
    */
   estimatedSnapsCount?: number;
 
@@ -211,7 +210,6 @@ async function sendIndividualSnapRequest(
 }
 
 export default class RemoteBrowserTarget {
-  public readonly chunks: number | undefined;
   public readonly browserName: BrowserType;
   public readonly viewport: string;
   public readonly maxHeight: number | undefined;
@@ -219,12 +217,7 @@ export default class RemoteBrowserTarget {
 
   constructor(
     browserName: BrowserType,
-    {
-      viewport = '1024x768',
-      chunks,
-      maxHeight,
-      ...otherOptions
-    }: TargetWithDefaults,
+    { viewport = '1024x768', maxHeight, ...otherOptions }: TargetWithDefaults,
   ) {
     if (!browserName) {
       throw new Error(
@@ -239,7 +232,6 @@ export default class RemoteBrowserTarget {
       );
     }
 
-    this.chunks = chunks;
     this.browserName = browserName;
     this.viewport = viewport;
     this.maxHeight = maxHeight ?? undefined;
@@ -277,25 +269,23 @@ export default class RemoteBrowserTarget {
     const items: Array<ChunkItem> = [];
 
     if (staticPackage) {
-      const effectiveChunks =
-        this.chunks ?? Math.max(1, computeDefaultChunks(estimatedSnapsCount ?? 0));
-      for (let i = 0; i < effectiveChunks; i += 1) {
+      const chunks = computeChunks(estimatedSnapsCount ?? 0);
+      for (let i = 0; i < chunks; i += 1) {
         items.push(
           buildChunkItem({
             ...buildItemParams,
-            chunk:
-              effectiveChunks > 1 ? { index: i, total: effectiveChunks } : undefined,
+            chunk: chunks > 1 ? { index: i, total: chunks } : undefined,
           }),
         );
       }
     } else if (pages) {
-      for (const pageSlice of getPageSlices(pages, this.chunks ?? 1)) {
+      for (const pageSlice of getPageSlices(pages, computeChunks(pages.length))) {
         items.push(buildChunkItem({ ...buildItemParams, pageSlice }));
       }
     } else {
-      const effectiveChunks = this.chunks ?? 1;
-      const snapsPerChunk = Math.ceil((snapPayloads?.length ?? 0) / effectiveChunks);
-      for (let i = 0; i < effectiveChunks; i += 1) {
+      const chunks = computeChunks(snapPayloads?.length ?? 0);
+      const snapsPerChunk = Math.ceil((snapPayloads?.length ?? 0) / chunks);
+      for (let i = 0; i < chunks; i += 1) {
         const slice = snapPayloads?.slice(
           i * snapsPerChunk,
           i * snapsPerChunk + snapsPerChunk,
@@ -313,7 +303,8 @@ export default class RemoteBrowserTarget {
     // avoid creating duplicate snap-requests.
     //
     // Large item arrays are split into batches of MAX_BULK_ITEMS_PER_REQUEST
-    // and sent as sequential bulk requests to keep individual payloads bounded.
+    // and sent as sequential bulk requests to keep individual payloads
+    // bounded.
     try {
       const requestIds: Array<number | undefined> = Array.from({
         length: items.length,

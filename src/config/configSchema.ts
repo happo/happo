@@ -203,7 +203,6 @@ function nullishWithDefault<
 const targetEntries = {
   type: v.picklist(TARGET_TYPES),
   viewport: nullishWithDefault(viewport, DEFAULT_VIEWPORT),
-  chunks: v.exactOptional(v.number()),
   maxHeight: v.exactOptional(v.number()),
   maxWidth: v.exactOptional(v.number()),
   hideBehavior: v.exactOptional(v.literal('ignore')),
@@ -314,7 +313,6 @@ const configEntries = {
     DEFAULT_ENDPOINT,
   ),
   project: v.exactOptional(v.string()),
-  githubApiUrl: v.exactOptional(v.string(), 'https://api.github.com'),
   targets: v.exactOptional(
     v.pipe(
       v.unknown(),
@@ -350,10 +348,7 @@ const configSchema = v.looseObject(configEntries);
  */
 export type ParsedConfig = Omit<Config, 'targets'> &
   Required<
-    Pick<
-      Config,
-      'endpoint' | 'githubApiUrl' | 'integration' | 'failOnWaitForTimeout'
-    >
+    Pick<Config, 'endpoint' | 'integration' | 'failOnWaitForTimeout'>
   > & {
     targets: Record<string, TargetWithDefaults>;
   };

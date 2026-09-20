@@ -577,7 +577,6 @@ describe('loadConfigFile', () => {
 
     assert.ok(config);
     assert.strictEqual(config.endpoint, 'https://happo.io');
-    assert.strictEqual(config.githubApiUrl, 'https://api.github.com');
     assert.strictEqual(config.integration?.type, 'storybook');
     assert.deepStrictEqual(config.targets, {
       chrome: {
@@ -628,7 +627,6 @@ describe('loadConfigFile', () => {
       'happo.config.ts': `
         export default {
           endpoint: 'https://test-endpoint.com',
-          githubApiUrl: 'https://test-github-api-url.com',
           apiKey: 'test-api-key',
           apiSecret: 'test-api-secret',
 
@@ -664,7 +662,6 @@ describe('loadConfigFile', () => {
 
     assert.ok(config);
     assert.strictEqual(config.endpoint, 'https://test-endpoint.com');
-    assert.strictEqual(config.githubApiUrl, 'https://test-github-api-url.com');
     assert.strictEqual(config.integration?.type, 'cypress');
 
     assert.deepStrictEqual(config.targets, {
@@ -715,6 +712,70 @@ describe('loadConfigFile', () => {
 
     assert.ok(config);
     assert.strictEqual(config.targets['chrome']?.allowPointerEvents, false);
+  });
+
+  describe('removed options', () => {
+    it('throws an error when `githubApiUrl` is set', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            githubApiUrl: 'https://ghe.mycompany.zone/api/v3',
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /The `githubApiUrl` option in config file \S+ has been removed/,
+      );
+    });
+
+    it('throws an error when `chunks` is set on a target', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              chrome: {
+                type: 'chrome',
+                viewport: '1024x768',
+                chunks: 5,
+              },
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /The `chunks` option on target `chrome` in config file \S+ has been removed/,
+      );
+    });
+
+    it('throws an error when `useFullPageFallbackForTallScreenshots` is set on a target', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-api-key',
+            apiSecret: 'test-api-secret',
+            targets: {
+              mobile: {
+                type: 'ios-safari',
+                useFullPageFallbackForTallScreenshots: true,
+              },
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /The `useFullPageFallbackForTallScreenshots` option on target `mobile` in config file \S+ has been removed/,
+      );
+    });
   });
 
   describe('animate validation', () => {

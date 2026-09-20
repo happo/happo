@@ -38,7 +38,6 @@ beforeEach(async () => {
     apiKey: 'test-key',
     apiSecret: 'test-secret',
     project: 'test-project',
-    githubApiUrl: 'https://api.github.com',
     targets: {},
     integration: {
       type: 'custom',

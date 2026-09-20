@@ -5,15 +5,16 @@ const HAPPO_COMMENT_MARKER = '<!-- happo-comment -->';
 
 const HAPPO_USER_AGENT = 'Happo client';
 
+const GITHUB_API_URL = 'https://api.github.com';
+
 async function deleteExistingComments(
-  normalizedGithubApiUrl: string,
   owner: string,
   repo: string,
   prNumber: number,
   authHeader: string,
 ) {
   const commentsRes = await fetch(
-    `${normalizedGithubApiUrl}/repos/${owner}/${repo}/issues/${prNumber}/comments`,
+    `${GITHUB_API_URL}/repos/${owner}/${repo}/issues/${prNumber}/comments`,
     {
       headers: {
         'User-Agent': HAPPO_USER_AGENT,
@@ -53,7 +54,7 @@ async function deleteExistingComments(
   await Promise.all(
     happoComments.map(async (comment) => {
       const res = await fetch(
-        `${normalizedGithubApiUrl}/repos/${owner}/${repo}/issues/comments/${comment.id}`,
+        `${GITHUB_API_URL}/repos/${owner}/${repo}/issues/comments/${comment.id}`,
         {
           method: 'DELETE',
           headers: {
@@ -71,7 +72,6 @@ async function deleteExistingComments(
 }
 
 interface PostGitHubCommentOptions {
-  githubApiUrl: string;
   statusImageUrl: string;
   compareUrl: string;
   link: string;
@@ -79,7 +79,6 @@ interface PostGitHubCommentOptions {
 }
 
 export default async function postGitHubComment({
-  githubApiUrl,
   statusImageUrl,
   compareUrl,
   link,
@@ -107,22 +106,14 @@ export default async function postGitHubComment({
     throw new TypeError('PR number is not a number');
   }
 
-  const normalizedGithubApiUrl = githubApiUrl.replace(/\/$/, '');
-
   const authHeader = `Bearer ${authToken}`;
 
   console.log('[HAPPO] Deleting existing happo comments...');
-  await deleteExistingComments(
-    normalizedGithubApiUrl,
-    owner,
-    repo,
-    prNumber,
-    authHeader,
-  );
+  await deleteExistingComments(owner, repo, prNumber, authHeader);
 
   const body = `${HAPPO_COMMENT_MARKER}\n[![Happo status](${statusImageUrl})](${compareUrl})`;
   const res = await fetch(
-    `${normalizedGithubApiUrl}/repos/${owner}/${repo}/issues/${prNumber}/comments`,
+    `${GITHUB_API_URL}/repos/${owner}/${repo}/issues/${prNumber}/comments`,
     {
       method: 'POST',
       headers: {

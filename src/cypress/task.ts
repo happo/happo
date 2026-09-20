@@ -159,8 +159,8 @@ const task: HappoTask = {
     return {
       autoApplyPseudoStateAttributes:
         integration?.type === 'cypress'
-          ? (integration.autoApplyPseudoStateAttributes ?? false)
-          : false,
+          ? (integration.autoApplyPseudoStateAttributes ?? true)
+          : true,
       skip,
     };
   },

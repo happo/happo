@@ -123,7 +123,6 @@ beforeEach(() => {
     retryMaxTimeout: 1,
   };
   config = {
-    githubApiUrl: 'https://api.github.com',
     targets: {},
     project: 'test',
     integration: {

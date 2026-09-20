@@ -93,7 +93,7 @@ Options:
   --fallbackShasCount <count> Number of fallback shas to use for compare calls (default: 50)
   --notify <emails>     One or more (comma-separated) email addresses to notify with results
   --nonce <nonce>       Nonce to use for Cypress/Playwright comparison
-  --githubToken <token> GitHub token to use for posting Happo statuses as comments. Use in combination with the \`githubApiUrl\` configuration option. (default: auto-detected from environment)
+  --githubToken <token> GitHub token to use for posting Happo statuses as comments on the PR. (default: auto-detected from environment)
   --skip <json> JSON array of {component, variant?} objects to skip and borrow from the nearest baseline report instead (omit variant to skip every variant of the component). On the finalize command these are the examples that were already skipped during the run. Also available as --skippedExamples (the two are aliases; pass only one)
   --only <json> JSON array of {component} or {storyFile} objects to include in this run (all other stories are skipped); only supported for the Storybook integration
 
@@ -509,9 +509,9 @@ async function handleDefaultCommand(
       );
       logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
 
-      if (environment.link && environment.githubToken && config.githubApiUrl) {
-        // githubToken and githubApiUrl are set which means that we should post
-        // a comment to the PR.
+      if (environment.link && environment.githubToken) {
+        // A githubToken is set, which means that we should post a comment to
+        // the PR.
         // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
         const postGitHubComment = (await import('../network/postGitHubComment.ts'))
           .default;
@@ -520,7 +520,6 @@ async function handleDefaultCommand(
           link: environment.link,
           statusImageUrl: asyncComparison.statusImageUrl,
           compareUrl: asyncComparison.compareUrl,
-          githubApiUrl: config.githubApiUrl,
         });
       }
     }

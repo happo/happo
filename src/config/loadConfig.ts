@@ -20,6 +20,44 @@ const CONFIG_FILENAMES = [
   'happo.config.cts',
 ];
 
+/**
+ * Top-level config options that used to exist but have since been removed.
+ * Mapped to the migration advice we want to give when we see one.
+ */
+const REMOVED_CONFIG_OPTIONS: Record<string, string> = {
+  githubApiUrl:
+    'Happo now always posts PR comments through https://api.github.com. If you need comments posted to a GitHub Enterprise instance, install the Happo GitHub app or post the comment yourself using the comparison URL.',
+};
+
+/**
+ * Target options that used to exist but have since been removed. Mapped to the
+ * migration advice we want to give when we see one.
+ */
+const REMOVED_TARGET_OPTIONS: Record<string, string> = {
+  chunks:
+    'Happo now decides how many chunks to use, based on the size of the run. Remove the option and Happo will parallelize for you.',
+  useFullPageFallbackForTallScreenshots:
+    'Tall screenshots no longer need a full-page fallback. Remove the option.',
+};
+
+function assertNoRemovedOptions(
+  subject: unknown,
+  removedOptions: Record<string, string>,
+  configFilePath: string,
+  describeOption: (option: string) => string,
+): void {
+  if (typeof subject !== 'object' || subject === null) {
+    return;
+  }
+  for (const [option, advice] of Object.entries(removedOptions)) {
+    if (option in subject && Reflect.get(subject, option) !== undefined) {
+      throw new TypeError(
+        `The ${describeOption(option)} in config file ${configFilePath} has been removed. ${advice}`,
+      );
+    }
+  }
+}
+
 export function findConfigFile(): string {
   if (process.env.HAPPO_CONFIG_FILE) {
     return process.env.HAPPO_CONFIG_FILE;
@@ -169,6 +207,25 @@ export async function loadConfigFile(
     throw new TypeError(
       `Your Happo config file ${configFilePath} must have a default export that is an object, got: array.`,
     );
+  }
+
+  assertNoRemovedOptions(
+    config,
+    REMOVED_CONFIG_OPTIONS,
+    configFilePath,
+    (option) => `\`${option}\` option`,
+  );
+
+  const rawTargets: unknown = 'targets' in config ? config.targets : undefined;
+  if (typeof rawTargets === 'object' && rawTargets !== null) {
+    for (const [name, target] of Object.entries(rawTargets)) {
+      assertNoRemovedOptions(
+        target,
+        REMOVED_TARGET_OPTIONS,
+        configFilePath,
+        (option) => `\`${option}\` option on target \`${name}\``,
+      );
+    }
   }
 
   const parsedConfig = parseConfig(config, configFilePath, (message) => {

@@ -7,7 +7,6 @@ const config: Config = defineConfig({
   project: 'playwright',
   integration: {
     type: 'playwright',
-    autoApplyPseudoStateAttributes: true,
   },
 });
 

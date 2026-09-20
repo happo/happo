@@ -61,7 +61,7 @@ describe('takeDOMSnapshot', () => {
       snapshot.html.trim(),
       `
     <main>
-      <input type="text" name="name" data-happo-focus="true">
+      <input type="text" name="name" data-happo-focus="true" data-happo-focus-visible="true">
       <input type="checkbox">
     </main>
   `.trim(),
@@ -124,7 +124,7 @@ describe('takeDOMSnapshot', () => {
   });
 
   describe('autoApplyPseudoStateAttributes', () => {
-    it('does not affect behavior when false (default)', () => {
+    it('preserves manually set attributes when false', () => {
       initDOM(`
 <!DOCTYPE html>
 <html>
@@ -140,8 +140,13 @@ describe('takeDOMSnapshot', () => {
       const element = doc.querySelector('main');
       if (!element) throw new Error('Element not found');
 
-      // Without autoApplyPseudoStateAttributes, existing attributes are preserved
-      const snapshot = takeDOMSnapshot({ doc, element });
+      // With autoApplyPseudoStateAttributes turned off, existing attributes are
+      // left alone.
+      const snapshot = takeDOMSnapshot({
+        doc,
+        element,
+        autoApplyPseudoStateAttributes: false,
+      });
       assert.ok(
         snapshot.html.includes('data-happo-hover="true"'),
         'data-happo-hover should be preserved',
@@ -186,7 +191,7 @@ describe('takeDOMSnapshot', () => {
       );
     });
 
-    it('clears stale data-happo-hover and data-happo-active attributes', () => {
+    it('clears stale data-happo-hover and data-happo-active attributes by default', () => {
       initDOM(`
 <!DOCTYPE html>
 <html>
@@ -202,9 +207,10 @@ describe('takeDOMSnapshot', () => {
       const element = doc.querySelector('main');
       if (!element) throw new Error('Element not found');
 
-      // With autoApplyPseudoStateAttributes, stale manual attributes are cleared
-      // (since nothing is currently hovered/active in JSDOM)
-      const snapshot = takeDOMSnapshot({ doc, element, autoApplyPseudoStateAttributes: true });
+      // autoApplyPseudoStateAttributes is on by default, so stale manual
+      // attributes are cleared (since nothing is currently hovered/active in
+      // JSDOM)
+      const snapshot = takeDOMSnapshot({ doc, element });
       assert.ok(
         !snapshot.html.includes('data-happo-hover'),
         'stale data-happo-hover should be cleared',

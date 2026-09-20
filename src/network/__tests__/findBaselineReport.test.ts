@@ -39,7 +39,6 @@ beforeEach(async () => {
     apiKey: 'test-key',
     apiSecret: 'test-secret',
     endpoint: 'https://happo.io',
-    githubApiUrl: 'https://api.github.com',
     project: 'test-project',
     targets: {},
     integration: { type: 'storybook' },

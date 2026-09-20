@@ -92,12 +92,12 @@ interface BaseE2EIntegration {
   downloadAllAssets?: boolean;
 
   /**
-   * When set to `true`, Happo automatically detects elements that are in
-   * `:hover`, `:active`, or `:focus-visible` states at the moment a screenshot
-   * is taken and adds the corresponding `data-happo-hover`,
-   * `data-happo-active`, and `data-happo-focus-visible` attributes. It also
-   * improves focus handling by traversing into shadow DOM to find the deepest
-   * focused element so that `data-happo-focus` is applied reliably.
+   * Happo automatically detects elements that are in `:hover`, `:active`, or
+   * `:focus-visible` states at the moment a screenshot is taken and adds the
+   * corresponding `data-happo-hover`, `data-happo-active`, and
+   * `data-happo-focus-visible` attributes. It also improves focus handling by
+   * traversing into shadow DOM to find the deepest focused element so that
+   * `data-happo-focus` is applied reliably.
    *
    * Note: basic focus handling (`data-happo-focus` based on `activeElement`)
    * is always applied regardless of this option.
@@ -107,6 +107,10 @@ interface BaseE2EIntegration {
    *
    * Requires `applyPseudoClasses: true` on your targets for the attributes to
    * be rendered as CSS pseudo-class styles on Happo workers.
+   *
+   * Set this to `false` to opt out and control the attributes yourself.
+   *
+   * @default true
    */
   autoApplyPseudoStateAttributes?: boolean;
 }
@@ -129,8 +133,9 @@ interface CustomIntegration {
    * the path to the folder containing the custom files and the path to the
    * entry point file relative to the root directory.
    *
-   * Optionally return `estimatedSnapsCount` to enable server-side auto-chunking,
-   * which parallelizes rendering across multiple workers.
+   * Return `estimatedSnapsCount` to let Happo parallelize rendering across
+   * multiple workers. Without it, the whole package is rendered by a single
+   * worker.
    *
    * @example
    * { rootDir: 'dist/custom', entryPoint: 'index.js', estimatedSnapsCount: 42 }
@@ -275,17 +280,6 @@ export interface Config {
   project?: string;
 
   /**
-   * Use this to post Happo statuses as comments to your PR. This can be useful
-   * if the Happo server doesn't have access to your GitHub repository.
-   *
-   * The default is `'https://api.github.com'`. If you are using GitHub
-   * Enterprise, enter the URL to your local GitHub API here, such as
-   * `'https://ghe.mycompany.zone/api/v3'` (the default for GHE installation is
-   * for the API to be located at `/api/v3`).
-   */
-  githubApiUrl?: string;
-
-  /**
    * Browsers to use when generating snapshots
    */
   targets: Record<string, Target>;
@@ -339,14 +333,6 @@ export type BrowserType = MobileSafariBrowserType | DesktopBrowserType;
 
 interface BaseTarget {
   type: BrowserType;
-
-  /**
-   * Split the target into chunks to be run on multiple workers in parallel
-   *
-   * This adds some overhead, so if your test suite isn't large, using more than
-   * one chunk might actually slow things down.
-   */
-  chunks?: number;
 
   /**
    * Override the default maximum height (5000px) used by Happo workers
@@ -584,7 +570,6 @@ export interface ConfigWithDefaults extends Config {
   apiSecret: NonNullable<Config['apiSecret']>;
   integration: NonNullable<Config['integration']>;
   endpoint: NonNullable<Config['endpoint']>;
-  githubApiUrl: NonNullable<Config['githubApiUrl']>;
   targets: Record<string, TargetWithDefaults>;
   failOnWaitForTimeout: NonNullable<Config['failOnWaitForTimeout']>;
 }

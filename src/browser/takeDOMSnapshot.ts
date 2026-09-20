@@ -472,7 +472,7 @@ export default function takeDOMSnapshot({
   transformDOM,
   handleBase64Image,
   strategy = 'hoist',
-  autoApplyPseudoStateAttributes = false,
+  autoApplyPseudoStateAttributes = true,
 }: TakeDOMSnapshotOptions): DOMSnapshotResult {
   if (doc == null) {
     throw new Error('doc cannot be null or undefined');

@@ -79,6 +79,9 @@ test('modal dialogs are marked with data-happo-modal', async ({ page }) => {
     return globalThis.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
+      // Keep hover/focus-visible detection out of this, since what's hovered
+      // depends on where the mouse happens to be.
+      autoApplyPseudoStateAttributes: false,
     });
   });
 
@@ -103,6 +106,9 @@ test('non-modal dialogs are not marked with data-happo-modal', async ({ page }) 
     return globalThis.happo.takeDOMSnapshot({
       doc: document,
       element: document.body,
+      // Keep hover/focus-visible detection out of this, since what's hovered
+      // depends on where the mouse happens to be.
+      autoApplyPseudoStateAttributes: false,
     });
   });
 
