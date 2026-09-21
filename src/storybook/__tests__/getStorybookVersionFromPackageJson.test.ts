@@ -239,9 +239,52 @@ it('throws a helpful error when the declared version is unparseable and the pack
   );
 });
 
-describe('semver-shaped specifiers are read directly', () => {
-  // These never need node_modules — the declared range already tells us the
-  // major.
+describe('the installed version wins over the declared range', () => {
+  // A declared range is a bound, not a version, so it can disagree with what
+  // is actually on disk in both directions. node_modules is what
+  // `storybook build` runs and what the manager addon has to match, so it
+  // wins every time.
+  const cases: Array<[string, string, number]> = [
+    // Range spans more than one major — the declaration never picked a side.
+    ['>=8.0.0', '9.1.10', 9],
+    ['8 || 9', '9.0.0', 9],
+    ['>=8.0.0 <10', '9.1.10', 9],
+    // Declaration runs ahead of the install (branch switch without a
+    // reinstall, stale lockfile). Reading 9 here would hand `--preview-only`
+    // to a v8 CLI and fail the build outright.
+    ['^9.0.0', '8.6.0', 8],
+    // Even an exact pin loses: `overrides`/`resolutions` can put something
+    // else on disk, and only disk knows.
+    ['9.1.10', '8.6.0', 8],
+    // Agreement case, for the avoidance of doubt.
+    ['^8.0.0', '8.6.0', 8],
+  ];
+
+  for (const [declared, installed, expected] of cases) {
+    it(`reads ${expected} for declared "${declared}" with ${installed} installed`, () => {
+      tmpfs.mock({
+        'package.json': JSON.stringify({
+          name: 'test',
+          devDependencies: { storybook: declared },
+        }),
+        node_modules: {
+          storybook: {
+            'package.json': JSON.stringify({
+              name: 'storybook',
+              version: installed,
+            }),
+          },
+        },
+      });
+
+      assert.strictEqual(getStorybookVersionFromPackageJson(), expected);
+    });
+  }
+});
+
+describe('falls back to the declared range when nothing resolves off disk', () => {
+  // No node_modules at all — this is the Yarn PnP-without-hooks shape, where
+  // the declaration is the only signal we have left.
   const cases: Array<[string, number]> = [
     ['^9.0.0', 9],
     ['~7.1.0', 7],
@@ -269,61 +312,59 @@ describe('semver-shaped specifiers are read directly', () => {
   }
 });
 
-describe('non-semver specifiers fall back to the installed version', () => {
-  // Every one of these contains digits somewhere. Reading a major out of them
-  // is either flat-out wrong ("catalog:react19" -> 19) or right only by
-  // coincidence ("catalog:sb9" -> 9), so they must all defer to node_modules.
-  // Each case deliberately installs a version that does NOT match the digits
-  // in the specifier, so a bogus parse would fail the assertion.
-  const cases: Array<[string, string, number]> = [
-    ['catalog:react19', '8.2.1', 8],
-    ['catalog:sb9', '8.2.1', 8],
-    ['npm:storybook@8.6.0', '9.1.10', 9],
-    ['file:../forks/storybook-9', '8.6.0', 8],
-    ['link:../forks/storybook-9', '8.6.0', 8],
-    ['git+https://github.com/storybookjs/storybook.git#v9.0.0', '8.6.0', 8],
-    ['github:storybookjs/storybook#v9', '8.6.0', 8],
-    ['workspace:^9', '8.6.0', 8],
-    ['*', '9.1.10', 9],
-    ['latest', '9.1.10', 9],
+describe('non-semver specifiers never yield a major on their own', () => {
+  // Every one of these contains digits somewhere, and an unanchored digit
+  // match would pull a major out of them — flat-out wrong for
+  // "catalog:react19" (-> 19), right only by coincidence for "catalog:sb9".
+  // With nothing installed to fall back to there is no answer to give, so
+  // throwing is the correct outcome. These fixtures deliberately have no
+  // node_modules: an installed version would mask the declaration entirely
+  // and the assertion would pass no matter how the specifier parsed.
+  const specifiers = [
+    'catalog:react19',
+    'catalog:sb9',
+    'npm:storybook@8.6.0',
+    'file:../forks/storybook-9',
+    'link:../forks/storybook-9',
+    'git+https://github.com/storybookjs/storybook.git#v9.0.0',
+    'github:storybookjs/storybook#v9',
+    'workspace:^9',
+    '*',
+    'latest',
   ];
 
-  for (const [declared, installed, expected] of cases) {
-    it(`reads ${expected} from node_modules for "${declared}"`, () => {
+  for (const declared of specifiers) {
+    it(`throws rather than guessing a major from "${declared}"`, () => {
       tmpfs.mock({
         'package.json': JSON.stringify({
           name: 'test',
           devDependencies: { storybook: declared },
         }),
-        node_modules: {
-          storybook: {
-            'package.json': JSON.stringify({
-              name: 'storybook',
-              version: installed,
-            }),
-          },
-        },
       });
 
-      assert.strictEqual(getStorybookVersionFromPackageJson(), expected);
+      assert.throws(
+        () => getStorybookVersionFromPackageJson(),
+        /Unable to determine installed version of storybook/,
+      );
     });
   }
-});
 
-it('throws rather than guessing a major from digits in a named catalog', () => {
-  // Regression: "catalog:react19" used to parse as Storybook 19. On a project
-  // actually running Storybook 8 that bogus major gets `--preview-only` passed
-  // to a build that does not support it, failing the build outright. With
-  // nothing installed to fall back to, erroring out is the correct outcome.
-  tmpfs.mock({
-    'package.json': JSON.stringify({
-      name: 'test',
-      devDependencies: { storybook: 'catalog:react19' },
-    }),
+  it('resolves them from node_modules when the package is installed', () => {
+    tmpfs.mock({
+      'package.json': JSON.stringify({
+        name: 'test',
+        devDependencies: { storybook: 'catalog:react19' },
+      }),
+      node_modules: {
+        storybook: {
+          'package.json': JSON.stringify({
+            name: 'storybook',
+            version: '8.2.1',
+          }),
+        },
+      },
+    });
+
+    assert.strictEqual(getStorybookVersionFromPackageJson(), 8);
   });
-
-  assert.throws(
-    () => getStorybookVersionFromPackageJson(),
-    /Unable to determine installed version of storybook/,
-  );
 });
