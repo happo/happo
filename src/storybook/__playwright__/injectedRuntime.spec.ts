@@ -17,12 +17,36 @@ import buildStorybookPackage from '../index.ts';
  * `buildStorybookPackage()` now puts the runtime into the package itself, so
  * the import is optional. This drives a package built from a fixture that
  * does not import it anywhere, the way a worker would, against whichever
- * Storybook version is installed.
+ * Storybook version is installed. That makes it the coverage for this, rather
+ * than any of the jobs that hit the real Happo API -- those all build
+ * fixtures that do import the runtime, and would pass just as happily if the
+ * injection stopped working.
  */
 
-// Nothing under this config dir imports the runtime -- see its preview.ts.
-const CONFIG_DIR = 'src/storybook/__tests__/storybook-app-v8';
+// Nothing under this config dir imports the runtime -- see its main.ts.
+const CONFIG_DIR = 'src/storybook/__tests__/storybook-app-no-register';
 const OUTPUT_DIR = '.out-injected-runtime';
+
+/**
+ * A string literal from `browser/register.ts`. Distinctive enough not to turn
+ * up by accident, and a string, so it survives whatever minifier the user's
+ * Storybook builder happens to run.
+ */
+const RUNTIME_MARKER =
+  'Missing examples. Make sure to call the init function before calling nextExample.';
+
+function readJsFiles(dir: string): Array<string> {
+  if (!fs.existsSync(dir)) {
+    return [];
+  }
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return readJsFiles(full);
+    }
+    return entry.name.endsWith('.js') ? [full] : [];
+  });
+}
 
 let server: ServerInfo;
 
@@ -43,6 +67,21 @@ test('the package carries the runtime rather than relying on the preview', () =>
   const iframe = fs.readFileSync(path.join(OUTPUT_DIR, 'iframe.html'), 'utf8');
 
   expect(iframe).toMatch(/<script[^>]+src="\.\/happo-storybook-runtime\.js"/);
+});
+
+test('the injected copy is the only one in the package', () => {
+  const runtime = fs.readFileSync(
+    path.join(OUTPUT_DIR, 'happo-storybook-runtime.js'),
+    'utf8',
+  );
+  expect(runtime).toContain(RUNTIME_MARKER);
+
+  // An import added anywhere under the fixture would bundle a second copy and
+  // quietly take away everything the next test proves, without failing it.
+  const bundled = readJsFiles(path.join(OUTPUT_DIR, 'assets')).filter((file) =>
+    fs.readFileSync(file, 'utf8').includes(RUNTIME_MARKER),
+  );
+  expect(bundled, `${CONFIG_DIR} imports the Happo runtime somewhere`).toEqual([]);
 });
 
 test('the injected runtime alone can drive the Storybook', async ({ page }) => {
