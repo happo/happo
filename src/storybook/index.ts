@@ -5,6 +5,9 @@ import path from 'node:path';
 import type { StorybookIntegration } from '../config/index.ts';
 import { isInSkipSet, toSkipSet } from '../isomorphic/parseSkip.ts';
 import type { OnlyItem, SkipItem } from '../isomorphic/types.ts';
+import formatStorybookBuildFailure, {
+  MAX_CAPTURED_OUTPUT_CHARS,
+} from './formatStorybookBuildFailure.ts';
 import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
 import resolveStoryFileItems, { type StorybookIndexEntry } from './resolveStoryFileItems.ts';
@@ -133,15 +136,88 @@ async function buildStorybook({
     console.log(`[happo] Using build command \`${binary} ${params.join(' ')}\``);
   }
 
+  const command = [binary, ...params];
+
   return new Promise((resolve, reject) => {
     const spawned = spawn(binary, params, {
-      stdio: 'inherit',
+      // stdout and stderr are piped rather than inherited so that we can keep
+      // the tail of them and put it in the error when the build fails. They
+      // are written straight back out below, so a terminal or a CI log still
+      // sees the build's output live and in full -- the only thing that
+      // changes is that we now know what it said. stdin stays inherited so
+      // that a prompt (npx offering to install the CLI, say) still works.
+      stdio: ['inherit', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        // Piping stdout makes Storybook think it is not talking to a terminal
+        // and drop its colors. It is, via us, so say so.
+        ...(process.stdout.isTTY && !('FORCE_COLOR' in process.env)
+          ? { FORCE_COLOR: '1' }
+          : {}),
+      },
       shell: process.platform == 'win32',
     });
 
-    spawned.on('exit', (code) => {
+    let capturedOutput = '';
+
+    function capture(chunk: Buffer): void {
+      capturedOutput += chunk.toString('utf8');
+      if (capturedOutput.length > MAX_CAPTURED_OUTPUT_CHARS) {
+        // Keep the end rather than the start: a build that fails partway
+        // through says why on its way out, not on its way in.
+        capturedOutput = capturedOutput.slice(-MAX_CAPTURED_OUTPUT_CHARS);
+      }
+    }
+
+    // Forwarded with pipe() rather than a write() inside the 'data' handler:
+    // pipe() pauses the child's stream when our own stdout cannot keep up,
+    // which is the backpressure `stdio: 'inherit'` used to get for free from
+    // the kernel. Writing unconditionally would instead drain the child as
+    // fast as it produces and buffer the difference in this process, without
+    // bound, whenever the far end is slow -- a redirect to a file, or a CI
+    // agent collecting the log.
+    //
+    // `end: false` matters: the child's stdout ending must not close ours for
+    // the rest of the run.
+    spawned.stdout?.pipe(process.stdout, { end: false });
+    spawned.stderr?.pipe(process.stderr, { end: false });
+
+    // Capturing separately rather than in a transform keeps this out of the
+    // forwarding path entirely. pipe() pauses the source under backpressure,
+    // which stops these events too, so the capture stays in step with what
+    // has actually been written out.
+    spawned.stdout?.on('data', capture);
+    spawned.stderr?.on('data', capture);
+
+    // Without this listener an unspawnable binary (a missing `storybook`, a
+    // `yarn` that is not on PATH) emits an unhandled 'error' event, which
+    // takes the whole process down with an uncaught exception -- past the
+    // catch in the CLI that is supposed to cancel the Happo job, leaving the
+    // job hanging with no message at all.
+    spawned.on('error', (error) => {
+      reject(
+        new Error(
+          `Could not run the Storybook build command \`${command.join(' ')}\`: ${error.message}`,
+          { cause: error },
+        ),
+      );
+    });
+
+    // 'close' rather than 'exit': it fires once the piped streams above have
+    // been drained, so everything Storybook printed is in `capturedOutput` by
+    // the time we build the error out of it.
+    spawned.on('close', (code, signal) => {
       if (code !== 0) {
-        reject(new Error('Failed to build static storybook package'));
+        reject(
+          new Error(
+            formatStorybookBuildFailure({
+              command,
+              exitCode: code,
+              signal,
+              output: capturedOutput,
+            }),
+          ),
+        );
         return;
       }
 
@@ -319,8 +395,28 @@ export default async function buildStorybookPackage({
 
   const iframePath = path.join(outputDir, 'iframe.html');
   if (!fs.existsSync(iframePath)) {
+    // Reaching here means the build reported success (or was skipped for a
+    // prebuilt package) and still left nothing to render, so the exit code
+    // has no more to tell us. What is worth saying is where we looked, since
+    // the usual cause is that `outputDir` and the directory the package
+    // actually landed in are two different places.
     throw new Error(
-      'Failed to build static storybook package (missing iframe.html)',
+      [
+        `Happo could not find iframe.html in ${path.resolve(outputDir)}.`,
+        '',
+        'That file is the Storybook preview, and it is the only thing Happo renders, so ' +
+          'there is nothing to take screenshots of without it.',
+        '',
+        usePrebuiltPackage
+          ? 'Happo was told to use a prebuilt package (`usePrebuiltPackage`), so it did not run ' +
+            'the build itself. Check that your Storybook build ran before `happo run`, and that ' +
+            '`outputDir` in your Happo config points at the directory it wrote to.'
+          : 'The Storybook build reported success, so this usually means it wrote its output ' +
+            'somewhere else. Check whether `outputDir` in your Happo config is overridden by a ' +
+            '`--output-dir` in your `.storybook` config or your build script.',
+        '',
+        'See https://docs.happo.io/docs/storybook#troubleshooting for more details.',
+      ].join('\n'),
     );
   }
 
