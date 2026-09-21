@@ -1,3 +1,5 @@
+import { stripVTControlCharacters } from 'node:util';
+
 /**
  * How much of Storybook's own build output we keep around to replay when the
  * build fails. The output is streamed straight through to the terminal as it
@@ -10,18 +12,6 @@ export const MAX_CAPTURED_OUTPUT_CHARS = 20_000;
 
 /** Lines of that tail we actually put in the message. */
 const MAX_REPLAYED_LINES = 30;
-
-// eslint-disable-next-line no-control-regex -- matching ANSI escapes requires them
-const ANSI_PATTERN = /\u001B\[[0-9;]*[A-Za-z]/g;
-
-/**
- * Storybook colorizes its output and draws progress spinners. Those escape
- * codes are fine on a terminal but turn into visible junk once the text is
- * embedded in an error message and forwarded to the Happo job page.
- */
-export function stripAnsi(value: string): string {
-  return value.replaceAll(ANSI_PATTERN, '');
-}
 
 export interface StorybookBuildFailure {
   /** The command we spawned, binary first. */
@@ -59,7 +49,7 @@ const MAX_REASON_LENGTH = 100;
  * Best guess at the one line from the build output that explains the failure.
  */
 export function extractFailureReason(output: string): string | undefined {
-  const plain = stripAnsi(output);
+  const plain = stripVTControlCharacters(output);
   const match =
     STORYBOOK_ERROR_LINE.exec(plain) ?? GENERIC_ERROR_LINE.exec(plain);
   const reason = match?.[1]?.trim();
@@ -129,7 +119,7 @@ export default function formatStorybookBuildFailure({
 }: StorybookBuildFailure): string {
   const sections = [buildHeadline({ exitCode, signal, output })];
 
-  const tail = stripAnsi(output ?? '')
+  const tail = stripVTControlCharacters(output ?? '')
     .split('\n')
     .map((line) => line.trimEnd())
     .filter((line) => line.trim() !== '')

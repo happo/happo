@@ -4,7 +4,6 @@ import { describe, it } from 'node:test';
 import formatFailureMessage from '../../network/formatFailureMessage.ts';
 import formatStorybookBuildFailure, {
   extractFailureReason,
-  stripAnsi,
 } from '../formatStorybookBuildFailure.ts';
 
 const COMMAND = ['storybook', 'build', '--output-dir', '.out'];
@@ -86,15 +85,24 @@ describe('formatStorybookBuildFailure', () => {
     assert.doesNotMatch(message, /line 0\b/);
   });
 
-  it('strips ANSI escapes so the message stays readable off a terminal', () => {
+  it('strips terminal control sequences from the replayed output', () => {
+    // Storybook colorizes its output and drives a spinner, so the captured
+    // text carries color codes, cursor hide/show (ESC[?25l) and line-clearing
+    // escapes. They are invisible on a terminal and visible junk anywhere
+    // else -- including the Happo job page, which is the whole point of
+    // capturing this.
+    const esc = String.fromCodePoint(27);
     const message = formatStorybookBuildFailure({
       command: COMMAND,
       exitCode: 1,
-      output: '\u001B[31mERR! it broke\u001B[39m',
+      output: `${esc}[?25l${esc}[36m|${esc}[39m building${esc}[2K${esc}[1G${esc}[31mERR! it broke${esc}[39m${esc}[?25h`,
     });
 
     assert.match(message, /ERR! it broke/);
-    assert.ok(!message.includes(String.fromCodePoint(27)));
+    assert.ok(
+      !message.includes(esc),
+      `escape sequences survived into the message: ${JSON.stringify(message)}`,
+    );
   });
 
   it('says so when there was no output at all', () => {
@@ -201,15 +209,5 @@ describe('extractFailureReason', () => {
     assert.ok(reason);
     assert.ok(reason.length <= 100, `expected <= 100 chars, got ${reason.length}`);
     assert.match(reason, /…$/);
-  });
-});
-
-describe('stripAnsi', () => {
-  it('leaves plain text alone', () => {
-    assert.strictEqual(stripAnsi('plain text'), 'plain text');
-  });
-
-  it('removes color and cursor sequences', () => {
-    assert.strictEqual(stripAnsi('\u001B[2K\u001B[1Gdone\u001B[0m'), 'done');
   });
 });
