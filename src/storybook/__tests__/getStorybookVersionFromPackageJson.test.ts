@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { afterEach, it } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import getStorybookVersionFromPackageJson from '../getStorybookVersionFromPackageJson.ts';
@@ -237,4 +237,134 @@ it('throws a helpful error when the declared version is unparseable and the pack
     () => getStorybookVersionFromPackageJson(),
     /Unable to determine installed version of storybook.*Ensure dependencies are installed/s,
   );
+});
+
+describe('the installed version wins over the declared range', () => {
+  // A declared range is a bound, not a version, so it can disagree with what
+  // is actually on disk in both directions. node_modules is what
+  // `storybook build` runs and what the manager addon has to match, so it
+  // wins every time.
+  const cases: Array<[string, string, number]> = [
+    // Range spans more than one major — the declaration never picked a side.
+    ['>=8.0.0', '9.1.10', 9],
+    ['8 || 9', '9.0.0', 9],
+    ['>=8.0.0 <10', '9.1.10', 9],
+    // Declaration runs ahead of the install (branch switch without a
+    // reinstall, stale lockfile). Reading 9 here would hand `--preview-only`
+    // to a v8 CLI and fail the build outright.
+    ['^9.0.0', '8.6.0', 8],
+    // Even an exact pin loses: `overrides`/`resolutions` can put something
+    // else on disk, and only disk knows.
+    ['9.1.10', '8.6.0', 8],
+    // Agreement case, for the avoidance of doubt.
+    ['^8.0.0', '8.6.0', 8],
+  ];
+
+  for (const [declared, installed, expected] of cases) {
+    it(`reads ${expected} for declared "${declared}" with ${installed} installed`, () => {
+      tmpfs.mock({
+        'package.json': JSON.stringify({
+          name: 'test',
+          devDependencies: { storybook: declared },
+        }),
+        node_modules: {
+          storybook: {
+            'package.json': JSON.stringify({
+              name: 'storybook',
+              version: installed,
+            }),
+          },
+        },
+      });
+
+      assert.strictEqual(getStorybookVersionFromPackageJson(), expected);
+    });
+  }
+});
+
+describe('falls back to the declared range when nothing resolves off disk', () => {
+  // No node_modules at all — this is the Yarn PnP-without-hooks shape, where
+  // the declaration is the only signal we have left.
+  const cases: Array<[string, number]> = [
+    ['^9.0.0', 9],
+    ['~7.1.0', 7],
+    ['>=8.0.0', 8],
+    ['>= 8.0.0', 8],
+    ['>=8.0.0 <9.0.0', 8],
+    ['9.0.0 || 10.0.0', 9],
+    ['v9.0.0', 9],
+    ['8.0.0-alpha.1', 8],
+    ['9.x', 9],
+    ['9', 9],
+  ];
+
+  for (const [declared, expected] of cases) {
+    it(`reads ${expected} from "${declared}"`, () => {
+      tmpfs.mock({
+        'package.json': JSON.stringify({
+          name: 'test',
+          devDependencies: { storybook: declared },
+        }),
+      });
+
+      assert.strictEqual(getStorybookVersionFromPackageJson(), expected);
+    });
+  }
+});
+
+describe('non-semver specifiers never yield a major on their own', () => {
+  // Every one of these contains digits somewhere, and an unanchored digit
+  // match would pull a major out of them — flat-out wrong for
+  // "catalog:react19" (-> 19), right only by coincidence for "catalog:sb9".
+  // With nothing installed to fall back to there is no answer to give, so
+  // throwing is the correct outcome. These fixtures deliberately have no
+  // node_modules: an installed version would mask the declaration entirely
+  // and the assertion would pass no matter how the specifier parsed.
+  const specifiers = [
+    'catalog:react19',
+    'catalog:sb9',
+    'npm:storybook@8.6.0',
+    'file:../forks/storybook-9',
+    'link:../forks/storybook-9',
+    'git+https://github.com/storybookjs/storybook.git#v9.0.0',
+    'github:storybookjs/storybook#v9',
+    'workspace:^9',
+    '*',
+    'latest',
+  ];
+
+  for (const declared of specifiers) {
+    it(`throws rather than guessing a major from "${declared}"`, () => {
+      tmpfs.mock({
+        'package.json': JSON.stringify({
+          name: 'test',
+          devDependencies: { storybook: declared },
+        }),
+      });
+
+      assert.throws(
+        () => getStorybookVersionFromPackageJson(),
+        /Unable to determine installed version of storybook/,
+      );
+    });
+  }
+
+  it('resolves them from node_modules when the package is installed', () => {
+    tmpfs.mock({
+      'package.json': JSON.stringify({
+        name: 'test',
+        devDependencies: { storybook: 'catalog:react19' },
+      }),
+      node_modules: {
+        storybook: {
+          'package.json': JSON.stringify({
+            name: 'storybook',
+            version: '8.2.1',
+          }),
+        },
+      },
+    });
+
+    assert.strictEqual(getStorybookVersionFromPackageJson(), 8);
+  });
 });
