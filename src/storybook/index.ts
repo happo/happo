@@ -160,8 +160,7 @@ async function buildStorybook({
 
     let capturedOutput = '';
 
-    function capture(chunk: Buffer, target: NodeJS.WriteStream): void {
-      target.write(chunk);
+    function capture(chunk: Buffer): void {
       capturedOutput += chunk.toString('utf8');
       if (capturedOutput.length > MAX_CAPTURED_OUTPUT_CHARS) {
         // Keep the end rather than the start: a build that fails partway
@@ -170,8 +169,25 @@ async function buildStorybook({
       }
     }
 
-    spawned.stdout?.on('data', (chunk: Buffer) => capture(chunk, process.stdout));
-    spawned.stderr?.on('data', (chunk: Buffer) => capture(chunk, process.stderr));
+    // Forwarded with pipe() rather than a write() inside the 'data' handler:
+    // pipe() pauses the child's stream when our own stdout cannot keep up,
+    // which is the backpressure `stdio: 'inherit'` used to get for free from
+    // the kernel. Writing unconditionally would instead drain the child as
+    // fast as it produces and buffer the difference in this process, without
+    // bound, whenever the far end is slow -- a redirect to a file, or a CI
+    // agent collecting the log.
+    //
+    // `end: false` matters: the child's stdout ending must not close ours for
+    // the rest of the run.
+    spawned.stdout?.pipe(process.stdout, { end: false });
+    spawned.stderr?.pipe(process.stderr, { end: false });
+
+    // Capturing separately rather than in a transform keeps this out of the
+    // forwarding path entirely. pipe() pauses the source under backpressure,
+    // which stops these events too, so the capture stays in step with what
+    // has actually been written out.
+    spawned.stdout?.on('data', capture);
+    spawned.stderr?.on('data', capture);
 
     // Without this listener an unspawnable binary (a missing `storybook`, a
     // `yarn` that is not on PATH) emits an unhandled 'error' event, which
