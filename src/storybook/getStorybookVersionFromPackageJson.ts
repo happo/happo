@@ -4,6 +4,23 @@ import path from 'node:path';
 
 import * as walk from 'empathic/walk';
 
+// A specifier is only treated as a version when it actually looks like a
+// semver range: an optional range operator, then a major version followed by a
+// separator (or nothing at all). Anchoring here matters — an unanchored digit
+// match would happily read a major out of specifiers that merely *contain*
+// digits, e.g. "catalog:react19" (-> 19) or "npm:storybook@8.6.0" (-> 8), and
+// a bogus major is worse than no major: falling back to the installed package
+// always gives us the real version.
+const SEMVER_MAJOR = /^\s*[v=<>~^\s]*(\d+)(?:[.\-+]|\s|$)/;
+
+function parseMajorVersion(version: string | undefined): number | undefined {
+  const match = version?.match(SEMVER_MAJOR);
+  if (!match?.[1]) {
+    return undefined;
+  }
+  return Number.parseInt(match[1], 10);
+}
+
 function readVersionFrom(filePath: string): string | undefined {
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf8')).version;
@@ -111,20 +128,21 @@ export default function getStorybookVersionFromPackageJson(
   }
 
   const declaredVersion: string = combinedDependencies[storybookPackage];
-  const declaredMatch = declaredVersion.match(/\d+/);
-  if (declaredMatch) {
-    return Number.parseInt(declaredMatch[0], 10);
+  const declaredMajor = parseMajorVersion(declaredVersion);
+  if (declaredMajor !== undefined) {
+    return declaredMajor;
   }
 
   // The declared dependency is not a plain semver range. This happens with
-  // pnpm catalogs ("catalog:", "catalog:foo"), workspace protocols
-  // ("workspace:*"), and other non-semver specifiers ("link:", "file:", etc.).
-  // Fall back to the version from the installed package in node_modules.
+  // pnpm catalogs ("catalog:", "catalog:react19"), workspace protocols
+  // ("workspace:*"), aliases ("npm:storybook@8.6.0"), and other non-semver
+  // specifiers ("link:", "file:", git URLs, etc.). Fall back to the version
+  // from the installed package in node_modules.
   const projectRoot = path.dirname(packageJsonPath);
   const installedVersion = readInstalledVersion(storybookPackage, projectRoot);
-  const installedMatch = installedVersion?.match(/\d+/);
-  if (installedMatch) {
-    return Number.parseInt(installedMatch[0], 10);
+  const installedMajor = parseMajorVersion(installedVersion);
+  if (installedMajor !== undefined) {
+    return installedMajor;
   }
 
   throw new Error(
