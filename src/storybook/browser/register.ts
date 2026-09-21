@@ -32,6 +32,8 @@ declare global {
   var happoSkipped: SkipItems | undefined;
   var happoOnly: OnlyItems | null | undefined;
   var __IS_HAPPO_RUN: boolean | undefined;
+  // Shared by every copy of this module on the page. See `RegisterState`.
+  var __happoRegisterState: RegisterState | undefined;
   var __STORYBOOK_CLIENT_API__:
     | {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,7 +68,10 @@ interface Example {
   component: string;
   variant: string;
   storyId: string;
-  delay: number;
+  // Undefined until `setDefaultDelay()` is called and unless the story sets
+  // `parameters.happo.delay`; `setTimeout(fn, undefined)` is a zero delay,
+  // which is what "no delay configured" has always meant here.
+  delay: number | undefined;
   waitForContent: string | undefined;
   waitFor: () => boolean;
   beforeScreenshot: HookFunction;
@@ -76,15 +81,39 @@ interface Example {
   animate: StoryAnimateConfig | undefined;
 }
 
-let renderTimeoutMs = 2000;
-let examples: Array<Example>;
-let currentIndex = 0;
-let defaultDelay: number;
-let themeSwitcher: (theme: string, channel: Channel) => Promise<void>;
-let forcedHappoScreenshotSteps:
-  | Array<{ stepLabel: string; done: boolean }>
-  | undefined;
-let shouldWaitForCompletedEvent = true;
+/**
+ * Everything this module mutates while a Happo run is in progress.
+ *
+ * It lives on `globalThis` rather than in module scope because the page can
+ * end up with more than one copy of this module: Happo ships a standalone
+ * build of it inside the Storybook package (so the integration works without
+ * `import 'happo/storybook/register'` in `.storybook/preview`), and a project
+ * that imports anything from this module -- `forceHappoScreenshot` in a story
+ * file, say -- gets a second copy bundled into the preview. Storybook loads
+ * story files lazily, so that second copy can be evaluated *during* a run,
+ * after `init()` has already collected the examples. Sharing the state means
+ * whichever copy `window.happo` happens to point at is looking at the same
+ * run.
+ */
+interface RegisterState {
+  renderTimeoutMs: number;
+  examples: Array<Example> | undefined;
+  currentIndex: number;
+  defaultDelay: number | undefined;
+  themeSwitcher: ((theme: string, channel: Channel) => Promise<void>) | undefined;
+  forcedHappoScreenshotSteps: Array<{ stepLabel: string; done: boolean }> | undefined;
+  shouldWaitForCompletedEvent: boolean;
+}
+
+const state: RegisterState = (globalThis.__happoRegisterState ??= {
+  renderTimeoutMs: 2000,
+  examples: undefined,
+  currentIndex: 0,
+  defaultDelay: undefined,
+  themeSwitcher: undefined,
+  forcedHappoScreenshotSteps: undefined,
+  shouldWaitForCompletedEvent: true,
+});
 
 class ForcedHappoScreenshot extends Error {
   type: string;
@@ -103,7 +132,7 @@ async function waitForWaitFor(
   start = time.originalDateNow(),
 ): Promise<void> {
   const duration = time.originalDateNow() - start;
-  if (!waitFor() && duration < renderTimeoutMs) {
+  if (!waitFor() && duration < state.renderTimeoutMs) {
     return new Promise((resolve) =>
       time.originalSetTimeout(() => resolve(waitForWaitFor(waitFor, start)), 50),
     );
@@ -171,7 +200,7 @@ async function getExamples(): Promise<Array<Example>> {
       if (parameters.happo === false) {
         return;
       }
-      let delay = defaultDelay;
+      let delay = state.defaultDelay;
       let waitForContent;
       let waitFor;
       let beforeScreenshot;
@@ -180,7 +209,7 @@ async function getExamples(): Promise<Array<Example>> {
       let themes;
       let animate;
       if (typeof parameters.happo === 'object' && parameters.happo !== null) {
-        delay = parameters.happo.delay || defaultDelay;
+        delay = parameters.happo.delay || state.defaultDelay;
         waitForContent = parameters.happo.waitForContent;
         waitFor = parameters.happo.waitFor;
         beforeScreenshot = parameters.happo.beforeScreenshot;
@@ -282,7 +311,7 @@ function filterExamples(
 globalThis.happo = globalThis.happo || ({} as WindowHappo);
 
 globalThis.happo.init = async (config: InitConfig) => {
-  examples = filterExamples(await getExamples(), config);
+  state.examples = filterExamples(await getExamples(), config);
 };
 
 interface Story {
@@ -305,7 +334,7 @@ function renderStory(
   let loadingCount = 0;
 
   return new Promise((resolve) => {
-    const timeout = time.originalSetTimeout(resolve, renderTimeoutMs);
+    const timeout = time.originalSetTimeout(resolve, state.renderTimeoutMs);
     function handleRenderPhaseChanged(ev: { storyId: string; newPhase: string }) {
       if (!channel) {
         throw new Error('Missing Storybook Addons Channel');
@@ -337,8 +366,8 @@ function renderStory(
         channel.off('storyRenderPhaseChanged', handleRenderPhaseChanged);
         clearTimeout(timeout);
 
-        if (isPlaying && forcedHappoScreenshotSteps) {
-          const pausedAtStep = forcedHappoScreenshotSteps.at(-1);
+        if (isPlaying && state.forcedHappoScreenshotSteps) {
+          const pausedAtStep = state.forcedHappoScreenshotSteps.at(-1);
 
           if (pausedAtStep && !pausedAtStep.done) {
             return resolve({ pausedAtStep });
@@ -353,7 +382,7 @@ function renderStory(
       }
     }
 
-    if (shouldWaitForCompletedEvent) {
+    if (state.shouldWaitForCompletedEvent) {
       channel.on('storyRenderPhaseChanged', handleRenderPhaseChanged);
     }
 
@@ -363,7 +392,7 @@ function renderStory(
       channel.emit('setCurrentStory', story);
     }
 
-    if (!shouldWaitForCompletedEvent) {
+    if (!state.shouldWaitForCompletedEvent) {
       time.originalSetTimeout(() => {
         clearTimeout(timeout);
         resolve({});
@@ -382,19 +411,19 @@ function assertHTMLElement(element: Element | null): asserts element is HTMLElem
 }
 
 globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> => {
-  if (!examples) {
+  if (!state.examples) {
     throw new Error(
       'Missing examples. Make sure to call the init function before calling nextExample.',
     );
   }
 
-  if (currentIndex >= examples.length) {
+  if (state.currentIndex >= state.examples.length) {
     return;
   }
 
-  const example = examples[currentIndex];
+  const example = state.examples[state.currentIndex];
   if (!example) {
-    throw new Error(`Missing example at index ${currentIndex}`);
+    throw new Error(`Missing example at index ${state.currentIndex}`);
   }
 
   const {
@@ -422,7 +451,7 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
     assertHTMLElement(rootElement);
     rootElement.dataset.happoIgnore = 'true';
 
-    const { afterScreenshot } = examples[currentIndex - 1] || {};
+    const { afterScreenshot } = state.examples[state.currentIndex - 1] || {};
     if (afterScreenshot && typeof afterScreenshot === 'function') {
       try {
         await afterScreenshot({ rootElement });
@@ -445,7 +474,7 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
         story: rawVariant,
         storyId,
       },
-      { force: !!forcedHappoScreenshotSteps },
+      { force: !!state.forcedHappoScreenshotSteps },
     );
 
     pausedAtStep = renderResult.pausedAtStep;
@@ -453,7 +482,7 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
     if (pausedAtStep) {
       variant = `${variant}-${pausedAtStep.stepLabel}`;
     } else {
-      forcedHappoScreenshotSteps = undefined;
+      state.forcedHappoScreenshotSteps = undefined;
     }
 
     const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
@@ -461,8 +490,8 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       throw new Error('Missing Storybook Addons Channel');
     }
 
-    if (theme && themeSwitcher) {
-      await themeSwitcher(theme, channel);
+    if (theme && state.themeSwitcher) {
+      await state.themeSwitcher(theme, channel);
     }
 
     if (/sb-show-errordisplay/.test(document.body.className)) {
@@ -510,13 +539,13 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
     if (pausedAtStep) {
       pausedAtStep.done = true;
     } else {
-      currentIndex++;
+      state.currentIndex++;
     }
   }
 };
 
 export function forceHappoScreenshot(stepLabel: string): void {
-  if (!examples) {
+  if (!state.examples) {
     console.log(
       `Ignoring forceHappoScreenshot with step label "${stepLabel}" since we are not currently rendering for Happo`,
     );
@@ -530,36 +559,36 @@ export function forceHappoScreenshot(stepLabel: string): void {
   }
 
   if (
-    forcedHappoScreenshotSteps &&
-    forcedHappoScreenshotSteps.some((s) => s.stepLabel === stepLabel)
+    state.forcedHappoScreenshotSteps &&
+    state.forcedHappoScreenshotSteps.some((s) => s.stepLabel === stepLabel)
   ) {
     // ignore, this step has already been handled
     return;
   }
 
-  forcedHappoScreenshotSteps = forcedHappoScreenshotSteps || [];
-  forcedHappoScreenshotSteps.push({ stepLabel, done: false });
+  state.forcedHappoScreenshotSteps = state.forcedHappoScreenshotSteps || [];
+  state.forcedHappoScreenshotSteps.push({ stepLabel, done: false });
 
   console.log('Forcing happo screenshot', stepLabel);
   throw new ForcedHappoScreenshot(stepLabel);
 }
 
 export function setDefaultDelay(delay: number): void {
-  defaultDelay = delay;
+  state.defaultDelay = delay;
 }
 
 export function setRenderTimeoutMs(timeoutMs: number): void {
-  renderTimeoutMs = timeoutMs;
+  state.renderTimeoutMs = timeoutMs;
 }
 
 export function setThemeSwitcher(
   func: (theme: string, channel: Channel) => Promise<void>,
 ): void {
-  themeSwitcher = func;
+  state.themeSwitcher = func;
 }
 
 export function setShouldWaitForCompletedEvent(swfce: boolean): void {
-  shouldWaitForCompletedEvent = swfce;
+  state.shouldWaitForCompletedEvent = swfce;
 }
 
 /**
