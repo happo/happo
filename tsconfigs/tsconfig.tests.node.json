@@ -2,6 +2,7 @@
   "extends": "./tsconfig.base.json",
 
   "compilerOptions": {
+    "rootDir": "../",
     "tsBuildInfoFile": "../tmp/tsc/tsconfig.tests.node.tsbuildinfo",
     "types": ["node"]
   },
@@ -15,12 +16,18 @@
     },
     {
       "path": "./tsconfig.isomorphic.json"
+    },
+    {
+      "path": "./tsconfig.dev.json"
     }
   ],
 
   "include": [
     "../src/**/*.test.ts",
     "../src/**/__tests__/**/*.ts",
-    "../src/test-utils/**/*.ts"
+    "../src/test-utils/**/*.ts",
+    "../scripts/**/__tests__/**/*.ts",
+    // Imported by tests, and inside rootDir, so it must be listed
+    "../package.json"
   ]
 }

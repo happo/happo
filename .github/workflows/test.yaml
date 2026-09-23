@@ -109,6 +109,9 @@ jobs:
     name: Storybook (skipped examples)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # getSkip.ts diffs against the base commit to avoid skipping changed story files
+          fetch-depth: 0
       - uses: ./.github/actions/setup-env
       - run: pnpm test:storybook:skipped
 
