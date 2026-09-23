@@ -240,7 +240,11 @@ function run() {
   const filesToRun = getFilesToRun(patterns, selectedFiles);
   nodeTestArgs.push(...filesToRun);
 
-  currentProcess = spawn(process.execPath, nodeTestArgs, { stdio: 'inherit' });
+  currentProcess = spawn(process.execPath, nodeTestArgs, {
+    stdio: 'inherit',
+    // Keep the test suite from reporting errors to Sentry
+    env: { ...process.env, HAPPO_DISABLE_TELEMETRY: 'true' },
+  });
 
   // Forward SIGINT to the child process
   process.on('SIGINT', () => {

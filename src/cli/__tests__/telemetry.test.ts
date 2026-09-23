@@ -2,7 +2,13 @@ import assert from 'node:assert';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 
-import { createReporter, detectCI, parseDsn, parseFrames } from '../telemetry.ts';
+import {
+  createReporter,
+  detectCI,
+  isTelemetryDisabled,
+  parseDsn,
+  parseFrames,
+} from '../telemetry.ts';
 
 describe('telemetry', () => {
   describe('detectCI', () => {
@@ -109,6 +115,34 @@ describe('telemetry', () => {
           colno: 5,
         },
       ]);
+    });
+  });
+
+  describe('isTelemetryDisabled', () => {
+    it('is false by default', () => {
+      assert.strictEqual(isTelemetryDisabled({}), false);
+    });
+
+    it('is true when HAPPO_DISABLE_TELEMETRY is set', () => {
+      assert.strictEqual(
+        isTelemetryDisabled({ HAPPO_DISABLE_TELEMETRY: '1' }),
+        true,
+      );
+    });
+
+    it('is false in generic test environments', () => {
+      assert.strictEqual(
+        isTelemetryDisabled({
+          NODE_ENV: 'test',
+          JEST_WORKER_ID: '1',
+          NODE_TEST_CONTEXT: 'child-v8',
+        }),
+        false,
+      );
+    });
+
+    it('is true when running our test suite', () => {
+      assert.strictEqual(isTelemetryDisabled(), true);
     });
   });
 
