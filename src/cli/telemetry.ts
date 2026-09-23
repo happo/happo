@@ -452,20 +452,26 @@ export async function parseFrames(
   return frames.toReversed();
 }
 
-function isTestEnv(
+/**
+ * Our own test runner (scripts/test.ts) sets this so that the test suite
+ * doesn't report to Sentry. We deliberately don't sniff for generic test
+ * environments (NODE_ENV, JEST_WORKER_ID, etc.) because customers run happo
+ * in those too, and we want to hear about their errors.
+ */
+export function isTelemetryDisabled(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
-  return env.NODE_ENV === 'test' || Boolean(env.JEST_WORKER_ID);
+  return Boolean(env.HAPPO_DISABLE_TELEMETRY);
 }
 
 /**
  * Create a reporter with rate limiting
  */
 export function createReporter(opts: ReporterOptions = {}): Reporter {
-  if (isTestEnv()) {
+  if (isTelemetryDisabled()) {
     return {
       async captureException() {
-        // Never emit telemetry during tests.
+        // Telemetry has been turned off.
       },
     };
   }
