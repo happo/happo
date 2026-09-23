@@ -8,7 +8,6 @@
     { "path": "./tsconfigs/tsconfig.isomorphic.json" },
     { "path": "./tsconfigs/tsconfig.tests.cypress.json" },
     { "path": "./tsconfigs/tsconfig.tests.node.json" },
-    { "path": "./tsconfigs/tsconfig.tests.playwright.json" },
-    { "path": "./tsconfigs/tsconfig.tests.scripts.json" }
+    { "path": "./tsconfigs/tsconfig.tests.playwright.json" }
   ]
 }
