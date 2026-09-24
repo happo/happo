@@ -904,6 +904,275 @@ describe('loadConfigFile', () => {
     });
   });
 
+  describe('targets validation', () => {
+    it('throws a helpful error when targets is an array of browser names', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: ['chrome', 'firefox'],
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          assert.ok(error instanceof TypeError);
+          assert.match(
+            error.message,
+            /^Invalid `targets` in config file \S+: must be an object where each key is a name you choose for the target and each value is an object describing the browser, got an array\. For example:/,
+          );
+          assert.ok(
+            error.message.includes(
+              [
+                '  targets: {',
+                "    chrome: { type: 'chrome', viewport: '1024x768' },",
+                "    firefox: { type: 'firefox', viewport: '1024x768' },",
+                '  },',
+              ].join('\n'),
+            ),
+            error.message,
+          );
+          assert.match(
+            error.message,
+            /See https:\/\/docs\.happo\.io\/docs\/configuration#targets$/,
+          );
+          return true;
+        },
+      );
+    });
+
+    it('throws a helpful error when targets is a string', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: 'safari',
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          assert.match(error.message, /got string 'safari'\. For example:/);
+          assert.ok(
+            error.message.includes(
+              "    safari: { type: 'safari', viewport: '1024x768' },",
+            ),
+            error.message,
+          );
+          return true;
+        },
+      );
+    });
+
+    it('throws a helpful error when a target is a string instead of an object', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              desktop: 'firefox',
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          assert.ok(error instanceof TypeError);
+          assert.match(
+            error.message,
+            /^Invalid target `desktop` in config file \S+: each target must be an object describing the browser, got string 'firefox'\. For example:/,
+          );
+          assert.ok(
+            error.message.includes(
+              "    desktop: { type: 'firefox', viewport: '1024x768' },",
+            ),
+            error.message,
+          );
+          return true;
+        },
+      );
+    });
+
+    it('suggests a chrome target when a target value is not a known browser', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              'my-target': true,
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          assert.match(error.message, /got boolean true\. For example:/);
+          assert.ok(
+            error.message.includes(
+              "    'my-target': { type: 'chrome', viewport: '1024x768' },",
+            ),
+            error.message,
+          );
+          return true;
+        },
+      );
+    });
+
+    it('throws a helpful error when targets is not a plain object', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: new Map([['chrome', { type: 'chrome' }]]),
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Invalid `targets` in config file \S+: must be an object .+, got object Map\(1\) \{ 'chrome' => \{ type: 'chrome' \} \}\. For example:/,
+      );
+    });
+
+    it('accepts targets created with a null prototype', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: Object.assign(Object.create(null), {
+              chrome: { type: 'chrome' },
+            }),
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+      assert.strictEqual(config.targets.chrome?.type, 'chrome');
+    });
+
+    it('escapes target names in the example snippet', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              "user's": 'firefox',
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          assert.ok(
+            error.message.includes(
+              `    "user's": { type: 'firefox', viewport: '1024x768' },`,
+            ),
+            error.message,
+          );
+          return true;
+        },
+      );
+    });
+
+    it('suggests a chrome type when a target with an unknown name is missing a type', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              desktop: { viewport: '1200x800' },
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          assert.ok(
+            error.message.includes(
+              "    desktop: { type: 'chrome', viewport: '1024x768' },",
+            ),
+            error.message,
+          );
+          return true;
+        },
+      );
+    });
+
+    it('throws a helpful error when a target is missing a type', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { viewport: '1024x768' },
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          assert.ok(error instanceof TypeError);
+          assert.match(
+            error.message,
+            /^Invalid target `chrome` in config file \S+: `type` must be a non-empty string naming the browser \(such as 'chrome', 'firefox', 'edge', 'safari', 'ios-safari', 'ipad-safari', 'accessibility'\), got nothing\. For example:/,
+          );
+          assert.ok(
+            error.message.includes(
+              "    chrome: { type: 'chrome', viewport: '1024x768' },",
+            ),
+            error.message,
+          );
+          return true;
+        },
+      );
+    });
+
+    it('throws a helpful error when a target type is not a string', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 42 },
+            },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid target `chrome` in config file \S+: `type` must be a non-empty string naming the browser \(such as .+\), got 42\. For example:/,
+      );
+    });
+  });
+
   describe('deepCompare validation', () => {
     it('accepts valid deepCompare settings', async () => {
       tmpfs.mock({
