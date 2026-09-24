@@ -572,7 +572,7 @@ export type Target = MobileSafariTarget | DesktopTarget;
 
 export interface TargetWithDefaults extends BaseTarget {
   viewport: `${number}x${number}`;
-  __dynamic: boolean;
+  __dynamic?: boolean;
   prefersReducedMotion?: boolean;
 
   /** See {@link DesktopTarget.allowedHostnames}. */
