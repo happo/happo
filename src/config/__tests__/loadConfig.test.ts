@@ -1624,6 +1624,80 @@ describe('loadConfigFile', () => {
       assert.ok(Object.keys(config.targets.chrome ?? {}).includes('viewPort'));
     });
 
+    it('uses numeric indexes when an unknown option is inside an array', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            integration: {
+              type: 'pages',
+              pages: [{ url: 'https://example.com', title: 'Home', titles: 'Home' }],
+            },
+          };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
+
+      assert.match(
+        logger.error.mock.calls[0]?.arguments[0],
+        /Unknown option `integration\.pages\[0\]\.titles` in config file \S+\. Did you mean `title`\?/,
+      );
+    });
+
+    it('does not report unknown options when reportUnknownOptions is false', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            stylesheets: ['main.css'],
+          };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      const config = await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+        { reportUnknownOptions: false },
+      );
+
+      assert.strictEqual(logger.error.mock.callCount(), 0);
+      assert.ok('stylesheets' in config);
+      assert.deepStrictEqual(config.stylesheets, ['main.css']);
+    });
+
+    it('handles circular structures in unknown options', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          const shared = { name: 'shared' };
+          shared.self = shared;
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            shared,
+          };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      const config = await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+      );
+
+      assert.strictEqual(logger.error.mock.callCount(), 1);
+      assert.ok('shared' in config);
+      const { shared } = config;
+      assert.ok(typeof shared === 'object' && shared !== null && 'self' in shared);
+      assert.strictEqual(shared.self, shared);
+    });
+
     it('does not warn for a config that only uses known options', async () => {
       tmpfs.mock({
         'happo.config.js': `
@@ -1680,6 +1754,63 @@ describe('loadConfigFile', () => {
       assert.strictEqual(config.endpoint, 'https://happo.io');
       assert.strictEqual('project' in config, false);
       assert.strictEqual('maxHeight' in (config.targets.chrome ?? {}), false);
+    });
+
+    it('treats apiKey and apiSecret set to null as missing', async () => {
+      process.env.HAPPO_API_KEY = 'env-key';
+      process.env.HAPPO_API_SECRET = 'env-secret';
+      tmpfs.mock({
+        'happo.config.js': `
+          export default { apiKey: null, apiSecret: null };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.strictEqual(config.apiKey, 'env-key');
+      assert.strictEqual(config.apiSecret, 'env-secret');
+    });
+
+    it('uses the default endpoint when endpoint is empty or null', async () => {
+      for (const endpoint of ["''", 'null']) {
+        tmpfs.mock({
+          'happo.config.js': `
+            export default { apiKey: 'test-key', apiSecret: 'test-secret', endpoint: ${endpoint} };
+          `,
+        });
+
+        const config = await loadConfigFile(findConfigFile(), {
+          link: undefined,
+          ci: false,
+        });
+
+        assert.strictEqual(
+          config.endpoint,
+          'https://happo.io',
+          `endpoint: ${endpoint}`,
+        );
+        tmpfs.restore();
+      }
+    });
+
+    it('describes each option when a value matches none of a union', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: { chrome: { type: 'chrome', animate: [] } },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Invalid `targets\.chrome\.animate` in config file \S+: must be a boolean, 'auto', or an object, got: \[\]\.$/,
+      );
     });
 
     it('treats deepCompare: null as if it were left out', async () => {

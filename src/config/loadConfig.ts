@@ -107,6 +107,15 @@ export async function loadConfigFile(
   configFilePath: string,
   environment?: Pick<EnvironmentResult, 'link' | 'ci'>,
   logger: Logger = console,
+  {
+    reportUnknownOptions = true,
+  }: {
+    /**
+     * Set to `false` when the config has already been loaded (and unknown
+     * options reported) earlier in the run, to avoid repeating the warnings.
+     */
+    reportUnknownOptions?: boolean;
+  } = {},
 ): Promise<ConfigWithDefaults> {
   try {
     const stats = await fs.promises.stat(configFilePath);
@@ -163,7 +172,9 @@ export async function loadConfigFile(
   }
 
   const parsedConfig = parseConfig(config, configFilePath, (message) => {
-    logger.error(`[HAPPO] ${message}`);
+    if (reportUnknownOptions) {
+      logger.error(`[HAPPO] ${message}`);
+    }
   });
 
   let { apiKey, apiSecret } = parsedConfig;

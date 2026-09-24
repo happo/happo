@@ -2,6 +2,7 @@ import { inspect } from 'node:util';
 
 import * as v from 'valibot';
 
+import findClosestMatch from '../utils/findClosestMatch.ts';
 import type {
   AnimateConfig,
   AnimateDiscovery,
@@ -52,6 +53,8 @@ const TARGET_TYPES = [
 
 const DEFAULT_VIEWPORT = '1024x768';
 
+const DEFAULT_ENDPOINT = 'https://happo.io';
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== 'object' || value === null) {
     return false;
@@ -63,13 +66,16 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 /**
  * Valibot's `object` and `record` schemas accept arrays and class instances
  * like `Map` (which `record` turns into an empty object), so we check that we
- * have a plain object first. We set `expects` so that unions containing this
- * describe it as an object.
+ * have a plain object first.
+ *
+ * This is the only `custom` schema that can end up inside a union, where its
+ * `expects` of `unknown` shows up in the union's message. `describeExpected`
+ * describes that as an object.
  */
-const plainObjectCheck = {
-  ...v.custom<Record<string, unknown>>(isPlainObject, 'must be an object'),
-  expects: 'Object',
-};
+const plainObjectCheck = v.custom<Record<string, unknown>>(
+  isPlainObject,
+  'must be an object',
+);
 
 function plainObject<TEntries extends v.ObjectEntries>(entries: TEntries) {
   return v.pipe(plainObjectCheck, v.looseObject(entries));
@@ -296,9 +302,17 @@ function defaultIfFalsy(getDefault: () => unknown) {
 }
 
 const configEntries = {
-  apiKey: v.exactOptional(v.string()),
-  apiSecret: v.exactOptional(v.string()),
-  endpoint: v.exactOptional(v.string(), 'https://happo.io'),
+  // `null` (e.g. `process.env.HAPPO_API_KEY ?? null`) has always meant "look
+  // for credentials elsewhere". `parseConfig` removes it from the output.
+  apiKey: v.exactOptional(v.nullable(v.string())),
+  apiSecret: v.exactOptional(v.nullable(v.string())),
+  endpoint: v.exactOptional(
+    v.pipe(
+      v.nullable(v.string()),
+      v.transform((endpoint) => endpoint || DEFAULT_ENDPOINT),
+    ),
+    DEFAULT_ENDPOINT,
+  ),
   project: v.exactOptional(v.string()),
   githubApiUrl: v.exactOptional(v.string(), 'https://api.github.com'),
   targets: v.exactOptional(
@@ -362,6 +376,10 @@ function describeExpected(expected: string | null): string {
     .map((part) => {
       if (part.startsWith('"')) {
         return `'${part.slice(1, -1)}'`;
+      }
+      if (part === 'unknown') {
+        // See `plainObjectCheck`.
+        return 'an object';
       }
       const article = /^[aeiou]/i.test(part) ? 'an' : 'a';
       return `${article} ${part.toLowerCase()}`;
@@ -565,7 +583,7 @@ function isSchema(value: unknown): value is v.GenericSchema {
 }
 
 interface UnknownOption {
-  path: ReadonlyArray<string>;
+  path: ReadonlyArray<string | number>;
   knownOptions: ReadonlyArray<string>;
 }
 
@@ -577,7 +595,7 @@ interface UnknownOption {
 function findUnknownOptions(
   schema: v.GenericSchema,
   value: unknown,
-  path: ReadonlyArray<string> = [],
+  path: ReadonlyArray<string | number> = [],
 ): Array<UnknownOption> {
   const unknownOptions: Array<UnknownOption> = [];
 
@@ -625,7 +643,7 @@ function findUnknownOptions(
   } else if ('item' in schema && isSchema(schema.item) && Array.isArray(value)) {
     for (const [index, item] of value.entries()) {
       unknownOptions.push(
-        ...findUnknownOptions(schema.item, item, [...path, String(index)]),
+        ...findUnknownOptions(schema.item, item, [...path, index]),
       );
     }
   } else if ('options' in schema && Array.isArray(schema.options)) {
@@ -640,37 +658,44 @@ function findUnknownOptions(
   return unknownOptions;
 }
 
-function editDistance(a: string, b: string): number {
-  let previousRow = Array.from({ length: b.length + 1 }, (_, index) => index);
-  for (let i = 1; i <= a.length; i++) {
-    const row = [i];
-    for (let j = 1; j <= b.length; j++) {
-      row[j] = Math.min(
-        (previousRow[j] ?? 0) + 1,
-        (row[j - 1] ?? 0) + 1,
-        (previousRow[j - 1] ?? 0) + (a[i - 1] === b[j - 1] ? 0 : 1),
-      );
-    }
-    previousRow = row;
+/**
+ * Config files commonly set options to `undefined` (e.g. `apiKey:
+ * process.env.HAPPO_API_KEY`). We treat those the same as leaving the option
+ * out, which lets the schema match the optional properties of the public types
+ * exactly.
+ */
+function removeUndefinedValues(
+  value: unknown,
+  // Configs can contain circular structures in options we don't know about, so
+  // we reuse the copy we already made instead of recursing forever.
+  copies: WeakMap<object, unknown> = new WeakMap(),
+): unknown {
+  if (!Array.isArray(value) && !isPlainObject(value)) {
+    return value;
   }
-  return previousRow[b.length] ?? 0;
-}
 
-function suggestOption(
-  unknownOption: string,
-  knownOptions: ReadonlyArray<string>,
-): string | undefined {
-  const lowerCased = unknownOption.toLowerCase();
-  let bestMatch: string | undefined;
-  let bestDistance = 3;
-  for (const knownOption of knownOptions) {
-    const distance = editDistance(lowerCased, knownOption.toLowerCase());
-    if (distance < bestDistance) {
-      bestMatch = knownOption;
-      bestDistance = distance;
+  const existingCopy = copies.get(value);
+  if (existingCopy) {
+    return existingCopy;
+  }
+
+  if (Array.isArray(value)) {
+    const copy: Array<unknown> = [];
+    copies.set(value, copy);
+    for (const item of value) {
+      copy.push(removeUndefinedValues(item, copies));
+    }
+    return copy;
+  }
+
+  const copy: Record<string, unknown> = {};
+  copies.set(value, copy);
+  for (const [key, entryValue] of Object.entries(value)) {
+    if (entryValue !== undefined) {
+      copy[key] = removeUndefinedValues(entryValue, copies);
     }
   }
-  return bestMatch;
+  return copy;
 }
 
 /**
@@ -680,28 +705,6 @@ function suggestOption(
  * Unknown options are reported through `onUnknownOption` instead of failing,
  * since they have historically been allowed.
  */
-/**
- * Config files commonly set options to `undefined` (e.g. `apiKey:
- * process.env.HAPPO_API_KEY`). We treat those the same as leaving the option
- * out, which lets the schema match the optional properties of the public types
- * exactly.
- */
-function removeUndefinedValues(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(removeUndefinedValues);
-  }
-  if (!isPlainObject(value)) {
-    return value;
-  }
-  const result: Record<string, unknown> = {};
-  for (const [key, entryValue] of Object.entries(value)) {
-    if (entryValue !== undefined) {
-      result[key] = removeUndefinedValues(entryValue);
-    }
-  }
-  return result;
-}
-
 export function parseConfig(
   rawInput: unknown,
   configFilePath: string,
@@ -718,14 +721,18 @@ export function parseConfig(
   }
 
   for (const { path, knownOptions } of findUnknownOptions(configSchema, input)) {
-    const key = path.at(-1) ?? '';
-    const suggestion = suggestOption(key, knownOptions);
+    const suggestion = findClosestMatch(String(path.at(-1)), knownOptions);
     onUnknownOption(
       `Unknown option \`${formatPath(path)}\` in config file ${configFilePath}.${suggestion ? ` Did you mean \`${suggestion}\`?` : ''} This will be an error in the next major version of Happo.`,
     );
   }
 
-  // `deepCompare: null` has always been treated the same as leaving it out.
-  const { deepCompare, ...output } = result.output;
-  return deepCompare ? { ...output, deepCompare } : output;
+  // These have always treated `null` the same as leaving them out.
+  const { apiKey, apiSecret, deepCompare, ...output } = result.output;
+  return {
+    ...output,
+    ...(typeof apiKey === 'string' ? { apiKey } : {}),
+    ...(typeof apiSecret === 'string' ? { apiSecret } : {}),
+    ...(deepCompare ? { deepCompare } : {}),
+  };
 }
