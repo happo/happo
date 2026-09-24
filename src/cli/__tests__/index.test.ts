@@ -1,3 +1,5 @@
+import '../../test-utils/disableTelemetry.ts';
+
 import assert from 'node:assert';
 import fs from 'node:fs';
 import type { Mock } from 'node:test';
