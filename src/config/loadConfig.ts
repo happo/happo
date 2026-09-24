@@ -209,7 +209,7 @@ function validateDeepCompareSettings(
 
 const TARGETS_DOCS_URL = 'https://docs.happo.io/docs/configuration#targets';
 
-const KNOWN_TARGET_TYPES: ReadonlyArray<BrowserType> = [
+const KNOWN_TARGET_TYPES: ReadonlyArray<string> = [
   'chrome',
   'firefox',
   'edge',
@@ -217,10 +217,10 @@ const KNOWN_TARGET_TYPES: ReadonlyArray<BrowserType> = [
   'ios-safari',
   'ipad-safari',
   'accessibility',
-];
+] satisfies Array<BrowserType>;
 
-function isKnownTargetType(value: unknown): value is BrowserType {
-  return (KNOWN_TARGET_TYPES as ReadonlyArray<unknown>).includes(value);
+function isKnownTargetType(value: unknown): value is string {
+  return typeof value === 'string' && KNOWN_TARGET_TYPES.includes(value);
 }
 
 function describeValue(value: unknown): string {
