@@ -177,8 +177,11 @@ export interface AnimateOptions {
   loop?: number;
 
   /**
-   * Size budget, in bytes. Overshooting drops frames rather than the
-   * snapshot.
+   * Size budget, in bytes. A capture that comes out bigger is handled like
+   * an unmet `expect`, as `onExpectationFailure` says, whether or not
+   * `expect` is set. Frames are only dropped to make it fit with
+   * `onExpectationFailure: 'warn'`: the size depends on pixels, so dropping
+   * frames on some runs and not others would make every frame a diff.
    *
    * @default 4_000_000
    */
@@ -209,6 +212,12 @@ export interface AnimateOptions {
    * timers after a trigger, content that arrives after a fetch. Each is taken
    * over as it appears and keeps its offset in time, so a stagger stays a
    * stagger.
+   *
+   * That offset is measured from when the page's timers fired, which can
+   * differ between runs. Declare it instead with a `data-happo-start-ms`
+   * attribute (in ms into the capture) on the animating element or an
+   * ancestor, or with `startMs` on a driver's handle. Starts that had to be
+   * measured are marked `measured` in the `verify` trace.
    *
    * A number is short for `{ settleMs }`.
    *
@@ -256,13 +265,15 @@ export interface AnimateOptions {
   expect?: AnimateExpectations | null;
 
   /**
-   * What happens when `expect` isn't met.
+   * What happens when `expect` isn't met, or the capture is over
+   * `maxBytes`.
    *
    * - `'image'` (default): the snapshot is replaced by an image describing
    *   the failure and every animation that was found, so it shows up as a
    *   diff that names itself.
    * - `'fail'`: the run fails.
-   * - `'warn'`: logged, and whatever was captured is kept.
+   * - `'warn'`: logged, and whatever was captured is kept. A capture over
+   *   `maxBytes` has frames dropped until it fits.
    *
    * @default 'image'
    */
@@ -355,6 +366,12 @@ export interface AnimateTrace {
     target: string | null;
     startMs: number;
     endMs: number;
+    /**
+     * Set when the start was measured rather than declared with
+     * `data-happo-start-ms` or a driver's `startMs`. A measured start can
+     * differ between runs.
+     */
+    measured?: true;
   }>;
   /** The capture window, in milliseconds. */
   durationMs: number;
@@ -380,6 +397,13 @@ export interface AnimationDriverHandle {
   target?: object;
   /** How long it runs, in milliseconds. */
   durationMs: number;
+  /**
+   * When it starts, in milliseconds into the capture, e.g. a Lottie with a
+   * delay. `seek` is then called with times relative to that start, and the
+   * capture window covers `startMs + durationMs`. Without it, a handle found
+   * during `discovery` starts when it was first seen.
+   */
+  startMs?: number;
   /** Renders the animation at `timeMs`. Return a promise if that isn't immediate. */
   seek: (timeMs: number) => void | Promise<void>;
   /** Stops it moving on its own. */
