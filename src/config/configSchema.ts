@@ -34,7 +34,9 @@ type PagesIntegration = Extract<
   NonNullable<Config['integration']>,
   { type: 'pages' }
 >;
-type DesktopTarget = Extract<Target, { type: 'chrome' }>;
+// The desktop variant has every target option, so we check the target schema
+// against it.
+type DesktopTarget = Exclude<Target, { type: 'ios-safari' | 'ipad-safari' }>;
 
 const TARGETS_DOCS_URL = 'https://docs.happo.io/docs/configuration#targets';
 
@@ -276,15 +278,21 @@ const deepCompareEntries = {
   applyBlur: v.exactOptional(v.boolean()),
 } satisfies EntriesOf<DeepCompareSettings>;
 
-const DEFAULT_TARGETS = { chrome: { type: 'chrome', viewport: DEFAULT_VIEWPORT } };
-const DEFAULT_INTEGRATION = { type: 'storybook' };
+// These are functions so that every parse gets its own objects. Code later on
+// adds to `config.targets` (e.g. dynamic targets in e2e/controller.ts).
+function getDefaultTargets() {
+  return { chrome: { type: 'chrome', viewport: DEFAULT_VIEWPORT } };
+}
+function getDefaultIntegration() {
+  return { type: 'storybook' };
+}
 
 /**
  * A missing (or otherwise falsy) `targets` or `integration` has always meant
  * "use the default", so we keep that working.
  */
-function defaultIfFalsy(defaultValue: unknown) {
-  return (value: unknown): unknown => value || defaultValue;
+function defaultIfFalsy(getDefault: () => unknown) {
+  return (value: unknown): unknown => value || getDefault();
 }
 
 const configEntries = {
@@ -296,15 +304,15 @@ const configEntries = {
   targets: v.exactOptional(
     v.pipe(
       v.unknown(),
-      v.transform(defaultIfFalsy(DEFAULT_TARGETS)),
+      v.transform(defaultIfFalsy(getDefaultTargets)),
       plainRecord(target),
     ),
-    DEFAULT_TARGETS,
+    getDefaultTargets,
   ),
   integration: v.exactOptional(
     v.pipe(
       v.unknown(),
-      v.transform(defaultIfFalsy(DEFAULT_INTEGRATION)),
+      v.transform(defaultIfFalsy(getDefaultIntegration)),
       plainObjectCheck,
       v.variant('type', [
         v.looseObject(storybookIntegrationEntries),
@@ -313,7 +321,7 @@ const configEntries = {
         v.looseObject(pagesIntegrationEntries),
       ]),
     ),
-    DEFAULT_INTEGRATION,
+    getDefaultIntegration,
   ),
   deepCompare: v.exactOptional(v.nullable(plainObject(deepCompareEntries))),
   failOnWaitForTimeout: v.exactOptional(v.boolean(), true),

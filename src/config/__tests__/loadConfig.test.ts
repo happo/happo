@@ -590,6 +590,39 @@ describe('loadConfigFile', () => {
     });
   });
 
+  it('gives each load its own default targets and integration', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          apiKey: 'test-api-key',
+          apiSecret: 'test-api-secret',
+        };
+      `,
+    });
+
+    const first = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+      ci: false,
+    });
+    // e.g. what e2e/controller.ts does with dynamic targets
+    first.targets.dynamic = {
+      type: 'firefox',
+      viewport: '800x600',
+      __dynamic: true,
+    };
+    if (first.targets.chrome) {
+      first.targets.chrome.viewport = '1x1';
+    }
+
+    const second = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+      ci: false,
+    });
+    assert.deepStrictEqual(Object.keys(second.targets), ['chrome']);
+    assert.strictEqual(second.targets.chrome?.viewport, '1024x768');
+    assert.notStrictEqual(second.integration, first.integration);
+  });
+
   it('does not clobber values with defaults', async () => {
     tmpfs.mock({
       'happo.config.ts': `
