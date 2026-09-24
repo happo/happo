@@ -223,6 +223,14 @@ function isKnownTargetType(value: unknown): value is string {
   return typeof value === 'string' && KNOWN_TARGET_TYPES.includes(value);
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
 function describeValue(value: unknown): string {
   if (Array.isArray(value)) {
     return 'an array';
@@ -242,7 +250,9 @@ function exampleTargetsSnippet(
   entries: Array<{ name: string; type: unknown }>,
 ): string {
   const lines = entries.map(({ name, type }) => {
-    const key = /^[A-Za-z_$][\w$]*$/.test(name) ? name : `'${name}'`;
+    // `inspect` gives us a properly escaped string literal for keys that
+    // aren't valid identifiers, e.g. `'my-target'` or `"user's"`.
+    const key = /^[A-Za-z_$][\w$]*$/.test(name) ? name : inspect(name);
     const exampleType = isKnownTargetType(type) ? type : 'chrome';
     return `    ${key}: { type: '${exampleType}', viewport: '1024x768' },`;
   });
@@ -251,7 +261,7 @@ function exampleTargetsSnippet(
 }
 
 function validateTargets(targets: unknown, configFilePath: string): void {
-  if (typeof targets !== 'object' || targets === null || Array.isArray(targets)) {
+  if (!isPlainObject(targets)) {
     // People sometimes write `targets: ['chrome', 'firefox']` or
     // `targets: 'chrome'`, so we use those values to build the example.
     const entries = (Array.isArray(targets) ? targets : [targets])
@@ -280,9 +290,12 @@ See ${TARGETS_DOCS_URL}`,
     }
 
     if (!('type' in target) || typeof target.type !== 'string' || !target.type) {
+      // e.g. `targets: { chrome: { viewport: '1024x768' } }`
       const got = 'type' in target ? inspect(target.type) : 'nothing';
       throw new TypeError(
-        `Invalid target \`${name}\` in config file ${configFilePath}: \`type\` must be one of ${KNOWN_TARGET_TYPES.map((type) => `'${type}'`).join(', ')}, got ${got}.
+        `Invalid target \`${name}\` in config file ${configFilePath}: \`type\` must be a non-empty string naming the browser (such as ${KNOWN_TARGET_TYPES.map((type) => `'${type}'`).join(', ')}), got ${got}. For example:
+
+${exampleTargetsSnippet([{ name, type: name }])}
 
 See ${TARGETS_DOCS_URL}`,
       );
