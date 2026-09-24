@@ -151,7 +151,8 @@
     "limit-concur": "^4.0.0",
     "mime-types": "^3.0.2",
     "modern-tar": "0.8.5",
-    "srcset": "^5.0.3"
+    "srcset": "^5.0.3",
+    "valibot": "^1.5.0"
   },
   "storybook": {
     "displayName": "Happo",

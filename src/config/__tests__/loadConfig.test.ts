@@ -590,6 +590,39 @@ describe('loadConfigFile', () => {
     });
   });
 
+  it('gives each load its own default targets and integration', async () => {
+    tmpfs.mock({
+      'happo.config.ts': `
+        export default {
+          apiKey: 'test-api-key',
+          apiSecret: 'test-api-secret',
+        };
+      `,
+    });
+
+    const first = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+      ci: false,
+    });
+    // e.g. what e2e/controller.ts does with dynamic targets
+    first.targets.dynamic = {
+      type: 'firefox',
+      viewport: '800x600',
+      __dynamic: true,
+    };
+    if (first.targets.chrome) {
+      first.targets.chrome.viewport = '1x1';
+    }
+
+    const second = await loadConfigFile(findConfigFile(), {
+      link: undefined,
+      ci: false,
+    });
+    assert.deepStrictEqual(Object.keys(second.targets), ['chrome']);
+    assert.strictEqual(second.targets.chrome?.viewport, '1024x768');
+    assert.notStrictEqual(second.integration, first.integration);
+  });
+
   it('does not clobber values with defaults', async () => {
     tmpfs.mock({
       'happo.config.ts': `
@@ -703,7 +736,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `animate` in config file \S+: animated snapshots are not supported on "ios-safari" targets/,
+        /Invalid `targets\.mobile\.animate` in config file \S+: animated snapshots are not supported on "ios-safari" targets/,
       );
     });
 
@@ -725,7 +758,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `animate` in config file \S+: animated snapshots are not supported on "ipad-safari" targets/,
+        /Invalid `targets\.tablet\.animate` in config file \S+: animated snapshots are not supported on "ipad-safari" targets/,
       );
     });
 
@@ -749,7 +782,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `animate` in config file \S+: animated snapshots are not supported on "ios-safari" targets/,
+        /Invalid `targets\.mobile\.animate` in config file \S+: animated snapshots are not supported on "ios-safari" targets/,
       );
     });
 
@@ -1140,7 +1173,7 @@ describe('loadConfigFile', () => {
           assert.ok(error instanceof TypeError);
           assert.match(
             error.message,
-            /^Invalid target `chrome` in config file \S+: `type` must be a non-empty string naming the browser \(such as 'chrome', 'firefox', 'edge', 'safari', 'ios-safari', 'ipad-safari', 'accessibility'\), got nothing\. For example:/,
+            /^Invalid target `chrome` in config file \S+: `type` must be one of 'chrome', 'firefox', 'edge', 'safari', 'ios-safari', 'ipad-safari', 'accessibility', got nothing\. For example:/,
           );
           assert.ok(
             error.message.includes(
@@ -1168,7 +1201,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid target `chrome` in config file \S+: `type` must be a non-empty string naming the browser \(such as .+\), got 42\. For example:/,
+        /Invalid target `chrome` in config file \S+: `type` must be one of .+, got 42\. For example:/,
       );
     });
   });
@@ -1276,7 +1309,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `deepCompare` in config file \S+: `compareThreshold` is required/,
+        /Missing required option `deepCompare\.compareThreshold` in config file \S+\./,
       );
     });
 
@@ -1296,7 +1329,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `deepCompare` in config file \S+: must be an object, got: string/,
+        /Invalid `deepCompare` in config file \S+: must be an object, got: 'invalid'/,
       );
     });
 
@@ -1316,7 +1349,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `deepCompare` in config file \S+: must be an object, got: array/,
+        /Invalid `deepCompare` in config file \S+: must be an object, got: \[\]/,
       );
     });
 
@@ -1339,7 +1372,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `deepCompare.diffAlgorithm` in config file \S+: must be "color-delta" or "ssim", got: "invalid-algorithm"/,
+        /Invalid `deepCompare.diffAlgorithm` in config file \S+: must be one of 'color-delta', 'ssim', got: 'invalid-algorithm'/,
       );
     });
 
@@ -1362,7 +1395,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `deepCompare.diffAlgorithm` in config file \S+: must be "color-delta" or "ssim", got: 123/,
+        /Invalid `deepCompare.diffAlgorithm` in config file \S+: must be one of 'color-delta', 'ssim', got: 123/,
       );
     });
 
@@ -1384,7 +1417,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `deepCompare.compareThreshold` in config file \S+: must be a number between 0 and 1, got: "invalid"/,
+        /Invalid `deepCompare.compareThreshold` in config file \S+: must be a number between 0 and 1, got: 'invalid'/,
       );
     });
 
@@ -1451,7 +1484,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `deepCompare.ignoreThreshold` in config file \S+: must be a number between 0 and 1, got: "invalid"/,
+        /Invalid `deepCompare.ignoreThreshold` in config file \S+: must be a number between 0 and 1, got: 'invalid'/,
       );
     });
 
@@ -1520,7 +1553,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `deepCompare.ignoreWhitespace` in config file \S+: must be a boolean, got: "invalid"/,
+        /Invalid `deepCompare.ignoreWhitespace` in config file \S+: must be a boolean, got: 'invalid'/,
       );
     });
 
@@ -1543,8 +1576,433 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /Invalid `deepCompare.applyBlur` in config file \S+: must be a boolean, got: "invalid"/,
+        /Invalid `deepCompare.applyBlur` in config file \S+: must be a boolean, got: 'invalid'/,
       );
+    });
+  });
+
+  describe('unknown options', () => {
+    it('warns about unknown options, suggesting close matches, and keeps them', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            stylesheets: ['main.css'],
+            targets: {
+              chrome: { type: 'chrome', viewPort: '800x600' },
+            },
+            integration: { type: 'storybook', confgDir: '.storybook' },
+          };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      const config = await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+      );
+
+      const warnings = logger.error.mock.calls.map((call) => call.arguments[0]);
+      assert.strictEqual(warnings.length, 3);
+      assert.match(
+        warnings[0],
+        /^\[HAPPO\] Unknown option `stylesheets` in config file \S+\. This will be an error in the next major version of Happo\.$/,
+      );
+      assert.match(
+        warnings[1],
+        /^\[HAPPO\] Unknown option `targets\.chrome\.viewPort` in config file \S+\. Did you mean `viewport`\?/,
+      );
+      assert.match(
+        warnings[2],
+        /^\[HAPPO\] Unknown option `integration\.confgDir` in config file \S+\. Did you mean `configDir`\?/,
+      );
+
+      // Unknown options are still passed along, as they were before.
+      assert.strictEqual(config.targets.chrome?.viewport, '1024x768');
+      assert.ok(Object.keys(config.targets.chrome ?? {}).includes('viewPort'));
+    });
+
+    it('uses numeric indexes when an unknown option is inside an array', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            integration: {
+              type: 'pages',
+              pages: [{ url: 'https://example.com', title: 'Home', titles: 'Home' }],
+            },
+          };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
+
+      assert.match(
+        logger.error.mock.calls[0]?.arguments[0],
+        /Unknown option `integration\.pages\[0\]\.titles` in config file \S+\. Did you mean `title`\?/,
+      );
+    });
+
+    it('does not report unknown options when reportUnknownOptions is false', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            stylesheets: ['main.css'],
+          };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      const config = await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+        { reportUnknownOptions: false },
+      );
+
+      assert.strictEqual(logger.error.mock.callCount(), 0);
+      assert.ok('stylesheets' in config);
+      assert.deepStrictEqual(config.stylesheets, ['main.css']);
+    });
+
+    it('handles circular structures in unknown options', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          const shared = { name: 'shared' };
+          shared.self = shared;
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            shared,
+          };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      const config = await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+      );
+
+      assert.strictEqual(logger.error.mock.callCount(), 1);
+      assert.ok('shared' in config);
+      const { shared } = config;
+      assert.ok(typeof shared === 'object' && shared !== null && 'self' in shared);
+      assert.strictEqual(shared.self, shared);
+    });
+
+    it('does not warn for a config that only uses known options', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            project: 'my-project',
+            targets: {
+              chrome: {
+                type: 'chrome',
+                viewport: '1024x768',
+                animate: { mode: 'auto', trigger: { selector: '.a', action: 'click' } },
+                outgoingRequestHeaders: [{ name: 'x-happo', value: '1' }],
+              },
+              ios: { type: 'ios-safari' },
+            },
+            integration: {
+              type: 'pages',
+              pages: [{ url: 'https://example.com', title: 'Home', animate: 'auto' }],
+            },
+            deepCompare: { compareThreshold: 0.1, ignoreWhitespace: true },
+          };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
+
+      assert.strictEqual(logger.error.mock.callCount(), 0);
+    });
+  });
+
+  describe('schema validation', () => {
+    it('treats options set to undefined as if they were left out', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            project: undefined,
+            endpoint: undefined,
+            targets: {
+              chrome: { type: 'chrome', maxHeight: undefined },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.strictEqual(config.endpoint, 'https://happo.io');
+      assert.strictEqual('project' in config, false);
+      assert.strictEqual('maxHeight' in (config.targets.chrome ?? {}), false);
+    });
+
+    it('treats apiKey and apiSecret set to null as missing', async () => {
+      process.env.HAPPO_API_KEY = 'env-key';
+      process.env.HAPPO_API_SECRET = 'env-secret';
+      tmpfs.mock({
+        'happo.config.js': `
+          export default { apiKey: null, apiSecret: null };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.strictEqual(config.apiKey, 'env-key');
+      assert.strictEqual(config.apiSecret, 'env-secret');
+    });
+
+    it('uses the default endpoint when endpoint is empty or null', async () => {
+      for (const endpoint of ["''", 'null']) {
+        tmpfs.mock({
+          'happo.config.js': `
+            export default { apiKey: 'test-key', apiSecret: 'test-secret', endpoint: ${endpoint} };
+          `,
+        });
+
+        const config = await loadConfigFile(findConfigFile(), {
+          link: undefined,
+          ci: false,
+        });
+
+        assert.strictEqual(
+          config.endpoint,
+          'https://happo.io',
+          `endpoint: ${endpoint}`,
+        );
+        tmpfs.restore();
+      }
+    });
+
+    it('describes each option when a value matches none of a union', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: { chrome: { type: 'chrome', animate: [] } },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Invalid `targets\.chrome\.animate` in config file \S+: must be a boolean, 'auto', or an object, got: \[\]\.$/,
+      );
+    });
+
+    it('treats deepCompare: null as if it were left out', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            deepCompare: null,
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.strictEqual('deepCompare' in config, false);
+    });
+
+    it('applies target defaults when they are set to null', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: null, prefersReducedMotion: null },
+            },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.strictEqual(config.targets.chrome?.viewport, '1024x768');
+      assert.strictEqual(config.targets.chrome?.prefersReducedMotion, true);
+    });
+
+    it('defaults the integration to storybook', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default { apiKey: 'test-key', apiSecret: 'test-secret' };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.integration, { type: 'storybook' });
+    });
+
+    it('throws a helpful error for an invalid viewport', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: { chrome: { type: 'chrome', viewport: '1024 x 768' } },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Invalid `targets\.chrome\.viewport` in config file \S+: must be a string like '1024x768', got: '1024 x 768'\.$/,
+      );
+    });
+
+    it('reports errors nested inside animate options', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: { chrome: { type: 'chrome', animate: { mode: 'sometimes' } } },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Invalid `targets\.chrome\.animate\.mode` in config file \S+: must be one of 'off', 'auto', 'always', got: 'sometimes'\.$/,
+      );
+    });
+
+    it('throws a helpful error for an unknown integration type', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            integration: { type: 'storybok' },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Invalid `integration\.type` in config file \S+: must be one of 'storybook', 'cypress', 'playwright', 'custom', 'pages', got: 'storybok'\.$/,
+      );
+    });
+
+    it('throws a helpful error when a custom integration is missing build', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            integration: { type: 'custom' },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Missing required option `integration\.build` in config file \S+\.$/,
+      );
+    });
+
+    it('includes the index when an item in an array is invalid', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            integration: { type: 'pages', pages: [{ url: 'https://example.com' }] },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Missing required option `integration\.pages\[0\]\.title` in config file \S+\.$/,
+      );
+    });
+
+    it('reports every problem at once', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            endpoint: 5,
+            targets: { chrome: { type: 'chrome', maxHeight: '100' } },
+            failOnWaitForTimeout: 'yes',
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          assert.ok(error instanceof TypeError);
+          const lines = error.message.split('\n\n');
+          assert.match(lines[0] ?? '', /^Found 3 problems in config file \S+:$/);
+          assert.match(
+            lines[1] ?? '',
+            /^- Invalid `endpoint` .+: must be a string, got: 5\.$/,
+          );
+          assert.match(
+            lines[2] ?? '',
+            /^- Invalid `targets\.chrome\.maxHeight` .+: must be a number, got: '100'\.$/,
+          );
+          assert.match(
+            lines[3] ?? '',
+            /^- Invalid `failOnWaitForTimeout` .+: must be a boolean, got: 'yes'\.$/,
+          );
+          return true;
+        },
+      );
+    });
+
+    it('validates the config before attempting alternative authentication', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default { failOnWaitForTimeout: 'yes' };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: true }, logger),
+        /Invalid `failOnWaitForTimeout`/,
+      );
+      assert.strictEqual(logger.log.mock.callCount(), 0);
     });
   });
 

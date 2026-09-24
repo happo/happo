@@ -216,7 +216,12 @@ class Controller {
     }
 
     const configFilePath = findConfigFile();
-    this.happoConfig = await loadConfigFile(configFilePath);
+    // The CLI wrapper that set HAPPO_E2E_PORT has already loaded this config
+    // and reported any unknown options. This runs for every spec (Cypress) or
+    // batch of tests (Playwright), so we don't repeat those warnings here.
+    this.happoConfig = await loadConfigFile(configFilePath, undefined, console, {
+      reportUnknownOptions: false,
+    });
     return true;
   }
 
@@ -537,7 +542,9 @@ class Controller {
         throw new Error(
           `Invalid dynamic target: missing required field(s) ${missing
             .map((m) => `\`${m}\``)
-            .join(', ')}${hint}. Received fields: [${received.join(', ')}]. Full value: ${inspect(target)}`,
+            .join(
+              ', ',
+            )}${hint}. Received fields: [${received.join(', ')}]. Full value: ${inspect(target)}`,
         );
       }
 

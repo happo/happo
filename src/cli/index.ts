@@ -8,6 +8,7 @@ import resolveEnvironment from '../environment/index.ts';
 import { validateOnly } from '../isomorphic/parseOnly.ts';
 import { validateSkip } from '../isomorphic/parseSkip.ts';
 import type { Logger, OnlyItem, SkipItem } from '../isomorphic/types.ts';
+import findClosestMatch from '../utils/findClosestMatch.ts';
 import type { ParsedCLIArgs } from './parseOptions.ts';
 import { parseOptions } from './parseOptions.ts';
 import type { Reporter } from './telemetry.ts';
@@ -28,42 +29,6 @@ function parseDashdashCommandParts(
     return undefined;
   }
   return rawArgs.slice(dashdashIndex + 1);
-}
-
-function levenshtein(a: string, b: string): number {
-  const n = b.length;
-  const row = Array.from({ length: n + 1 }, (_, j) => j);
-
-  for (let i = 1; i <= a.length; i++) {
-    let prev = row[0]!;
-    row[0] = i;
-    for (let j = 1; j <= n; j++) {
-      const temp = row[j]!;
-      row[j] = a[i - 1] === b[j - 1] ? prev : 1 + Math.min(prev, temp, row[j - 1]!);
-      prev = temp;
-    }
-  }
-
-  return row[n]!;
-}
-
-function findClosestOption(
-  unknownName: string,
-  knownNames: ReadonlyArray<string>,
-): string | undefined {
-  let bestMatch: string | undefined;
-  let bestDistance = Infinity;
-
-  for (const known of knownNames) {
-    const distance = levenshtein(unknownName, known);
-    const threshold = Math.floor(Math.max(unknownName.length, known.length) / 3);
-    if (distance <= threshold && distance < bestDistance) {
-      bestDistance = distance;
-      bestMatch = known;
-    }
-  }
-
-  return bestMatch;
 }
 
 function parseRawArgs(rawArgs: Array<string>) {
@@ -88,7 +53,7 @@ function parseRawArgs(rawArgs: Array<string>) {
 
       if (match && match[1]) {
         const unknownOption = match[1];
-        const suggestion = findClosestOption(
+        const suggestion = findClosestMatch(
           unknownOption.slice(2),
           Object.keys(parseOptions),
         );
@@ -233,7 +198,10 @@ export async function main(
       return;
     }
 
-    if (args.values.skip !== undefined && args.values.skippedExamples !== undefined) {
+    if (
+      args.values.skip !== undefined &&
+      args.values.skippedExamples !== undefined
+    ) {
       logger.error(
         '[HAPPO] Use either --skip or --skippedExamples, not both. They are two names for the same option.',
       );

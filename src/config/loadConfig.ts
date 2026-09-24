@@ -1,19 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { inspect } from 'node:util';
 
 import { any as findAny } from 'empathic/find';
 
 import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from '../network/fetchWithRetry.ts';
+import { parseConfig } from './configSchema.ts';
 import getShortLivedAPIToken from './getShortLivedAPIToken.ts';
-import type {
-  BrowserType,
-  ConfigWithDefaults,
-  DeepCompareSettings,
-} from './index.ts';
+import type { ConfigWithDefaults } from './index.ts';
 
 const CONFIG_FILENAMES = [
   'happo.config.js',
@@ -23,8 +19,6 @@ const CONFIG_FILENAMES = [
   'happo.config.mts',
   'happo.config.cts',
 ];
-
-const DEFAULT_ENDPOINT = 'https://happo.io';
 
 export function findConfigFile(): string {
   if (process.env.HAPPO_CONFIG_FILE) {
@@ -109,207 +103,19 @@ async function getFallbackApiToken(
   return undefined;
 }
 
-/**
- * Determines whether a target's `animate` setting would actually trigger
- * animated snapshot capture, accounting for the shorthands (`true`,
- * `false`, `'auto'`) as well as a trigger implicitly turning capture on.
- */
-function isAnimateEnabled(animate: unknown): boolean {
-  if (animate === true || animate === 'auto') {
-    return true;
-  }
-
-  if (typeof animate === 'object' && animate !== null) {
-    if ('trigger' in animate && animate.trigger) {
-      return true;
-    }
-    return 'mode' in animate && animate.mode !== undefined && animate.mode !== 'off';
-  }
-
-  return false;
-}
-
-function validateDeepCompareSettings(
-  settings: unknown,
-  configFilePath: string,
-): asserts settings is DeepCompareSettings {
-  if (typeof settings !== 'object' || settings === null || Array.isArray(settings)) {
-    throw new TypeError(
-      `Invalid \`deepCompare\` in config file ${configFilePath}: must be an object, got: ${Array.isArray(settings) ? 'array' : settings === null ? 'null' : typeof settings}.`,
-    );
-  }
-
-  if (!('compareThreshold' in settings) || settings.compareThreshold === undefined) {
-    throw new TypeError(
-      `Invalid \`deepCompare\` in config file ${configFilePath}: \`compareThreshold\` is required.`,
-    );
-  }
-
-  if (
-    typeof settings.compareThreshold !== 'number' ||
-    settings.compareThreshold < 0 ||
-    settings.compareThreshold > 1
-  ) {
-    throw new TypeError(
-      `Invalid \`deepCompare.compareThreshold\` in config file ${configFilePath}: must be a number between 0 and 1, got: ${JSON.stringify(settings.compareThreshold)}.`,
-    );
-  }
-
-  if (
-    'diffAlgorithm' in settings &&
-    settings.diffAlgorithm !== undefined &&
-    (typeof settings.diffAlgorithm !== 'string' ||
-      (settings.diffAlgorithm !== 'color-delta' &&
-        settings.diffAlgorithm !== 'ssim'))
-  ) {
-    throw new TypeError(
-      `Invalid \`deepCompare.diffAlgorithm\` in config file ${configFilePath}: must be "color-delta" or "ssim", got: ${JSON.stringify(settings.diffAlgorithm)}.`,
-    );
-  }
-
-  if (
-    'ignoreThreshold' in settings &&
-    settings.ignoreThreshold !== undefined &&
-    (typeof settings.ignoreThreshold !== 'number' ||
-      settings.ignoreThreshold < 0 ||
-      settings.ignoreThreshold > 1)
-  ) {
-    throw new TypeError(
-      `Invalid \`deepCompare.ignoreThreshold\` in config file ${configFilePath}: must be a number between 0 and 1, got: ${JSON.stringify(settings.ignoreThreshold)}.`,
-    );
-  }
-
-  if (
-    'ignoreWhitespace' in settings &&
-    settings.ignoreWhitespace !== undefined &&
-    typeof settings.ignoreWhitespace !== 'boolean'
-  ) {
-    throw new TypeError(
-      `Invalid \`deepCompare.ignoreWhitespace\` in config file ${configFilePath}: must be a boolean, got: ${JSON.stringify(settings.ignoreWhitespace)}.`,
-    );
-  }
-
-  if (
-    'applyBlur' in settings &&
-    settings.applyBlur !== undefined &&
-    typeof settings.applyBlur !== 'boolean'
-  ) {
-    throw new TypeError(
-      `Invalid \`deepCompare.applyBlur\` in config file ${configFilePath}: must be a boolean, got: ${JSON.stringify(settings.applyBlur)}.`,
-    );
-  }
-}
-
-const TARGETS_DOCS_URL = 'https://docs.happo.io/docs/configuration#targets';
-
-const KNOWN_TARGET_TYPES: ReadonlyArray<string> = [
-  'chrome',
-  'firefox',
-  'edge',
-  'safari',
-  'ios-safari',
-  'ipad-safari',
-  'accessibility',
-] satisfies Array<BrowserType>;
-
-function isKnownTargetType(value: unknown): value is string {
-  return typeof value === 'string' && KNOWN_TARGET_TYPES.includes(value);
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
-}
-
-function describeValue(value: unknown): string {
-  if (Array.isArray(value)) {
-    return 'an array';
-  }
-  if (value === null) {
-    return 'null';
-  }
-  return `${typeof value} ${inspect(value)}`;
-}
-
-/**
- * Builds a snippet of what a valid `targets` config could look like, based on
- * what we were able to infer from the user's (invalid) config. This lets us
- * show people something close to what they meant to write.
- */
-function exampleTargetsSnippet(
-  entries: Array<{ name: string; type: unknown }>,
-): string {
-  const lines = entries.map(({ name, type }) => {
-    // `inspect` gives us a properly escaped string literal for keys that
-    // aren't valid identifiers, e.g. `'my-target'` or `"user's"`.
-    const key = /^[A-Za-z_$][\w$]*$/.test(name) ? name : inspect(name);
-    const exampleType = isKnownTargetType(type) ? type : 'chrome';
-    return `    ${key}: { type: '${exampleType}', viewport: '1024x768' },`;
-  });
-
-  return ['  targets: {', ...lines, '  },'].join('\n');
-}
-
-/**
- * A target that has passed `validateTargets`. We deliberately don't narrow
- * `type` to the known browser types, so that types added on the server are
- * passed through without requiring a client upgrade.
- */
-type ValidatedTarget = Record<string, unknown> & { type: string };
-
-function validateTargets(
-  targets: unknown,
-  configFilePath: string,
-): asserts targets is Record<string, ValidatedTarget> {
-  if (!isPlainObject(targets)) {
-    // People sometimes write `targets: ['chrome', 'firefox']` or
-    // `targets: 'chrome'`, so we use those values to build the example.
-    const entries = (Array.isArray(targets) ? targets : [targets])
-      .filter((value): value is string => typeof value === 'string' && !!value)
-      .map((value) => ({ name: value, type: value }));
-
-    throw new TypeError(
-      `Invalid \`targets\` in config file ${configFilePath}: must be an object where each key is a name you choose for the target and each value is an object describing the browser, got ${describeValue(targets)}. For example:
-
-${exampleTargetsSnippet(entries.length > 0 ? entries : [{ name: 'chrome', type: 'chrome' }])}
-
-See ${TARGETS_DOCS_URL}`,
-    );
-  }
-
-  for (const [name, target] of Object.entries(targets)) {
-    if (typeof target !== 'object' || target === null || Array.isArray(target)) {
-      // e.g. `targets: { chrome: 'chrome' }`
-      throw new TypeError(
-        `Invalid target \`${name}\` in config file ${configFilePath}: each target must be an object describing the browser, got ${describeValue(target)}. For example:
-
-${exampleTargetsSnippet([{ name, type: isKnownTargetType(target) ? target : name }])}
-
-See ${TARGETS_DOCS_URL}`,
-      );
-    }
-
-    if (!('type' in target) || typeof target.type !== 'string' || !target.type) {
-      // e.g. `targets: { chrome: { viewport: '1024x768' } }`
-      const got = 'type' in target ? inspect(target.type) : 'nothing';
-      throw new TypeError(
-        `Invalid target \`${name}\` in config file ${configFilePath}: \`type\` must be a non-empty string naming the browser (such as ${KNOWN_TARGET_TYPES.map((type) => `'${type}'`).join(', ')}), got ${got}. For example:
-
-${exampleTargetsSnippet([{ name, type: name }])}
-
-See ${TARGETS_DOCS_URL}`,
-      );
-    }
-  }
-}
-
 export async function loadConfigFile(
   configFilePath: string,
   environment?: Pick<EnvironmentResult, 'link' | 'ci'>,
   logger: Logger = console,
+  {
+    reportUnknownOptions = true,
+  }: {
+    /**
+     * Set to `false` when the config has already been loaded (and unknown
+     * options reported) earlier in the run, to avoid repeating the warnings.
+     */
+    reportUnknownOptions?: boolean;
+  } = {},
 ): Promise<ConfigWithDefaults> {
   try {
     const stats = await fs.promises.stat(configFilePath);
@@ -326,8 +132,7 @@ export async function loadConfigFile(
     throw error;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: change this to unknown and add type assertions
-  let config: any;
+  let config: unknown;
   try {
     config = (await import(pathToFileURL(configFilePath).href)).default;
   } catch (error) {
@@ -366,21 +171,26 @@ export async function loadConfigFile(
     );
   }
 
+  const parsedConfig = parseConfig(config, configFilePath, (message) => {
+    if (reportUnknownOptions) {
+      logger.error(`[HAPPO] ${message}`);
+    }
+  });
+
+  let { apiKey, apiSecret } = parsedConfig;
+
   // We read these in here so that they can be passed along to the child process
   // in e2e/wrapper.ts. This allows us to use pull-request authentication
   // without having to make an additional HTTP request.
-  if (!config.apiKey && process.env.HAPPO_API_KEY) {
-    config.apiKey = process.env.HAPPO_API_KEY;
+  if (!apiKey && process.env.HAPPO_API_KEY) {
+    apiKey = process.env.HAPPO_API_KEY;
   }
-  if (!config.apiSecret && process.env.HAPPO_API_SECRET) {
-    config.apiSecret = process.env.HAPPO_API_SECRET;
+  if (!apiSecret && process.env.HAPPO_API_SECRET) {
+    apiSecret = process.env.HAPPO_API_SECRET;
   }
 
-  if (!config.apiKey || !config.apiSecret) {
-    const missing = [
-      config.apiKey ? null : 'apiKey',
-      config.apiSecret ? null : 'apiSecret',
-    ]
+  if (!apiKey || !apiSecret) {
+    const missing = [apiKey ? null : 'apiKey', apiSecret ? null : 'apiSecret']
       .filter(Boolean)
       .map((key) => `\`${key}\``)
       .join(' and ');
@@ -389,7 +199,7 @@ export async function loadConfigFile(
       `Missing ${missing} in Happo config. Attempting alternative authentication.`,
     );
     const fallbackApiToken = await getFallbackApiToken(
-      config.endpoint || DEFAULT_ENDPOINT,
+      parsedConfig.endpoint,
       environment,
       logger,
     );
@@ -398,77 +208,9 @@ export async function loadConfigFile(
         `Missing ${missing} in your Happo config. Reference yours at https://happo.io/settings`,
       );
     }
-    config.apiKey = fallbackApiToken.key;
-    config.apiSecret = fallbackApiToken.secret;
+    apiKey = fallbackApiToken.key;
+    apiSecret = fallbackApiToken.secret;
   }
 
-  if (!config.targets) {
-    config.targets = {
-      chrome: {
-        type: 'chrome',
-        viewport: '1024x768',
-      },
-    };
-  }
-
-  const targets: unknown = config.targets;
-  validateTargets(targets, configFilePath);
-
-  if (!config.integration) {
-    config.integration = {
-      type: 'storybook',
-    };
-  }
-
-  const allTargets = Object.values(targets);
-  for (const target of allTargets) {
-    target.viewport = target.viewport || '1024x768';
-    target.freezeAnimations = target.freezeAnimations || 'last-frame';
-    target.prefersReducedMotion = target.prefersReducedMotion ?? true;
-    target.allowPointerEvents = target.allowPointerEvents ?? true;
-
-    if (
-      (target.type === 'ios-safari' || target.type === 'ipad-safari') &&
-      isAnimateEnabled(target.animate)
-    ) {
-      throw new TypeError(
-        `Invalid \`animate\` in config file ${configFilePath}: animated snapshots are not supported on "${target.type}" targets. Remove \`animate\` from this target, or capture it in a Playwright-driven browser (chrome, firefox, edge, or safari) instead.`,
-      );
-    }
-  }
-
-  // Validate deepCompare settings if present
-  if (config.deepCompare !== undefined && config.deepCompare !== null) {
-    validateDeepCompareSettings(config.deepCompare, configFilePath);
-    // Set default diffAlgorithm if not provided
-    if (!config.deepCompare.diffAlgorithm) {
-      config.deepCompare.diffAlgorithm = 'color-delta';
-    }
-  }
-
-  if (
-    config.failOnWaitForTimeout !== undefined &&
-    typeof config.failOnWaitForTimeout !== 'boolean'
-  ) {
-    // Use `util.inspect` rather than `JSON.stringify` so that values which
-    // can't be serialized (BigInts, circular objects, etc.) still produce
-    // the intended "must be a boolean" validation error instead of an
-    // unrelated serialization failure.
-    throw new TypeError(
-      `Invalid \`failOnWaitForTimeout\` in config file ${configFilePath}: must be a boolean, got: ${inspect(config.failOnWaitForTimeout)}.`,
-    );
-  }
-
-  if (config.failOnWaitForTimeout === undefined) {
-    config.failOnWaitForTimeout = true;
-  }
-
-  const configWithDefaults = {
-    endpoint: DEFAULT_ENDPOINT,
-    githubApiUrl: 'https://api.github.com',
-    targets: allTargets,
-    ...config,
-  };
-
-  return configWithDefaults;
+  return { ...parsedConfig, apiKey, apiSecret };
 }
