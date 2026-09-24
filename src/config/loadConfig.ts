@@ -13,7 +13,6 @@ import type {
   BrowserType,
   ConfigWithDefaults,
   DeepCompareSettings,
-  TargetWithDefaults,
 } from './index.ts';
 
 const CONFIG_FILENAMES = [
@@ -115,36 +114,30 @@ async function getFallbackApiToken(
  * animated snapshot capture, accounting for the shorthands (`true`,
  * `false`, `'auto'`) as well as a trigger implicitly turning capture on.
  */
-function isAnimateEnabled(animate: TargetWithDefaults['animate']): boolean {
-  if (animate === undefined || animate === false) {
-    return false;
-  }
-
+function isAnimateEnabled(animate: unknown): boolean {
   if (animate === true || animate === 'auto') {
     return true;
   }
 
   if (typeof animate === 'object' && animate !== null) {
-    if (animate.trigger) {
+    if ('trigger' in animate && animate.trigger) {
       return true;
     }
-    return animate.mode !== undefined && animate.mode !== 'off';
+    return 'mode' in animate && animate.mode !== undefined && animate.mode !== 'off';
   }
 
   return false;
 }
 
 function validateDeepCompareSettings(
-  deepCompare: DeepCompareSettings,
+  settings: unknown,
   configFilePath: string,
-): asserts deepCompare is DeepCompareSettings {
-  if (typeof deepCompare !== 'object' || Array.isArray(deepCompare)) {
+): asserts settings is DeepCompareSettings {
+  if (typeof settings !== 'object' || settings === null || Array.isArray(settings)) {
     throw new TypeError(
-      `Invalid \`deepCompare\` in config file ${configFilePath}: must be an object, got: ${Array.isArray(deepCompare) ? 'array' : typeof deepCompare}.`,
+      `Invalid \`deepCompare\` in config file ${configFilePath}: must be an object, got: ${Array.isArray(settings) ? 'array' : settings === null ? 'null' : typeof settings}.`,
     );
   }
-
-  const settings = deepCompare as DeepCompareSettings;
 
   if (!('compareThreshold' in settings) || settings.compareThreshold === undefined) {
     throw new TypeError(
@@ -260,7 +253,17 @@ function exampleTargetsSnippet(
   return ['  targets: {', ...lines, '  },'].join('\n');
 }
 
-function validateTargets(targets: unknown, configFilePath: string): void {
+/**
+ * A target that has passed `validateTargets`. We deliberately don't narrow
+ * `type` to the known browser types, so that types added on the server are
+ * passed through without requiring a client upgrade.
+ */
+type ValidatedTarget = Record<string, unknown> & { type: string };
+
+function validateTargets(
+  targets: unknown,
+  configFilePath: string,
+): asserts targets is Record<string, ValidatedTarget> {
   if (!isPlainObject(targets)) {
     // People sometimes write `targets: ['chrome', 'firefox']` or
     // `targets: 'chrome'`, so we use those values to build the example.
@@ -408,7 +411,8 @@ export async function loadConfigFile(
     };
   }
 
-  validateTargets(config.targets, configFilePath);
+  const targets: unknown = config.targets;
+  validateTargets(targets, configFilePath);
 
   if (!config.integration) {
     config.integration = {
@@ -416,8 +420,8 @@ export async function loadConfigFile(
     };
   }
 
-  const allTargets = Object.values(config.targets);
-  for (const target of allTargets as Array<TargetWithDefaults>) {
+  const allTargets = Object.values(targets);
+  for (const target of allTargets) {
     target.viewport = target.viewport || '1024x768';
     target.freezeAnimations = target.freezeAnimations || 'last-frame';
     target.prefersReducedMotion = target.prefersReducedMotion ?? true;
