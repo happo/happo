@@ -808,7 +808,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /The `githubApiUrl` option in config file \S+ has been removed/,
+        /^TypeError: The `githubApiUrl` option in config file \S+ has been removed\. Happo posts PR statuses from the server now/,
       );
     });
 
@@ -831,7 +831,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /The `chunks` option on target `chrome` in config file \S+ has been removed/,
+        /^TypeError: The `targets\.chrome\.chunks` option in config file \S+ has been removed\. Happo now decides how many chunks to use/,
       );
     });
 
@@ -853,7 +853,7 @@ describe('loadConfigFile', () => {
 
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
-        /The `useFullPageFallbackForTallScreenshots` option on target `mobile` in config file \S+ has been removed/,
+        /^TypeError: The `targets\.mobile\.useFullPageFallbackForTallScreenshots` option in config file \S+ has been removed\. Tall screenshots no longer need a full-page fallback/,
       );
     });
   });
@@ -1723,7 +1723,7 @@ describe('loadConfigFile', () => {
   });
 
   describe('unknown options', () => {
-    it('warns about unknown options, suggesting close matches, and keeps them', async () => {
+    it('throws for unknown options, suggesting close matches', async () => {
       tmpfs.mock({
         'happo.config.js': `
           export default {
@@ -1738,31 +1738,51 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
-      const config = await loadConfigFile(
-        findConfigFile(),
-        { link: undefined, ci: false },
-        logger,
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          assert.ok(error instanceof TypeError);
+          const lines = error.message.split('\n\n');
+          assert.match(lines[0] ?? '', /^Found 3 problems in config file \S+:$/);
+          assert.match(
+            lines[1] ?? '',
+            /^- Unknown option `stylesheets` in config file \S+\.$/,
+          );
+          assert.match(
+            lines[2] ?? '',
+            /^- Unknown option `targets\.chrome\.viewPort` in config file \S+\. Did you mean `viewport`\?$/,
+          );
+          assert.match(
+            lines[3] ?? '',
+            /^- Unknown option `integration\.confgDir` in config file \S+\. Did you mean `configDir`\?$/,
+          );
+          return true;
+        },
       );
+    });
 
-      const warnings = logger.error.mock.calls.map((call) => call.arguments[0]);
-      assert.strictEqual(warnings.length, 3);
-      assert.match(
-        warnings[0],
-        /^\[HAPPO\] Unknown option `stylesheets` in config file \S+\. This will be an error in the next major version of Happo\.$/,
-      );
-      assert.match(
-        warnings[1],
-        /^\[HAPPO\] Unknown option `targets\.chrome\.viewPort` in config file \S+\. Did you mean `viewport`\?/,
-      );
-      assert.match(
-        warnings[2],
-        /^\[HAPPO\] Unknown option `integration\.confgDir` in config file \S+\. Did you mean `configDir`\?/,
-      );
+    it('reports unknown options together with invalid values', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            failOnWaitForTimeout: 'yes',
+            stylesheets: ['main.css'],
+          };
+        `,
+      });
 
-      // Unknown options are still passed along, as they were before.
-      assert.strictEqual(config.targets.chrome?.viewport, '1024x768');
-      assert.ok(Object.keys(config.targets.chrome ?? {}).includes('viewPort'));
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        (error: Error) => {
+          const lines = error.message.split('\n\n');
+          assert.match(lines[0] ?? '', /^Found 2 problems/);
+          assert.match(lines[1] ?? '', /^- Invalid `failOnWaitForTimeout`/);
+          assert.match(lines[2] ?? '', /^- Unknown option `stylesheets`/);
+          return true;
+        },
+      );
     });
 
     it('uses numeric indexes when an unknown option is inside an array', async () => {
@@ -1779,40 +1799,13 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
-      await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
-
-      assert.match(
-        logger.error.mock.calls[0]?.arguments[0],
-        /Unknown option `integration\.pages\[0\]\.titles` in config file \S+\. Did you mean `title`\?/,
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Unknown option `integration\.pages\[0\]\.titles` in config file \S+\. Did you mean `title`\?$/,
       );
     });
 
-    it('does not report unknown options when reportUnknownOptions is false', async () => {
-      tmpfs.mock({
-        'happo.config.js': `
-          export default {
-            apiKey: 'test-key',
-            apiSecret: 'test-secret',
-            stylesheets: ['main.css'],
-          };
-        `,
-      });
-
-      const logger = { log: mock.fn(), error: mock.fn() };
-      const config = await loadConfigFile(
-        findConfigFile(),
-        { link: undefined, ci: false },
-        logger,
-        { reportUnknownOptions: false },
-      );
-
-      assert.strictEqual(logger.error.mock.callCount(), 0);
-      assert.ok('stylesheets' in config);
-      assert.deepStrictEqual(config.stylesheets, ['main.css']);
-    });
-
-    it('handles circular structures in unknown options', async () => {
+    it('reports circular structures in unknown options without overflowing', async () => {
       tmpfs.mock({
         'happo.config.js': `
           const shared = { name: 'shared' };
@@ -1825,21 +1818,13 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
-      const config = await loadConfigFile(
-        findConfigFile(),
-        { link: undefined, ci: false },
-        logger,
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /^TypeError: Unknown option `shared` in config file \S+\.$/,
       );
-
-      assert.strictEqual(logger.error.mock.callCount(), 1);
-      assert.ok('shared' in config);
-      const { shared } = config;
-      assert.ok(typeof shared === 'object' && shared !== null && 'self' in shared);
-      assert.strictEqual(shared.self, shared);
     });
 
-    it('does not warn for a config that only uses known options', async () => {
+    it('accepts a config that only uses known options', async () => {
       tmpfs.mock({
         'happo.config.js': `
           export default {

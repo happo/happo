@@ -352,14 +352,36 @@ const configEntries = {
 const configSchema = v.looseObject(configEntries);
 
 /**
+ * Options that used to exist but have since been removed, keyed by the entries
+ * of the object they belonged to. Mapped to the migration advice we want to
+ * give when we see one, instead of just calling them unknown.
+ */
+const REMOVED_OPTIONS = new Map<object, Record<string, string>>([
+  [
+    configEntries,
+    {
+      githubApiUrl:
+        'Happo posts PR statuses from the server now, including to GitHub Enterprise instances, so the client no longer posts comments at all. Remove the option.',
+    },
+  ],
+  [
+    targetEntries,
+    {
+      chunks:
+        'Happo now decides how many chunks to use, based on the size of the run. Remove the option and Happo will parallelize for you.',
+      useFullPageFallbackForTallScreenshots:
+        'Tall screenshots no longer need a full-page fallback. Remove the option.',
+    },
+  ],
+]);
+
+/**
  * The config after validation and after defaults have been applied, but
  * before `apiKey` and `apiSecret` have been resolved (which may involve
  * network requests).
  */
 export type ParsedConfig = Omit<Config, 'targets'> &
-  Required<
-    Pick<Config, 'endpoint' | 'integration' | 'failOnWaitForTimeout'>
-  > & {
+  Required<Pick<Config, 'endpoint' | 'integration' | 'failOnWaitForTimeout'>> & {
     targets: Record<string, TargetWithDefaults>;
   };
 
@@ -559,11 +581,10 @@ function formatIssue(
 
 const MAX_REPORTED_ISSUES = 10;
 
-function formatIssues(issues: ReadonlyArray<Issue>, configFilePath: string): string {
-  const messages = flattenIssues(issues).map(({ issue, path }) =>
-    formatIssue(issue, path, configFilePath),
-  );
-
+function formatProblems(
+  messages: ReadonlyArray<string>,
+  configFilePath: string,
+): string {
   if (messages.length === 1) {
     return messages.join('');
   }
@@ -590,12 +611,13 @@ function isSchema(value: unknown): value is v.GenericSchema {
 interface UnknownOption {
   path: ReadonlyArray<string | number>;
   knownOptions: ReadonlyArray<string>;
+  /** Set when this is an option that has been removed. */
+  removedAdvice: string | undefined;
 }
 
 /**
- * Walks the schema alongside a (valid) config value to find options the
- * schema doesn't know about. Those are usually typos or leftovers from older
- * versions, so we want to tell people about them.
+ * Walks the schema alongside a config value to find options the schema doesn't
+ * know about. Those are usually typos or leftovers from older versions.
  */
 function findUnknownOptions(
   schema: v.GenericSchema,
@@ -628,6 +650,7 @@ function findUnknownOptions(
         unknownOptions.push({
           path: [...path, key],
           knownOptions: Object.keys(entries),
+          removedAdvice: REMOVED_OPTIONS.get(entries)?.[key],
         });
       }
     }
@@ -703,17 +726,26 @@ function removeUndefinedValues(
   return copy;
 }
 
+function formatUnknownOption(
+  { path, knownOptions, removedAdvice }: UnknownOption,
+  configFilePath: string,
+): string {
+  if (removedAdvice) {
+    return `The \`${formatPath(path)}\` option in config file ${configFilePath} has been removed. ${removedAdvice}`;
+  }
+
+  const suggestion = findClosestMatch(String(path.at(-1)), knownOptions);
+  return `Unknown option \`${formatPath(path)}\` in config file ${configFilePath}.${suggestion ? ` Did you mean \`${suggestion}\`?` : ''}`;
+}
+
 /**
  * Validates a config object and applies defaults. Throws a `TypeError`
- * describing every problem it found if the config is invalid.
- *
- * Unknown options are reported through `onUnknownOption` instead of failing,
- * since they have historically been allowed.
+ * describing every problem it found, including options it doesn't know about,
+ * if the config is invalid.
  */
 export function parseConfig(
   rawInput: unknown,
   configFilePath: string,
-  onUnknownOption: (message: string) => void,
 ): ParsedConfig {
   const input = removeUndefinedValues(rawInput);
   const result = v.safeParse(configSchema, input, {
@@ -721,14 +753,18 @@ export function parseConfig(
     message: (issue) => `must be ${describeExpected(issue.expected)}`,
   });
 
-  if (!result.success) {
-    throw new TypeError(formatIssues(result.issues, configFilePath));
-  }
+  const unknownOptionMessages = findUnknownOptions(configSchema, input).map(
+    (unknownOption) => formatUnknownOption(unknownOption, configFilePath),
+  );
 
-  for (const { path, knownOptions } of findUnknownOptions(configSchema, input)) {
-    const suggestion = findClosestMatch(String(path.at(-1)), knownOptions);
-    onUnknownOption(
-      `Unknown option \`${formatPath(path)}\` in config file ${configFilePath}.${suggestion ? ` Did you mean \`${suggestion}\`?` : ''} This will be an error in the next major version of Happo.`,
+  if (!result.success || unknownOptionMessages.length > 0) {
+    const issueMessages = result.success
+      ? []
+      : flattenIssues(result.issues).map(({ issue, path }) =>
+          formatIssue(issue, path, configFilePath),
+        );
+    throw new TypeError(
+      formatProblems([...issueMessages, ...unknownOptionMessages], configFilePath),
     );
   }
 
