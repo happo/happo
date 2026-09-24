@@ -10,6 +10,7 @@ import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from '../network/fetchWithRetry.ts';
 import getShortLivedAPIToken from './getShortLivedAPIToken.ts';
 import type {
+  BrowserType,
   ConfigWithDefaults,
   DeepCompareSettings,
   TargetWithDefaults,
@@ -206,6 +207,89 @@ function validateDeepCompareSettings(
   }
 }
 
+const TARGETS_DOCS_URL = 'https://docs.happo.io/docs/configuration#targets';
+
+const KNOWN_TARGET_TYPES: ReadonlyArray<BrowserType> = [
+  'chrome',
+  'firefox',
+  'edge',
+  'safari',
+  'ios-safari',
+  'ipad-safari',
+  'accessibility',
+];
+
+function isKnownTargetType(value: unknown): value is BrowserType {
+  return (KNOWN_TARGET_TYPES as ReadonlyArray<unknown>).includes(value);
+}
+
+function describeValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return 'an array';
+  }
+  if (value === null) {
+    return 'null';
+  }
+  return `${typeof value} ${inspect(value)}`;
+}
+
+/**
+ * Builds a snippet of what a valid `targets` config could look like, based on
+ * what we were able to infer from the user's (invalid) config. This lets us
+ * show people something close to what they meant to write.
+ */
+function exampleTargetsSnippet(
+  entries: Array<{ name: string; type: unknown }>,
+): string {
+  const lines = entries.map(({ name, type }) => {
+    const key = /^[A-Za-z_$][\w$]*$/.test(name) ? name : `'${name}'`;
+    const exampleType = isKnownTargetType(type) ? type : 'chrome';
+    return `    ${key}: { type: '${exampleType}', viewport: '1024x768' },`;
+  });
+
+  return ['  targets: {', ...lines, '  },'].join('\n');
+}
+
+function validateTargets(targets: unknown, configFilePath: string): void {
+  if (typeof targets !== 'object' || targets === null || Array.isArray(targets)) {
+    // People sometimes write `targets: ['chrome', 'firefox']` or
+    // `targets: 'chrome'`, so we use those values to build the example.
+    const entries = (Array.isArray(targets) ? targets : [targets])
+      .filter((value): value is string => typeof value === 'string' && !!value)
+      .map((value) => ({ name: value, type: value }));
+
+    throw new TypeError(
+      `Invalid \`targets\` in config file ${configFilePath}: must be an object where each key is a name you choose for the target and each value is an object describing the browser, got ${describeValue(targets)}. For example:
+
+${exampleTargetsSnippet(entries.length > 0 ? entries : [{ name: 'chrome', type: 'chrome' }])}
+
+See ${TARGETS_DOCS_URL}`,
+    );
+  }
+
+  for (const [name, target] of Object.entries(targets)) {
+    if (typeof target !== 'object' || target === null || Array.isArray(target)) {
+      // e.g. `targets: { chrome: 'chrome' }`
+      throw new TypeError(
+        `Invalid target \`${name}\` in config file ${configFilePath}: each target must be an object describing the browser, got ${describeValue(target)}. For example:
+
+${exampleTargetsSnippet([{ name, type: isKnownTargetType(target) ? target : name }])}
+
+See ${TARGETS_DOCS_URL}`,
+      );
+    }
+
+    if (!('type' in target) || typeof target.type !== 'string' || !target.type) {
+      const got = 'type' in target ? inspect(target.type) : 'nothing';
+      throw new TypeError(
+        `Invalid target \`${name}\` in config file ${configFilePath}: \`type\` must be one of ${KNOWN_TARGET_TYPES.map((type) => `'${type}'`).join(', ')}, got ${got}.
+
+See ${TARGETS_DOCS_URL}`,
+      );
+    }
+  }
+}
+
 export async function loadConfigFile(
   configFilePath: string,
   environment?: Pick<EnvironmentResult, 'link' | 'ci'>,
@@ -310,6 +394,8 @@ export async function loadConfigFile(
       },
     };
   }
+
+  validateTargets(config.targets, configFilePath);
 
   if (!config.integration) {
     config.integration = {
