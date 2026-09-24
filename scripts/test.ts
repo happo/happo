@@ -210,6 +210,8 @@ function run() {
     '--trace-uncaught',
     '--test',
     '--experimental-test-module-mocks',
+    // Keep the test suite from reporting errors to Sentry
+    '--import=./src/test-utils/disableTelemetry.ts',
   ];
 
   if (args.coverage) {
@@ -240,11 +242,7 @@ function run() {
   const filesToRun = getFilesToRun(patterns, selectedFiles);
   nodeTestArgs.push(...filesToRun);
 
-  currentProcess = spawn(process.execPath, nodeTestArgs, {
-    stdio: 'inherit',
-    // Keep the test suite from reporting errors to Sentry
-    env: { ...process.env, HAPPO_DISABLE_TELEMETRY: 'true' },
-  });
+  currentProcess = spawn(process.execPath, nodeTestArgs, { stdio: 'inherit' });
 
   // Forward SIGINT to the child process
   process.on('SIGINT', () => {

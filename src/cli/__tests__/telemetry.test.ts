@@ -1,3 +1,5 @@
+import '../../test-utils/disableTelemetry.ts';
+
 import assert from 'node:assert';
 import path from 'node:path';
 import { describe, it } from 'node:test';
