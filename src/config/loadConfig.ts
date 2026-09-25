@@ -8,6 +8,7 @@ import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import fetchWithRetry from '../network/fetchWithRetry.ts';
 import { parseConfig } from './configSchema.ts';
+import getGithubOidcApiToken from './getGithubOidcApiToken.ts';
 import getShortLivedAPIToken from './getShortLivedAPIToken.ts';
 import type { ConfigWithDefaults } from './index.ts';
 
@@ -74,9 +75,25 @@ async function getPullRequestSecret(
 
 async function getFallbackApiToken(
   endpoint: string,
+  project: string | undefined,
   environment: Pick<EnvironmentResult, 'link' | 'ci'> | undefined,
   logger: Logger,
 ): Promise<{ key: string; secret: string } | undefined> {
+  // GitHub Actions with `permissions: id-token: write`. Tried first because,
+  // unlike pull-request auth, it also works for default-branch builds.
+  try {
+    const githubOidcApiToken = await getGithubOidcApiToken(endpoint, project, logger);
+    if (githubOidcApiToken) {
+      return githubOidcApiToken;
+    }
+  } catch (error) {
+    logger.log(
+      `Failed to authenticate using GitHub Actions OIDC: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+
   if (environment?.link) {
     try {
       // Fetch pull request auth
@@ -200,6 +217,7 @@ export async function loadConfigFile(
     );
     const fallbackApiToken = await getFallbackApiToken(
       parsedConfig.endpoint,
+      parsedConfig.project,
       environment,
       logger,
     );
