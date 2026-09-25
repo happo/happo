@@ -32,6 +32,43 @@ function computeDefaultChunks(estimatedSnapCount: number): number {
 }
 
 /**
+ * Fewest snapshots worth giving a chunk of its own.
+ *
+ * Deliberately far below the ~100 per chunk `computeDefaultChunks()` aims for,
+ * because this is not a second opinion about how much to parallelize -- an
+ * explicit `chunks` is the user's call and stays honoured for any real
+ * workload. It only bites when a chunk would have almost nothing to do.
+ */
+const MIN_SNAPS_PER_CHUNK = 10;
+
+/**
+ * Trims a chunk count down to what the run actually has to render.
+ *
+ * `skip` and `only` can cut the work of a run dramatically -- the skipped
+ * examples are borrowed from a baseline through an extends-report rather than
+ * rendered -- but an explicit `chunks` was chosen for the whole suite, not for
+ * whatever is left of it. Honouring it literally books a worker per chunk for
+ * a job that no longer needs them: one real run asked for 24 chunks of a
+ * Storybook whose `only` filter left a small fraction renderable, and whole
+ * chunks had nothing to render at all.
+ *
+ * Returns `chunks` untouched when the count is unknown, since then there is
+ * nothing to say the request is too large.
+ */
+function capChunksToWork(chunks: number, estimatedSnapCount?: number): number {
+  if (
+    estimatedSnapCount === undefined ||
+    !Number.isFinite(estimatedSnapCount) ||
+    estimatedSnapCount <= 0
+  ) {
+    return chunks;
+  }
+
+  const justified = Math.ceil(estimatedSnapCount / MIN_SNAPS_PER_CHUNK);
+  return Math.max(1, Math.min(chunks, justified));
+}
+
+/**
  * PageSlice is an array of pages with the extra extendsSha property.
  */
 interface PageSlice extends Array<Page> {
@@ -277,8 +314,14 @@ export default class RemoteBrowserTarget {
     const items: Array<ChunkItem> = [];
 
     if (staticPackage) {
-      const effectiveChunks =
+      // `computeDefaultChunks()` already targets ~100 snapshots per chunk, so
+      // the cap only ever changes an explicit `chunks`.
+      const requestedChunks =
         this.chunks ?? Math.max(1, computeDefaultChunks(estimatedSnapsCount ?? 0));
+      const effectiveChunks = capChunksToWork(
+        requestedChunks,
+        estimatedSnapsCount,
+      );
       for (let i = 0; i < effectiveChunks; i += 1) {
         items.push(
           buildChunkItem({
