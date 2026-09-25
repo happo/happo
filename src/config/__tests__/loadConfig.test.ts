@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import http from 'node:http';
 import path from 'node:path';
-import { afterEach, describe, it, mock } from 'node:test';
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import { findConfigFile, loadConfigFile } from '../loadConfig.ts';
@@ -55,6 +55,16 @@ async function startPullRequestTokenServer(
     },
   };
 }
+
+// When these tests themselves run on GitHub Actions with id-token permission,
+// the runner's OIDC variables would send loadConfigFile down the OIDC path.
+delete originalEnv.ACTIONS_ID_TOKEN_REQUEST_URL;
+delete originalEnv.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
+
+beforeEach(() => {
+  delete process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
+  delete process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
+});
 
 afterEach(() => {
   tmpfs.restore();
@@ -538,6 +548,101 @@ describe('loadConfigFile', () => {
       logger.log.mock.calls[1]?.arguments[0],
       /Failed to obtain temporary pull-request token/,
     );
+  });
+
+  it('uses GitHub Actions OIDC when the job can request an ID token', async () => {
+    const requests: Array<{ url: string | undefined; body: string }> = [];
+    const server = http.createServer((req, res) => {
+      let body = '';
+      req.on('data', (chunk: Buffer) => {
+        body += chunk.toString();
+      });
+      req.on('end', () => {
+        requests.push({ url: req.url, body });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify(
+            req.url?.startsWith('/id-token')
+              ? { value: 'the-id-token' }
+              : { key: 'oidc-key', secret: 'oidc-secret' },
+          ),
+        );
+      });
+    });
+    await new Promise<void>((resolve) => server.listen(0, () => resolve()));
+    const address = server.address();
+    assert.ok(address && typeof address !== 'string');
+    const { port } = address;
+
+    try {
+      process.env.ACTIONS_ID_TOKEN_REQUEST_URL = `http://localhost:${port}/id-token?api-version=2.0`;
+      process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN = 'runner-token';
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            endpoint: 'http://localhost:${port}',
+            project: 'storybook',
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: 'https://github.com/happo/happo/pull/123',
+        ci: true,
+      });
+
+      assert.strictEqual(config.apiKey, 'oidc-key');
+      assert.strictEqual(config.apiSecret, 'oidc-secret');
+      assert.deepStrictEqual(
+        requests.map(({ url }) => url?.split('?')[0]),
+        ['/id-token', '/api/auth/github-oidc'],
+      );
+      assert.deepStrictEqual(JSON.parse(requests[1]?.body ?? ''), {
+        token: 'the-id-token',
+        project: 'storybook',
+      });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('falls back to pull-request authentication when GitHub Actions OIDC fails', async () => {
+    const testSecret = 'test-pull-request-secret';
+    const { port, close } = await startPullRequestTokenServer([
+      { status: 200, body: { secret: testSecret } },
+    ]);
+
+    try {
+      // Nothing answers /id-token on this server, so the OIDC attempt 404s.
+      process.env.ACTIONS_ID_TOKEN_REQUEST_URL = `http://localhost:${port}/id-token?api-version=2.0`;
+      process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN = 'runner-token';
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            endpoint: 'http://localhost:${port}',
+          };
+        `,
+      });
+
+      const logger = { log: mock.fn(), error: mock.fn() };
+      const config = await loadConfigFile(
+        findConfigFile(),
+        { link: 'https://github.com/happo/happo/pull/123', ci: true },
+        logger,
+      );
+
+      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(config.apiSecret, testSecret);
+      assert.ok(
+        logger.log.mock.calls.some((call) =>
+          /Failed to authenticate using GitHub Actions OIDC/.test(
+            String(call.arguments[0]),
+          ),
+        ),
+      );
+    } finally {
+      await close();
+    }
   });
 
   it('loads the config file', async () => {
