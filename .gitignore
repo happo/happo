@@ -7,8 +7,7 @@
 .happo-tmp/
 .npm
 .out
-.out-v8
-.out-injected-runtime
+.out-*
 /coverage/
 dist
 node_modules

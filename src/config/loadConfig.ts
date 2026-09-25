@@ -107,15 +107,6 @@ export async function loadConfigFile(
   configFilePath: string,
   environment?: Pick<EnvironmentResult, 'link' | 'ci'>,
   logger: Logger = console,
-  {
-    reportUnknownOptions = true,
-  }: {
-    /**
-     * Set to `false` when the config has already been loaded (and unknown
-     * options reported) earlier in the run, to avoid repeating the warnings.
-     */
-    reportUnknownOptions?: boolean;
-  } = {},
 ): Promise<ConfigWithDefaults> {
   try {
     const stats = await fs.promises.stat(configFilePath);
@@ -145,7 +136,7 @@ export async function loadConfigFile(
       // a more helpful error message.
       const extension = path.extname(configFilePath);
       throw new TypeError(
-        `Your Happo config file ${configFilePath} is using an extension that is not supported by this version of Node.js (${extension}). Please use a newer version of Node.js (22.18.0+, 23.6.0+, or 24+).`,
+        `Your Happo config file ${configFilePath} is using an extension that is not supported by this version of Node.js (${extension}). Please use a newer version of Node.js (22.18.0+ or 24+).`,
         { cause: error },
       );
     }
@@ -171,11 +162,7 @@ export async function loadConfigFile(
     );
   }
 
-  const parsedConfig = parseConfig(config, configFilePath, (message) => {
-    if (reportUnknownOptions) {
-      logger.error(`[HAPPO] ${message}`);
-    }
-  });
+  const parsedConfig = parseConfig(config, configFilePath);
 
   let { apiKey, apiSecret } = parsedConfig;
 

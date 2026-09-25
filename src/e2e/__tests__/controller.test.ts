@@ -93,7 +93,6 @@ before(async () => {
     targets: {
       chrome: {
         type: 'chrome',
-        execute: async () => ['request-id-1'],
       },
     },
     endpoint: 'http://localhost:${port}',

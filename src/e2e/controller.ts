@@ -216,12 +216,7 @@ class Controller {
     }
 
     const configFilePath = findConfigFile();
-    // The CLI wrapper that set HAPPO_E2E_PORT has already loaded this config
-    // and reported any unknown options. This runs for every spec (Cypress) or
-    // batch of tests (Playwright), so we don't repeat those warnings here.
-    this.happoConfig = await loadConfigFile(configFilePath, undefined, console, {
-      reportUnknownOptions: false,
-    });
+    this.happoConfig = await loadConfigFile(configFilePath);
     return true;
   }
 

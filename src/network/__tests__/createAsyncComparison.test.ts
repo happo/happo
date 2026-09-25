@@ -44,7 +44,6 @@ beforeEach(async () => {
     apiKey: 'test-key',
     apiSecret: 'test-secret',
     endpoint: 'https://happo.io',
-    githubApiUrl: 'https://api.github.com',
     targets: {
       chrome: {
         type: 'chrome',
@@ -69,7 +68,6 @@ beforeEach(async () => {
     ci: false,
     ciJobUrl: undefined,
     nonce: undefined,
-    githubToken: undefined,
     debugMode: false,
     skip: undefined,
     only: undefined,

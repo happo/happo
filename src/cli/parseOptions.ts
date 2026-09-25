@@ -60,10 +60,6 @@ export const parseOptions = {
     type: 'string',
   },
 
-  githubToken: {
-    type: 'string',
-  },
-
   // Flake command options
   allProjects: {
     type: 'boolean',
@@ -102,10 +98,6 @@ export const parseOptions = {
   },
 
   skip: {
-    type: 'string',
-  },
-
-  skippedExamples: {
     type: 'string',
   },
 

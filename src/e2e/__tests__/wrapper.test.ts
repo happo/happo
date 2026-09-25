@@ -19,7 +19,6 @@ const happoConfig = () => ({
   apiSecret: 'test-secret',
   targets: {},
   endpoint: `http://localhost:${serverPort}`,
-  githubApiUrl: 'https://api.github.com',
   integration: { type: 'playwright' as const },
   failOnWaitForTimeout: true,
 });
@@ -34,7 +33,6 @@ const baseEnvironment = {
   debugMode: false,
   notify: undefined,
   fallbackShas: undefined,
-  githubToken: undefined,
   ci: false,
   ciJobUrl: undefined,
   skip: undefined,

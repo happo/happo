@@ -213,7 +213,7 @@ Cypress.Commands.add(
         { ...taskOptions, log: false },
       ).then((happoSettings) => {
         cachedAutoApplyPseudoStateAttributes =
-          happoSettings?.autoApplyPseudoStateAttributes ?? false;
+          happoSettings?.autoApplyPseudoStateAttributes ?? true;
         cachedSkipSet = toSkipSet(happoSettings?.skip ?? []);
         if (isInSkipSet(cachedSkipSet, component, variant)) {
           return;

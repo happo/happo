@@ -50,7 +50,6 @@ export interface EnvironmentResult {
   debugMode: boolean;
   notify: string | undefined;
   fallbackShas: Array<string> | undefined;
-  githubToken: string | undefined;
   ci: boolean;
   ciJobUrl: string | undefined;
   skip: string | undefined;
@@ -729,10 +728,9 @@ export default async function resolveEnvironment(
     debugMode,
     notify: cliArgs.notify,
     fallbackShas: resolveFallbackShas(cliArgs, nonNullBeforeSha),
-    githubToken: cliArgs.githubToken,
     ci: !!env.CI,
     ciJobUrl: resolveCIJobUrl(env),
-    skip: cliArgs.skip ?? cliArgs.skippedExamples,
+    skip: cliArgs.skip,
     only: cliArgs.only,
   };
 

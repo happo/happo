@@ -123,7 +123,6 @@ beforeEach(() => {
     retryMaxTimeout: 1,
   };
   config = {
-    githubApiUrl: 'https://api.github.com',
     targets: {},
     project: 'test',
     integration: {
@@ -131,6 +130,7 @@ beforeEach(() => {
       build: async () => ({
         rootDir: './custom',
         entryPoint: 'index.js',
+        estimatedSnapsCount: 0,
       }),
     },
     endpoint: 'http://localhost:8990',

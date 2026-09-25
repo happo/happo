@@ -1,8 +1,8 @@
 import type { StorybookConfig } from '@storybook/react-vite';
 
-// Minimal Storybook config compatible with v8, v9, and v10.
-// Intentionally avoids 'storybook/actions' and 'storybook/test', which did
-// not exist as storybook package exports in Storybook v8.
+// The smallest Storybook config Happo supports: no addons beyond Happo's own
+// preset, and none of the optional 'storybook/*' package exports that the
+// fuller fixture in storybook-app pulls in.
 const result: StorybookConfig = {
   stories: ['./**/*.stories.ts'],
 

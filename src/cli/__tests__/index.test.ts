@@ -133,16 +133,6 @@ mock.module('../../network/uploadAssets.ts', {
   },
 });
 
-const postGitHubCommentMock: Mock<
-  typeof import('../../network/postGitHubComment.ts').default
-> = mock.fn(async () => {
-  return true;
-});
-
-mock.module('../../network/postGitHubComment.ts', {
-  defaultExport: postGitHubCommentMock,
-});
-
 // Install fresh mocks & imports for each test
 beforeEach(async () => {
   logger = {
@@ -170,7 +160,6 @@ beforeEach(async () => {
 
   makeHappoAPIRequestMock.mock.resetCalls();
   findBaselineResponseOverride = null;
-  postGitHubCommentMock.mock.resetCalls();
 });
 
 afterEach(() => {
@@ -298,28 +287,11 @@ describe('main', () => {
       );
     });
 
-    it('posts GitHub comment when conditions are met', async () => {
-      tmpfs.writeFile(
-        'happo.config.ts',
-        `export default {
-          integration: { type: 'custom', build: async () => ({ rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))}, entryPoint: 'bundle.js' }) },
-          apiKey: 'test-key',
-          apiSecret: 'test-secret',
-          githubApiUrl: 'https://api.github.com',
-          targets: {
-            chrome: { type: 'chrome', viewport: '1024x768' },
-          },
-        };`,
-      );
-
+    it('rejects the removed --githubToken flag', async () => {
       await main(
         [
           'npx',
           'happo',
-          '--beforeSha',
-          'before-sha',
-          '--afterSha',
-          'after-sha',
           '--link',
           'https://github.com/owner/repo/pull/123',
           '--githubToken',
@@ -328,86 +300,11 @@ describe('main', () => {
         logger,
       );
 
-      assert.strictEqual(postGitHubCommentMock.mock.callCount(), 1);
-      const call = postGitHubCommentMock.mock.calls[0];
-      assert.ok(call);
-      assert.strictEqual(call.arguments[0]?.authToken, 'test-token');
-      assert.strictEqual(
-        call.arguments[0]?.link,
-        'https://github.com/owner/repo/pull/123',
+      assert.strictEqual(process.exitCode, 1);
+      assert.match(
+        logger.error.mock.calls.map((c) => c.arguments.join(' ')).join('\n'),
+        /--githubToken/,
       );
-      assert.strictEqual(call.arguments[0]?.githubApiUrl, 'https://api.github.com');
-      assert.strictEqual(
-        call.arguments[0]?.statusImageUrl,
-        'https://happo.io/api/reports/123/status-image',
-      );
-      assert.strictEqual(
-        call.arguments[0]?.compareUrl,
-        'https://happo.io/api/reports/123/compare',
-      );
-    });
-
-    it('does not post GitHub comment when beforeSha equals afterSha', async () => {
-      tmpfs.writeFile(
-        'happo.config.ts',
-        `export default {
-          integration: { type: 'custom', build: async () => ({ rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))}, entryPoint: 'bundle.js' }) },
-          apiKey: 'test-key',
-          apiSecret: 'test-secret',
-          githubApiUrl: 'https://api.github.com',
-          targets: {
-            chrome: { type: 'chrome', viewport: '1024x768' },
-          },
-        };`,
-      );
-
-      await main(
-        [
-          'npx',
-          'happo',
-          '--beforeSha',
-          'same-sha',
-          '--afterSha',
-          'same-sha',
-          '--link',
-          'https://github.com/owner/repo/pull/123',
-          '--githubToken',
-          'test-token',
-        ],
-        logger,
-      );
-
-      assert.strictEqual(postGitHubCommentMock.mock.callCount(), 0);
-    });
-
-    it('does not post GitHub comment when githubToken is missing', async () => {
-      tmpfs.writeFile(
-        'happo.config.ts',
-        `export default {
-          integration: { type: 'custom', build: async () => ({ rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))}, entryPoint: 'bundle.js' }) },
-          apiKey: 'test-key',
-          apiSecret: 'test-secret',
-          targets: {
-            chrome: { type: 'chrome', viewport: '1024x768' },
-          },
-        };`,
-      );
-
-      await main(
-        [
-          'npx',
-          'happo',
-          '--beforeSha',
-          'before-sha',
-          '--afterSha',
-          'after-sha',
-          '--link',
-          'https://github.com/owner/repo/pull/123',
-        ],
-        logger,
-      );
-
-      assert.strictEqual(postGitHubCommentMock.mock.callCount(), 0);
     });
 
     it('suggests camelCase for kebab-case option with a good match', async () => {
@@ -634,12 +531,68 @@ describe('main', () => {
               build: async () => ({
                 rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
                 entryPoint: 'bundle.js',
+                estimatedSnapsCount: 1,
               }),
             },
             apiKey: 'test-key',
             apiSecret: 'test-secret',
           };
           `,
+        );
+      });
+
+      it('fails with a helpful error when build() omits estimatedSnapsCount', async () => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `
+          export default {
+            integration: {
+              type: 'custom',
+              build: async () => ({
+                rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
+                entryPoint: 'bundle.js',
+              }),
+            },
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          };
+          `,
+        );
+
+        await main(['npx', 'happo'], logger);
+
+        assert.strictEqual(process.exitCode, 1);
+        assert.match(
+          logger.error.mock.calls.map((c) => c.arguments.join(' ')).join('\n'),
+          /must return an `estimatedSnapsCount`/,
+        );
+      });
+
+      it('fails with a helpful error when estimatedSnapsCount is not a number', async () => {
+        tmpfs.writeFile(
+          'happo.config.ts',
+          `
+          export default {
+            integration: {
+              type: 'custom',
+              build: async () => ({
+                rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
+                entryPoint: 'bundle.js',
+                estimatedSnapsCount: 'lots',
+              }),
+            },
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          };
+          `,
+        );
+
+        await main(['npx', 'happo'], logger);
+
+        assert.strictEqual(process.exitCode, 1);
+        assert.match(
+          logger.error.mock.calls.map((c) => c.arguments.join(' ')).join('\n'),
+          /invalid `estimatedSnapsCount`: must be a non-negative, finite number, got: 'lots'/,
         );
       });
 
@@ -695,6 +648,7 @@ describe('main', () => {
               build: async () => ({
                 rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
                 entryPoint: 'bundle.js',
+                estimatedSnapsCount: 1,
               }),
             },
             apiKey: 'test-key',
@@ -720,7 +674,7 @@ describe('main', () => {
         );
       });
 
-      it('is aliased by --skippedExamples on the default command', async () => {
+      it('rejects the removed --skippedExamples flag', async () => {
         tmpfs.writeFile(
           'happo.config.ts',
           `export default {
@@ -730,54 +684,20 @@ describe('main', () => {
           };`,
         );
 
-        // --skippedExamples used to be parsed and then silently dropped here,
-        // producing a full run with no skipping and no error.
         await main(
           [
             'npx',
             'happo',
             '--skippedExamples',
-            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
-          ],
-          logger,
-        );
-
-        const storyFileErrors = logger.error.mock.calls.filter((c) =>
-          String(c.arguments[0]).includes('storyFile'),
-        );
-        assert.strictEqual(storyFileErrors.length, 0);
-      });
-
-      it('names the flag the user actually passed in error messages', async () => {
-        tmpfs.writeFile(
-          'happo.config.ts',
-          `export default {
-            integration: {
-              type: 'custom',
-              build: async () => ({
-                rootDir: ${JSON.stringify(tmpfs.fullPath('happo-custom'))},
-                entryPoint: 'bundle.js',
-              }),
-            },
-            apiKey: 'test-key',
-            apiSecret: 'test-secret',
-          };`,
-        );
-
-        await main(
-          [
-            'npx',
-            'happo',
-            '--skippedExamples',
-            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+            JSON.stringify([{ component: 'Button' }]),
           ],
           logger,
         );
 
         assert.strictEqual(process.exitCode, 1);
         assert.match(
-          String(logger.error.mock.calls[0]?.arguments[0]),
-          /storyFile items in --skippedExamples/,
+          logger.error.mock.calls.map((c) => c.arguments.join(' ')).join('\n'),
+          /--skippedExamples/,
         );
       });
 
@@ -934,7 +854,7 @@ describe('main', () => {
         assert(makeHappoAPIRequestMock.mock.callCount() > 0);
       });
 
-      it('borrows skipped examples from the baseline via an extends-report when --skippedExamples is set', async () => {
+      it('borrows skipped examples from the baseline via an extends-report when --skip is set', async () => {
         const skip = [{ component: 'Button', variant: 'primary' }];
         await main(
           [
@@ -947,7 +867,7 @@ describe('main', () => {
             'before-sha',
             '--nonce',
             'test-nonce',
-            '--skippedExamples',
+            '--skip',
             JSON.stringify(skip),
           ],
           logger,
@@ -1000,7 +920,7 @@ describe('main', () => {
         );
       });
 
-      it('does not create an extends-report when --skippedExamples is not set', async () => {
+      it('does not create an extends-report when --skip is not set', async () => {
         await main(
           [
             'npx',
@@ -1035,7 +955,7 @@ describe('main', () => {
             'before-sha',
             '--nonce',
             'test-nonce',
-            '--skippedExamples',
+            '--skip',
             JSON.stringify([{ component: 'Button', variant: 'primary' }]),
           ],
           logger,
@@ -1083,31 +1003,7 @@ describe('main', () => {
         );
       });
 
-      it('names --skippedExamples in the validator error, not --skip', async () => {
-        await main(
-          [
-            'npx',
-            'happo',
-            'finalize',
-            '--afterSha',
-            'test-sha',
-            '--nonce',
-            'test-nonce',
-            '--skippedExamples',
-            JSON.stringify([{ nope: true }]),
-          ],
-          logger,
-        );
-        assert.strictEqual(process.exitCode, 1);
-        const message = logger.error.mock.calls
-          .map((c) => c.arguments.join(' '))
-          .join('\n');
-        assert.match(message, /--skippedExamples must be a JSON array/);
-        assert.doesNotMatch(message, /--skip must be a JSON array/);
-      });
-
-      it('fails when both --skip and --skippedExamples are given', async () => {
-        const skip = JSON.stringify([{ component: 'Button' }]);
+      it('rejects storyFile items in --skip', async () => {
         await main(
           [
             'npx',
@@ -1118,30 +1014,6 @@ describe('main', () => {
             '--nonce',
             'test-nonce',
             '--skip',
-            skip,
-            '--skippedExamples',
-            skip,
-          ],
-          logger,
-        );
-        assert.strictEqual(process.exitCode, 1);
-        assert.match(
-          String(logger.error.mock.calls[0]?.arguments[0]),
-          /Use either --skip or --skippedExamples, not both/,
-        );
-      });
-
-      it('rejects storyFile items in --skippedExamples', async () => {
-        await main(
-          [
-            'npx',
-            'happo',
-            'finalize',
-            '--afterSha',
-            'test-sha',
-            '--nonce',
-            'test-nonce',
-            '--skippedExamples',
             JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
           ],
           logger,

@@ -71,8 +71,6 @@ export interface StorybookIntegration {
    * browsable Storybook, and reaching a story means visiting
    * `iframe.html?id=<storyId>&viewMode=story` by hand.
    *
-   * Ignored on Storybook v8, which has no `--preview-only` flag.
-   *
    * @default true
    */
   previewOnly?: boolean;
@@ -92,12 +90,12 @@ interface BaseE2EIntegration {
   downloadAllAssets?: boolean;
 
   /**
-   * When set to `true`, Happo automatically detects elements that are in
-   * `:hover`, `:active`, or `:focus-visible` states at the moment a screenshot
-   * is taken and adds the corresponding `data-happo-hover`,
-   * `data-happo-active`, and `data-happo-focus-visible` attributes. It also
-   * improves focus handling by traversing into shadow DOM to find the deepest
-   * focused element so that `data-happo-focus` is applied reliably.
+   * Happo automatically detects elements that are in `:hover`, `:active`, or
+   * `:focus-visible` states at the moment a screenshot is taken and adds the
+   * corresponding `data-happo-hover`, `data-happo-active`, and
+   * `data-happo-focus-visible` attributes. It also improves focus handling by
+   * traversing into shadow DOM to find the deepest focused element so that
+   * `data-happo-focus` is applied reliably.
    *
    * Note: basic focus handling (`data-happo-focus` based on `activeElement`)
    * is always applied regardless of this option.
@@ -107,6 +105,10 @@ interface BaseE2EIntegration {
    *
    * Requires `applyPseudoClasses: true` on your targets for the attributes to
    * be rendered as CSS pseudo-class styles on Happo workers.
+   *
+   * Set this to `false` to opt out and control the attributes yourself.
+   *
+   * @default true
    */
   autoApplyPseudoStateAttributes?: boolean;
 }
@@ -126,11 +128,14 @@ interface CustomIntegration {
 
   /**
    * An async function that generates a custom package. Returns an object with
-   * the path to the folder containing the custom files and the path to the
-   * entry point file relative to the root directory.
+   * the path to the folder containing the custom files, the path to the entry
+   * point file relative to the root directory, and the number of snapshots
+   * the package renders.
    *
-   * Optionally return `estimatedSnapsCount` to enable server-side auto-chunking,
-   * which parallelizes rendering across multiple workers.
+   * `estimatedSnapsCount` is how Happo decides to spread the package across
+   * several workers -- only your `build()` knows how many examples it
+   * registered. It does not have to be exact; it is used to pick a number of
+   * chunks, not to validate the run.
    *
    * @example
    * { rootDir: 'dist/custom', entryPoint: 'index.js', estimatedSnapsCount: 42 }
@@ -138,7 +143,7 @@ interface CustomIntegration {
   build: () => Promise<{
     rootDir: string;
     entryPoint: string;
-    estimatedSnapsCount?: number;
+    estimatedSnapsCount: number;
   }>;
 }
 
@@ -275,17 +280,6 @@ export interface Config {
   project?: string;
 
   /**
-   * Use this to post Happo statuses as comments to your PR. This can be useful
-   * if the Happo server doesn't have access to your GitHub repository.
-   *
-   * The default is `'https://api.github.com'`. If you are using GitHub
-   * Enterprise, enter the URL to your local GitHub API here, such as
-   * `'https://ghe.mycompany.zone/api/v3'` (the default for GHE installation is
-   * for the API to be located at `/api/v3`).
-   */
-  githubApiUrl?: string;
-
-  /**
    * Browsers to use when generating snapshots
    */
   targets: Record<string, Target>;
@@ -339,14 +333,6 @@ export type BrowserType = MobileSafariBrowserType | DesktopBrowserType;
 
 interface BaseTarget {
   type: BrowserType;
-
-  /**
-   * Split the target into chunks to be run on multiple workers in parallel
-   *
-   * This adds some overhead, so if your test suite isn't large, using more than
-   * one chunk might actually slow things down.
-   */
-  chunks?: number;
 
   /**
    * Override the default maximum height (5000px) used by Happo workers
@@ -521,13 +507,15 @@ interface DesktopTarget extends BaseTarget {
   outgoingRequestHeaders?: Array<{ name: string; value: string }>;
 
   /**
-   * Restrict which hostnames the browser is allowed to make HTTP(S) requests
-   * to while rendering. Anything not covered by the list is refused before it
-   * leaves the browser.
+   * The hostnames the browser is allowed to make HTTP(S) requests to while
+   * rendering. Anything not covered by the list is refused before it leaves
+   * the browser.
    *
-   * A snapshot that loads a font, a script, or an image from somewhere else
-   * changes when that somewhere else does, and fails when it is down — so the
-   * fewer hostnames a target needs, the more reproducible its snapshots are.
+   * Defaults to `[]`, which blocks every external request. A snapshot that
+   * loads a font, a script, or an image from somewhere else changes when that
+   * somewhere else does, and fails when it is down — so a target reaches
+   * outside itself only where you have said it may. Listing a hostname is the
+   * only way to let a request out.
    *
    * Entries are hostnames, matched exactly. Prefix one with `*.` to cover
    * subdomains — `*.example.com` covers `cdn.example.com` but not
@@ -543,24 +531,17 @@ interface DesktopTarget extends BaseTarget {
    * everything in your uploaded package — are always allowed and don't belong
    * in the list. Neither do `data:`/`blob:` URLs, which never hit the network.
    *
-   * Leave this unset (the default) and nothing is blocked.
-   *
-   * You don't have to guess what to put in the list. Every run already logs
-   * the external hostnames its pages reached for, whether or not a list is
-   * set, so run once without one and read them off the snap-request's logs in
-   * happo.io:
-   *
-   * ```
-   * External requests: 12 to 2 hostnames: fonts.gstatic.com (x11), cdn.example.com
-   * ```
-   *
-   * Once a list is in force the same line splits into what was allowed and
-   * what was blocked, which is what to read when a snapshot is missing
-   * something.
+   * You don't have to guess what to put in the list. Every run logs the
+   * external hostnames its pages reached for, split into what was allowed and
+   * what was blocked, so run once and read the blocked ones off the
+   * snap-request's logs in happo.io. That same line is what to read when a
+   * snapshot comes back missing something.
    *
    * Not supported on `ios-safari` or `ipad-safari` targets, where the browser
-   * can't be pointed at the proxy that does the blocking. Those targets log
-   * that the option had no effect rather than leaving you to assume it did.
+   * can't be pointed at the proxy that does the blocking. Those targets are
+   * left without a list rather than handed one that does nothing.
+   *
+   * @default []
    *
    * @experimental This option and its shape are still evolving and may change
    * in a future release.
@@ -584,7 +565,6 @@ export interface ConfigWithDefaults extends Config {
   apiSecret: NonNullable<Config['apiSecret']>;
   integration: NonNullable<Config['integration']>;
   endpoint: NonNullable<Config['endpoint']>;
-  githubApiUrl: NonNullable<Config['githubApiUrl']>;
   targets: Record<string, TargetWithDefaults>;
   failOnWaitForTimeout: NonNullable<Config['failOnWaitForTimeout']>;
 }

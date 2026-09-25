@@ -5,7 +5,6 @@ import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
 
 interface CreateAsyncComparisonResult {
   id: number;
-  statusImageUrl: string;
   compareUrl: string;
 }
 
@@ -18,10 +17,6 @@ function assertResultIsCreateAsyncComparisonResult(
 
   if (!('id' in result) || typeof result.id !== 'number') {
     throw new TypeError('Result is missing id');
-  }
-
-  if (!('statusImageUrl' in result) || typeof result.statusImageUrl !== 'string') {
-    throw new TypeError('Result is missing statusImageUrl');
   }
 
   if (!('compareUrl' in result) || typeof result.compareUrl !== 'string') {

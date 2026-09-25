@@ -76,8 +76,8 @@ function BlockedDataFetchComponent(): ReactNode {
   const [xhr, setXhr] = useState<'pending' | 'ready' | 'blocked'>('pending');
   const [fetch, setFetch] = useState<'pending' | 'ready' | 'blocked'>('pending');
   useEffect(() => {
-    // A CORS-friendly URL that would succeed without an allowlist. Happo
-    // runs with `allowedHostnames: []`, so both requests fail and the
+    // A CORS-friendly URL that would succeed if the hostname were allowed.
+    // `allowedHostnames` defaults to `[]`, so both requests fail and the
     // snapshot should show "blocked", not "ready".
     const apiUrl = 'https://api.restful-api.dev/objects/1';
 

@@ -114,8 +114,8 @@ export const test: TestType<
     const integration = controller.config?.integration;
     const autoApplyPseudoStateAttributes =
       integration?.type === 'playwright'
-        ? (integration.autoApplyPseudoStateAttributes ?? false)
-        : false;
+        ? (integration.autoApplyPseudoStateAttributes ?? true)
+        : true;
 
     const skippedFilePath = process.env.HAPPO_SKIP_FILE;
     const rawSkipped = skippedFilePath

@@ -13,7 +13,6 @@ import createAsyncComparison from '../network/createAsyncComparison.ts';
 import createSkipExtendsRequest from '../network/createSkipExtendsRequest.ts';
 import formatFailureMessage from '../network/formatFailureMessage.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
-import postGitHubComment from '../network/postGitHubComment.ts';
 import startJob, { type StartJobResult } from '../network/startJob.ts';
 import startServer, { type ServerInfo } from '../network/startServer.ts';
 
@@ -64,10 +63,10 @@ export async function finalizeAll({
   if (skipJSON) {
     let skip: Array<SkipItem>;
     try {
-      skip = validateSkip(skipJSON, '--skippedExamples');
+      skip = validateSkip(skipJSON);
     } catch (e) {
       logger.error(
-        '[HAPPO] Invalid --skippedExamples:',
+        '[HAPPO] Invalid --skip:',
         e instanceof Error ? e.message : String(e),
       );
       throw e;
@@ -103,24 +102,7 @@ export async function finalizeAll({
   );
 
   if (environment.beforeSha !== environment.afterSha) {
-    const compareResult = await createAsyncComparison(
-      happoConfig,
-      environment,
-      logger,
-    );
-
-    if (environment.link && environment.githubToken && happoConfig.githubApiUrl) {
-      // githubToken and githubApiUrl are set which means that we should post
-      // a comment to the PR.
-      // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
-      await postGitHubComment({
-        authToken: environment.githubToken,
-        link: environment.link,
-        statusImageUrl: compareResult.statusImageUrl,
-        compareUrl: compareResult.compareUrl,
-        githubApiUrl: happoConfig.githubApiUrl,
-      });
-    }
+    await createAsyncComparison(happoConfig, environment, logger);
   }
 }
 
@@ -173,29 +155,7 @@ async function finalizeHappoReport(
   if (!nonce && environment.beforeSha !== environment.afterSha) {
     // If there is a nonce, the comparison will happen when the finalize
     // command is called.
-    const compareResult = await createAsyncComparison(
-      happoConfig,
-      environment,
-      logger,
-    );
-
-    if (
-      compareResult &&
-      environment.link &&
-      environment.githubToken &&
-      happoConfig.githubApiUrl
-    ) {
-      // githubToken and githubApiUrl is set which means that we should post
-      // a comment to the PR.
-      // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
-      await postGitHubComment({
-        authToken: environment.githubToken,
-        link: environment.link,
-        statusImageUrl: compareResult.statusImageUrl,
-        compareUrl: compareResult.compareUrl,
-        githubApiUrl: happoConfig.githubApiUrl,
-      });
-    }
+    await createAsyncComparison(happoConfig, environment, logger);
   }
   logger.log(`[HAPPO] ${job.url}`);
 }

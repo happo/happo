@@ -55,11 +55,14 @@ beforeEach(() => {
     apiKey: 'test-key',
     apiSecret: 'test-secret',
     project: 'test-project',
-    githubApiUrl: 'https://api.github.com',
     targets: {},
     integration: {
       type: 'custom',
-      build: async () => ({ rootDir: './custom', entryPoint: 'index.js' }),
+      build: async () => ({
+        rootDir: './custom',
+        entryPoint: 'index.js',
+        estimatedSnapsCount: 0,
+      }),
     },
     failOnWaitForTimeout: true,
   };
