@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 
 import type { Mock } from 'vitest';
-import { afterEach, beforeEach, describe, it, vi } from 'vitest';
+import { beforeEach, describe, it, vi } from 'vitest';
 
 import type { ConfigWithDefaults, DeepCompareSettings } from '../../config/index.ts';
 import type { EnvironmentResult } from '../../environment/index.ts';
@@ -75,12 +75,6 @@ beforeEach(async () => {
     skip: undefined,
     only: undefined,
   };
-
-  makeHappoAPIRequestMock.mockClear();
-});
-
-afterEach(() => {
-  makeHappoAPIRequestMock.mockClear();
 });
 
 describe('createAsyncComparison', () => {

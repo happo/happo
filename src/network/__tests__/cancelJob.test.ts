@@ -75,8 +75,6 @@ beforeEach(async () => {
   };
 
   ({ default: cancelJob } = await import('../cancelJob.ts'));
-
-  makeHappoAPIRequestMock.mockClear();
 });
 
 describe('cancelJob', () => {

@@ -171,9 +171,7 @@ beforeEach(async () => {
     `,
   });
 
-  makeHappoAPIRequestMock.mockClear();
   findBaselineResponseOverride = null;
-  postGitHubCommentMock.mockClear();
 });
 
 afterEach(() => {

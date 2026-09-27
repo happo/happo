@@ -67,7 +67,6 @@ beforeEach(async () => {
   makeHappoAPIRequestImpl = async () => ({ sha: 'baseline-sha-123' });
 
   ({ default: findBaselineReport } = await import('../findBaselineReport.ts'));
-  makeHappoAPIRequestMock.mockClear();
 });
 
 describe('findBaselineReport', () => {

@@ -46,9 +46,6 @@ let logger: Logger;
 const originalIsTTY = process.stdin.isTTY;
 
 beforeEach(async () => {
-  // Reset mocks
-  mockPromptUser.mockClear();
-  mockOpenBrowser.mockClear();
   mockPromptUser.shouldReject = false;
 
   // Ensure stdin.isTTY is true for tests

@@ -1,12 +1,16 @@
 import fs from 'node:fs';
+import path from 'node:path';
 
 import { configDefaults, defineConfig, type ViteUserConfig } from 'vitest/config';
 
 // Tests that talk to the real Happo API read HAPPO_API_KEY and HAPPO_API_SECRET
 // from here (see env.example). Loaded into this process so the test workers,
 // and anything they spawn, inherit it. Variables already set win.
-if (fs.existsSync('.env.local')) {
-  process.loadEnvFile('.env.local');
+// Resolved against this file rather than the working directory, which differs
+// from it when Vitest is started with --root or --config.
+const ENV_FILE = path.join(import.meta.dirname, '.env.local');
+if (fs.existsSync(ENV_FILE)) {
+  process.loadEnvFile(ENV_FILE);
 }
 
 // Runs `pnpm clean && pnpm build:dist`, which deletes `dist/` out from under

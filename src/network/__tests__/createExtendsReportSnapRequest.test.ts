@@ -45,7 +45,6 @@ beforeEach(async () => {
   ({ default: createExtendsReportSnapRequest } = await import(
     '../createExtendsReportSnapRequest.ts'
   ));
-  makeHappoAPIRequestMock.mockClear();
 });
 
 describe('createExtendsReportSnapRequest', () => {

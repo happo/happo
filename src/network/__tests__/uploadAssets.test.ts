@@ -69,7 +69,6 @@ beforeEach(() => {
 
   buffer = Buffer.from('test content') as Buffer<ArrayBuffer>;
   s3Requests = [];
-  makeHappoAPIRequestMock.mockClear();
   makeHappoAPIRequestImpl = async () => {
     throw new Error('makeHappoAPIRequest not configured');
   };
