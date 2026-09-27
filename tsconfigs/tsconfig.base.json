@@ -31,6 +31,10 @@
 
     "strict": true,
     "verbatimModuleSyntax": true,
+    // Node's type stripping refuses enums, namespaces and parameter
+    // properties. The tests used to catch them by running under it; Vitest
+    // compiles the TS itself, so tsc has to.
+    "erasableSyntaxOnly": true,
     "isolatedDeclarations": true,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
