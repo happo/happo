@@ -68,7 +68,7 @@
     "lint": "eslint .",
     "prepublishOnly": "pnpm clean && pnpm build",
     "storybook:dev": "storybook dev --config-dir src/storybook/__tests__/storybook-app -p ${PORT:-6007}",
-    "test": "node --env-file-if-exists=.env.local ./scripts/test.ts",
+    "test": "vitest run",
     "test:custom": "pnpm build:dist && pnpm build:custom && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.custom.config.ts",
     "test:custom:skipped": "pnpm build:dist && pnpm build:custom && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.custom.config.ts --project custom-skipped --skip \"$(node ./scripts/getCustomSkip.ts)\"",
     "test:cypress": "pnpm build:dist && node --env-file-if-exists=.env.local dist/cli/main.js -c ./happoconfigs/happo.cypress.config.ts e2e -- cypress run -C src/cypress/__cypress__/cypress.config.ts",
@@ -111,7 +111,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
-    "@reporters/github": "^2.1.2",
     "@storybook/builder-vite": "^10.5.10",
     "@storybook/react-vite": "^10.5.10",
     "@types/async-retry": "^1.4.9",
@@ -122,6 +121,7 @@
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
+    "@vitest/coverage-v8": "^5.0.2",
     "cypress": "^16.0.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.9.1",
@@ -140,7 +140,8 @@
     "release-with-ease": "^2.4.0",
     "storybook": "^10.5.10",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.68.0"
+    "typescript-eslint": "^8.68.0",
+    "vitest": "^5.0.2"
   },
   "dependencies": {
     "async-retry": "^1.3.3",

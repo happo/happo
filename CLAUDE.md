@@ -14,34 +14,35 @@ pnpm build          # Full build: type-check + esbuild dist
 pnpm build:types    # TypeScript declarations build (tsc project refs; emits to dist/ and tmp/tsc/)
 pnpm build:dist     # esbuild bundling only
 pnpm lint           # ESLint
-pnpm test           # Run unit tests (Node test runner)
+pnpm test           # Run unit tests (Vitest)
 pnpm all            # Run everything in parallel: lint, build:types, test, test:playwright
 pnpm clean          # Remove dist/, tmp/tsc, tmp/happo-custom
 ```
 
 ### Running a single test or subset of tests
 
-The test script (`scripts/test.ts`) wraps Node's built-in test runner with `fzf`-based file selection:
+`pnpm test` is `vitest run`, so Vitest's own filters work:
 
 ```bash
-# Run tests matching a file pattern (uses fzf fuzzy matching)
+# Run test files whose path contains "loadConfig"
 pnpm test loadConfig
 
-# Run tests matching a test name pattern
-pnpm test -- --testName "should load config"
+# Run tests whose name matches a pattern
+pnpm test -t "should load config"
 
-# Watch mode with interactive file picker
-pnpm test -- --watch
+# Watch mode (optionally with the same filters); press h for the key bindings
+pnpm exec vitest
+pnpm exec vitest loadConfig
 
 # Run all tests
 pnpm test
 ```
 
-Unit tests are TypeScript files named `*.test.ts`. The test runner looks under `src/`, `tsconfigs/`, and `scripts/` (including `__tests__/` subdirectories), so tests are not limited to `src/`. The `fzf` CLI tool must be installed for the interactive file picker.
+Unit tests are TypeScript files named `*.test.ts`. `vitest.config.ts` looks under `src/`, `tsconfigs/`, and `scripts/` (including `__tests__/` subdirectories), so tests are not limited to `src/`. Tests import `describe`, `it`, `vi` and the hooks from `vitest` explicitly and assert with `node:assert`.
 
 ### Environment
 
-`.env.local` (gitignored) is loaded automatically by the test scripts. Use `env.example` as a template. Tests that hit the real Happo API require `HAPPO_API_KEY` and `HAPPO_API_SECRET`.
+`.env.local` (gitignored) is loaded automatically by `vitest.config.ts` and the `test:*` scripts. Use `env.example` as a template. Tests that hit the real Happo API require `HAPPO_API_KEY` and `HAPPO_API_SECRET`.
 
 ## Architecture
 
@@ -106,4 +107,4 @@ Import order is enforced with `eslint-plugin-simple-import-sort`.
 
 ### Test Infrastructure
 
-Tests use Node's built-in test runner (`node --test`). Integration tests in `happoconfigs/` contain real happo configs used by `pnpm test:storybook`, `test:cypress`, `test:playwright`, etc. These require valid API credentials in `.env.local`.
+Unit tests run under Vitest (`vitest.config.ts`). Integration tests in `happoconfigs/` contain real happo configs used by `pnpm test:storybook`, `test:cypress`, `test:playwright`, etc. These require valid API credentials in `.env.local`.

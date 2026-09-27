@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import path from 'node:path';
-import { describe, it } from 'node:test';
+
+import { describe, it } from 'vitest';
 
 import getStorybookBuildCommandParts from '../getStorybookBuildCommandParts.ts';
 

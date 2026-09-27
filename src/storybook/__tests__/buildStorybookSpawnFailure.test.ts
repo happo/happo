@@ -2,7 +2,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { after, describe, it, mock } from 'node:test';
+
+import { afterAll, describe, it, vi } from 'vitest';
 
 // A path under node_modules so that buildStorybook() treats it as the binary
 // to spawn directly, and one that does not exist so that spawning it fails.
@@ -14,15 +15,15 @@ const MISSING_BINARY = path.join(
   'storybook',
 );
 
-mock.module('../getStorybookBuildCommandParts.ts', {
-  defaultExport: () => [MISSING_BINARY, 'build'],
-});
+vi.mock('../getStorybookBuildCommandParts.ts', () => ({
+  default: () => [MISSING_BINARY, 'build'],
+}));
 
 const { default: buildStorybookPackage } = await import('../index.ts');
 
 const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'happo-spawn-test-'));
 
-after(() => {
+afterAll(() => {
   fs.rmSync(outputDir, { recursive: true, force: true });
 });
 

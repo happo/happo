@@ -1,7 +1,8 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import http from 'node:http';
-import { after, before, describe, it } from 'node:test';
+
+import { afterAll, beforeAll, describe, it } from 'vitest';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import Controller from '../controller.ts';
@@ -15,7 +16,7 @@ let server: http.Server;
 const TEST_API_KEY = 'test-api-key';
 const TEST_API_SECRET = 'test-api-secret';
 
-before(async () => {
+beforeAll(async () => {
   process.env.HAPPO_E2E_PORT = port.toString();
 
   let requestId = 0;
@@ -105,7 +106,7 @@ before(async () => {
   });
 });
 
-after(() => {
+afterAll(() => {
   server.close();
 
   process.env = { ...originalEnv };

@@ -1,7 +1,8 @@
 import assert from 'node:assert';
 import http from 'node:http';
 import path from 'node:path';
-import { after, before, beforeEach, describe, it } from 'node:test';
+
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 import runWithWrapper from '../wrapper.ts';
 
@@ -41,7 +42,7 @@ const baseEnvironment = {
   only: undefined,
 };
 
-before(async () => {
+beforeAll(async () => {
   await new Promise<void>((resolve) => {
     server = http.createServer((req, res) => {
       // Connection: close prevents undici from pooling connections, which
@@ -113,7 +114,7 @@ before(async () => {
   });
 });
 
-after(() => {
+afterAll(() => {
   server.closeAllConnections();
   server.close();
 });

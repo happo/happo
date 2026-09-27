@@ -1,6 +1,7 @@
 import assert from 'node:assert';
-import type { Mock } from 'node:test';
-import { beforeEach, describe, it, mock } from 'node:test';
+
+import type { Mock } from 'vitest';
+import { beforeEach, describe, it, vi } from 'vitest';
 
 import type { ConfigWithDefaults } from '../../config/index.ts';
 import type { EnvironmentResult } from '../../environment/index.ts';
@@ -14,13 +15,15 @@ interface Logger {
 type MakeHappoAPIRequestImpl = (...args: Array<unknown>) => Promise<unknown>;
 
 let makeHappoAPIRequestImpl: MakeHappoAPIRequestImpl;
-const makeHappoAPIRequestMock = mock.fn(async (...args: Array<unknown>) => {
-  return await makeHappoAPIRequestImpl(...args);
-});
+const makeHappoAPIRequestMock = vi.hoisted(() =>
+  vi.fn(async (...args: Array<unknown>) => {
+    return await makeHappoAPIRequestImpl(...args);
+  }),
+);
 
-mock.module('../makeHappoAPIRequest.ts', {
-  defaultExport: makeHappoAPIRequestMock,
-});
+vi.mock('../makeHappoAPIRequest.ts', () => ({
+  default: makeHappoAPIRequestMock,
+}));
 
 let cancelJob: typeof import('../cancelJob.ts').default;
 let logger: Logger;
@@ -29,8 +32,8 @@ let environment: EnvironmentResult;
 
 beforeEach(async () => {
   logger = {
-    log: mock.fn(),
-    error: mock.fn(),
+    log: vi.fn(),
+    error: vi.fn(),
   };
 
   config = {
@@ -72,8 +75,6 @@ beforeEach(async () => {
   };
 
   ({ default: cancelJob } = await import('../cancelJob.ts'));
-
-  makeHappoAPIRequestMock.mock.resetCalls();
 });
 
 describe('cancelJob', () => {
@@ -86,9 +87,9 @@ describe('cancelJob', () => {
       cancelJob('failure', 'test-message', config, environment, logger),
     );
 
-    assert.strictEqual(logger.error.mock.callCount(), 1);
+    assert.strictEqual(logger.error.mock.calls.length, 1);
     assert.strictEqual(
-      logger.error.mock.calls[0]?.arguments[0],
+      logger.error.mock.calls[0]?.[0],
       'Skipping cancellation of Happo job because it has already been completed',
     );
   });
@@ -102,9 +103,9 @@ describe('cancelJob', () => {
       cancelJob('failure', 'test-message', config, environment, logger),
     );
 
-    assert.strictEqual(logger.error.mock.callCount(), 1);
+    assert.strictEqual(logger.error.mock.calls.length, 1);
     assert.strictEqual(
-      logger.error.mock.calls[0]?.arguments[0],
+      logger.error.mock.calls[0]?.[0],
       'Skipping cancellation of Happo job because it does not exist',
     );
   });

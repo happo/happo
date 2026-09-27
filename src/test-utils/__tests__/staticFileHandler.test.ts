@@ -2,7 +2,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { afterEach, beforeEach, describe, it } from 'vitest';
 
 import startServer, { type ServerInfo } from '../../network/startServer.ts';
 import staticFileHandler from '../staticFileHandler.ts';

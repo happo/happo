@@ -1,20 +1,23 @@
 import assert from 'node:assert';
 import { createHash } from 'node:crypto';
 import http from 'node:http';
-import { after, before, beforeEach, describe, it, mock } from 'node:test';
+
+import { afterAll, beforeAll, beforeEach, describe, it, vi } from 'vitest';
 
 import type { ConfigWithDefaults } from '../../config/index.ts';
 
 type MakeHappoAPIRequestImpl = (...args: Array<unknown>) => Promise<unknown>;
 
 let makeHappoAPIRequestImpl: MakeHappoAPIRequestImpl;
-const makeHappoAPIRequestMock = mock.fn(async (...args: Array<unknown>) => {
-  return await makeHappoAPIRequestImpl(...args);
-});
+const makeHappoAPIRequestMock = vi.hoisted(() =>
+  vi.fn(async (...args: Array<unknown>) => {
+    return await makeHappoAPIRequestImpl(...args);
+  }),
+);
 
-mock.module('../makeHappoAPIRequest.ts', {
-  defaultExport: makeHappoAPIRequestMock,
-});
+vi.mock('../makeHappoAPIRequest.ts', () => ({
+  default: makeHappoAPIRequestMock,
+}));
 
 let uploadAssets: typeof import('../uploadAssets.ts').default;
 
@@ -27,7 +30,7 @@ let s3Requests: Array<http.IncomingMessage>;
 
 const logger = { info: () => {}, warn: () => {} };
 
-before(async () => {
+beforeAll(async () => {
   s3Server = http.createServer((req, res) => {
     s3Requests.push(req);
     s3ResponseHandler(req, res);
@@ -43,7 +46,7 @@ before(async () => {
   ({ default: uploadAssets } = await import('../uploadAssets.ts'));
 });
 
-after(async () => {
+afterAll(async () => {
   await new Promise<void>((resolve) => {
     s3Server.close(() => resolve());
   });
@@ -66,7 +69,6 @@ beforeEach(() => {
 
   buffer = Buffer.from('test content') as Buffer<ArrayBuffer>;
   s3Requests = [];
-  makeHappoAPIRequestMock.mock.resetCalls();
   makeHappoAPIRequestImpl = async () => {
     throw new Error('makeHappoAPIRequest not configured');
   };
@@ -183,7 +185,7 @@ describe('uploadAssets', () => {
 
       assert.strictEqual(result, '/existing/path.zip');
       // Only the signed-url GET — no S3 PUT, no finalize POST
-      assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+      assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
     });
   });
 
@@ -209,7 +211,7 @@ describe('uploadAssets', () => {
       const result = await uploadAssets(buffer, { hash: 'abc123', logger, format: 'zip' }, config);
 
       assert.strictEqual(result, '/new/path.zip');
-      assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 2);
+      assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 2);
     });
 
     describe('when S3 returns a wrong ETag', () => {
@@ -226,7 +228,7 @@ describe('uploadAssets', () => {
           /S3 upload verification failed/,
         );
 
-        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+        assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
       });
     });
 
@@ -244,7 +246,7 @@ describe('uploadAssets', () => {
           /S3 upload verification failed/,
         );
 
-        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+        assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
       });
     });
 
@@ -262,7 +264,7 @@ describe('uploadAssets', () => {
           /Failed to upload assets to S3 signed URL/,
         );
 
-        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+        assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
       });
     });
   });

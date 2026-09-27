@@ -2,7 +2,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { after, before, describe, it } from 'node:test';
+
+import { afterAll, beforeAll, describe, it } from 'vitest';
 
 import buildHappoStorybookRuntime from '../../test-utils/buildHappoStorybookRuntime.ts';
 import happoStorybookPlugin from '../index.ts';
@@ -20,7 +21,7 @@ describe('happoStorybookPlugin', () => {
   let packageDir: string;
   let estimatedSnapsCount: number | undefined;
 
-  before(async () => {
+  beforeAll(async () => {
     await buildHappoStorybookRuntime();
     ({ packageDir, estimatedSnapsCount } = await happoStorybookPlugin({
       configDir: 'src/storybook/__tests__/storybook-app',
@@ -144,7 +145,7 @@ describe('happoStorybookPlugin', () => {
     let defaultDir: string;
     let withManagerDir: string;
 
-    before(async () => {
+    beforeAll(async () => {
       defaultDir = await fs.promises.mkdtemp(
         path.join(os.tmpdir(), 'happo-preview-only-'),
       );
@@ -163,7 +164,7 @@ describe('happoStorybookPlugin', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await fs.promises.rm(defaultDir, { recursive: true, force: true });
       await fs.promises.rm(withManagerDir, { recursive: true, force: true });
     });

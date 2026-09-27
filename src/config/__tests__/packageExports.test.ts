@@ -2,9 +2,9 @@ import assert from 'node:assert';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { before, describe, it } from 'node:test';
 
 import ts from 'typescript';
+import { beforeAll, describe, it } from 'vitest';
 
 import packageJson from '../../../package.json' with { type: 'json' };
 
@@ -159,7 +159,7 @@ describe('package.json exports', () => {
   });
 
   describe('after build:dist', () => {
-    before(() => {
+    beforeAll(() => {
       execSync('pnpm clean', { stdio: 'inherit', cwd: rootDir });
       execSync('pnpm build:dist', { stdio: 'inherit', cwd: rootDir });
     });

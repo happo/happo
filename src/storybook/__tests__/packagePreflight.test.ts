@@ -2,7 +2,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, before, describe, it } from 'node:test';
+
+import { afterEach, beforeAll, describe, it } from 'vitest';
 
 import buildHappoStorybookRuntime from '../../test-utils/buildHappoStorybookRuntime.ts';
 import buildStorybookPackage from '../index.ts';
@@ -42,7 +43,7 @@ function createPackage({
 }
 
 describe('the built package', () => {
-  before(async () => {
+  beforeAll(async () => {
     await buildHappoStorybookRuntime();
   });
 

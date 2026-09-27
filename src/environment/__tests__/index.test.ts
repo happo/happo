@@ -1,8 +1,9 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
+
+import { afterEach, beforeEach, describe, it } from 'vitest';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import resolveEnvironment from '../index.ts';
