@@ -1,9 +1,9 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import http from 'node:http';
-import { after, before, beforeEach, describe, it } from 'node:test';
 
 import multiparty from 'multiparty';
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 import type {
   BrowserType,
@@ -65,7 +65,7 @@ describe('RemoteBrowserTarget', () => {
     let simulateBulkInvalidShape = false;
     let config: ConfigWithDefaults;
 
-    before(async () => {
+    beforeAll(async () => {
       httpServer = http.createServer((req, res) => {
         if (req.url?.startsWith('/api/snap-requests/bulk')) {
           if (simulateBulkNotSupported) {
@@ -140,7 +140,7 @@ describe('RemoteBrowserTarget', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await new Promise<void>((resolve) => {
         httpServer.close(() => resolve());
       });

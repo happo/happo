@@ -1,6 +1,7 @@
 import assert from 'node:assert';
-import type { Mock } from 'node:test';
-import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+
+import type { Mock } from 'vitest';
+import { afterEach, beforeEach, describe, it, vi } from 'vitest';
 
 interface Logger {
   log: Mock<Console['log']>;
@@ -13,36 +14,32 @@ interface MockPromptUser extends Mock<(message: string) => Promise<void>> {
   lastMessage?: string;
 }
 
-let mockPromptUser: MockPromptUser;
-mock.module('../promptUser.ts', {
-  defaultExport: (() => {
-    mockPromptUser = mock.fn(async (message: string) => {
-      // Store the message
-      mockPromptUser.lastMessage = message;
-      // Reject or resolve based on the flag
-      if (mockPromptUser.shouldReject) {
-        throw new Error('User cancelled authentication');
-      }
-    }) as MockPromptUser;
-    return mockPromptUser;
-  })(),
+const mockPromptUser = vi.hoisted(() => {
+  const mockPromptUser = vi.fn(async (message: string) => {
+    // Store the message
+    mockPromptUser.lastMessage = message;
+    // Reject or resolve based on the flag
+    if (mockPromptUser.shouldReject) {
+      throw new Error('User cancelled authentication');
+    }
+  }) as MockPromptUser;
+  return mockPromptUser;
 });
+vi.mock('../promptUser.ts', () => ({ default: mockPromptUser }));
 
 // Mock openBrowser module
 interface MockOpenBrowser extends Mock<(url: string) => Promise<void>> {
   lastUrl?: string;
 }
 
-let mockOpenBrowser: MockOpenBrowser;
-mock.module('../openBrowser.ts', {
-  defaultExport: (() => {
-    mockOpenBrowser = mock.fn(async (url: string) => {
-      // Store the URL that was passed
-      mockOpenBrowser.lastUrl = url;
-    }) as MockOpenBrowser;
-    return mockOpenBrowser;
-  })(),
+const mockOpenBrowser = vi.hoisted(() => {
+  const mockOpenBrowser = vi.fn(async (url: string) => {
+    // Store the URL that was passed
+    mockOpenBrowser.lastUrl = url;
+  }) as MockOpenBrowser;
+  return mockOpenBrowser;
 });
+vi.mock('../openBrowser.ts', () => ({ default: mockOpenBrowser }));
 
 let getShortLivedAPIToken: typeof import('../getShortLivedAPIToken.ts').default;
 let logger: Logger;
@@ -50,8 +47,8 @@ const originalIsTTY = process.stdin.isTTY;
 
 beforeEach(async () => {
   // Reset mocks
-  mockPromptUser.mock.resetCalls();
-  mockOpenBrowser.mock.resetCalls();
+  mockPromptUser.mockClear();
+  mockOpenBrowser.mockClear();
   mockPromptUser.shouldReject = false;
 
   // Ensure stdin.isTTY is true for tests
@@ -62,8 +59,8 @@ beforeEach(async () => {
   });
 
   logger = {
-    log: mock.fn(),
-    error: mock.fn(),
+    log: vi.fn(),
+    error: vi.fn(),
   };
 
   // Import the function after mocks are set up
@@ -105,14 +102,14 @@ describe('getShortLivedAPIToken', () => {
     );
 
     // Verify promptUser was called with the correct message
-    assert.strictEqual(mockPromptUser.mock.callCount(), 1);
+    assert.strictEqual(mockPromptUser.mock.calls.length, 1);
     assert.strictEqual(
-      mockPromptUser.mock.calls[0]?.arguments[0],
+      mockPromptUser.mock.calls[0]?.[0],
       'Press <Enter> to authenticate in the browser',
     );
 
     // Verify that openBrowser was not called (execution stopped)
-    assert.strictEqual(mockOpenBrowser.mock.callCount(), 0);
+    assert.strictEqual(mockOpenBrowser.mock.calls.length, 0);
   });
 
   it('resolves with key and secret when user presses Enter and callback is called', async () => {
@@ -126,9 +123,9 @@ describe('getShortLivedAPIToken', () => {
     const promise = getShortLivedAPIToken(endpoint, logger);
 
     // Verify promptUser was called with the correct message
-    assert.strictEqual(mockPromptUser.mock.callCount(), 1);
+    assert.strictEqual(mockPromptUser.mock.calls.length, 1);
     assert.strictEqual(
-      mockPromptUser.mock.calls[0]?.arguments[0],
+      mockPromptUser.mock.calls[0]?.[0],
       'Press <Enter> to authenticate in the browser',
     );
 
@@ -136,8 +133,8 @@ describe('getShortLivedAPIToken', () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Verify that openBrowser was called
-    assert.strictEqual(mockOpenBrowser.mock.callCount(), 1);
-    const authUrl = mockOpenBrowser.mock.calls[0]?.arguments[0] as string;
+    assert.strictEqual(mockOpenBrowser.mock.calls.length, 1);
+    const authUrl = mockOpenBrowser.mock.calls[0]?.[0] as string;
     assert.ok(authUrl, 'openBrowser should have been called with a URL');
     assert.ok(authUrl.includes(endpoint));
     assert.ok(authUrl.includes('/cli/auth'));
@@ -176,8 +173,8 @@ describe('getShortLivedAPIToken', () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Get the callback URL from openBrowser call
-    assert.strictEqual(mockOpenBrowser.mock.callCount(), 1);
-    const authUrl = mockOpenBrowser.mock.calls[0]?.arguments[0] as string;
+    assert.strictEqual(mockOpenBrowser.mock.calls.length, 1);
+    const authUrl = mockOpenBrowser.mock.calls[0]?.[0] as string;
     const callbackUrlMatch = authUrl.match(/callbackUrl=([^&]+)/);
     assert.ok(callbackUrlMatch);
     assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
@@ -189,7 +186,7 @@ describe('getShortLivedAPIToken', () => {
 
     const result = await promise;
     assert.strictEqual(
-      logger.error.mock.calls[0]?.arguments[0],
+      logger.error.mock.calls[0]?.[0],
       'Failed to authenticate: Missing key or secret in callback',
     );
     assert.strictEqual(result, null);
@@ -208,8 +205,8 @@ describe('getShortLivedAPIToken', () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Get the callback URL from openBrowser call
-    assert.strictEqual(mockOpenBrowser.mock.callCount(), 1);
-    const authUrl = mockOpenBrowser.mock.calls[0]?.arguments[0] as string;
+    assert.strictEqual(mockOpenBrowser.mock.calls.length, 1);
+    const authUrl = mockOpenBrowser.mock.calls[0]?.[0] as string;
     const callbackUrlMatch = authUrl.match(/callbackUrl=([^&]+)/);
     assert.ok(callbackUrlMatch);
     assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
@@ -223,7 +220,7 @@ describe('getShortLivedAPIToken', () => {
 
     const result = await promise;
     assert.strictEqual(
-      logger.error.mock.calls[0]?.arguments[0],
+      logger.error.mock.calls[0]?.[0],
       'Failed to authenticate: Missing key or secret in callback',
     );
     assert.strictEqual(result, null);
@@ -242,8 +239,8 @@ describe('getShortLivedAPIToken', () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Get the callback URL from openBrowser call
-    assert.strictEqual(mockOpenBrowser.mock.callCount(), 1);
-    const authUrl = mockOpenBrowser.mock.calls[0]?.arguments[0] as string;
+    assert.strictEqual(mockOpenBrowser.mock.calls.length, 1);
+    const authUrl = mockOpenBrowser.mock.calls[0]?.[0] as string;
     const callbackUrlMatch = authUrl.match(/callbackUrl=([^&]+)/);
     assert.ok(callbackUrlMatch);
     assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
@@ -257,7 +254,7 @@ describe('getShortLivedAPIToken', () => {
 
     const result = await promise;
     assert.strictEqual(
-      logger.error.mock.calls[0]?.arguments[0],
+      logger.error.mock.calls[0]?.[0],
       'Failed to authenticate: Missing key or secret in callback',
     );
     assert.strictEqual(result, null);

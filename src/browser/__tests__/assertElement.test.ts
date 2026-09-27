@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { describe, it } from 'node:test';
+
+import { describe, it } from 'vitest';
 
 import withJSDOM from '../../test-utils/withJSDOM.ts';
 import assertElement, { isElementWithDataset } from '../assertElement.ts';

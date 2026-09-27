@@ -1,9 +1,9 @@
 import assert from 'node:assert';
 import http from 'node:http';
-import type { Mock } from 'node:test';
-import { after, before, beforeEach, describe, it, mock } from 'node:test';
 
 import multiparty from 'multiparty';
+import type { Mock } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, it, vi } from 'vitest';
 
 import type { ConfigWithDefaults } from '../../config/index.ts';
 import type {
@@ -40,10 +40,10 @@ let config: ConfigWithDefaults;
 let httpServer: http.Server;
 let errorTries: number;
 
-before(async () => {
+beforeAll(async () => {
   logger = {
-    log: mock.fn(),
-    error: mock.fn(),
+    log: vi.fn(),
+    error: vi.fn(),
   };
 
   httpServer = http.createServer((req, res) => {
@@ -105,7 +105,7 @@ before(async () => {
   });
 });
 
-after(async () => {
+afterAll(async () => {
   await new Promise<void>((resolve) => {
     httpServer.close(() => resolve());
   });

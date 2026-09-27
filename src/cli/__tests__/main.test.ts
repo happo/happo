@@ -2,7 +2,8 @@ import '../../test-utils/disableTelemetry.ts';
 
 import assert from 'node:assert';
 import { execSync } from 'node:child_process';
-import { describe, it } from 'node:test';
+
+import { describe, it } from 'vitest';
 
 const isWindows = process.platform === 'win32';
 

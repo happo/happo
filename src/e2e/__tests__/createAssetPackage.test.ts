@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { afterEach, beforeEach, describe, it } from 'vitest';
 
 import type { ServerInfo } from '../../network/startServer.ts';
 import { archiveEntryNames } from '../../test-utils/readArchive.ts';

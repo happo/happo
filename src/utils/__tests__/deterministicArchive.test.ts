@@ -1,7 +1,8 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, test } from 'node:test';
+
+import { afterEach, beforeEach, describe, test } from 'vitest';
 
 import readArchive, {
   archiveEntryNames as entryNames,

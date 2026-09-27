@@ -1,6 +1,5 @@
-import { afterEach } from 'node:test';
-
 import { JSDOM } from 'jsdom';
+import { afterEach } from 'vitest';
 
 /**
  * Helper for using JSDOM in tests

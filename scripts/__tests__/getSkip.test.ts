@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { afterEach, beforeEach, describe, it } from 'vitest';
 
 import * as tmpfs from '../../src/test-utils/tmpfs.ts';
 import getSkip from '../getSkip.ts';

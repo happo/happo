@@ -2,8 +2,9 @@ import '../../test-utils/disableTelemetry.ts';
 
 import assert from 'node:assert';
 import fs from 'node:fs';
-import type { Mock } from 'node:test';
-import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+
+import type { Mock } from 'vitest';
+import { afterEach, beforeEach, describe, it, vi } from 'vitest';
 
 import packageJson from '../../../package.json' with { type: 'json' };
 import type { ConfigWithDefaults } from '../../config/index.ts';
@@ -21,8 +22,8 @@ let logger: Logger;
 let main: (argv: Array<string>, logger: Logger) => Promise<void>;
 let flakeResponseOverride: object | null = null;
 let findBaselineResponseOverride: object | null = null;
-const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
-  async (request: RequestAttributes, config: ConfigWithDefaults) => {
+const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(() =>
+  vi.fn(async (request: RequestAttributes, config: ConfigWithDefaults) => {
     const { url, path } = request;
     const fetchURL = path ? `${config.endpoint}${path}` : url;
     if (!fetchURL) {
@@ -119,35 +120,37 @@ const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
     }
 
     return {};
-  },
+  }),
 );
 
 // mock makeHappoAPIRequest.ts *before* importing ../index.ts
-mock.module('../../network/makeHappoAPIRequest.ts', {
-  defaultExport: makeHappoAPIRequestMock, // <- default export
-});
+vi.mock('../../network/makeHappoAPIRequest.ts', () => ({
+  default: makeHappoAPIRequestMock, // <- default export
+}));
 
-mock.module('../../network/uploadAssets.ts', {
-  defaultExport: async () => {
+vi.mock('../../network/uploadAssets.ts', () => ({
+  default: async () => {
     return 'https://happo.io/api/snap-requests/assets/123.zip';
   },
-});
+}));
 
 const postGitHubCommentMock: Mock<
   typeof import('../../network/postGitHubComment.ts').default
-> = mock.fn(async () => {
-  return true;
-});
+> = vi.hoisted(() =>
+  vi.fn(async () => {
+    return true;
+  }),
+);
 
-mock.module('../../network/postGitHubComment.ts', {
-  defaultExport: postGitHubCommentMock,
-});
+vi.mock('../../network/postGitHubComment.ts', () => ({
+  default: postGitHubCommentMock,
+}));
 
 // Install fresh mocks & imports for each test
 beforeEach(async () => {
   logger = {
-    log: mock.fn(),
-    error: mock.fn(),
+    log: vi.fn(),
+    error: vi.fn(),
   };
   flakeResponseOverride = null;
 
@@ -168,9 +171,9 @@ beforeEach(async () => {
     `,
   });
 
-  makeHappoAPIRequestMock.mock.resetCalls();
+  makeHappoAPIRequestMock.mockClear();
   findBaselineResponseOverride = null;
-  postGitHubCommentMock.mock.resetCalls();
+  postGitHubCommentMock.mockClear();
 });
 
 afterEach(() => {
@@ -185,21 +188,15 @@ describe('main', () => {
     it('shows version with --version flag', async () => {
       await main(['npx', 'happo', '--version'], logger);
 
-      assert.strictEqual(logger.log.mock.callCount(), 1);
-      assert.strictEqual(
-        logger.log.mock.calls[0]?.arguments[0],
-        packageJson.version,
-      );
+      assert.strictEqual(logger.log.mock.calls.length, 1);
+      assert.strictEqual(logger.log.mock.calls[0]?.[0], packageJson.version);
     });
 
     it('shows version with -v flag', async () => {
       await main(['npx', 'happo', '-v'], logger);
 
-      assert.strictEqual(logger.log.mock.callCount(), 1);
-      assert.strictEqual(
-        logger.log.mock.calls[0]?.arguments[0],
-        packageJson.version,
-      );
+      assert.strictEqual(logger.log.mock.calls.length, 1);
+      assert.strictEqual(logger.log.mock.calls[0]?.[0], packageJson.version);
     });
   });
 
@@ -207,8 +204,8 @@ describe('main', () => {
     it('shows help with --help flag', async () => {
       await main(['npx', 'happo', '--help'], logger);
 
-      assert.strictEqual(logger.log.mock.callCount(), 1);
-      const helpText = logger.log.mock.calls[0]?.arguments[0];
+      assert.strictEqual(logger.log.mock.calls.length, 1);
+      const helpText = logger.log.mock.calls[0]?.[0];
       assert.ok(helpText.includes(`Happo ${packageJson.version}`));
       assert.ok(helpText.includes('Usage: happo [options]'));
       assert.ok(helpText.includes('finalize'));
@@ -219,8 +216,8 @@ describe('main', () => {
     it('shows help with -h flag', async () => {
       await main(['npx', 'happo', '-h'], logger);
 
-      assert.strictEqual(logger.log.mock.callCount(), 1);
-      const helpText = logger.log.mock.calls[0]?.arguments[0];
+      assert.strictEqual(logger.log.mock.calls.length, 1);
+      const helpText = logger.log.mock.calls[0]?.[0];
       assert.ok(helpText.includes(`Happo ${packageJson.version}`));
     });
   });
@@ -242,7 +239,7 @@ describe('main', () => {
         logger,
       );
 
-      assert.equal(logger.log.mock.calls[0]?.arguments[0], 'Running happo tests...');
+      assert.equal(logger.log.mock.calls[0]?.[0], 'Running happo tests...');
     });
 
     it('uses custom config file with -c flag', async () => {
@@ -258,19 +255,13 @@ describe('main', () => {
 
       await main(['npx', 'happo', '-c', tmpfs.fullPath('custom.config.ts')], logger);
 
-      assert.strictEqual(
-        logger.log.mock.calls[0]?.arguments[0],
-        'Running happo tests...',
-      );
+      assert.strictEqual(logger.log.mock.calls[0]?.[0], 'Running happo tests...');
     });
 
     it('uses default config file when no --config flag', async () => {
       await main(['npx', 'happo'], logger);
 
-      assert.strictEqual(
-        logger.log.mock.calls[0]?.arguments[0],
-        'Running happo tests...',
-      );
+      assert.strictEqual(logger.log.mock.calls[0]?.[0], 'Running happo tests...');
     });
 
     it('fails when config file does not exist', async () => {
@@ -280,9 +271,9 @@ describe('main', () => {
       );
 
       assert.strictEqual(process.exitCode, 1);
-      assert.strictEqual(logger.error.mock.callCount(), 1);
+      assert.strictEqual(logger.error.mock.calls.length, 1);
       assert.strictEqual(
-        logger.error.mock.calls[0]?.arguments[0],
+        logger.error.mock.calls[0]?.[0],
         `Happo config file could not be found: ${tmpfs.fullPath('non-existent.config.ts')}`,
       );
     });
@@ -292,10 +283,7 @@ describe('main', () => {
     it('runs default command when no positional args', async () => {
       await main(['npx', 'happo'], logger);
 
-      assert.strictEqual(
-        logger.log.mock.calls[0]?.arguments[0],
-        'Running happo tests...',
-      );
+      assert.strictEqual(logger.log.mock.calls[0]?.[0], 'Running happo tests...');
     });
 
     it('posts GitHub comment when conditions are met', async () => {
@@ -328,21 +316,18 @@ describe('main', () => {
         logger,
       );
 
-      assert.strictEqual(postGitHubCommentMock.mock.callCount(), 1);
+      assert.strictEqual(postGitHubCommentMock.mock.calls.length, 1);
       const call = postGitHubCommentMock.mock.calls[0];
       assert.ok(call);
-      assert.strictEqual(call.arguments[0]?.authToken, 'test-token');
+      assert.strictEqual(call[0]?.authToken, 'test-token');
+      assert.strictEqual(call[0]?.link, 'https://github.com/owner/repo/pull/123');
+      assert.strictEqual(call[0]?.githubApiUrl, 'https://api.github.com');
       assert.strictEqual(
-        call.arguments[0]?.link,
-        'https://github.com/owner/repo/pull/123',
-      );
-      assert.strictEqual(call.arguments[0]?.githubApiUrl, 'https://api.github.com');
-      assert.strictEqual(
-        call.arguments[0]?.statusImageUrl,
+        call[0]?.statusImageUrl,
         'https://happo.io/api/reports/123/status-image',
       );
       assert.strictEqual(
-        call.arguments[0]?.compareUrl,
+        call[0]?.compareUrl,
         'https://happo.io/api/reports/123/compare',
       );
     });
@@ -377,7 +362,7 @@ describe('main', () => {
         logger,
       );
 
-      assert.strictEqual(postGitHubCommentMock.mock.callCount(), 0);
+      assert.strictEqual(postGitHubCommentMock.mock.calls.length, 0);
     });
 
     it('does not post GitHub comment when githubToken is missing', async () => {
@@ -407,16 +392,16 @@ describe('main', () => {
         logger,
       );
 
-      assert.strictEqual(postGitHubCommentMock.mock.callCount(), 0);
+      assert.strictEqual(postGitHubCommentMock.mock.calls.length, 0);
     });
 
     it('suggests camelCase for kebab-case option with a good match', async () => {
       await main(['npx', 'happo', '--base-branch', 'origin/main'], logger);
 
       assert.strictEqual(process.exitCode, 1);
-      assert.strictEqual(logger.error.mock.callCount(), 1);
+      assert.strictEqual(logger.error.mock.calls.length, 1);
       assert.strictEqual(
-        logger.error.mock.calls[0]?.arguments[0],
+        logger.error.mock.calls[0]?.[0],
         "Unknown option: '--base-branch'. Did you mean '--baseBranch'?",
       );
     });
@@ -425,9 +410,9 @@ describe('main', () => {
       await main(['npx', 'happo', '--baseeBranch', 'origin/main'], logger);
 
       assert.strictEqual(process.exitCode, 1);
-      assert.strictEqual(logger.error.mock.callCount(), 1);
+      assert.strictEqual(logger.error.mock.calls.length, 1);
       assert.strictEqual(
-        logger.error.mock.calls[0]?.arguments[0],
+        logger.error.mock.calls[0]?.[0],
         "Unknown option: '--baseeBranch'. Did you mean '--baseBranch'?",
       );
     });
@@ -435,15 +420,13 @@ describe('main', () => {
     it('shows error for unknown command', async () => {
       await main(['npx', 'happo', 'unknown-command'], logger);
 
-      assert.strictEqual(logger.error.mock.callCount(), 2);
+      assert.strictEqual(logger.error.mock.calls.length, 2);
       assert.strictEqual(
-        logger.error.mock.calls[0]?.arguments[0],
+        logger.error.mock.calls[0]?.[0],
         'Unknown command: unknown-command\n',
       );
       assert.ok(
-        logger.error.mock.calls[1]?.arguments[0].includes(
-          `Happo ${packageJson.version}`,
-        ),
+        logger.error.mock.calls[1]?.[0].includes(`Happo ${packageJson.version}`),
       );
       assert.strictEqual(process.exitCode, 1);
     });
@@ -467,15 +450,12 @@ describe('main', () => {
       it('uses the configured project by default', async () => {
         await main(['npx', 'happo', 'flake'], logger);
 
-        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+        assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
         const call = makeHappoAPIRequestMock.mock.calls[0];
         assert.ok(call);
+        assert.strictEqual(call[0]?.path, '/api/flake?project=test-project');
         assert.strictEqual(
-          call.arguments[0]?.path,
-          '/api/flake?project=test-project',
-        );
-        assert.strictEqual(
-          logger.log.mock.calls[0]?.arguments[0],
+          logger.log.mock.calls[0]?.[0],
           [
             'Found 2 flakes:',
             '- [test-project] Button / primary / chrome [https://happo.io/snapshots/1.png, https://happo.io/snapshots/2.png] (https://happo.io/comparisons/1)',
@@ -490,7 +470,7 @@ describe('main', () => {
 
         const call = makeHappoAPIRequestMock.mock.calls[0];
         assert.ok(call);
-        assert.strictEqual(call.arguments[0]?.path, '/api/flake');
+        assert.strictEqual(call[0]?.path, '/api/flake');
       });
 
       it('supports flake filters in query params', async () => {
@@ -520,7 +500,7 @@ describe('main', () => {
         const call = makeHappoAPIRequestMock.mock.calls[0];
         assert.ok(call);
         assert.strictEqual(
-          call.arguments[0]?.path,
+          call[0]?.path,
           '/api/flake?project=custom-project&limit=10&page=2&component=Button&variant=primary&target=chrome&sha=abc123',
         );
       });
@@ -529,7 +509,7 @@ describe('main', () => {
         await main(['npx', 'happo', 'flake', '--format=json'], logger);
 
         assert.strictEqual(
-          logger.log.mock.calls[0]?.arguments[0],
+          logger.log.mock.calls[0]?.[0],
           JSON.stringify(
             [
               {
@@ -587,12 +567,9 @@ describe('main', () => {
         flakeResponseOverride = [];
         await main(['npx', 'happo', 'flake'], logger);
 
-        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
-        assert.strictEqual(logger.log.mock.callCount(), 1);
-        assert.strictEqual(
-          logger.log.mock.calls[0]?.arguments[0],
-          'No flakes found.',
-        );
+        assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
+        assert.strictEqual(logger.log.mock.calls.length, 1);
+        assert.strictEqual(logger.log.mock.calls[0]?.[0], 'No flakes found.');
         assert.ok(!process.exitCode || process.exitCode === 0);
       });
 
@@ -600,11 +577,11 @@ describe('main', () => {
         flakeResponseOverride = { ok: true };
         await main(['npx', 'happo', 'flake'], logger);
 
-        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
-        assert.strictEqual(logger.log.mock.callCount(), 0);
-        assert.strictEqual(logger.error.mock.callCount(), 1);
+        assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
+        assert.strictEqual(logger.log.mock.calls.length, 0);
+        assert.strictEqual(logger.error.mock.calls.length, 1);
         assert.strictEqual(
-          logger.error.mock.calls[0]?.arguments[0],
+          logger.error.mock.calls[0]?.[0],
           'Expected flake response to be an array.',
         );
         assert.strictEqual(process.exitCode, 1);
@@ -614,10 +591,10 @@ describe('main', () => {
         await main(['npx', 'happo', 'flake', '--format=xml'], logger);
 
         assert.strictEqual(process.exitCode, 1);
-        assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 0);
-        assert.strictEqual(logger.error.mock.callCount(), 1);
+        assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 0);
+        assert.strictEqual(logger.error.mock.calls.length, 1);
         assert.strictEqual(
-          logger.error.mock.calls[0]?.arguments[0],
+          logger.error.mock.calls[0]?.[0],
           'Unsupported format: xml. Use --format=json for raw JSON output or --format=human for human-readable output.',
         );
       });
@@ -646,7 +623,7 @@ describe('main', () => {
       it('succeeds when a custom iframe.html file does not exist', async () => {
         await main(['npx', 'happo'], logger);
         assert.ok(!process.exitCode || process.exitCode === 0);
-        assert(logger.log.mock.callCount() >= 1);
+        assert(logger.log.mock.calls.length >= 1);
       });
 
       it('generates a iframe.html file when it does not exist', async () => {
@@ -672,7 +649,7 @@ describe('main', () => {
         it('succeeds when custom iframe.html file is provided', async () => {
           await main(['npx', 'happo'], logger);
           assert.ok(!process.exitCode || process.exitCode === 0);
-          assert(logger.log.mock.callCount() >= 1);
+          assert(logger.log.mock.calls.length >= 1);
         });
 
         it('does not clobber the custom iframe.html file', async () => {
@@ -713,11 +690,8 @@ describe('main', () => {
         );
 
         assert.strictEqual(process.exitCode, 1);
-        assert.strictEqual(logger.error.mock.callCount(), 1);
-        assert.match(
-          logger.error.mock.calls[0]?.arguments[0],
-          /storyFile.*storybook/,
-        );
+        assert.strictEqual(logger.error.mock.calls.length, 1);
+        assert.match(logger.error.mock.calls[0]?.[0], /storyFile.*storybook/);
       });
 
       it('is aliased by --skippedExamples on the default command', async () => {
@@ -743,7 +717,7 @@ describe('main', () => {
         );
 
         const storyFileErrors = logger.error.mock.calls.filter((c) =>
-          String(c.arguments[0]).includes('storyFile'),
+          String(c[0]).includes('storyFile'),
         );
         assert.strictEqual(storyFileErrors.length, 0);
       });
@@ -776,7 +750,7 @@ describe('main', () => {
 
         assert.strictEqual(process.exitCode, 1);
         assert.match(
-          String(logger.error.mock.calls[0]?.arguments[0]),
+          String(logger.error.mock.calls[0]?.[0]),
           /storyFile items in --skippedExamples/,
         );
       });
@@ -802,7 +776,7 @@ describe('main', () => {
         );
 
         const storyFileErrors = logger.error.mock.calls.filter((c) =>
-          String(c.arguments[0]).includes('storyFile'),
+          String(c[0]).includes('storyFile'),
         );
         assert.strictEqual(storyFileErrors.length, 0);
       });
@@ -812,9 +786,9 @@ describe('main', () => {
       it('fails when no dashdash is provided', async () => {
         await main(['npx', 'happo', '--'], logger);
 
-        assert(logger.error.mock.callCount() >= 1);
+        assert(logger.error.mock.calls.length >= 1);
         assert.match(
-          logger.error.mock.calls[0]?.arguments[0],
+          logger.error.mock.calls[0]?.[0],
           /Missing command for e2e action/,
         );
         assert.strictEqual(process.exitCode, 1);
@@ -827,7 +801,7 @@ describe('main', () => {
         );
 
         assert.strictEqual(process.exitCode, 0);
-        assert(logger.log.mock.callCount() >= 1);
+        assert(logger.log.mock.calls.length >= 1);
 
         assert.ok(fs.statSync(tmpfs.fullPath('happy-to-be-here.txt')));
       });
@@ -846,8 +820,8 @@ describe('main', () => {
         );
         await main(['npx', 'happo', '--', 'echo', 'hello'], logger);
         assert.strictEqual(process.exitCode, 1);
-        assert(logger.error.mock.callCount() >= 1);
-        const errorMessage = logger.error.mock.calls[0]?.arguments[0];
+        assert(logger.error.mock.calls.length >= 1);
+        const errorMessage = logger.error.mock.calls[0]?.[0];
         assert.match(
           errorMessage,
           /Unsupported integration type used for e2e command: storybook/,
@@ -897,17 +871,14 @@ describe('main', () => {
         // ls exits 1 on mac, but 2 in CI. Good enough to just assert that it's
         // not 0 here.
         assert.notStrictEqual(process.exitCode, 0);
-        assert(logger.log.mock.callCount() >= 1);
+        assert(logger.log.mock.calls.length >= 1);
       });
 
       it('fails to finalize when --nonce is not set', async () => {
         await main(['npx', 'happo', 'finalize'], logger);
         assert.equal(process.exitCode, 1);
-        assert(logger.error.mock.callCount() >= 1);
-        assert.match(
-          logger.error.mock.calls[0]?.arguments[0],
-          /Missing --nonce argument/,
-        );
+        assert(logger.error.mock.calls.length >= 1);
+        assert.match(logger.error.mock.calls[0]?.[0], /Missing --nonce argument/);
       });
 
       it('can finalize a report when --nonce is set', async () => {
@@ -931,7 +902,7 @@ describe('main', () => {
           console.log('logger.error.mock.calls', logger.error.mock.calls);
         }
         assert.equal(process.exitCode, 0);
-        assert(makeHappoAPIRequestMock.mock.callCount() > 0);
+        assert(makeHappoAPIRequestMock.mock.calls.length > 0);
       });
 
       it('borrows skipped examples from the baseline via an extends-report when --skippedExamples is set', async () => {
@@ -955,10 +926,10 @@ describe('main', () => {
         assert.equal(process.exitCode, 0);
 
         const extendsCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
-          call.arguments[0]?.path?.includes('/snap-requests/extends-report'),
+          call[0]?.path?.includes('/snap-requests/extends-report'),
         );
         assert.ok(extendsCall, 'expected an extends-report API call');
-        const extendsBody = extendsCall.arguments[0]?.body as {
+        const extendsBody = extendsCall[0]?.body as {
           extendsSha: string;
           extendedSnaps: unknown;
         };
@@ -969,33 +940,31 @@ describe('main', () => {
         // report before it is finalized, or it will not be part of the report.
         const attachCall = makeHappoAPIRequestMock.mock.calls.find(
           (call) =>
-            call.arguments[0]?.path === '/api/async-reports/test-sha' &&
-            (call.arguments[0]?.body as { requestIds?: Array<number> })
-              ?.requestIds?.length,
+            call[0]?.path === '/api/async-reports/test-sha' &&
+            (call[0]?.body as { requestIds?: Array<number> })?.requestIds?.length,
         );
         assert.ok(attachCall, 'expected the extends-report to be attached');
         assert.deepStrictEqual(
-          (attachCall.arguments[0]?.body as { requestIds: Array<number> })
-            .requestIds,
+          (attachCall[0]?.body as { requestIds: Array<number> }).requestIds,
           [123],
         );
         assert.strictEqual(
-          (attachCall.arguments[0]?.body as { nonce: string }).nonce,
+          (attachCall[0]?.body as { nonce: string }).nonce,
           'test-nonce',
         );
 
         const finalizeCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
-          call.arguments[0]?.path?.includes('/finalize'),
+          call[0]?.path?.includes('/finalize'),
         );
         assert.ok(finalizeCall, 'expected a finalize API call');
         // The old placeholder mechanism is gone — sending both would duplicate
         // the borrowed snapshots.
         assert.ok(
-          !('skippedExamples' in (finalizeCall.arguments[0]?.body as object)),
+          !('skippedExamples' in (finalizeCall[0]?.body as object)),
           'finalize body should not carry skippedExamples',
         );
         assert.ok(
-          !('skip' in (finalizeCall.arguments[0]?.body as object)),
+          !('skip' in (finalizeCall[0]?.body as object)),
           'finalize body should not carry skip',
         );
       });
@@ -1017,7 +986,7 @@ describe('main', () => {
         );
         assert.equal(process.exitCode, 0);
         const extendsCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
-          call.arguments[0]?.path?.includes('/snap-requests/extends-report'),
+          call[0]?.path?.includes('/snap-requests/extends-report'),
         );
         assert.strictEqual(extendsCall, undefined);
       });
@@ -1043,12 +1012,12 @@ describe('main', () => {
         assert.equal(process.exitCode, 0);
 
         const extendsCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
-          call.arguments[0]?.path?.includes('/snap-requests/extends-report'),
+          call[0]?.path?.includes('/snap-requests/extends-report'),
         );
         assert.strictEqual(extendsCall, undefined);
 
         const finalizeCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
-          call.arguments[0]?.path?.includes('/finalize'),
+          call[0]?.path?.includes('/finalize'),
         );
         assert.ok(finalizeCall, 'expected a finalize API call anyway');
       });
@@ -1073,12 +1042,11 @@ describe('main', () => {
         );
         assert.equal(process.exitCode, 0);
         const extendsCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
-          call.arguments[0]?.path?.includes('/snap-requests/extends-report'),
+          call[0]?.path?.includes('/snap-requests/extends-report'),
         );
         assert.ok(extendsCall, 'expected an extends-report API call');
         assert.deepStrictEqual(
-          (extendsCall.arguments[0]?.body as { extendedSnaps: unknown })
-            .extendedSnaps,
+          (extendsCall[0]?.body as { extendedSnaps: unknown }).extendedSnaps,
           skip,
         );
       });
@@ -1099,9 +1067,7 @@ describe('main', () => {
           logger,
         );
         assert.strictEqual(process.exitCode, 1);
-        const message = logger.error.mock.calls
-          .map((c) => c.arguments.join(' '))
-          .join('\n');
+        const message = logger.error.mock.calls.map((c) => c.join(' ')).join('\n');
         assert.match(message, /--skippedExamples must be a JSON array/);
         assert.doesNotMatch(message, /--skip must be a JSON array/);
       });
@@ -1126,7 +1092,7 @@ describe('main', () => {
         );
         assert.strictEqual(process.exitCode, 1);
         assert.match(
-          String(logger.error.mock.calls[0]?.arguments[0]),
+          String(logger.error.mock.calls[0]?.[0]),
           /Use either --skip or --skippedExamples, not both/,
         );
       });
@@ -1148,7 +1114,7 @@ describe('main', () => {
         );
         assert.strictEqual(process.exitCode, 1);
         assert.match(
-          String(logger.error.mock.calls[0]?.arguments[0]),
+          String(logger.error.mock.calls[0]?.[0]),
           /storyFile.*not supported/,
         );
       });
@@ -1192,21 +1158,18 @@ describe('main', () => {
             logger,
           );
           assert.notStrictEqual(process.exitCode, 0);
-          assert(makeHappoAPIRequestMock.mock.callCount() > 0);
+          assert(makeHappoAPIRequestMock.mock.calls.length > 0);
 
           const cancelRequest = makeHappoAPIRequestMock.mock.calls.at(-1);
           if (!cancelRequest) {
             throw new Error('No cancel request found');
           }
+          assert.strictEqual(cancelRequest[1]?.endpoint, 'https://happo.io');
           assert.strictEqual(
-            cancelRequest.arguments[1]?.endpoint,
-            'https://happo.io',
-          );
-          assert.strictEqual(
-            cancelRequest.arguments[0]?.path,
+            cancelRequest[0]?.path,
             '/api/jobs/foobar/barfoo/cancel',
           );
-          const { message } = cancelRequest.arguments[0]?.body as {
+          const { message } = cancelRequest[0]?.body as {
             message: string;
           };
           // Happo only keeps the first line of the message.
@@ -1234,16 +1197,13 @@ describe('main', () => {
             logger,
           );
           assert.notStrictEqual(process.exitCode, 0);
-          assert(makeHappoAPIRequestMock.mock.callCount() === 1);
+          assert(makeHappoAPIRequestMock.mock.calls.length === 1);
           const startJobRequest = makeHappoAPIRequestMock.mock.calls.at(-1);
           if (!startJobRequest) {
             throw new Error('No start job request found');
           }
-          assert.strictEqual(
-            startJobRequest.arguments[1]?.endpoint,
-            'https://happo.io',
-          );
-          assert.ok(startJobRequest.arguments[0]?.path?.includes('/api/jobs'));
+          assert.strictEqual(startJobRequest[1]?.endpoint, 'https://happo.io');
+          assert.ok(startJobRequest[0]?.path?.includes('/api/jobs'));
         });
       });
     });

@@ -1,6 +1,7 @@
 import assert from 'node:assert';
-import type { Mock } from 'node:test';
-import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+
+import type { Mock } from 'vitest';
+import { afterEach, beforeEach, describe, it, vi } from 'vitest';
 
 import Logger, { logTag } from '../Logger.ts';
 
@@ -13,7 +14,7 @@ let currentTime: number;
 function getCleanLogs(mockedFn: Mock<(str: string) => void>) {
   return (
     mockedFn.mock.calls
-      .map((call) => call.arguments[0])
+      .map((call) => call[0])
       .join('')
       // eslint-disable-next-line no-control-regex
       .replaceAll(/\u001B\[\d{1,2}m/g, '')
@@ -21,8 +22,8 @@ function getCleanLogs(mockedFn: Mock<(str: string) => void>) {
 }
 
 beforeEach(() => {
-  stderrPrint = mock.fn();
-  print = mock.fn();
+  stderrPrint = vi.fn();
+  print = vi.fn();
   subject = () => new Logger({ print, stderrPrint });
 
   // Mock Date.now() for timer tests
@@ -65,7 +66,7 @@ describe('Logger', () => {
     // We use `stringContaining` here because the string is wrapped with color
     // instruction characters
     assert.ok(
-      stderrPrint.mock.calls[0]?.arguments[0]?.includes('foobar'),
+      stderrPrint.mock.calls[0]?.[0]?.includes('foobar'),
       'Expected error log to contain stack trace',
     );
   });
@@ -77,7 +78,7 @@ describe('Logger', () => {
     // We use `stringContaining` here because the string is wrapped with color
     // instruction characters
     assert.ok(
-      stderrPrint.mock.calls[0]?.arguments[0]?.includes('damn'),
+      stderrPrint.mock.calls[0]?.[0]?.includes('damn'),
       'Expected error log to contain error message',
     );
   });
@@ -87,7 +88,7 @@ describe('Logger', () => {
 
     logger.start('Pizza');
     assert.ok(
-      print.mock.calls[0]?.arguments[0]?.includes('Starting: Pizza'),
+      print.mock.calls[0]?.[0]?.includes('Starting: Pizza'),
       'Expected log to contain "Starting: Pizza"',
     );
   });
@@ -103,15 +104,15 @@ describe('Logger', () => {
     const logger = subject();
 
     logger.start('Pizza');
-    print.mock.resetCalls();
+    print.mockClear();
 
     logger.success('Yum');
     assert.ok(
-      print.mock.calls[0]?.arguments[0]?.includes('✓'),
+      print.mock.calls[0]?.[0]?.includes('✓'),
       'Expected log to contain checkmark',
     );
     assert.ok(
-      print.mock.calls[1]?.arguments[0]?.includes('Pizza:'),
+      print.mock.calls[1]?.[0]?.includes('Pizza:'),
       'Expected log to contain "Pizza:"',
     );
   });
@@ -120,11 +121,11 @@ describe('Logger', () => {
     const logger = subject();
 
     logger.start();
-    print.mock.resetCalls();
+    print.mockClear();
 
     logger.success('Yum');
     assert.ok(
-      print.mock.calls[0]?.arguments[0]?.includes('✓'),
+      print.mock.calls[0]?.[0]?.includes('✓'),
       'Expected log to contain checkmark',
     );
   });
@@ -134,21 +135,21 @@ describe('Logger', () => {
 
     logger.start('Pizza');
     assert.ok(
-      print.mock.calls[0]?.arguments[0]?.includes('Starting: Pizza'),
+      print.mock.calls[0]?.[0]?.includes('Starting: Pizza'),
       'Expected log to contain "Starting: Pizza"',
     );
     assert.strictEqual(stderrPrint.mock.calls.length, 0);
-    print.mock.resetCalls();
+    print.mockClear();
 
     currentTime += 12;
 
     logger.success('Yum');
     assert.ok(
-      print.mock.calls[2]?.arguments[0]?.includes('Yum'),
+      print.mock.calls[2]?.[0]?.includes('Yum'),
       'Expected log to contain "Yum"',
     );
     assert.ok(
-      /\(\d+ms\)/.test(print.mock.calls[3]?.arguments[0] || ''),
+      /\(\d+ms\)/.test(print.mock.calls[3]?.[0] || ''),
       'Expected log to contain duration in milliseconds',
     );
     assert.strictEqual(stderrPrint.mock.calls.length, 0);
@@ -162,21 +163,21 @@ describe('Logger', () => {
 
     logger.start('Pizza');
     assert.ok(
-      print.mock.calls[0]?.arguments[0]?.includes('Starting: Pizza'),
+      print.mock.calls[0]?.[0]?.includes('Starting: Pizza'),
       'Expected log to contain "Starting: Pizza"',
     );
     assert.strictEqual(stderrPrint.mock.calls.length, 0);
-    print.mock.resetCalls();
+    print.mockClear();
 
     currentTime += 13;
 
     logger.fail('Yuck');
     assert.ok(
-      print.mock.calls[2]?.arguments[0]?.includes('Yuck'),
+      print.mock.calls[2]?.[0]?.includes('Yuck'),
       'Expected log to contain "Yuck"',
     );
     assert.ok(
-      /\(\d+ms\)/.test(print.mock.calls[3]?.arguments[0] || ''),
+      /\(\d+ms\)/.test(print.mock.calls[3]?.[0] || ''),
       'Expected log to contain duration in milliseconds',
     );
     assert.strictEqual(stderrPrint.mock.calls.length, 0);
@@ -189,15 +190,15 @@ describe('Logger', () => {
     const logger = subject();
 
     logger.start('Pizza');
-    print.mock.resetCalls();
+    print.mockClear();
 
     logger.fail('Yuck');
     assert.ok(
-      print.mock.calls[0]?.arguments[0]?.includes('✗'),
+      print.mock.calls[0]?.[0]?.includes('✗'),
       'Expected log to contain X mark',
     );
     assert.ok(
-      print.mock.calls[1]?.arguments[0]?.includes(' Pizza:'),
+      print.mock.calls[1]?.[0]?.includes(' Pizza:'),
       'Expected log to contain " Pizza:"',
     );
   });

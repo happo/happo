@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+
+import { afterEach, beforeEach, describe, it, vi } from 'vitest';
 
 import { clearTokenCache, getSignedToken } from '../getSignedToken.ts';
 
@@ -37,7 +38,9 @@ describe('token caching', () => {
       // Each Date.now() call returns a new second, so independently-minted
       // tokens would have different exp values and thus different JWT strings.
       let nowMs = 0;
-      const dateNowMock = mock.method(Date, 'now', () => (nowMs += 1001));
+      const dateNowMock = vi
+        .spyOn(Date, 'now')
+        .mockImplementation(() => (nowMs += 1001));
       try {
         const [token1, token2] = await Promise.all([
           getSignedToken('key', 'secret'),
@@ -45,43 +48,43 @@ describe('token caching', () => {
         ]);
         assert.strictEqual(token1, token2);
       } finally {
-        dateNowMock.mock.restore();
+        dateNowMock.mockRestore();
       }
     });
   });
 
   describe('when close to the token TTL', () => {
     afterEach(() => {
-      mock.timers.reset();
+      vi.useRealTimers();
     });
 
     it('mints a new token when within the refresh buffer', async () => {
-      mock.timers.enable({ apis: ['Date'], now: 0 });
+      vi.useFakeTimers({ toFake: ['Date'], now: 0 });
       const token1 = await getSignedToken('key', 'secret');
 
       // TTL is 300s, buffer is 30s — advance to 271s elapsed so 29s remain
-      mock.timers.tick(271_000);
+      vi.advanceTimersByTime(271_000);
       const token2 = await getSignedToken('key', 'secret');
 
       assert.notStrictEqual(token1, token2);
     });
 
     it('mints a new token when the token has expired', async () => {
-      mock.timers.enable({ apis: ['Date'], now: 0 });
+      vi.useFakeTimers({ toFake: ['Date'], now: 0 });
       const token1 = await getSignedToken('key', 'secret');
 
-      mock.timers.tick(301_000);
+      vi.advanceTimersByTime(301_000);
       const token2 = await getSignedToken('key', 'secret');
 
       assert.notStrictEqual(token1, token2);
     });
 
     it('reuses the token when well within the TTL', async () => {
-      mock.timers.enable({ apis: ['Date'], now: 0 });
+      vi.useFakeTimers({ toFake: ['Date'], now: 0 });
       const token1 = await getSignedToken('key', 'secret');
 
       // Advance to 269s elapsed — 31s remain, which is just above the 30s buffer
-      mock.timers.tick(269_000);
+      vi.advanceTimersByTime(269_000);
       const token2 = await getSignedToken('key', 'secret');
 
       assert.strictEqual(token1, token2);

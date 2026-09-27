@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { beforeEach, it } from 'node:test';
+
+import { beforeEach, it } from 'vitest';
 
 import { MD5 } from '../md5.ts';
 

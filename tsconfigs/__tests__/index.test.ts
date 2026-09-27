@@ -1,10 +1,10 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { describe, it } from 'node:test';
 
 import { up as findUp } from 'empathic/find';
 import ts from 'typescript';
+import { describe, it } from 'vitest';
 
 const tsconfigDirName = 'tsconfigs';
 

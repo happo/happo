@@ -1,6 +1,7 @@
 import assert from 'node:assert';
-import type { Mock } from 'node:test';
-import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+
+import type { Mock } from 'vitest';
+import { afterEach, beforeEach, describe, it, vi } from 'vitest';
 
 import type { ConfigWithDefaults, DeepCompareSettings } from '../../config/index.ts';
 import type { EnvironmentResult } from '../../environment/index.ts';
@@ -16,25 +17,25 @@ let config: ConfigWithDefaults;
 let environment: EnvironmentResult;
 let createAsyncComparison: typeof import('../createAsyncComparison.ts').default;
 
-const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
-  async () => {
+const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(() =>
+  vi.fn(async () => {
     return {
       id: 123,
       statusImageUrl: 'https://happo.io/api/reports/123/status-image',
       compareUrl: 'https://happo.io/api/reports/123/compare',
     };
-  },
+  }),
 );
 
 // mock makeHappoAPIRequest.ts *before* importing createAsyncComparison
-mock.module('../makeHappoAPIRequest.ts', {
-  defaultExport: makeHappoAPIRequestMock,
-});
+vi.mock('../makeHappoAPIRequest.ts', () => ({
+  default: makeHappoAPIRequestMock,
+}));
 
 beforeEach(async () => {
   logger = {
-    log: mock.fn(),
-    error: mock.fn(),
+    log: vi.fn(),
+    error: vi.fn(),
   };
 
   // Now import the SUT; it will see the mocked module
@@ -75,11 +76,11 @@ beforeEach(async () => {
     only: undefined,
   };
 
-  makeHappoAPIRequestMock.mock.resetCalls();
+  makeHappoAPIRequestMock.mockClear();
 });
 
 afterEach(() => {
-  makeHappoAPIRequestMock.mock.resetCalls();
+  makeHappoAPIRequestMock.mockClear();
 });
 
 describe('createAsyncComparison', () => {
@@ -96,16 +97,13 @@ describe('createAsyncComparison', () => {
 
     await createAsyncComparison(config, environment, logger);
 
-    assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+    assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
-    assert.strictEqual(
-      call.arguments[0]?.path,
-      '/api/reports/before-sha/compare/after-sha',
-    );
-    assert.strictEqual(call.arguments[0]?.method, 'POST');
+    assert.strictEqual(call[0]?.path, '/api/reports/before-sha/compare/after-sha');
+    assert.strictEqual(call[0]?.method, 'POST');
 
-    const body = call.arguments[0]?.body as {
+    const body = call[0]?.body as {
       deepCompare?: DeepCompareSettings;
       link?: string;
       message?: string;
@@ -128,11 +126,11 @@ describe('createAsyncComparison', () => {
 
     await createAsyncComparison(config, environment, logger);
 
-    assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+    assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
 
-    const body = call.arguments[0]?.body as {
+    const body = call[0]?.body as {
       deepCompare?: DeepCompareSettings;
       [key: string]: unknown;
     };
@@ -151,11 +149,11 @@ describe('createAsyncComparison', () => {
 
     await createAsyncComparison(config, environment, logger);
 
-    assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+    assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
 
-    const body = call.arguments[0]?.body as {
+    const body = call[0]?.body as {
       deepCompare?: DeepCompareSettings;
     };
 

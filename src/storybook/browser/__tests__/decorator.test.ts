@@ -1,5 +1,4 @@
 import assert from 'node:assert';
-import { describe, it } from 'node:test';
 
 import {
   applyHooks,
@@ -8,6 +7,7 @@ import {
   mockChannel,
   setChannel,
 } from 'storybook/internal/preview-api';
+import { describe, it } from 'vitest';
 
 import withHappo from '../decorator.ts';
 
