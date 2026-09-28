@@ -67,7 +67,9 @@ export default async function makeHappoAPIRequest(
   const fetchURL = path ? new URL(path, endpoint) : url;
 
   if (!fetchURL) {
-    throw new Error('No fetch URL provided. Either `path` (preferred) or `url` must be provided.');
+    throw new Error(
+      'No fetch URL provided. Either `path` (preferred) or `url` must be provided.',
+    );
   }
 
   const signed = await getSignedToken(apiKey, apiSecret);

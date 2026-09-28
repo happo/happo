@@ -23,7 +23,8 @@ interface ExtendedWindow extends Window {
 export function isExtendedWindow(w: Window): w is ExtendedWindow {
   return (
     'CSSStyleSheet' in w &&
-    typeof (w as unknown as { CSSStyleSheet: unknown }).CSSStyleSheet === 'function'
+    typeof (w as unknown as { CSSStyleSheet: unknown }).CSSStyleSheet ===
+      'function'
   );
 }
 
@@ -73,7 +74,8 @@ export default function applyConstructedStylesPatch(
     return;
   }
 
-  const CSSStyleSheetConstructor = win.CSSStyleSheet as ExtendedCSSStyleSheetConstructor;
+  const CSSStyleSheetConstructor =
+    win.CSSStyleSheet as ExtendedCSSStyleSheetConstructor;
   if (CSSStyleSheetConstructor[isInstalledSymbol]) {
     return;
   }
@@ -81,7 +83,10 @@ export default function applyConstructedStylesPatch(
 
   // Patch insertRule to record each rule string.
   const originalInsertRule = win.CSSStyleSheet.prototype.insertRule;
-  win.CSSStyleSheet.prototype.insertRule = function (rule: string, index: number = 0): number {
+  win.CSSStyleSheet.prototype.insertRule = function (
+    rule: string,
+    index: number = 0,
+  ): number {
     const extendedThis = this as ExtendedCSSStyleSheet;
     ensureRecord(extendedThis);
 
@@ -142,7 +147,10 @@ export default function applyConstructedStylesPatch(
       displayError(
         'CSSStyleSheet.prototype.deleteRule does not work with Happo after first having called replace/replaceSync. Reach out to support@happo.io if you need help with this.',
       );
-    } else if (index >= 0 && index < (extendedThis[recordedCSSSymbol]?.length || 0)) {
+    } else if (
+      index >= 0 &&
+      index < (extendedThis[recordedCSSSymbol]?.length || 0)
+    ) {
       extendedThis[recordedCSSSymbol]?.splice(index, 1);
     }
     return originalDeleteRule.call(this, index);
@@ -170,16 +178,22 @@ export default function applyConstructedStylesPatch(
   const originalReplaceSync = win.CSSStyleSheet.prototype.replaceSync;
   win.CSSStyleSheet.prototype.replaceSync = function (text: string): void {
     const extendedThis = this as ExtendedCSSStyleSheet;
-    extendedThis[recordedCSSSymbol] = text.split('\n').map((rule) => rule.trim());
+    extendedThis[recordedCSSSymbol] = text
+      .split('\n')
+      .map((rule) => rule.trim());
     extendedThis[hasBrokenIndexesSymbol] = true;
     return originalReplaceSync.call(this, text);
   };
 
   // Patch replace (the asynchronous version) similarly.
   const originalReplace = win.CSSStyleSheet.prototype.replace;
-  win.CSSStyleSheet.prototype.replace = function (text: string): Promise<CSSStyleSheet> {
+  win.CSSStyleSheet.prototype.replace = function (
+    text: string,
+  ): Promise<CSSStyleSheet> {
     const sheet = this as ExtendedCSSStyleSheet;
-    return originalReplace.call(sheet, text).then(function (result: CSSStyleSheet) {
+    return originalReplace.call(sheet, text).then(function (
+      result: CSSStyleSheet,
+    ) {
       sheet[recordedCSSSymbol] = text.split('\n').map((rule) => rule.trim());
       sheet[hasBrokenIndexesSymbol] = true;
       return result;

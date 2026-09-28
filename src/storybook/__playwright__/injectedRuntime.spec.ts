@@ -70,7 +70,10 @@ test('the package carries the runtime rather than relying on the preview', () =>
 });
 
 test('the injected copy is the only one in the package', () => {
-  const runtime = fs.readFileSync(path.join(OUTPUT_DIR, 'happo-storybook-runtime.js'), 'utf8');
+  const runtime = fs.readFileSync(
+    path.join(OUTPUT_DIR, 'happo-storybook-runtime.js'),
+    'utf8',
+  );
   expect(runtime).toContain(RUNTIME_MARKER);
 
   // An import added anywhere under the fixture would bundle a second copy and
@@ -78,7 +81,9 @@ test('the injected copy is the only one in the package', () => {
   const bundled = readJsFiles(path.join(OUTPUT_DIR, 'assets')).filter((file) =>
     fs.readFileSync(file, 'utf8').includes(RUNTIME_MARKER),
   );
-  expect(bundled, `${CONFIG_DIR} imports the Happo runtime somewhere`).toEqual([]);
+  expect(bundled, `${CONFIG_DIR} imports the Happo runtime somewhere`).toEqual(
+    [],
+  );
 });
 
 test('the injected runtime alone can drive the Storybook', async ({ page }) => {
@@ -92,7 +97,9 @@ test('the injected runtime alone can drive the Storybook', async ({ page }) => {
   // regression here fails in seconds pointing at this line rather than
   // running out the whole test's clock.
   await page.waitForFunction(
-    () => typeof (globalThis as { happo?: { init?: unknown } }).happo?.init === 'function',
+    () =>
+      typeof (globalThis as { happo?: { init?: unknown } }).happo?.init ===
+      'function',
     undefined,
     { timeout: 30_000 },
   );
@@ -101,7 +108,9 @@ test('the injected runtime alone can drive the Storybook', async ({ page }) => {
     const { happo } = globalThis as unknown as {
       happo: {
         init: (config: Record<string, unknown>) => Promise<void>;
-        nextExample: () => Promise<{ component: string; variant: string } | undefined>;
+        nextExample: () => Promise<
+          { component: string; variant: string } | undefined
+        >;
       };
     };
 

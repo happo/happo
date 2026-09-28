@@ -205,7 +205,11 @@ describe('takeDOMSnapshot', () => {
 
       // With autoApplyPseudoStateAttributes, stale manual attributes are cleared
       // (since nothing is currently hovered/active in JSDOM)
-      const snapshot = takeDOMSnapshot({ doc, element, autoApplyPseudoStateAttributes: true });
+      const snapshot = takeDOMSnapshot({
+        doc,
+        element,
+        autoApplyPseudoStateAttributes: true,
+      });
       assert.ok(
         !snapshot.html.includes('data-happo-hover'),
         'stale data-happo-hover should be cleared',
@@ -235,12 +239,17 @@ describe('takeDOMSnapshot', () => {
       shadowRoot.innerHTML = '<input type="text" id="shadow-input">';
       main.append(host);
 
-      const shadowInput = shadowRoot.querySelector<HTMLInputElement>('#shadow-input');
+      const shadowInput =
+        shadowRoot.querySelector<HTMLInputElement>('#shadow-input');
       if (!shadowInput) throw new Error('shadow input not found');
       shadowInput.focus();
 
       // The shadow host's shadow root activeElement should be the input
-      assert.equal(doc.activeElement, host, 'shadow host should be the activeElement');
+      assert.equal(
+        doc.activeElement,
+        host,
+        'shadow host should be the activeElement',
+      );
       assert.equal(
         doc.activeElement?.shadowRoot?.activeElement,
         shadowInput,
@@ -255,8 +264,12 @@ describe('takeDOMSnapshot', () => {
       });
       const parser = new globalThis.window.DOMParser();
       const snapshotDoc = parser.parseFromString(snapshot.html, 'text/html');
-      const focusedInput = snapshotDoc.querySelector<HTMLElement>('#shadow-input');
-      assert.ok(focusedInput, 'shadow input should be present in snapshot HTML');
+      const focusedInput =
+        snapshotDoc.querySelector<HTMLElement>('#shadow-input');
+      assert.ok(
+        focusedInput,
+        'shadow input should be present in snapshot HTML',
+      );
       assert.strictEqual(
         focusedInput?.dataset.happoFocus,
         'true',
@@ -304,7 +317,8 @@ describe('takeDOMSnapshot', () => {
       // The snapshotted element IS itself a shadow host
       const host = doc.createElement('div');
       const shadowRoot = host.attachShadow({ mode: 'open' });
-      shadowRoot.innerHTML = '<button data-happo-hover="true">Hover me</button>';
+      shadowRoot.innerHTML =
+        '<button data-happo-hover="true">Hover me</button>';
       doc.body.append(host);
 
       // When snapshotting the host directly, collectAllRoots must include
@@ -338,8 +352,12 @@ describe('takeDOMSnapshot', () => {
 </html>
   `);
     const { document: doc } = globalThis.window;
-    const radioInput = doc.querySelector<HTMLInputElement>('input[type="radio"][value="a"]');
-    const checkboxInput = doc.querySelector<HTMLInputElement>('input[type="checkbox"][name="baz"]');
+    const radioInput = doc.querySelector<HTMLInputElement>(
+      'input[type="radio"][value="a"]',
+    );
+    const checkboxInput = doc.querySelector<HTMLInputElement>(
+      'input[type="checkbox"][name="baz"]',
+    );
     if (!radioInput || !checkboxInput) {
       throw new Error('Input elements not found');
     }

@@ -1,5 +1,8 @@
 import { isInSkipSet, parseSkip, toSkipSet } from '../isomorphic/parseSkip.ts';
-import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
+import type {
+  NextExampleResult,
+  WindowWithHappo,
+} from '../isomorphic/types.ts';
 
 interface HappoStaticExample extends NextExampleResult {
   component: Required<NextExampleResult>['component'];
@@ -26,9 +29,15 @@ const happoStatic = {
         // into iframe.html. Filtering up front means the skip list is
         // robust against any DOM mutation an example might perform.
         const happoSkippedEl =
-          typeof document === 'undefined' ? null : document.getElementById('happo-skipped');
-        const skipSet = toSkipSet(parseSkip(happoSkippedEl?.textContent ?? undefined));
-        examples = examples.filter((e) => !isInSkipSet(skipSet, e.component, e.variant));
+          typeof document === 'undefined'
+            ? null
+            : document.getElementById('happo-skipped');
+        const skipSet = toSkipSet(
+          parseSkip(happoSkippedEl?.textContent ?? undefined),
+        );
+        examples = examples.filter(
+          (e) => !isInSkipSet(skipSet, e.component, e.variant),
+        );
 
         if (only) {
           examples = examples.filter(
@@ -90,17 +99,23 @@ const happoStatic = {
 
     const compType = typeof props.component;
     if (compType !== 'string') {
-      throw new Error(`Property \`component\` must be a string. Got "${compType}".`);
+      throw new Error(
+        `Property \`component\` must be a string. Got "${compType}".`,
+      );
     }
 
     const varType = typeof props.variant;
     if (varType !== 'string') {
-      throw new Error(`Property \`variant\` must be a string. Got "${varType}".`);
+      throw new Error(
+        `Property \`variant\` must be a string. Got "${varType}".`,
+      );
     }
 
     const rendType = typeof props.render;
     if (rendType !== 'function') {
-      throw new Error(`Property \`render\` must be a function. Got "${rendType}".`);
+      throw new Error(
+        `Property \`render\` must be a function. Got "${rendType}".`,
+      );
     }
 
     examples.push(props);

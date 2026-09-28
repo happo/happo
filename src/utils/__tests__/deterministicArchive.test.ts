@@ -4,7 +4,9 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, test } from 'vitest';
 
-import readArchive, { archiveEntryNames as entryNames } from '../../test-utils/readArchive.ts';
+import readArchive, {
+  archiveEntryNames as entryNames,
+} from '../../test-utils/readArchive.ts';
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import type { ArchiveFormat } from '../deterministicArchive.ts';
 import deterministicArchive from '../deterministicArchive.ts';
@@ -187,16 +189,25 @@ for (const format of ['zstd', 'zip'] satisfies Array<ArchiveFormat>) {
       const names = new Set(entryNames(buffer));
 
       // Check that our test files are included
-      assert(names.has('solid-white.png'), 'solid-white.png should be in the archive');
+      assert(
+        names.has('solid-white.png'),
+        'solid-white.png should be in the archive',
+      );
       assert(names.has('one.jpg'), 'one.jpg should be in the archive');
-      assert(names.has('subfolder/nested.txt'), 'subfolder/nested.txt should be in the archive');
+      assert(
+        names.has('subfolder/nested.txt'),
+        'subfolder/nested.txt should be in the archive',
+      );
     });
 
     test('preserves file contents', async () => {
       const { buffer } = await deterministicArchive([tmpdir]);
       const files = readArchive(buffer);
 
-      assert.strictEqual(files.get('subfolder/nested.txt')?.toString(), 'nested file content');
+      assert.strictEqual(
+        files.get('subfolder/nested.txt')?.toString(),
+        'nested file content',
+      );
       assert.strictEqual(files.get('empty.txt')?.length, 0);
       assert.deepStrictEqual(
         new Uint8Array(files.get('binary.bin') as Buffer),
@@ -209,20 +220,32 @@ for (const format of ['zstd', 'zip'] satisfies Array<ArchiveFormat>) {
         tmpdir, // absolute path
         testAssetsDir, // additional test directory
       ];
-      const resultNormal = await deterministicArchive([tmpdir, ...publicFolders]);
+      const resultNormal = await deterministicArchive([
+        tmpdir,
+        ...publicFolders,
+      ]);
       const resultWithPossibleDuplicates = await deterministicArchive([
         tmpdir,
         tmpdir,
         ...publicFolders,
         ...publicFolders,
       ]);
-      assert.deepStrictEqual(resultNormal.hash, resultWithPossibleDuplicates.hash);
-      assert.deepStrictEqual(resultNormal.buffer, resultWithPossibleDuplicates.buffer);
+      assert.deepStrictEqual(
+        resultNormal.hash,
+        resultWithPossibleDuplicates.hash,
+      );
+      assert.deepStrictEqual(
+        resultNormal.buffer,
+        resultWithPossibleDuplicates.buffer,
+      );
 
       // We expect 6 files: 5 from main directory + 1 from test-assets directory
       // (one.jpg appears in both directories but should be deduplicated)
       const expectedFileCount = 6; // solid-white.png, one.jpg, subfolder/nested.txt, empty.txt, binary.bin, test-assets/one.jpg
-      assert.strictEqual(entryNames(resultWithPossibleDuplicates.buffer).length, expectedFileCount);
+      assert.strictEqual(
+        entryNames(resultWithPossibleDuplicates.buffer).length,
+        expectedFileCount,
+      );
     });
 
     test('can include in-memory content', async () => {
@@ -251,18 +274,27 @@ for (const format of ['zstd', 'zip'] satisfies Array<ArchiveFormat>) {
       const singleFilePath = path.join(tmpdir, 'subfolder', 'nested.txt');
       const result = await deterministicArchive([singleFilePath]);
 
-      assert.deepStrictEqual(entryNames(result.buffer), ['subfolder/nested.txt']);
+      assert.deepStrictEqual(entryNames(result.buffer), [
+        'subfolder/nested.txt',
+      ]);
     });
 
     test('keeps folder structure when adding single files with absolute paths', async () => {
       const singleFilePath = path.join(tmpdir, 'subfolder', 'nested.txt');
       const result = await deterministicArchive([singleFilePath]);
 
-      assert.deepStrictEqual(entryNames(result.buffer), ['subfolder/nested.txt']);
+      assert.deepStrictEqual(entryNames(result.buffer), [
+        'subfolder/nested.txt',
+      ]);
     });
 
     test('handles deeply nested paths', async () => {
-      const deepDir = path.join(tmpdir, 'a'.repeat(30), 'b'.repeat(30), 'c'.repeat(30));
+      const deepDir = path.join(
+        tmpdir,
+        'a'.repeat(30),
+        'b'.repeat(30),
+        'c'.repeat(30),
+      );
       fs.mkdirSync(deepDir, { recursive: true });
       fs.writeFileSync(path.join(deepDir, 'deep.txt'), 'deep contents');
 

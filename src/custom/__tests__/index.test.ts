@@ -15,7 +15,9 @@ interface HappoStatic extends WindowHappo {
   nextExample: Required<WindowHappo>['nextExample'];
 }
 
-function assertWindowHasHappo(win: WindowWithHappo): asserts win is WindowWithHappoRequired {
+function assertWindowHasHappo(
+  win: WindowWithHappo,
+): asserts win is WindowWithHappoRequired {
   if (!win.happo) {
     throw new Error('window.happo is not defined');
   }
@@ -24,7 +26,9 @@ function assertWindowHasHappo(win: WindowWithHappo): asserts win is WindowWithHa
   }
 }
 
-function assertHappoStaticIsInitialized(happo: WindowHappo): asserts happo is HappoStatic {
+function assertHappoStaticIsInitialized(
+  happo: WindowHappo,
+): asserts happo is HappoStatic {
   if (!happo.init) {
     throw new TypeError('happo.init is not defined');
   }

@@ -4,7 +4,13 @@ import path from 'node:path';
 import * as esbuild from 'esbuild';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
-const OUTFILE = path.join(ROOT, 'dist', 'storybook', 'standalone', 'register.js');
+const OUTFILE = path.join(
+  ROOT,
+  'dist',
+  'storybook',
+  'standalone',
+  'register.js',
+);
 
 /**
  * Builds the standalone Happo Storybook runtime if it is not already on disk.
@@ -28,7 +34,9 @@ export default async function buildHappoStorybookRuntime(): Promise<void> {
   const scratchFile = `${OUTFILE}.${process.pid}.tmp`;
 
   await esbuild.build({
-    entryPoints: [path.join(ROOT, 'src', 'storybook', 'browser', 'register.ts')],
+    entryPoints: [
+      path.join(ROOT, 'src', 'storybook', 'browser', 'register.ts'),
+    ],
     outfile: scratchFile,
     bundle: true,
     packages: 'bundle',

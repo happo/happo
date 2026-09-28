@@ -26,7 +26,8 @@ it('passes the self test', () => {
 });
 
 it('hashes a 64 byte string', () => {
-  const str = '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592',
+  const str =
+      '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592',
     expectedResult = 'e0b153045b08d59d4e18a98ab823ac42',
     arr = stringToArray(str);
 
@@ -78,7 +79,9 @@ it('works incrementally', () => {
   md5.start();
   md5.appendByteArray(stringToArray('5d41402abc4b2a421456'));
   md5.appendByteArray(
-    stringToArray('5d41402abc4b2a4214565d41402abc4b2a4214565d41402abc4b2a421456'),
+    stringToArray(
+      '5d41402abc4b2a4214565d41402abc4b2a4214565d41402abc4b2a421456',
+    ),
   );
   md5.appendByteArray(stringToArray('5d41402abc4b2a421456'));
   assert.strictEqual(md5.end(), '45762198a57a35c8523915898fb8c68c');
@@ -122,7 +125,10 @@ it('can handle UTF8 strings', () => {
   let str = 'räksmörgås',
     arr = stringToArray(str);
 
-  assert.strictEqual(md5.appendByteArray(arr).end(), '09d9d71ec8a8e3bc74e51ebd587154f3');
+  assert.strictEqual(
+    md5.appendByteArray(arr).end(),
+    '09d9d71ec8a8e3bc74e51ebd587154f3',
+  );
   assert.strictEqual(MD5.hashAsciiStr(str), '09d9d71ec8a8e3bc74e51ebd587154f3');
 
   assert.strictEqual(MD5.hashStr(str), 'e462805dcf84413d5eddca45a4b88a5e');
@@ -131,7 +137,10 @@ it('can handle UTF8 strings', () => {
   arr = stringToArray(str);
 
   md5 = new MD5();
-  assert.strictEqual(md5.appendByteArray(arr).end(), '4664c02a4cf6b69392f8309b6d6256f5');
+  assert.strictEqual(
+    md5.appendByteArray(arr).end(),
+    '4664c02a4cf6b69392f8309b6d6256f5',
+  );
   assert.strictEqual(MD5.hashAsciiStr(str), '4664c02a4cf6b69392f8309b6d6256f5');
 
   assert.strictEqual(MD5.hashStr(str), '453931ab48a4a5af69f3da3c21064fc9');

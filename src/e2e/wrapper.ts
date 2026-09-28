@@ -77,7 +77,12 @@ export async function finalizeAll({
     // the same way the storybook/custom integrations do for --skip. The
     // request is attached to the async report (keyed by nonce) before we
     // finalize, so that the report is complete by the time it is built.
-    const extendsRequestId = await createSkipExtendsRequest(skip, happoConfig, environment, logger);
+    const extendsRequestId = await createSkipExtendsRequest(
+      skip,
+      happoConfig,
+      environment,
+      logger,
+    );
 
     if (extendsRequestId !== undefined) {
       await postAsyncReport([extendsRequestId], environment, happoConfig);
@@ -98,9 +103,17 @@ export async function finalizeAll({
   );
 
   if (environment.beforeSha !== environment.afterSha) {
-    const compareResult = await createAsyncComparison(happoConfig, environment, logger);
+    const compareResult = await createAsyncComparison(
+      happoConfig,
+      environment,
+      logger,
+    );
 
-    if (environment.link && environment.githubToken && happoConfig.githubApiUrl) {
+    if (
+      environment.link &&
+      environment.githubToken &&
+      happoConfig.githubApiUrl
+    ) {
       // githubToken and githubApiUrl are set which means that we should post
       // a comment to the PR.
       // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
@@ -137,14 +150,23 @@ async function finalizeHappoReport(
     // Borrow the examples we skipped during the run from the baseline. Without
     // a nonce the report is finalized by the POST below, so the extends-report
     // has to be part of that same call.
-    const extendsRequestId = await createSkipExtendsRequest(skip, happoConfig, environment, logger);
+    const extendsRequestId = await createSkipExtendsRequest(
+      skip,
+      happoConfig,
+      environment,
+      logger,
+    );
 
     if (extendsRequestId !== undefined) {
       requestIds.push(extendsRequestId);
     }
   }
 
-  const reportResult = await postAsyncReport(requestIds, environment, happoConfig);
+  const reportResult = await postAsyncReport(
+    requestIds,
+    environment,
+    happoConfig,
+  );
 
   if (!reportResult) {
     throw new Error('Failed to create async Happo report');
@@ -155,9 +177,18 @@ async function finalizeHappoReport(
   if (!nonce && environment.beforeSha !== environment.afterSha) {
     // If there is a nonce, the comparison will happen when the finalize
     // command is called.
-    const compareResult = await createAsyncComparison(happoConfig, environment, logger);
+    const compareResult = await createAsyncComparison(
+      happoConfig,
+      environment,
+      logger,
+    );
 
-    if (compareResult && environment.link && environment.githubToken && happoConfig.githubApiUrl) {
+    if (
+      compareResult &&
+      environment.link &&
+      environment.githubToken &&
+      happoConfig.githubApiUrl
+    ) {
       // githubToken and githubApiUrl is set which means that we should post
       // a comment to the PR.
       // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
@@ -242,7 +273,9 @@ export default async function runWithWrapper(
   // Validate before starting the e2e server or creating the job, so that a
   // malformed skip list doesn't leave a listening server and an uncancelled
   // job behind.
-  const skip: Array<SkipItem> | undefined = skipJSON ? validateSkip(skipJSON) : undefined;
+  const skip: Array<SkipItem> | undefined = skipJSON
+    ? validateSkip(skipJSON)
+    : undefined;
 
   const e2eServer = await startE2EServer(environment, happoConfig);
   logger.log(`[HAPPO] Listening on port ${e2eServer.port}`);
@@ -273,11 +306,15 @@ export default async function runWithWrapper(
         childEnv.HAPPO_SKIP_FILE = skipFilePath;
       }
 
-      const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
-        stdio: 'inherit',
-        env: childEnv,
-        shell: process.platform == 'win32',
-      });
+      const child = spawn(
+        dashdashCommandParts[0]!,
+        dashdashCommandParts.slice(1),
+        {
+          stdio: 'inherit',
+          env: childEnv,
+          shell: process.platform == 'win32',
+        },
+      );
 
       child.on('error', (e) => {
         return reject(e);
@@ -287,44 +324,53 @@ export default async function runWithWrapper(
       assertE2EIntegration(e2eIntegration);
       // `code` is null when the command was terminated by a signal, in which
       // case `signal` says which one.
-      child.on('close', async (code: number | null, signal: NodeJS.Signals | null) => {
-        if (code === 0 || e2eIntegration.allowFailures) {
-          try {
-            await finalizeHappoReport(happoConfig, environment, job, logger, skip);
-          } catch (e) {
-            logger.error('Failed to finalize Happo report', e);
-            return reject(e);
-          }
-        } else {
-          const reason =
-            code === null
-              ? `was terminated by ${signal ?? 'a signal'}`
-              : `failed with exit code ${code}`;
-          logger.error(
-            `[HAPPO] Command ${reason}: ${dashdashCommandParts.join(' ')}. Cancelling Happo job. See the output above for details about the failure.`,
-          );
-          try {
-            await cancelJob(
-              'failure',
-              formatFailureMessage({
-                integrationType: e2eIntegration.type,
-                command: dashdashCommandParts,
-                exitCode: code ?? undefined,
+      child.on(
+        'close',
+        async (code: number | null, signal: NodeJS.Signals | null) => {
+          if (code === 0 || e2eIntegration.allowFailures) {
+            try {
+              await finalizeHappoReport(
+                happoConfig,
                 environment,
-              }),
-              happoConfig,
-              environment,
-              logger,
+                job,
+                logger,
+                skip,
+              );
+            } catch (e) {
+              logger.error('Failed to finalize Happo report', e);
+              return reject(e);
+            }
+          } else {
+            const reason =
+              code === null
+                ? `was terminated by ${signal ?? 'a signal'}`
+                : `failed with exit code ${code}`;
+            logger.error(
+              `[HAPPO] Command ${reason}: ${dashdashCommandParts.join(' ')}. Cancelling Happo job. See the output above for details about the failure.`,
             );
-          } catch (e) {
-            logger.error('Failed to cancel Happo job', e);
-            return reject(e);
+            try {
+              await cancelJob(
+                'failure',
+                formatFailureMessage({
+                  integrationType: e2eIntegration.type,
+                  command: dashdashCommandParts,
+                  exitCode: code ?? undefined,
+                  environment,
+                }),
+                happoConfig,
+                environment,
+                logger,
+              );
+            } catch (e) {
+              logger.error('Failed to cancel Happo job', e);
+              return reject(e);
+            }
           }
-        }
-        // A signal-terminated command has no exit code of its own, but it
-        // still needs to fail the happo run.
-        resolve(code ?? 1);
-      });
+          // A signal-terminated command has no exit code of its own, but it
+          // still needs to fail the happo run.
+          resolve(code ?? 1);
+        },
+      );
     });
     return exitCode;
   } finally {

@@ -138,7 +138,9 @@ async function main() {
   const chmodPromises: Array<Promise<void>> = [];
   for (const config of DIST_CONFIGS) {
     if (config.executable) {
-      chmodPromises.push(fs.promises.chmod(path.join(config.outdir, 'main.js'), 0o755));
+      chmodPromises.push(
+        fs.promises.chmod(path.join(config.outdir, 'main.js'), 0o755),
+      );
     }
   }
   await Promise.all(chmodPromises);

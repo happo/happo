@@ -17,7 +17,12 @@ export default function getStorybookBuildCommandParts(
         );
       }
 
-      const pathToStorybookCommand = path.join(process.cwd(), 'node_modules', '.bin', 'storybook');
+      const pathToStorybookCommand = path.join(
+        process.cwd(),
+        'node_modules',
+        '.bin',
+        'storybook',
+      );
 
       if (fs.existsSync(pathToStorybookCommand)) {
         return [pathToStorybookCommand, 'build'];

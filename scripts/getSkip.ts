@@ -33,7 +33,9 @@ const componentExamples = [
 ];
 
 const storyFileExamples = [
-  { storyFile: './src/storybook/__tests__/storybook-app/Interactive.stories.ts' },
+  {
+    storyFile: './src/storybook/__tests__/storybook-app/Interactive.stories.ts',
+  },
   { storyFile: './src/storybook/__tests__/storybook-app/Story.stories.ts' },
 ];
 
@@ -49,7 +51,9 @@ function git(args: Array<string>): string | undefined {
  * The commit that the baseline report for this run is expected to come from:
  * the merge base for pull requests, and the previous head for pushes to main.
  */
-function resolveBaseSha(env: Record<string, string | undefined>): string | undefined {
+function resolveBaseSha(
+  env: Record<string, string | undefined>,
+): string | undefined {
   const { GITHUB_EVENT_PATH } = env;
 
   if (GITHUB_EVENT_PATH) {
@@ -74,7 +78,9 @@ function resolveBaseSha(env: Record<string, string | undefined>): string | undef
   return git(['merge-base', 'origin/main', 'HEAD']);
 }
 
-function resolveChangedFiles(env: Record<string, string | undefined>): Set<string> | undefined {
+function resolveChangedFiles(
+  env: Record<string, string | undefined>,
+): Set<string> | undefined {
   const baseSha = resolveBaseSha(env);
   if (!baseSha) {
     return undefined;
@@ -116,15 +122,21 @@ export default function getSkip({
   );
 
   if (unchangedStoryFileExamples.length < storyFileExamples.length) {
-    logger.error('[getSkip] Not skipping story files that changed since the base commit.');
+    logger.error(
+      '[getSkip] Not skipping story files that changed since the base commit.',
+    );
   }
 
   const storyFileItem =
-    unchangedStoryFileExamples[day % Math.max(unchangedStoryFileExamples.length, 1)];
+    unchangedStoryFileExamples[
+      day % Math.max(unchangedStoryFileExamples.length, 1)
+    ];
 
   return storyFileItem ? [componentItem, storyFileItem] : [componentItem];
 }
 
 if (import.meta.main) {
-  process.stdout.write(JSON.stringify(getSkip({ day: new Date().getDay(), env: process.env })));
+  process.stdout.write(
+    JSON.stringify(getSkip({ day: new Date().getDay(), env: process.env })),
+  );
 }

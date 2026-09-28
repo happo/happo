@@ -3,7 +3,10 @@ import assert from 'node:assert';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, it, vi } from 'vitest';
 
-import type { ConfigWithDefaults, DeepCompareSettings } from '../../config/index.ts';
+import type {
+  ConfigWithDefaults,
+  DeepCompareSettings,
+} from '../../config/index.ts';
 import type { EnvironmentResult } from '../../environment/index.ts';
 import type makeHappoAPIRequest from '../makeHappoAPIRequest.ts';
 
@@ -17,14 +20,15 @@ let config: ConfigWithDefaults;
 let environment: EnvironmentResult;
 let createAsyncComparison: typeof import('../createAsyncComparison.ts').default;
 
-const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(() =>
-  vi.fn(async () => {
-    return {
-      id: 123,
-      statusImageUrl: 'https://happo.io/api/reports/123/status-image',
-      compareUrl: 'https://happo.io/api/reports/123/compare',
-    };
-  }),
+const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(
+  () =>
+    vi.fn(async () => {
+      return {
+        id: 123,
+        statusImageUrl: 'https://happo.io/api/reports/123/status-image',
+        compareUrl: 'https://happo.io/api/reports/123/compare',
+      };
+    }),
 );
 
 // mock makeHappoAPIRequest.ts *before* importing createAsyncComparison
@@ -39,7 +43,8 @@ beforeEach(async () => {
   };
 
   // Now import the SUT; it will see the mocked module
-  ({ default: createAsyncComparison } = await import('../createAsyncComparison.ts'));
+  ({ default: createAsyncComparison } =
+    await import('../createAsyncComparison.ts'));
 
   config = {
     apiKey: 'test-key',
@@ -94,7 +99,10 @@ describe('createAsyncComparison', () => {
     assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
-    assert.strictEqual(call[0]?.path, '/api/reports/before-sha/compare/after-sha');
+    assert.strictEqual(
+      call[0]?.path,
+      '/api/reports/before-sha/compare/after-sha',
+    );
     assert.strictEqual(call[0]?.method, 'POST');
 
     const body = call[0]?.body as {

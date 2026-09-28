@@ -12,13 +12,18 @@ describe('validateOnly', () => {
 
   it('rejects component items with variant', () => {
     assert.throws(
-      () => validateOnly(JSON.stringify([{ component: 'Button', variant: 'Primary' }])),
+      () =>
+        validateOnly(
+          JSON.stringify([{ component: 'Button', variant: 'Primary' }]),
+        ),
       TypeError,
     );
   });
 
   it('accepts storyFile items', () => {
-    const result = validateOnly(JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]));
+    const result = validateOnly(
+      JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
+    );
     assert.deepStrictEqual(result, [{ storyFile: './src/Button.stories.tsx' }]);
   });
 
@@ -26,31 +31,45 @@ describe('validateOnly', () => {
     assert.throws(
       () =>
         validateOnly(
-          JSON.stringify([{ storyFile: './src/Button.stories.tsx', variant: 'Primary' }]),
+          JSON.stringify([
+            { storyFile: './src/Button.stories.tsx', variant: 'Primary' },
+          ]),
         ),
       TypeError,
     );
   });
 
   it('accepts a mix of component and storyFile items', () => {
-    const items = [{ component: 'Button' }, { storyFile: './src/Input.stories.tsx' }];
+    const items = [
+      { component: 'Button' },
+      { storyFile: './src/Input.stories.tsx' },
+    ];
     const result = validateOnly(JSON.stringify(items));
     assert.deepStrictEqual(result, items);
   });
 
   it('rejects items with both component and storyFile', () => {
     assert.throws(
-      () => validateOnly(JSON.stringify([{ component: 'Button', storyFile: './foo.tsx' }])),
+      () =>
+        validateOnly(
+          JSON.stringify([{ component: 'Button', storyFile: './foo.tsx' }]),
+        ),
       TypeError,
     );
   });
 
   it('rejects items with neither component nor storyFile', () => {
-    assert.throws(() => validateOnly(JSON.stringify([{ variant: 'Primary' }])), TypeError);
+    assert.throws(
+      () => validateOnly(JSON.stringify([{ variant: 'Primary' }])),
+      TypeError,
+    );
   });
 
   it('rejects non-array JSON', () => {
-    assert.throws(() => validateOnly(JSON.stringify({ component: 'Button' })), TypeError);
+    assert.throws(
+      () => validateOnly(JSON.stringify({ component: 'Button' })),
+      TypeError,
+    );
   });
 
   it('throws on invalid JSON', () => {
@@ -78,7 +97,10 @@ describe('parseOnly', () => {
   });
 
   it('returns parsed items for valid JSON', () => {
-    const items = [{ component: 'Button' }, { storyFile: './src/Input.stories.tsx' }];
+    const items = [
+      { component: 'Button' },
+      { storyFile: './src/Input.stories.tsx' },
+    ];
     assert.deepStrictEqual(parseOnly(JSON.stringify(items)), items);
   });
 });

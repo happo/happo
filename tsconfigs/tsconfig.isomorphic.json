@@ -12,5 +12,9 @@
   },
 
   "include": ["../src/**/isomorphic/**/*.ts"],
-  "exclude": ["../**/__tests__/**", "../**/__playwright__/**", "../**/*.test.ts"]
+  "exclude": [
+    "../**/__tests__/**",
+    "../**/__playwright__/**",
+    "../**/*.test.ts"
+  ]
 }

@@ -83,7 +83,9 @@ describe('cancelJob', () => {
       throw new ErrorWithStatusCode('Conflict', 409);
     };
 
-    await assert.doesNotReject(cancelJob('failure', 'test-message', config, environment, logger));
+    await assert.doesNotReject(
+      cancelJob('failure', 'test-message', config, environment, logger),
+    );
 
     assert.strictEqual(logger.error.mock.calls.length, 1);
     assert.strictEqual(
@@ -97,7 +99,9 @@ describe('cancelJob', () => {
       throw new ErrorWithStatusCode('No job found', 404);
     };
 
-    await assert.doesNotReject(cancelJob('failure', 'test-message', config, environment, logger));
+    await assert.doesNotReject(
+      cancelJob('failure', 'test-message', config, environment, logger),
+    );
 
     assert.strictEqual(logger.error.mock.calls.length, 1);
     assert.strictEqual(
@@ -111,7 +115,9 @@ describe('cancelJob', () => {
       throw new ErrorWithStatusCode('Other message', 404);
     };
 
-    await assert.rejects(cancelJob('failure', 'test-message', config, environment, logger));
+    await assert.rejects(
+      cancelJob('failure', 'test-message', config, environment, logger),
+    );
   });
 
   it('throws for unexpected errors', async () => {
@@ -119,6 +125,8 @@ describe('cancelJob', () => {
       throw new Error('boom');
     };
 
-    await assert.rejects(cancelJob('failure', 'test-message', config, environment, logger));
+    await assert.rejects(
+      cancelJob('failure', 'test-message', config, environment, logger),
+    );
   });
 });

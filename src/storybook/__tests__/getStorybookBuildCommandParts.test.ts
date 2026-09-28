@@ -14,7 +14,9 @@ describe('with project package.json', () => {
 
 describe('with a storybook script', () => {
   it.skip('uses binary in node_modules/.bin', () => {
-    const parts = getStorybookBuildCommandParts(path.resolve(__dirname, 'no-devdeps-package.json'));
+    const parts = getStorybookBuildCommandParts(
+      path.resolve(__dirname, 'no-devdeps-package.json'),
+    );
 
     assert.match(parts[0], /node_modules\/\.bin/);
     assert.strictEqual(parts[1], 'build');

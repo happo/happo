@@ -58,7 +58,11 @@ const time = globalThis.happoTime || {
 
 const STORY_STORE_TIMEOUT = 10_000;
 
-type HookFunction = ({ rootElement }: { rootElement: HTMLElement }) => void | Promise<void>;
+type HookFunction = ({
+  rootElement,
+}: {
+  rootElement: HTMLElement;
+}) => void | Promise<void>;
 
 interface Example {
   component: string;
@@ -96,8 +100,10 @@ interface RegisterState {
   examples: Array<Example> | undefined;
   currentIndex: number;
   defaultDelay: number | undefined;
-  themeSwitcher: ((theme: string, channel: Channel) => Promise<void>) | undefined;
-  forcedHappoScreenshotSteps: Array<{ stepLabel: string; done: boolean }> | undefined;
+  themeSwitcher:
+    ((theme: string, channel: Channel) => Promise<void>) | undefined;
+  forcedHappoScreenshotSteps:
+    Array<{ stepLabel: string; done: boolean }> | undefined;
   shouldWaitForCompletedEvent: boolean;
 }
 
@@ -130,7 +136,10 @@ async function waitForWaitFor(
   const duration = time.originalDateNow() - start;
   if (!waitFor() && duration < state.renderTimeoutMs) {
     return new Promise((resolve) =>
-      time.originalSetTimeout(() => resolve(waitForWaitFor(waitFor, start)), 50),
+      time.originalSetTimeout(
+        () => resolve(waitForWaitFor(waitFor, start)),
+        50,
+      ),
     );
   }
 
@@ -156,10 +165,15 @@ function isDefined<T>(value: T): value is NonNullable<T> {
 async function getStoryStore(startTime = time.originalDateNow()) {
   const duration = time.originalDateNow() - startTime;
   if (duration >= STORY_STORE_TIMEOUT) {
-    throw new Error(`Timeout: Could not find Storybook Client API after ${STORY_STORE_TIMEOUT}ms`);
+    throw new Error(
+      `Timeout: Could not find Storybook Client API after ${STORY_STORE_TIMEOUT}ms`,
+    );
   }
 
-  const { __STORYBOOK_CLIENT_API__: clientApi, __STORYBOOK_PREVIEW__: preview } = globalThis;
+  const {
+    __STORYBOOK_CLIENT_API__: clientApi,
+    __STORYBOOK_PREVIEW__: preview,
+  } = globalThis;
 
   if (clientApi && clientApi._storyStore) {
     return clientApi._storyStore;
@@ -251,12 +265,17 @@ async function getExamples(): Promise<Array<Example>> {
     });
 }
 
-function filterExamples(all: Array<Example>, initConfig: InitConfig): Array<Example> {
+function filterExamples(
+  all: Array<Example>,
+  initConfig: InitConfig,
+): Array<Example> {
   const { chunk, targetName, only } = initConfig;
 
   if (globalThis.happoOnly) {
     const happoOnly = globalThis.happoOnly;
-    all = all.filter((e) => happoOnly.some((item) => item.component === e.component));
+    all = all.filter((e) =>
+      happoOnly.some((item) => item.component === e.component),
+    );
   }
 
   if (globalThis.happoSkipped) {
@@ -290,7 +309,9 @@ function filterExamples(all: Array<Example>, initConfig: InitConfig): Array<Exam
   }
 
   if (only) {
-    all = all.filter((e) => e.component === only.component && e.variant === only.variant);
+    all = all.filter(
+      (e) => e.component === only.component && e.variant === only.variant,
+    );
   }
 
   return all;
@@ -323,7 +344,10 @@ function renderStory(
 
   return new Promise((resolve) => {
     const timeout = time.originalSetTimeout(resolve, state.renderTimeoutMs);
-    function handleRenderPhaseChanged(ev: { storyId: string; newPhase: string }) {
+    function handleRenderPhaseChanged(ev: {
+      storyId: string;
+      newPhase: string;
+    }) {
       if (!channel) {
         throw new Error('Missing Storybook Addons Channel');
       }
@@ -389,7 +413,9 @@ function renderStory(
   });
 }
 
-function assertHTMLElement(element: Element | null): asserts element is HTMLElement {
+function assertHTMLElement(
+  element: Element | null,
+): asserts element is HTMLElement {
   if (element === null) {
     throw new Error('element cannot be null');
   }
@@ -398,7 +424,9 @@ function assertHTMLElement(element: Element | null): asserts element is HTMLElem
   }
 }
 
-globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> => {
+globalThis.happo.nextExample = async (): Promise<
+  NextExampleResult | undefined
+> => {
   if (!state.examples) {
     throw new Error(
       'Missing examples. Make sure to call the init function before calling nextExample.',
@@ -502,7 +530,9 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       await waitForWaitFor(waitFor);
     }
 
-    const highlightsRootElement = document.querySelector('#storybook-highlights-root');
+    const highlightsRootElement = document.querySelector(
+      '#storybook-highlights-root',
+    );
     if (
       highlightsRootElement &&
       (highlightsRootElement instanceof HTMLElement ||
@@ -567,7 +597,9 @@ export function setRenderTimeoutMs(timeoutMs: number): void {
   state.renderTimeoutMs = timeoutMs;
 }
 
-export function setThemeSwitcher(func: (theme: string, channel: Channel) => Promise<void>): void {
+export function setThemeSwitcher(
+  func: (theme: string, channel: Channel) => Promise<void>,
+): void {
   state.themeSwitcher = func;
 }
 
@@ -580,7 +612,9 @@ export function setShouldWaitForCompletedEvent(swfce: boolean): void {
  * the worker. The hooks already reached the page through
  * `happoAnimate.beforeRender()`, and functions can't travel to the worker.
  */
-function withoutHooks(animate: StoryAnimateConfig | undefined): AnimateConfig | undefined {
+function withoutHooks(
+  animate: StoryAnimateConfig | undefined,
+): AnimateConfig | undefined {
   if (!animate || typeof animate !== 'object') {
     return animate;
   }

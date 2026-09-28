@@ -108,7 +108,9 @@ export default async function fetchWithRetry(
         });
       } catch (maybeError) {
         const originalError =
-          maybeError instanceof Error ? maybeError : new Error(String(maybeError));
+          maybeError instanceof Error
+            ? maybeError
+            : new Error(String(maybeError));
 
         const message =
           originalError.name === 'TimeoutError'

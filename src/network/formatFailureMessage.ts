@@ -49,7 +49,10 @@ function buildDetail({
   const parts: Array<string> = [];
 
   if (command && command.length > 0) {
-    const commandString = truncate(toSingleLine(command.join(' ')), MAX_COMMAND_LENGTH);
+    const commandString = truncate(
+      toSingleLine(command.join(' ')),
+      MAX_COMMAND_LENGTH,
+    );
     parts.push(
       exitCode === undefined
         ? `"${commandString}" did not complete`
@@ -59,7 +62,9 @@ function buildDetail({
     parts.push(`Exited with code ${exitCode}`);
   }
 
-  const errorText = error ? truncate(toSingleLine(error), MAX_ERROR_LENGTH) : '';
+  const errorText = error
+    ? truncate(toSingleLine(error), MAX_ERROR_LENGTH)
+    : '';
   if (errorText) {
     parts.push(errorText);
   }

@@ -105,7 +105,9 @@ export default class Logger {
         stack = stack.split(`file://${process.cwd()}/`).join('');
       }
     }
-    this.stderrPrint(red(stack || (typeof e === 'object' ? e.message : e) || String(e)));
+    this.stderrPrint(
+      red(stack || (typeof e === 'object' ? e.message : e) || String(e)),
+    );
     this.stderrPrint('\n');
   }
 

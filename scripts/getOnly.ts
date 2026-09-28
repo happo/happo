@@ -7,7 +7,9 @@
  */
 
 const storyFileExamples = [
-  { storyFile: './src/storybook/__tests__/storybook-app/Interactive.stories.ts' },
+  {
+    storyFile: './src/storybook/__tests__/storybook-app/Interactive.stories.ts',
+  },
   { storyFile: './src/storybook/__tests__/storybook-app/Story.stories.ts' },
 ];
 

@@ -5,7 +5,9 @@ import { expect, test } from './fixture.ts';
 let serverInfo: ServerInfo;
 
 test.beforeAll(async () => {
-  serverInfo = await startTestServer('./src/playwright/__playwright__/fixtures');
+  serverInfo = await startTestServer(
+    './src/playwright/__playwright__/fixtures',
+  );
 });
 
 test.afterAll(async () => {

@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, it } from 'vitest';
 import * as tmpfs from '../../src/test-utils/tmpfs.ts';
 import getSkip from '../getSkip.ts';
 
-const INTERACTIVE_STORIES = 'src/storybook/__tests__/storybook-app/Interactive.stories.ts';
+const INTERACTIVE_STORIES =
+  'src/storybook/__tests__/storybook-app/Interactive.stories.ts';
 const STORY_STORIES = 'src/storybook/__tests__/storybook-app/Story.stories.ts';
 
 // Days are 0 (Sun) – 6 (Sat). With two story files in the rotation, even days
@@ -87,7 +88,10 @@ describe('getSkip', () => {
 
     it('does not skip a story file changed since origin/main', () => {
       checkoutBranchFromOriginMain();
-      commitChange(STORY_STORIES, 'export const Story = {}; export const New = {};');
+      commitChange(
+        STORY_STORIES,
+        'export const Story = {}; export const New = {};',
+      );
 
       assert.deepStrictEqual(getSkip({ day: ODD_DAY, env: {}, logger })[1], {
         storyFile: `./${INTERACTIVE_STORIES}`,
@@ -103,8 +107,14 @@ describe('getSkip', () => {
 
     it('does not skip any story files when they all changed', () => {
       checkoutBranchFromOriginMain();
-      commitChange(STORY_STORIES, 'export const Story = {}; export const New = {};');
-      commitChange(INTERACTIVE_STORIES, 'export const Interactive = { play() {} };');
+      commitChange(
+        STORY_STORIES,
+        'export const Story = {}; export const New = {};',
+      );
+      commitChange(
+        INTERACTIVE_STORIES,
+        'export const Interactive = { play() {} };',
+      );
 
       assert.deepStrictEqual(getSkip({ day: ODD_DAY, env: {}, logger }), [
         { component: 'Stories', variant: 'Portal [white]' },
@@ -124,12 +134,18 @@ describe('getSkip', () => {
   describe('on a GitHub pull request', () => {
     it('does not skip a story file changed since the merge base', () => {
       tmpfs.exec('git', ['checkout', '-b', 'feature']);
-      commitChange(STORY_STORIES, 'export const Story = {}; export const New = {};');
+      commitChange(
+        STORY_STORIES,
+        'export const Story = {}; export const New = {};',
+      );
 
       // Main moves on after the branch was created. Changes on main are not
       // part of the pull request and don't count.
       tmpfs.exec('git', ['checkout', 'main']);
-      commitChange(INTERACTIVE_STORIES, 'export const Interactive = { play() {} };');
+      commitChange(
+        INTERACTIVE_STORIES,
+        'export const Interactive = { play() {} };',
+      );
       const mainSha = headSha();
       tmpfs.exec('git', ['checkout', 'feature']);
 
@@ -144,7 +160,10 @@ describe('getSkip', () => {
   describe('on a GitHub merge group', () => {
     it('does not skip a story file changed since the base', () => {
       const baseSha = headSha();
-      commitChange(STORY_STORIES, 'export const Story = {}; export const New = {};');
+      commitChange(
+        STORY_STORIES,
+        'export const Story = {}; export const New = {};',
+      );
 
       const env = writeEvent({ merge_group: { base_sha: baseSha } });
 
@@ -157,7 +176,10 @@ describe('getSkip', () => {
   describe('on a GitHub push', () => {
     it('does not skip a story file changed in the push', () => {
       const beforeSha = headSha();
-      commitChange(STORY_STORIES, 'export const Story = {}; export const New = {};');
+      commitChange(
+        STORY_STORIES,
+        'export const Story = {}; export const New = {};',
+      );
 
       const env = writeEvent({ before: beforeSha, ref: 'refs/heads/main' });
 
@@ -167,7 +189,10 @@ describe('getSkip', () => {
     });
 
     it('skips story files changed only in earlier pushes', () => {
-      commitChange(STORY_STORIES, 'export const Story = {}; export const New = {};');
+      commitChange(
+        STORY_STORIES,
+        'export const Story = {}; export const New = {};',
+      );
       const beforeSha = headSha();
       commitChange('README.md', 'Unrelated change');
 

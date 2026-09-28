@@ -48,7 +48,10 @@ export default async function cancelJob(
       error.statusCode === 404 &&
       error.message.includes('No job found')
     ) {
-      logger.error('Skipping cancellation of Happo job because it does not exist', error);
+      logger.error(
+        'Skipping cancellation of Happo job because it does not exist',
+        error,
+      );
     } else {
       throw error;
     }

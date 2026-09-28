@@ -1,7 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { configDefaults, defineConfig, type ViteUserConfig } from 'vitest/config';
+import {
+  configDefaults,
+  defineConfig,
+  type ViteUserConfig,
+} from 'vitest/config';
 
 // Tests that talk to the real Happo API read HAPPO_API_KEY and HAPPO_API_SECRET
 // from here (see .env.example). Loaded into this process so the test workers,

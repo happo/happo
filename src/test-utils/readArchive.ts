@@ -19,7 +19,9 @@ const ZSTD_MAGIC = Buffer.from([0x28, 0xb5, 0x2f, 0xfd]);
 export default function readArchive(buffer: Buffer): Map<string, Buffer> {
   if (!buffer.subarray(0, ZSTD_MAGIC.length).equals(ZSTD_MAGIC)) {
     const entries = unzipSync(new Uint8Array(buffer));
-    return new Map(Object.entries(entries).map(([name, data]) => [name, Buffer.from(data)]));
+    return new Map(
+      Object.entries(entries).map(([name, data]) => [name, Buffer.from(data)]),
+    );
   }
 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'happo-archive-'));
@@ -38,7 +40,10 @@ export default function readArchive(buffer: Buffer): Map<string, Buffer> {
         if (entry.isDirectory()) {
           walk(full);
         } else if (entry.isFile()) {
-          files.set(path.relative(outDir, full).replaceAll('\\', '/'), fs.readFileSync(full));
+          files.set(
+            path.relative(outDir, full).replaceAll('\\', '/'),
+            fs.readFileSync(full),
+          );
         }
       }
     };
@@ -55,5 +60,7 @@ export default function readArchive(buffer: Buffer): Map<string, Buffer> {
  * dropped in filtered out.
  */
 export function archiveEntryNames(buffer: Buffer): Array<string> {
-  return [...readArchive(buffer).keys()].filter((entryName) => !entryName.includes('.DS_Store'));
+  return [...readArchive(buffer).keys()].filter(
+    (entryName) => !entryName.includes('.DS_Store'),
+  );
 }

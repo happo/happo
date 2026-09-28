@@ -65,8 +65,15 @@ describe('the built package', () => {
     // It has to run as a plain script in the Storybook preview, so it must be
     // self-contained -- no import statements left for the browser to resolve.
     const runtime = fs.readFileSync(runtimePath, 'utf8');
-    assert.ok(runtime.includes('globalThis.happo'), 'runtime does not define globalThis.happo');
-    assert.doesNotMatch(runtime, /^\s*import\s/m, 'runtime is not self-contained');
+    assert.ok(
+      runtime.includes('globalThis.happo'),
+      'runtime does not define globalThis.happo',
+    );
+    assert.doesNotMatch(
+      runtime,
+      /^\s*import\s/m,
+      'runtime is not self-contained',
+    );
   });
 
   it('loads the runtime from iframe.html', async () => {
@@ -99,7 +106,8 @@ describe('the built package', () => {
 
   it('is not fooled by a document that only mentions the runtime', async () => {
     const outputDir = createPackage({
-      iframeContent: '<html><HEAD></HEAD><body>happo-storybook-runtime.js</body></html>',
+      iframeContent:
+        '<html><HEAD></HEAD><body>happo-storybook-runtime.js</body></html>',
     });
 
     await assert.rejects(

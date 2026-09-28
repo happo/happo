@@ -10,7 +10,10 @@ import createAssetPackage from '../createAssetPackage.ts';
 let serverInfo: ServerInfo;
 
 beforeEach(async () => {
-  serverInfo = await startTestServer(`${import.meta.dirname}/__fixtures__`, 3412);
+  serverInfo = await startTestServer(
+    `${import.meta.dirname}/__fixtures__`,
+    3412,
+  );
 });
 
 afterEach(async () => {
@@ -69,7 +72,11 @@ describe('createAssetPackage', () => {
     const fetchCalls: Array<string> = [];
     globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
       const url =
-        typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       fetchCalls.push(url);
       return originalFetch(input, init);
     }) as typeof globalThis.fetch;
@@ -162,7 +169,10 @@ describe('createAssetPackage', () => {
     assert.equal(entries.length, 2);
     assert.deepEqual(
       entries,
-      ['_external/83112e0c253721ddb1bcff1973e46dcb.png', 'sub folder/countries-bg.jpeg'].toSorted(),
+      [
+        '_external/83112e0c253721ddb1bcff1973e46dcb.png',
+        'sub folder/countries-bg.jpeg',
+      ].toSorted(),
     );
   });
 });

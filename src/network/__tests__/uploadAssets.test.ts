@@ -25,7 +25,10 @@ let config: ConfigWithDefaults;
 let buffer: Buffer<ArrayBuffer>;
 let s3Server: http.Server;
 let s3Port: number;
-let s3ResponseHandler: (req: http.IncomingMessage, res: http.ServerResponse) => void;
+let s3ResponseHandler: (
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+) => void;
 let s3Requests: Array<http.IncomingMessage>;
 
 const logger = { info: () => {}, warn: () => {} };
@@ -103,7 +106,11 @@ describe('uploadAssets', () => {
     });
 
     it('asks for a zstd signed URL and finalizes as zstd', async () => {
-      const result = await uploadAssets(buffer, { hash: 'abc123', logger, format: 'zstd' }, config);
+      const result = await uploadAssets(
+        buffer,
+        { hash: 'abc123', logger, format: 'zstd' },
+        config,
+      );
 
       assert.strictEqual(result, '/new/path.zst');
       assert.deepStrictEqual(requestedPaths, [
@@ -113,10 +120,17 @@ describe('uploadAssets', () => {
     });
 
     it('uploads with the content type the server signed with', async () => {
-      await uploadAssets(buffer, { hash: 'abc123', logger, format: 'zstd' }, config);
+      await uploadAssets(
+        buffer,
+        { hash: 'abc123', logger, format: 'zstd' },
+        config,
+      );
 
       assert.strictEqual(s3Requests.length, 1);
-      assert.strictEqual(s3Requests[0]?.headers['content-type'], 'application/zstd');
+      assert.strictEqual(
+        s3Requests[0]?.headers['content-type'],
+        'application/zstd',
+      );
     });
 
     describe('against a server that does not know about zstd', () => {
@@ -145,7 +159,10 @@ describe('uploadAssets', () => {
         );
 
         assert.strictEqual(result, '/new/path.zip');
-        assert.strictEqual(s3Requests[0]?.headers['content-type'], 'application/zip');
+        assert.strictEqual(
+          s3Requests[0]?.headers['content-type'],
+          'application/zip',
+        );
       });
     });
   });
@@ -158,16 +175,26 @@ describe('uploadAssets', () => {
         return { path: '/existing/path.zip' };
       };
 
-      await uploadAssets(buffer, { hash: 'abc123', logger, format: 'zip' }, config);
+      await uploadAssets(
+        buffer,
+        { hash: 'abc123', logger, format: 'zip' },
+        config,
+      );
 
-      assert.deepStrictEqual(requestedPaths, ['/api/snap-requests/assets/abc123/signed-url']);
+      assert.deepStrictEqual(requestedPaths, [
+        '/api/snap-requests/assets/abc123/signed-url',
+      ]);
     });
   });
   describe('when assets are already uploaded', () => {
     it('returns the existing path without uploading', async () => {
       makeHappoAPIRequestImpl = async () => ({ path: '/existing/path.zip' });
 
-      const result = await uploadAssets(buffer, { hash: 'abc123', logger, format: 'zip' }, config);
+      const result = await uploadAssets(
+        buffer,
+        { hash: 'abc123', logger, format: 'zip' },
+        config,
+      );
 
       assert.strictEqual(result, '/existing/path.zip');
       // Only the signed-url GET — no S3 PUT, no finalize POST
@@ -182,7 +209,8 @@ describe('uploadAssets', () => {
       let callCount = 0;
       makeHappoAPIRequestImpl = async () => {
         callCount++;
-        if (callCount === 1) return { signedUrl: `http://localhost:${s3Port}/upload` };
+        if (callCount === 1)
+          return { signedUrl: `http://localhost:${s3Port}/upload` };
         return { path: '/new/path.zip' };
       };
 
@@ -194,7 +222,11 @@ describe('uploadAssets', () => {
     });
 
     it('uploads, verifies the ETag, and finalizes', async () => {
-      const result = await uploadAssets(buffer, { hash: 'abc123', logger, format: 'zip' }, config);
+      const result = await uploadAssets(
+        buffer,
+        { hash: 'abc123', logger, format: 'zip' },
+        config,
+      );
 
       assert.strictEqual(result, '/new/path.zip');
       assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 2);
@@ -210,7 +242,11 @@ describe('uploadAssets', () => {
 
       it('throws without calling finalize', async () => {
         await assert.rejects(
-          uploadAssets(buffer, { hash: 'abc123', logger, format: 'zip' }, config),
+          uploadAssets(
+            buffer,
+            { hash: 'abc123', logger, format: 'zip' },
+            config,
+          ),
           /S3 upload verification failed/,
         );
 
@@ -228,7 +264,11 @@ describe('uploadAssets', () => {
 
       it('throws without calling finalize', async () => {
         await assert.rejects(
-          uploadAssets(buffer, { hash: 'abc123', logger, format: 'zip' }, config),
+          uploadAssets(
+            buffer,
+            { hash: 'abc123', logger, format: 'zip' },
+            config,
+          ),
           /S3 upload verification failed/,
         );
 
@@ -246,7 +286,11 @@ describe('uploadAssets', () => {
 
       it('throws without calling finalize', async () => {
         await assert.rejects(
-          uploadAssets(buffer, { hash: 'abc123', logger, format: 'zip' }, config),
+          uploadAssets(
+            buffer,
+            { hash: 'abc123', logger, format: 'zip' },
+            config,
+          ),
           /Failed to upload assets to S3 signed URL/,
         );
 

@@ -27,8 +27,14 @@ import type {
 // `parseConfig`, this keeps the schema and the public types in sync.
 type EntriesOf<T> = Record<keyof T, v.GenericSchema>;
 
-type CustomIntegration = Extract<NonNullable<Config['integration']>, { type: 'custom' }>;
-type PagesIntegration = Extract<NonNullable<Config['integration']>, { type: 'pages' }>;
+type CustomIntegration = Extract<
+  NonNullable<Config['integration']>,
+  { type: 'custom' }
+>;
+type PagesIntegration = Extract<
+  NonNullable<Config['integration']>,
+  { type: 'pages' }
+>;
 // The desktop variant has every target option, so we check the target schema
 // against it.
 type DesktopTarget = Exclude<Target, { type: 'ios-safari' | 'ipad-safari' }>;
@@ -66,7 +72,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * `expects` of `unknown` shows up in the union's message. `describeExpected`
  * describes that as an object.
  */
-const plainObjectCheck = v.custom<Record<string, unknown>>(isPlainObject, 'must be an object');
+const plainObjectCheck = v.custom<Record<string, unknown>>(
+  isPlainObject,
+  'must be an object',
+);
 
 function plainObject<TEntries extends v.ObjectEntries>(entries: TEntries) {
   return v.pipe(plainObjectCheck, v.looseObject(entries));
@@ -137,7 +146,9 @@ const animateOptionsEntries = {
   loop: v.exactOptional(v.number()),
   maxBytes: v.exactOptional(v.number()),
   prefersReducedMotion: v.exactOptional(v.nullable(v.boolean())),
-  discovery: v.exactOptional(v.union([v.number(), plainObject(animateDiscoveryEntries)])),
+  discovery: v.exactOptional(
+    v.union([v.number(), plainObject(animateDiscoveryEntries)]),
+  ),
   sampling: v.exactOptional(
     v.union([
       v.literal('uniform'),
@@ -149,10 +160,16 @@ const animateOptionsEntries = {
   expect: v.exactOptional(v.nullable(plainObject(animateExpectationsEntries))),
   onExpectationFailure: v.exactOptional(v.picklist(['image', 'fail', 'warn'])),
   drivers: v.exactOptional(v.nullable(v.array(v.string()))),
-  stages: v.exactOptional(v.union([v.number(), plainObject(animateStagesEntries)])),
+  stages: v.exactOptional(
+    v.union([v.number(), plainObject(animateStagesEntries)]),
+  ),
 } satisfies EntriesOf<AnimateOptions>;
 
-const animateConfig = v.union([v.boolean(), v.literal('auto'), plainObject(animateOptionsEntries)]);
+const animateConfig = v.union([
+  v.boolean(),
+  v.literal('auto'),
+  plainObject(animateOptionsEntries),
+]);
 
 /**
  * Determines whether a target's `animate` setting would actually trigger
@@ -195,7 +212,10 @@ const targetEntries = {
   applyPseudoClasses: v.exactOptional(v.boolean()),
   prefersColorScheme: v.exactOptional(v.picklist(['light', 'dark'])),
   allowPointerEvents: nullishWithDefault(v.boolean(), true),
-  freezeAnimations: nullishWithDefault(v.picklist(['last-frame', 'first-frame']), 'last-frame'),
+  freezeAnimations: nullishWithDefault(
+    v.picklist(['last-frame', 'first-frame']),
+    'last-frame',
+  ),
   animate: v.exactOptional(animateConfig),
   prefersReducedMotion: nullishWithDefault(v.boolean(), true),
   outgoingRequestHeaders: v.exactOptional(
@@ -260,7 +280,10 @@ const pagesIntegrationEntries = {
 
 const deepCompareEntries = {
   compareThreshold: betweenZeroAndOne,
-  diffAlgorithm: v.exactOptional(v.picklist(['color-delta', 'ssim']), 'color-delta'),
+  diffAlgorithm: v.exactOptional(
+    v.picklist(['color-delta', 'ssim']),
+    'color-delta',
+  ),
   ignoreThreshold: v.exactOptional(betweenZeroAndOne),
   ignoreWhitespace: v.exactOptional(v.boolean()),
   applyBlur: v.exactOptional(v.boolean()),
@@ -298,7 +321,11 @@ const configEntries = {
   project: v.exactOptional(v.string()),
   githubApiUrl: v.exactOptional(v.string(), 'https://api.github.com'),
   targets: v.exactOptional(
-    v.pipe(v.unknown(), v.transform(defaultIfFalsy(getDefaultTargets)), plainRecord(target)),
+    v.pipe(
+      v.unknown(),
+      v.transform(defaultIfFalsy(getDefaultTargets)),
+      plainRecord(target),
+    ),
     getDefaultTargets,
   ),
   integration: v.exactOptional(
@@ -327,7 +354,12 @@ const configSchema = v.looseObject(configEntries);
  * network requests).
  */
 export type ParsedConfig = Omit<Config, 'targets'> &
-  Required<Pick<Config, 'endpoint' | 'githubApiUrl' | 'integration' | 'failOnWaitForTimeout'>> & {
+  Required<
+    Pick<
+      Config,
+      'endpoint' | 'githubApiUrl' | 'integration' | 'failOnWaitForTimeout'
+    >
+  > & {
     targets: Record<string, TargetWithDefaults>;
   };
 
@@ -399,12 +431,15 @@ function describeValue(value: unknown): string {
  * what we were able to infer from the user's (invalid) config. This lets us
  * show people something close to what they meant to write.
  */
-function exampleTargetsSnippet(entries: Array<{ name: string; type: unknown }>): string {
+function exampleTargetsSnippet(
+  entries: Array<{ name: string; type: unknown }>,
+): string {
   const lines = entries.map(({ name, type }) => {
     // `inspect` gives us a properly escaped string literal for keys that
     // aren't valid identifiers, e.g. `'my-target'` or `"user's"`.
     const key = IDENTIFIER_PATTERN.test(name) ? name : inspect(name);
-    const exampleType = TARGET_TYPES.find((known) => known === type) ?? 'chrome';
+    const exampleType =
+      TARGET_TYPES.find((known) => known === type) ?? 'chrome';
     return `    ${key}: { type: '${exampleType}', viewport: '${DEFAULT_VIEWPORT}' },`;
   });
 
@@ -490,9 +525,17 @@ function flattenIssues(
   });
 }
 
-function formatIssue(issue: Issue, path: ReadonlyArray<unknown>, configFilePath: string): string {
+function formatIssue(
+  issue: Issue,
+  path: ReadonlyArray<unknown>,
+  configFilePath: string,
+): string {
   if (path[0] === 'targets') {
-    const targetsMessage = formatTargetsIssue(path, issue.input, configFilePath);
+    const targetsMessage = formatTargetsIssue(
+      path,
+      issue.input,
+      configFilePath,
+    );
     if (targetsMessage) {
       return targetsMessage;
     }
@@ -502,7 +545,11 @@ function formatIssue(issue: Issue, path: ReadonlyArray<unknown>, configFilePath:
 
   // Valibot reports a missing required key as an issue for the object that
   // is missing it.
-  if (issue.kind === 'schema' && issue.received === 'undefined' && issue.input === undefined) {
+  if (
+    issue.kind === 'schema' &&
+    issue.received === 'undefined' &&
+    issue.input === undefined
+  ) {
     return issue.type.endsWith('object')
       ? `Missing required option ${where}.`
       : `Missing required option ${where}: must be ${describeExpected(issue.expected)}.`;
@@ -517,7 +564,10 @@ function formatIssue(issue: Issue, path: ReadonlyArray<unknown>, configFilePath:
 
 const MAX_REPORTED_ISSUES = 10;
 
-function formatIssues(issues: ReadonlyArray<Issue>, configFilePath: string): string {
+function formatIssues(
+  issues: ReadonlyArray<Issue>,
+  configFilePath: string,
+): string {
   const messages = flattenIssues(issues).map(({ issue, path }) =>
     formatIssue(issue, path, configFilePath),
   );
@@ -537,7 +587,12 @@ function formatIssues(issues: ReadonlyArray<Issue>, configFilePath: string): str
 }
 
 function isSchema(value: unknown): value is v.GenericSchema {
-  return typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'schema';
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'kind' in value &&
+    value.kind === 'schema'
+  );
 }
 
 interface UnknownOption {
@@ -565,12 +620,18 @@ function findUnknownOptions(
         unknownOptions.push(...findUnknownOptions(item, value, path));
       }
     }
-  } else if ('entries' in schema && isPlainObject(schema.entries) && isPlainObject(value)) {
+  } else if (
+    'entries' in schema &&
+    isPlainObject(schema.entries) &&
+    isPlainObject(value)
+  ) {
     const { entries } = schema;
     for (const [key, entryValue] of Object.entries(value)) {
       const entrySchema = entries[key];
       if (isSchema(entrySchema)) {
-        unknownOptions.push(...findUnknownOptions(entrySchema, entryValue, [...path, key]));
+        unknownOptions.push(
+          ...findUnknownOptions(entrySchema, entryValue, [...path, key]),
+        );
       } else {
         unknownOptions.push({
           path: [...path, key],
@@ -580,15 +641,27 @@ function findUnknownOptions(
     }
   } else if ('wrapped' in schema && isSchema(schema.wrapped)) {
     unknownOptions.push(...findUnknownOptions(schema.wrapped, value, path));
-  } else if (schema.type === 'record' && 'value' in schema && isSchema(schema.value)) {
+  } else if (
+    schema.type === 'record' &&
+    'value' in schema &&
+    isSchema(schema.value)
+  ) {
     if (isPlainObject(value)) {
       for (const [key, entryValue] of Object.entries(value)) {
-        unknownOptions.push(...findUnknownOptions(schema.value, entryValue, [...path, key]));
+        unknownOptions.push(
+          ...findUnknownOptions(schema.value, entryValue, [...path, key]),
+        );
       }
     }
-  } else if ('item' in schema && isSchema(schema.item) && Array.isArray(value)) {
+  } else if (
+    'item' in schema &&
+    isSchema(schema.item) &&
+    Array.isArray(value)
+  ) {
     for (const [index, item] of value.entries()) {
-      unknownOptions.push(...findUnknownOptions(schema.item, item, [...path, index]));
+      unknownOptions.push(
+        ...findUnknownOptions(schema.item, item, [...path, index]),
+      );
     }
   } else if ('options' in schema && Array.isArray(schema.options)) {
     const matchingOption = schema.options.find(
@@ -664,7 +737,10 @@ export function parseConfig(
     throw new TypeError(formatIssues(result.issues, configFilePath));
   }
 
-  for (const { path, knownOptions } of findUnknownOptions(configSchema, input)) {
+  for (const { path, knownOptions } of findUnknownOptions(
+    configSchema,
+    input,
+  )) {
     const suggestion = findClosestMatch(String(path.at(-1)), knownOptions);
     onUnknownOption(
       `Unknown option \`${formatPath(path)}\` in config file ${configFilePath}.${suggestion ? ` Did you mean \`${suggestion}\`?` : ''} This will be an error in the next major version of Happo.`,

@@ -6,12 +6,21 @@ import findClosestMatch from '../findClosestMatch.ts';
 
 describe('findClosestMatch', () => {
   it('returns the closest candidate for a likely typo', () => {
-    assert.strictEqual(findClosestMatch('viewPort', ['type', 'viewport', 'maxHeight']), 'viewport');
-    assert.strictEqual(findClosestMatch('confgDir', ['configDir', 'staticDir']), 'configDir');
+    assert.strictEqual(
+      findClosestMatch('viewPort', ['type', 'viewport', 'maxHeight']),
+      'viewport',
+    );
+    assert.strictEqual(
+      findClosestMatch('confgDir', ['configDir', 'staticDir']),
+      'configDir',
+    );
   });
 
   it('returns undefined when nothing is close enough', () => {
-    assert.strictEqual(findClosestMatch('stylesheets', ['targets', 'project']), undefined);
+    assert.strictEqual(
+      findClosestMatch('stylesheets', ['targets', 'project']),
+      undefined,
+    );
     assert.strictEqual(findClosestMatch('foo', ['fps']), undefined);
   });
 

@@ -6,7 +6,11 @@ export default function Interactive(): ReactNode {
   return createElement(
     'div',
     null,
-    createElement('button', { onClick: () => setValue((old) => !old) }, 'click me'),
+    createElement(
+      'button',
+      { onClick: () => setValue((old) => !old) },
+      'click me',
+    ),
     value && createElement('p', null, 'I was clicked'),
     !value && createElement('p', null, 'I was not clicked'),
   );

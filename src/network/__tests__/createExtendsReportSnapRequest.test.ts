@@ -7,13 +7,16 @@ import type { ConfigWithDefaults } from '../../config/index.ts';
 import type { SkipItem } from '../../isomorphic/types.ts';
 import type makeHappoAPIRequest from '../makeHappoAPIRequest.ts';
 
-type MakeHappoAPIRequestImpl = (...args: Array<unknown>) => Promise<object | null>;
+type MakeHappoAPIRequestImpl = (
+  ...args: Array<unknown>
+) => Promise<object | null>;
 
 let makeHappoAPIRequestImpl: MakeHappoAPIRequestImpl;
-const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(() =>
-  vi.fn(async (...args: Array<unknown>) => {
-    return await makeHappoAPIRequestImpl(...args);
-  }),
+const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(
+  () =>
+    vi.fn(async (...args: Array<unknown>) => {
+      return await makeHappoAPIRequestImpl(...args);
+    }),
 );
 
 vi.mock('../makeHappoAPIRequest.ts', () => ({
@@ -74,7 +77,11 @@ describe('createExtendsReportSnapRequest', () => {
   });
 
   it('returns the requestId from the response', async () => {
-    const result = await createExtendsReportSnapRequest('baseline-sha', skip, config);
+    const result = await createExtendsReportSnapRequest(
+      'baseline-sha',
+      skip,
+      config,
+    );
 
     assert.strictEqual(result, 42);
   });

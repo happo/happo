@@ -107,8 +107,14 @@ describe('Logger', () => {
     print.mockClear();
 
     logger.success('Yum');
-    assert.ok(print.mock.calls[0]?.[0]?.includes('✓'), 'Expected log to contain checkmark');
-    assert.ok(print.mock.calls[1]?.[0]?.includes('Pizza:'), 'Expected log to contain "Pizza:"');
+    assert.ok(
+      print.mock.calls[0]?.[0]?.includes('✓'),
+      'Expected log to contain checkmark',
+    );
+    assert.ok(
+      print.mock.calls[1]?.[0]?.includes('Pizza:'),
+      'Expected log to contain "Pizza:"',
+    );
   });
 
   it('handles no start message with success()', () => {
@@ -118,7 +124,10 @@ describe('Logger', () => {
     print.mockClear();
 
     logger.success('Yum');
-    assert.ok(print.mock.calls[0]?.[0]?.includes('✓'), 'Expected log to contain checkmark');
+    assert.ok(
+      print.mock.calls[0]?.[0]?.includes('✓'),
+      'Expected log to contain checkmark',
+    );
   });
 
   it('logs durations with start() and success()', () => {
@@ -135,7 +144,10 @@ describe('Logger', () => {
     currentTime += 12;
 
     logger.success('Yum');
-    assert.ok(print.mock.calls[2]?.[0]?.includes('Yum'), 'Expected log to contain "Yum"');
+    assert.ok(
+      print.mock.calls[2]?.[0]?.includes('Yum'),
+      'Expected log to contain "Yum"',
+    );
     assert.ok(
       /\(\d+ms\)/.test(print.mock.calls[3]?.[0] || ''),
       'Expected log to contain duration in milliseconds',
@@ -160,7 +172,10 @@ describe('Logger', () => {
     currentTime += 13;
 
     logger.fail('Yuck');
-    assert.ok(print.mock.calls[2]?.[0]?.includes('Yuck'), 'Expected log to contain "Yuck"');
+    assert.ok(
+      print.mock.calls[2]?.[0]?.includes('Yuck'),
+      'Expected log to contain "Yuck"',
+    );
     assert.ok(
       /\(\d+ms\)/.test(print.mock.calls[3]?.[0] || ''),
       'Expected log to contain duration in milliseconds',
@@ -178,8 +193,14 @@ describe('Logger', () => {
     print.mockClear();
 
     logger.fail('Yuck');
-    assert.ok(print.mock.calls[0]?.[0]?.includes('✗'), 'Expected log to contain X mark');
-    assert.ok(print.mock.calls[1]?.[0]?.includes(' Pizza:'), 'Expected log to contain " Pizza:"');
+    assert.ok(
+      print.mock.calls[0]?.[0]?.includes('✗'),
+      'Expected log to contain X mark',
+    );
+    assert.ok(
+      print.mock.calls[1]?.[0]?.includes(' Pizza:'),
+      'Expected log to contain " Pizza:"',
+    );
   });
 });
 

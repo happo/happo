@@ -158,7 +158,9 @@ async function downloadCSSContent(blocks: Array<CSSBlock>): Promise<void> {
     }
   });
 
-  await Promise.all(actions.map(limitConcur(5, (action: () => Promise<void>) => action())));
+  await Promise.all(
+    actions.map(limitConcur(5, (action: () => Promise<void>) => action())),
+  );
 }
 
 class Controller {
@@ -217,9 +219,14 @@ class Controller {
     // The CLI wrapper that set HAPPO_E2E_PORT has already loaded this config
     // and reported any unknown options. This runs for every spec (Cypress) or
     // batch of tests (Playwright), so we don't repeat those warnings here.
-    this.happoConfig = await loadConfigFile(configFilePath, undefined, console, {
-      reportUnknownOptions: false,
-    });
+    this.happoConfig = await loadConfigFile(
+      configFilePath,
+      undefined,
+      console,
+      {
+        reportUnknownOptions: false,
+      },
+    );
     return true;
   }
 
@@ -296,7 +303,11 @@ class Controller {
       downloadAllAssets: downloadAllAssets ?? false,
     });
 
-    const assetsPath = await this.uploadAssetsIfNeeded({ buffer, hash, format });
+    const assetsPath = await this.uploadAssetsIfNeeded({
+      buffer,
+      hash,
+      format,
+    });
 
     const globalCSS = this.allCssBlocks.map((block) => ({
       id: block.key,
@@ -316,7 +327,9 @@ class Controller {
             // When URL has an ampersand, we need to make sure the html wasn't
             // escaped so we replace again, this time with "&" replaced by
             // "&amp;"
-            snapshot.html = snapshot.html.split(ampersands(url.url)).join(url.name!);
+            snapshot.html = snapshot.html
+              .split(ampersands(url.url))
+              .join(url.name!);
           }
         }
       }
@@ -335,7 +348,9 @@ class Controller {
 
       if (!snapshotsForTarget.length) {
         if (this.happoDebug) {
-          console.log(`[HAPPO] No snapshots recorded for target=${name}. Skipping.`);
+          console.log(
+            `[HAPPO] No snapshots recorded for target=${name}. Skipping.`,
+          );
         }
         continue;
       }
@@ -555,7 +570,9 @@ class Controller {
     return result;
   }
 
-  async uploadImage(pathOrBuffer: string | Buffer<ArrayBuffer>): Promise<string> {
+  async uploadImage(
+    pathOrBuffer: string | Buffer<ArrayBuffer>,
+  ): Promise<string> {
     if (!this.happoConfig) {
       throw new Error('Happo config not initialized');
     }
@@ -586,7 +603,9 @@ class Controller {
 
     if (!('uploadUrl' in uploadUrlResult) || !uploadUrlResult.uploadUrl) {
       if (!('url' in uploadUrlResult)) {
-        throw new Error('Missing url in uploadUrlResult when uploadUrl is missing');
+        throw new Error(
+          'Missing url in uploadUrlResult when uploadUrl is missing',
+        );
       }
 
       const { url } = uploadUrlResult;
@@ -629,7 +648,9 @@ class Controller {
       throw new Error('No url in uploadResult');
     }
 
-    return typeof uploadResult.url === 'string' ? uploadResult.url : String(uploadResult.url);
+    return typeof uploadResult.url === 'string'
+      ? uploadResult.url
+      : String(uploadResult.url);
   }
 
   async registerBase64ImageChunk({

@@ -58,7 +58,10 @@ export default function staticFileHandler(
 
     // Prevent path traversal (string-based, defense-in-depth for non-symlink
     // cases and callers that bypass HTTP).
-    if (resolved !== publicRoot && !resolved.startsWith(publicRoot + path.sep)) {
+    if (
+      resolved !== publicRoot &&
+      !resolved.startsWith(publicRoot + path.sep)
+    ) {
       res.writeHead(403);
       res.end();
       return;
@@ -69,7 +72,10 @@ export default function staticFileHandler(
     const realPublicRoot = await realPublicRootPromise;
     try {
       const realResolved = await fs.realpath(resolved);
-      if (realResolved !== realPublicRoot && !realResolved.startsWith(realPublicRoot + path.sep)) {
+      if (
+        realResolved !== realPublicRoot &&
+        !realResolved.startsWith(realPublicRoot + path.sep)
+      ) {
         res.writeHead(403);
         res.end();
         return;

@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 
-import Controller, { type SnapshotRegistrationParams } from '../e2e/controller.ts';
+import Controller, {
+  type SnapshotRegistrationParams,
+} from '../e2e/controller.ts';
 import { parseSkip } from '../isomorphic/parseSkip.ts';
 import type { SkipItem } from '../isomorphic/types.ts';
 
@@ -51,7 +53,10 @@ interface HappoScreenshotConfig {
 interface HappoTask {
   isRegisteredCorrectly: boolean;
   register(on: Cypress.PluginEvents): void;
-  handleAfterSpec(spec: Cypress.Spec, results: CypressCommandLine.RunResult): Promise<void>;
+  handleAfterSpec(
+    spec: Cypress.Spec,
+    results: CypressCommandLine.RunResult,
+  ): Promise<void>;
   happoRegisterSnapshot(snapshot: SnapshotRegistrationParams): Promise<null>;
   happoRegisterBase64Image(params: {
     base64Chunk: string;
@@ -77,7 +82,10 @@ const task: HappoTask = {
     task.isRegisteredCorrectly = true;
   },
 
-  async handleAfterSpec(_spec: Cypress.Spec, results: CypressCommandLine.RunResult): Promise<void> {
+  async handleAfterSpec(
+    _spec: Cypress.Spec,
+    results: CypressCommandLine.RunResult,
+  ): Promise<void> {
     if (!controller.isActive()) {
       return;
     }
@@ -107,7 +115,9 @@ const task: HappoTask = {
     await controller.finish();
   },
 
-  async happoRegisterSnapshot(snapshot: SnapshotRegistrationParams): Promise<null> {
+  async happoRegisterSnapshot(
+    snapshot: SnapshotRegistrationParams,
+  ): Promise<null> {
     if (!controller.isActive()) {
       return null;
     }

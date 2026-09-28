@@ -2,7 +2,11 @@ import applyConstructedStylesPatch, {
   isExtendedWindow,
 } from '../browser/applyConstructedStylesPatch.ts';
 import takeDOMSnapshot from '../browser/takeDOMSnapshot.ts';
-import { isInSkipSet, type SkipSet, toSkipSet } from '../isomorphic/parseSkip.ts';
+import {
+  isInSkipSet,
+  type SkipSet,
+  toSkipSet,
+} from '../isomorphic/parseSkip.ts';
 import type { SkipItem, TakeDOMSnapshotOptions } from '../isomorphic/types.ts';
 import chunked from './chunked.ts';
 
@@ -95,7 +99,9 @@ Cypress.on('window:before:load', (win: Window) => {
 
 // nodeType 1 === Element. Cross-frame safe alternative to instanceof Element.
 function isEventTargetElement(target: EventTarget | null): target is Element {
-  return target != null && 'nodeType' in target && (target as Node).nodeType === 1;
+  return (
+    target != null && 'nodeType' in target && (target as Node).nodeType === 1
+  );
 }
 
 interface CypressConfig {
@@ -152,7 +158,9 @@ Cypress.Commands.add(
         ? responsiveInlinedCanvases
         : config.responsiveInlinedCanvases;
 
-    const element = includeAllElements ? Array.from(originalSubject) : originalSubject[0];
+    const element = includeAllElements
+      ? Array.from(originalSubject)
+      : originalSubject[0];
     if (!element) {
       throw new Error('element cannot be null or undefined');
     }
@@ -205,11 +213,13 @@ Cypress.Commands.add(
     };
 
     if (cachedAutoApplyPseudoStateAttributes === null) {
-      cy.task<{ autoApplyPseudoStateAttributes: boolean; skip: Array<SkipItem> } | null>(
-        'happoGetIntegrationConfig',
-        null,
-        { ...taskOptions, log: false },
-      ).then((happoSettings) => {
+      cy.task<{
+        autoApplyPseudoStateAttributes: boolean;
+        skip: Array<SkipItem>;
+      } | null>('happoGetIntegrationConfig', null, {
+        ...taskOptions,
+        log: false,
+      }).then((happoSettings) => {
         cachedAutoApplyPseudoStateAttributes =
           happoSettings?.autoApplyPseudoStateAttributes ?? false;
         cachedSkipSet = toSkipSet(happoSettings?.skip ?? []);

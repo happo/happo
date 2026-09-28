@@ -23,7 +23,9 @@ async function setupPage(page: Page): Promise<void> {
 }
 
 test.beforeAll(async () => {
-  server = http.createServer(staticFileHandler('./src/browser/__playwright__/test-assets'));
+  server = http.createServer(
+    staticFileHandler('./src/browser/__playwright__/test-assets'),
+  );
 
   await new Promise<void>((resolve) => {
     server.listen(7700, () => resolve());
@@ -85,7 +87,9 @@ test('modal dialogs are marked with data-happo-modal', async ({ page }) => {
   );
 });
 
-test('non-modal dialogs are not marked with data-happo-modal', async ({ page }) => {
+test('non-modal dialogs are not marked with data-happo-modal', async ({
+  page,
+}) => {
   await setupPage(page);
 
   await page.goto('/regular-elements');
@@ -122,9 +126,15 @@ test('style collection', async ({ page }) => {
 
   expect(snapshot.cssBlocks.length).toBe(2);
   expect(snapshot.cssBlocks[0]?.content).toMatch(/--my-custom-font: 400 1rem/);
-  expect(snapshot.cssBlocks[0]?.content).toMatch(/--my-custom-font-weight: 400;/);
-  expect(snapshot.cssBlocks[0]?.content).toMatch(/font: var\(--my-custom-font\)/);
-  expect(snapshot.cssBlocks[0]?.content).toMatch(/font-weight: var\(--my-custom-font-weight\);/);
+  expect(snapshot.cssBlocks[0]?.content).toMatch(
+    /--my-custom-font-weight: 400;/,
+  );
+  expect(snapshot.cssBlocks[0]?.content).toMatch(
+    /font: var\(--my-custom-font\)/,
+  );
+  expect(snapshot.cssBlocks[0]?.content).toMatch(
+    /font-weight: var\(--my-custom-font-weight\);/,
+  );
 
   expect(snapshot.cssBlocks[1]?.content).toMatch(/color: yellow;/);
 });
@@ -143,7 +153,9 @@ test('one custom element', async ({ page }) => {
 
   expect(snapshot.html).toMatch(/<h1>Hello<\/h1>/s);
   expect(snapshot.html).toMatch(/<my-element data-color="red">/s);
-  expect(snapshot.html).toMatch(/<happo-shadow-content style="display: none;"><style>/s);
+  expect(snapshot.html).toMatch(
+    /<happo-shadow-content style="display: none;"><style>/s,
+  );
   expect(snapshot.assetUrls).toEqual([]);
   expect(snapshot.cssBlocks).toEqual([]);
 });
@@ -169,10 +181,18 @@ test('nested custom elements', async ({ page }) => {
   expect(htmlAfter).toEqual(htmlBefore);
 
   expect(snapshot.html).toMatch(/<layout-container data-columns="4">/s);
-  expect(snapshot.html).toMatch(/<component-card data-title="First card" role="article">/s);
-  expect(snapshot.html).toMatch(/<component-card data-title="Second card" role="article">/s);
-  expect(snapshot.html).toMatch(/<component-card data-title="Third card" role="article">/s);
-  expect(snapshot.html).toMatch(/<component-card data-title="Fourth card" role="article">/s);
+  expect(snapshot.html).toMatch(
+    /<component-card data-title="First card" role="article">/s,
+  );
+  expect(snapshot.html).toMatch(
+    /<component-card data-title="Second card" role="article">/s,
+  );
+  expect(snapshot.html).toMatch(
+    /<component-card data-title="Third card" role="article">/s,
+  );
+  expect(snapshot.html).toMatch(
+    /<component-card data-title="Fourth card" role="article">/s,
+  );
 
   expect((snapshot.html.match(/<happo-shadow-content/gs) || []).length).toBe(5);
 
@@ -211,7 +231,9 @@ test('custom element with special stylesheets', async ({ page }) => {
 
   expect(snapshot.html).toMatch(/<h1>Hello world<\/h1>/s);
   expect(snapshot.html).toMatch(/<my-element>/s);
-  expect(snapshot.html).toMatch(/<happo-shadow-content style="display: none;">/s);
+  expect(snapshot.html).toMatch(
+    /<happo-shadow-content style="display: none;">/s,
+  );
 
   expect(snapshot.html).toMatch(/<style data-happo-inlined="true">/s);
   expect(snapshot.html).toMatch(/h1.*\{.*font-size:.*88px;.*\}/s);
@@ -301,19 +323,25 @@ test('constructed styles', async ({ page }) => {
     });
 
     expect(snapshot.html).toMatch(/<p>world<\/p>/s);
-    expect(snapshot.html).toContain('CSSStyleSheet.prototype.deleteRule does not work with Happo');
-    expect(snapshot.cssBlocks.length).toBe(4);
-    expect(snapshot.cssBlocks[0]?.content?.replaceAll(/\s+/g, ' ').trim()).toEqual(
-      'p { color: blue; }',
+    expect(snapshot.html).toContain(
+      'CSSStyleSheet.prototype.deleteRule does not work with Happo',
     );
+    expect(snapshot.cssBlocks.length).toBe(4);
+    expect(
+      snapshot.cssBlocks[0]?.content?.replaceAll(/\s+/g, ' ').trim(),
+    ).toEqual('p { color: blue; }');
     expect(snapshot.cssBlocks[1]?.content?.replaceAll(/\s+/g, ' ')).toEqual(
       'b { color: green; } :root { --my-custom-font: 400 1rem / 1.5rem Roboto; --my-custom-font-weight: 400; } p { font: var(--my-custom-font); font-weight: var(--my-custom-font-weight); }',
     );
-    expect(snapshot.cssBlocks[2]?.content?.replaceAll(/\s+/g, ' ')).toEqual('b { color: violet; }');
+    expect(snapshot.cssBlocks[2]?.content?.replaceAll(/\s+/g, ' ')).toEqual(
+      'b { color: violet; }',
+    );
     expect(snapshot.cssBlocks[3]?.content?.replaceAll(/\s+/g, ' ')).toEqual(
       ':root { --my-custom-font: 600 1em / 1em Comic; --my-custom-font-weight: 400; } p { font: var(--my-custom-font); font-weight: var(--my-custom-font-weight); }',
     );
-    expect(snapshot.cssBlocks.map((block) => block.content).join(' ')).not.toMatch(/color: ?red/);
+    expect(
+      snapshot.cssBlocks.map((block) => block.content).join(' '),
+    ).not.toMatch(/color: ?red/);
   }
 
   // Take another snapshot to make sure that the styles are not duplicated.
@@ -327,16 +355,20 @@ test('constructed styles', async ({ page }) => {
 
     expect(snapshot.html).toMatch(/<h1>Hello<\/h1>/s);
     expect(snapshot.cssBlocks.length).toBe(4);
-    expect(snapshot.cssBlocks[0]?.content?.replaceAll(/\s+/g, ' ').trim()).toEqual(
-      'p { color: blue; }',
-    );
+    expect(
+      snapshot.cssBlocks[0]?.content?.replaceAll(/\s+/g, ' ').trim(),
+    ).toEqual('p { color: blue; }');
     expect(snapshot.cssBlocks[1]?.content?.replaceAll(/\s+/g, ' ')).toEqual(
       'b { color: green; } :root { --my-custom-font: 400 1rem / 1.5rem Roboto; --my-custom-font-weight: 400; } p { font: var(--my-custom-font); font-weight: var(--my-custom-font-weight); }',
     );
-    expect(snapshot.cssBlocks[2]?.content?.replaceAll(/\s+/g, ' ')).toEqual('b { color: violet; }');
+    expect(snapshot.cssBlocks[2]?.content?.replaceAll(/\s+/g, ' ')).toEqual(
+      'b { color: violet; }',
+    );
     expect(snapshot.cssBlocks[3]?.content?.replaceAll(/\s+/g, ' ')).toEqual(
       ':root { --my-custom-font: 600 1em / 1em Comic; --my-custom-font-weight: 400; } p { font: var(--my-custom-font); font-weight: var(--my-custom-font-weight); }',
     );
-    expect(snapshot.cssBlocks.map((block) => block.content).join(' ')).not.toMatch(/color: ?red/);
+    expect(
+      snapshot.cssBlocks.map((block) => block.content).join(' '),
+    ).not.toMatch(/color: ?red/);
   }
 });

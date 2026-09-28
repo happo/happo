@@ -1,4 +1,8 @@
-import { addons, makeDecorator, useEffect } from 'storybook/internal/preview-api';
+import {
+  addons,
+  makeDecorator,
+  useEffect,
+} from 'storybook/internal/preview-api';
 
 import { SB_ROOT_ELEMENT_SELECTOR } from './constants.ts';
 
@@ -33,15 +37,27 @@ export const withHappo: ReturnType<typeof makeDecorator> = makeDecorator({
       const channel = addons.getChannel();
       async function listen({ funcName }: { funcName: string }) {
         const rootElement = document.querySelector(SB_ROOT_ELEMENT_SELECTOR);
-        if (params && params[funcName] && typeof params[funcName] === 'function') {
+        if (
+          params &&
+          params[funcName] &&
+          typeof params[funcName] === 'function'
+        ) {
           const result = params[funcName]({ rootElement });
 
           if (result instanceof Promise) {
-            console.log(`Invoked Happo function \`${funcName}\`. Awaiting result...`);
+            console.log(
+              `Invoked Happo function \`${funcName}\`. Awaiting result...`,
+            );
             const finalResult = await result;
-            console.log(`Async result of Happo function \`${funcName}\`:`, finalResult);
+            console.log(
+              `Async result of Happo function \`${funcName}\`:`,
+              finalResult,
+            );
           } else {
-            console.log(`Invoked Happo function \`${funcName}\`. Return value:`, result);
+            console.log(
+              `Invoked Happo function \`${funcName}\`. Return value:`,
+              result,
+            );
           }
         } else {
           console.warn(`Happo function ${funcName} not found.`);

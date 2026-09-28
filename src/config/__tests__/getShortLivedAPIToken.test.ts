@@ -93,7 +93,10 @@ describe('getShortLivedAPIToken', () => {
     // Make promptUser reject to simulate user pressing a different key
     mockPromptUser.shouldReject = true;
 
-    await assert.rejects(getShortLivedAPIToken(endpoint, logger), /User cancelled authentication/);
+    await assert.rejects(
+      getShortLivedAPIToken(endpoint, logger),
+      /User cancelled authentication/,
+    );
 
     // Verify promptUser was called with the correct message
     assert.strictEqual(mockPromptUser.mock.calls.length, 1);
@@ -137,11 +140,16 @@ describe('getShortLivedAPIToken', () => {
     // The authUrl format is: ${endpoint}/cli/auth?callbackUrl=${encodeURIComponent(callbackUrl)}
     const callbackUrlMatch = authUrl.match(/callbackUrl=([^&]+)/);
     assert.ok(callbackUrlMatch, 'callbackUrl should be in the authUrl');
-    assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
+    assert.ok(
+      callbackUrlMatch[1],
+      'callbackUrl match should have a capture group',
+    );
     const callbackUrl = decodeURIComponent(callbackUrlMatch[1]);
     const pingResponse = await fetch(`${callbackUrl}?ping=true`);
     assert.strictEqual(pingResponse.status, 200);
-    const response = await fetch(`${callbackUrl}?key=${testKey}&secret=${testSecret}`);
+    const response = await fetch(
+      `${callbackUrl}?key=${testKey}&secret=${testSecret}`,
+    );
     assert.strictEqual(response.status, 200);
 
     // Wait for the promise to resolve
@@ -169,7 +177,10 @@ describe('getShortLivedAPIToken', () => {
     const authUrl = mockOpenBrowser.mock.calls[0]?.[0] as string;
     const callbackUrlMatch = authUrl.match(/callbackUrl=([^&]+)/);
     assert.ok(callbackUrlMatch);
-    assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
+    assert.ok(
+      callbackUrlMatch[1],
+      'callbackUrl match should have a capture group',
+    );
 
     const callbackUrl = decodeURIComponent(callbackUrlMatch[1]);
 
@@ -201,7 +212,10 @@ describe('getShortLivedAPIToken', () => {
     const authUrl = mockOpenBrowser.mock.calls[0]?.[0] as string;
     const callbackUrlMatch = authUrl.match(/callbackUrl=([^&]+)/);
     assert.ok(callbackUrlMatch);
-    assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
+    assert.ok(
+      callbackUrlMatch[1],
+      'callbackUrl match should have a capture group',
+    );
 
     const callbackUrl = decodeURIComponent(callbackUrlMatch[1]);
 
@@ -235,7 +249,10 @@ describe('getShortLivedAPIToken', () => {
     const authUrl = mockOpenBrowser.mock.calls[0]?.[0] as string;
     const callbackUrlMatch = authUrl.match(/callbackUrl=([^&]+)/);
     assert.ok(callbackUrlMatch);
-    assert.ok(callbackUrlMatch[1], 'callbackUrl match should have a capture group');
+    assert.ok(
+      callbackUrlMatch[1],
+      'callbackUrl match should have a capture group',
+    );
 
     const callbackUrl = decodeURIComponent(callbackUrlMatch[1]);
 

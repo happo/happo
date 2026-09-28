@@ -112,7 +112,13 @@ export default async function postGitHubComment({
   const authHeader = `Bearer ${authToken}`;
 
   console.log('[HAPPO] Deleting existing happo comments...');
-  await deleteExistingComments(normalizedGithubApiUrl, owner, repo, prNumber, authHeader);
+  await deleteExistingComments(
+    normalizedGithubApiUrl,
+    owner,
+    repo,
+    prNumber,
+    authHeader,
+  );
 
   const body = `${HAPPO_COMMENT_MARKER}\n[![Happo status](${statusImageUrl})](${compareUrl})`;
   const res = await fetch(
@@ -128,10 +134,15 @@ export default async function postGitHubComment({
     },
   );
   if (!res.ok) {
-    throw new Error(`Failed to post github comment: ${res.status} ${await res.text()}`);
+    throw new Error(
+      `Failed to post github comment: ${res.status} ${await res.text()}`,
+    );
   }
 
-  console.log(`[HAPPO] Posted github comment successfully. Response is`, await res.json());
+  console.log(
+    `[HAPPO] Posted github comment successfully. Response is`,
+    await res.json(),
+  );
 
   return true;
 }

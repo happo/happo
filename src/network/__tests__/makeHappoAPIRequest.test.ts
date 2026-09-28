@@ -6,7 +6,10 @@ import type { Mock } from 'vitest';
 import { afterAll, beforeAll, beforeEach, describe, it, vi } from 'vitest';
 
 import type { ConfigWithDefaults } from '../../config/index.ts';
-import type { MakeHappoAPIRequestOptions, RequestAttributes } from '../makeHappoAPIRequest.ts';
+import type {
+  MakeHappoAPIRequestOptions,
+  RequestAttributes,
+} from '../makeHappoAPIRequest.ts';
 import makeHappoAPIRequest from '../makeHappoAPIRequest.ts';
 
 type FormDataResponse = {
@@ -56,7 +59,10 @@ beforeAll(async () => {
       return;
     }
 
-    if (req.url === '/success' || (req.url === '/failure-retry' && errorTries > 2)) {
+    if (
+      req.url === '/success' ||
+      (req.url === '/failure-retry' && errorTries > 2)
+    ) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
@@ -178,7 +184,8 @@ it('can upload form data with buffers', async () => {
         {
           fieldName: 'payload',
           headers: {
-            'content-disposition': 'form-data; name="payload"; filename="payload.json"',
+            'content-disposition':
+              'form-data; name="payload"; filename="payload.json"',
             'content-type': 'application/json',
           },
           originalFilename: 'payload.json',
@@ -218,7 +225,8 @@ it('can retry uploading form data with buffers', async () => {
         {
           fieldName: 'payload',
           headers: {
-            'content-disposition': 'form-data; name="payload"; filename="payload.json"',
+            'content-disposition':
+              'form-data; name="payload"; filename="payload.json"',
             'content-type': 'application/json',
           },
           originalFilename: 'payload.json',
@@ -257,7 +265,10 @@ describe('when the request fails twice and then succeeds', () => {
     it('waits the default amount of time before retrying', async () => {
       const start = Date.now();
 
-      await assert.rejects(() => makeHappoAPIRequest(props, config, options, logger), /Nope/);
+      await assert.rejects(
+        () => makeHappoAPIRequest(props, config, options, logger),
+        /Nope/,
+      );
 
       const duration = Date.now() - start;
 
@@ -272,7 +283,10 @@ describe('when the request fails twice and then succeeds', () => {
     });
 
     it('throws without retrying', async () => {
-      await assert.rejects(() => makeHappoAPIRequest(props, config, options, logger), /Nope/);
+      await assert.rejects(
+        () => makeHappoAPIRequest(props, config, options, logger),
+        /Nope/,
+      );
     });
   });
 
@@ -282,7 +296,10 @@ describe('when the request fails twice and then succeeds', () => {
     });
 
     it('throws without retrying', async () => {
-      await assert.rejects(() => makeHappoAPIRequest(props, config, options, logger), /Nope/);
+      await assert.rejects(
+        () => makeHappoAPIRequest(props, config, options, logger),
+        /Nope/,
+      );
     });
   });
 
@@ -292,7 +309,10 @@ describe('when the request fails twice and then succeeds', () => {
     });
 
     it('throws without retrying', async () => {
-      await assert.rejects(() => makeHappoAPIRequest(props, config, options, logger), /Nope/);
+      await assert.rejects(
+        () => makeHappoAPIRequest(props, config, options, logger),
+        /Nope/,
+      );
     });
   });
 });
@@ -316,6 +336,9 @@ describe('when the request fails repeatedly', () => {
   });
 
   it('gives up retrying', async () => {
-    await assert.rejects(() => makeHappoAPIRequest(props, config, options, logger), /Nope/);
+    await assert.rejects(
+      () => makeHappoAPIRequest(props, config, options, logger),
+      /Nope/,
+    );
   });
 });

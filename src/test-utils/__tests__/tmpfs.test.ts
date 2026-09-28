@@ -18,7 +18,10 @@ it('creates the files in the temp dir', () => {
     },
   });
 
-  assert.strictEqual(fs.readFileSync(tmpfs.fullPath('test.txt'), 'utf8'), 'I like pizza');
+  assert.strictEqual(
+    fs.readFileSync(tmpfs.fullPath('test.txt'), 'utf8'),
+    'I like pizza',
+  );
 
   assert.strictEqual(
     fs.readFileSync(tmpfs.fullPath('subdir/test2.txt'), 'utf8'),
@@ -27,12 +30,17 @@ it('creates the files in the temp dir', () => {
 
   const allFiles = fs.readdirSync(tmpfs.getTempDir());
   assert.deepStrictEqual(allFiles, ['subdir', 'test.txt']);
-  assert.deepStrictEqual(fs.readdirSync(tmpfs.fullPath('subdir')), ['test2.txt']);
+  assert.deepStrictEqual(fs.readdirSync(tmpfs.fullPath('subdir')), [
+    'test2.txt',
+  ]);
 });
 
 it('throws if called twice without restore', () => {
   tmpfs.mock({});
-  assert.throws(() => tmpfs.mock({}), new Error('tmpfs.mock() called before tmpfs.restore()'));
+  assert.throws(
+    () => tmpfs.mock({}),
+    new Error('tmpfs.mock() called before tmpfs.restore()'),
+  );
 });
 
 describe('getTempDir', () => {
@@ -57,7 +65,10 @@ describe('getTempDir', () => {
 describe('fullPath', () => {
   it('returns the full path of a relative path in the temp dir', () => {
     tmpfs.mock({});
-    assert.strictEqual(tmpfs.fullPath('test.txt'), path.join(tmpfs.getTempDir(), 'test.txt'));
+    assert.strictEqual(
+      tmpfs.fullPath('test.txt'),
+      path.join(tmpfs.getTempDir(), 'test.txt'),
+    );
   });
 });
 
@@ -90,7 +101,10 @@ describe('writeFile', () => {
 
     it('writes a file to the temp dir', () => {
       tmpfs.writeFile('test.txt', 'Hello, world!');
-      assert.strictEqual(fs.readFileSync(tmpfs.fullPath('test.txt'), 'utf8'), 'Hello, world!');
+      assert.strictEqual(
+        fs.readFileSync(tmpfs.fullPath('test.txt'), 'utf8'),
+        'Hello, world!',
+      );
     });
   });
 });
@@ -111,7 +125,10 @@ describe('exec', () => {
     });
 
     it('throws an error if the command fails', () => {
-      assert.throws(() => tmpfs.exec('false'), new Error('Command `false` failed:\n\nstderr:\n'));
+      assert.throws(
+        () => tmpfs.exec('false'),
+        new Error('Command `false` failed:\n\nstderr:\n'),
+      );
     });
 
     it('can exec commands with arguments', () => {
@@ -122,7 +139,10 @@ describe('exec', () => {
     it('executes in the temp dir', () => {
       // Use Node to report the current working directory so we get a
       // platform-appropriate absolute path that matches getTempDir().
-      const result = tmpfs.exec(process.execPath, ['-e', 'console.log(process.cwd())']);
+      const result = tmpfs.exec(process.execPath, [
+        '-e',
+        'console.log(process.cwd())',
+      ]);
       assert.strictEqual(result.trim(), tmpfs.getTempDir());
     });
   });
@@ -130,7 +150,10 @@ describe('exec', () => {
 
 describe('gitInit', () => {
   it('throws an error if gitInit is called before mock', () => {
-    assert.throws(() => tmpfs.gitInit(), new Error('tmpfs.gitInit() called before tmpfs.mock()'));
+    assert.throws(
+      () => tmpfs.gitInit(),
+      new Error('tmpfs.gitInit() called before tmpfs.mock()'),
+    );
   });
 
   describe('after tmpfs mock', () => {

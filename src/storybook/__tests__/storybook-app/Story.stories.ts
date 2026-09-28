@@ -74,7 +74,9 @@ function DataFetchComponent(): ReactNode {
 
 function BlockedDataFetchComponent(): ReactNode {
   const [xhr, setXhr] = useState<'pending' | 'ready' | 'blocked'>('pending');
-  const [fetch, setFetch] = useState<'pending' | 'ready' | 'blocked'>('pending');
+  const [fetch, setFetch] = useState<'pending' | 'ready' | 'blocked'>(
+    'pending',
+  );
   useEffect(() => {
     // A CORS-friendly URL that would succeed without an allowlist. Happo
     // runs with `allowedHostnames: []`, so both requests fail and the
@@ -83,7 +85,9 @@ function BlockedDataFetchComponent(): ReactNode {
 
     const request = new XMLHttpRequest();
     request.addEventListener('loadend', () => {
-      setXhr(request.status >= 200 && request.status < 300 ? 'ready' : 'blocked');
+      setXhr(
+        request.status >= 200 && request.status < 300 ? 'ready' : 'blocked',
+      );
     });
     request.open('GET', apiUrl, true);
     request.send();
@@ -152,7 +156,8 @@ function ClickToReveal(): ReactNode {
 }
 
 export const Themed: StoryObj = {
-  render: (): ReactNode => createElement('div', { style: { color: 'gray' } }, 'My color is gray'),
+  render: (): ReactNode =>
+    createElement('div', { style: { color: 'gray' } }, 'My color is gray'),
   parameters: {
     happo: { themes: ['black', 'white'] as const },
   },
@@ -216,9 +221,10 @@ export const DataFetch: StoryObj = {
 export const DataFetchBlocked: StoryObj = {
   render: (): ReactNode => createElement(BlockedDataFetchComponent),
 };
-export const ExecuteAGraphQLMutationAndHandleTheResponseWhenReceived: StoryObj = {
-  render: (): ReactNode => createElement('div', null, 'I am done'),
-};
+export const ExecuteAGraphQLMutationAndHandleTheResponseWhenReceived: StoryObj =
+  {
+    render: (): ReactNode => createElement('div', null, 'I am done'),
+  };
 export const AsyncWithWaitForContent: StoryObj = {
   render: (): ReactNode => createElement(AsyncContent),
   parameters: {
@@ -254,7 +260,8 @@ export const AsyncWithWaitForDataSelector: StoryObj = {
   render: (): ReactNode => createElement(Async2),
   parameters: {
     happo: {
-      waitFor: (): boolean | null => !!document.querySelector('[data-async-ready=true]'),
+      waitFor: (): boolean | null =>
+        !!document.querySelector('[data-async-ready=true]'),
     },
   },
 };
@@ -269,18 +276,27 @@ export const ButtonFirefoxOnly: StoryObj = {
   },
 };
 export const ButtonWithImage: StoryObj = {
-  render: (): ReactNode => createElement(Button, null, createElement('img', { src: testImage })),
+  render: (): ReactNode =>
+    createElement(Button, null, createElement('img', { src: testImage })),
 };
 export const ButtonWithStaticImage: StoryObj = {
   render: (): ReactNode =>
-    createElement(Button, null, createElement('img', { src: '/assets/staticImage.png' })),
+    createElement(
+      Button,
+      null,
+      createElement('img', { src: '/assets/staticImage.png' }),
+    ),
 };
 export const ButtonWithSomeEmoji: StoryObj = {
   render: (): ReactNode =>
     createElement(
       Button,
       null,
-      createElement('span', { role: 'img', 'aria-label': 'so cool' }, '😀 😎 👍 💯'),
+      createElement(
+        'span',
+        { role: 'img', 'aria-label': 'so cool' },
+        '😀 😎 👍 💯',
+      ),
     ),
 };
 
@@ -317,6 +333,10 @@ function fallbackRender({ error }: { error: unknown }): ReactNode {
 }
 export const MiscFailing: StoryObj = {
   render: (): ReactNode =>
-    createElement(ErrorBoundary, { fallbackRender }, createElement(ComponentThatThrows)),
+    createElement(
+      ErrorBoundary,
+      { fallbackRender },
+      createElement(ComponentThatThrows),
+    ),
   parameters: { happo: { delay: 300 } },
 };

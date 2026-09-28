@@ -7,8 +7,13 @@ import type {
   DOMSnapshotResult,
   TakeDOMSnapshotOptions,
 } from '../isomorphic/types.ts';
-import applyConstructedStylesPatch, { recordedCSSSymbol } from './applyConstructedStylesPatch.ts';
-import assertElement, { isElementWithDataset, isIterableCollection } from './assertElement.ts';
+import applyConstructedStylesPatch, {
+  recordedCSSSymbol,
+} from './applyConstructedStylesPatch.ts';
+import assertElement, {
+  isElementWithDataset,
+  isIterableCollection,
+} from './assertElement.ts';
 import { MD5 } from './md5.ts';
 
 export { applyConstructedStylesPatch };
@@ -29,7 +34,9 @@ interface ExtendedCSSStyleSheet extends CSSStyleSheet {
   [recordedCSSSymbol]?: Array<string>;
 }
 
-function getContentFromStyleSheet(element: HTMLElement | CSSStyleSheet): string {
+function getContentFromStyleSheet(
+  element: HTMLElement | CSSStyleSheet,
+): string {
   let lines: Array<string>;
 
   if ('textContent' in element && element.textContent) {
@@ -39,8 +46,14 @@ function getContentFromStyleSheet(element: HTMLElement | CSSStyleSheet): string 
     recordedCSSSymbol in element &&
     (element as ExtendedHTMLElement | ExtendedCSSStyleSheet)[recordedCSSSymbol]
   ) {
-    lines = (element as ExtendedHTMLElement | ExtendedCSSStyleSheet)[recordedCSSSymbol]!;
-  } else if ('sheet' in element && element.sheet && (element.sheet as CSSStyleSheet).cssRules) {
+    lines = (element as ExtendedHTMLElement | ExtendedCSSStyleSheet)[
+      recordedCSSSymbol
+    ]!;
+  } else if (
+    'sheet' in element &&
+    element.sheet &&
+    (element.sheet as CSSStyleSheet).cssRules
+  ) {
     // Handle <style> or <link> elements that have a sheet property
     const cssRules = (element.sheet as CSSStyleSheet).cssRules as CSSRuleList;
     lines = Array.from(cssRules).map((rule: CSSRule) => rule.cssText);
@@ -67,7 +80,8 @@ function extractCSSBlocks(doc: Document): Array<CSSBlock> {
     }
     if (element.tagName === 'LINK') {
       // <link href>
-      const href = (element as HTMLLinkElement).href || element.getAttribute('href');
+      const href =
+        (element as HTMLLinkElement).href || element.getAttribute('href');
       blocks.push({
         key: href || '',
         href: href || undefined,
@@ -110,18 +124,24 @@ function getElementAssetUrls(
   {
     handleBase64Image = defaultHandleBase64Image,
   }: {
-    handleBase64Image?: (params: { base64Url: string; element: HTMLImageElement }) => void;
+    handleBase64Image?: (params: {
+      base64Url: string;
+      element: HTMLImageElement;
+    }) => void;
   } = {},
 ): Array<AssetUrl> {
   const allUrls: Array<AssetUrl> = [];
-  const allElements = [element].concat(Array.from(element.querySelectorAll('*')));
+  const allElements = [element].concat(
+    Array.from(element.querySelectorAll('*')),
+  );
   for (const element of allElements) {
     if (element.tagName === 'SCRIPT') {
       // skip script elements
       continue;
     }
     const srcset = element.getAttribute('srcset');
-    const imageHref = element.tagName.toLowerCase() === 'image' && element.getAttribute('href');
+    const imageHref =
+      element.tagName.toLowerCase() === 'image' && element.getAttribute('href');
     const linkHref =
       element.tagName.toLowerCase() === 'link' &&
       element.getAttribute('rel') === 'stylesheet' &&
@@ -162,7 +182,10 @@ function getElementAssetUrls(
   return allUrls.filter(({ url }) => !url.startsWith('data:'));
 }
 
-function copyStyles(sourceElement: HTMLElement, targetElement: HTMLElement): void {
+function copyStyles(
+  sourceElement: HTMLElement,
+  targetElement: HTMLElement,
+): void {
   const computedStyle = globalThis.getComputedStyle(sourceElement);
 
   for (let i = 0; i < computedStyle.length; i++) {
@@ -189,7 +212,8 @@ function inlineCanvases(
   canvases.push(...Array.from(element.querySelectorAll('canvas')));
 
   let newElement = element;
-  const replacements: Array<{ from: HTMLCanvasElement; to: HTMLImageElement }> = [];
+  const replacements: Array<{ from: HTMLCanvasElement; to: HTMLImageElement }> =
+    [];
   for (const canvas of canvases) {
     try {
       const canvasImageBase64 = canvas.toDataURL('image/png');
@@ -225,7 +249,12 @@ function inlineCanvases(
       }
       replacements.push({ from: canvas, to: image });
     } catch (e) {
-      if (typeof e === 'object' && e !== null && 'name' in e && e.name === 'SecurityError') {
+      if (
+        typeof e === 'object' &&
+        e !== null &&
+        'name' in e &&
+        e.name === 'SecurityError'
+      ) {
         console.warn('[HAPPO] Failed to convert tainted canvas to PNG image');
         console.warn(e);
       } else {
@@ -252,7 +281,9 @@ function registerScrollPositions(doc: Document): void {
 }
 
 function registerCheckedInputs(doc: Document): void {
-  const elements = doc.body.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+  const elements = doc.body.querySelectorAll(
+    'input[type="checkbox"], input[type="radio"]',
+  );
   for (const node of elements) {
     const input = node as HTMLInputElement;
     if (input.checked) {
@@ -331,7 +362,9 @@ function inlineShadowRoots(element: Element): void {
     if (currentElement.shadowRoot) {
       elementsToProcess.unshift(currentElement); // LIFO so that leaf nodes are processed first
     }
-    elements.unshift(...(Array.from(currentElement.children) as Array<HTMLElement>)); // LIFO so that leaf nodes are processed first
+    elements.unshift(
+      ...(Array.from(currentElement.children) as Array<HTMLElement>),
+    ); // LIFO so that leaf nodes are processed first
   }
 
   for (const element of elementsToProcess) {
@@ -360,12 +393,15 @@ function inlineShadowRoots(element: Element): void {
  * from all other dialogs.
  */
 function markModalDialogs(element: Element): void {
-  const cleanups = element.querySelectorAll<HTMLDialogElement>('dialog[data-happo-modal]');
+  const cleanups = element.querySelectorAll<HTMLDialogElement>(
+    'dialog[data-happo-modal]',
+  );
   for (const cleanup of cleanups) {
     delete cleanup.dataset.happoModal;
   }
 
-  const openModal = element.querySelector<HTMLDialogElement>('dialog:modal[open]');
+  const openModal =
+    element.querySelector<HTMLDialogElement>('dialog:modal[open]');
   if (!openModal) {
     return;
   }
@@ -440,8 +476,16 @@ function getDeepActiveElement(doc: Document): Element | null {
 }
 
 const PSEUDO_STATE_ATTRS = [
-  { pseudo: ':hover', attrSelector: '[data-happo-hover]', datasetKey: 'happoHover' },
-  { pseudo: ':active', attrSelector: '[data-happo-active]', datasetKey: 'happoActive' },
+  {
+    pseudo: ':hover',
+    attrSelector: '[data-happo-hover]',
+    datasetKey: 'happoHover',
+  },
+  {
+    pseudo: ':active',
+    attrSelector: '[data-happo-active]',
+    datasetKey: 'happoActive',
+  },
   {
     pseudo: ':focus-visible',
     attrSelector: '[data-happo-focus-visible]',
@@ -478,10 +522,13 @@ export default function takeDOMSnapshot({
     : [doc];
 
   for (const originalElement of allElements) {
-    const { element, cleanup: canvasCleanup } = inlineCanvases(originalElement, {
-      doc,
-      responsiveInlinedCanvases,
-    });
+    const { element, cleanup: canvasCleanup } = inlineCanvases(
+      originalElement,
+      {
+        doc,
+        responsiveInlinedCanvases,
+      },
+    );
 
     registerScrollPositions(doc);
     registerCheckedInputs(doc);
@@ -503,9 +550,9 @@ export default function takeDOMSnapshot({
     // Clear stale focus attributes across the full document (including shadow roots)
     // so that stale data-happo-focus from previous snapshots is never left behind.
     for (const root of allDocRoots) {
-      for (const e of root.querySelectorAll<HTMLElement | SVGElement | MathMLElement>(
-        '[data-happo-focus]',
-      )) {
+      for (const e of root.querySelectorAll<
+        HTMLElement | SVGElement | MathMLElement
+      >('[data-happo-focus]')) {
         delete e.dataset.happoFocus;
       }
     }
@@ -514,7 +561,11 @@ export default function takeDOMSnapshot({
       ? getDeepActiveElement(doc)
       : doc.activeElement;
 
-    if (activeElement && activeElement !== doc.body && isElementWithDataset(activeElement)) {
+    if (
+      activeElement &&
+      activeElement !== doc.body &&
+      isElementWithDataset(activeElement)
+    ) {
       activeElement.dataset.happoFocus = 'true';
     }
 
@@ -583,7 +634,12 @@ export default function takeDOMSnapshot({
     inlineShadowRoots(element);
     markModalDialogs(element);
 
-    assetUrls.push(...getElementAssetUrls(element, handleBase64Image ? { handleBase64Image } : {}));
+    assetUrls.push(
+      ...getElementAssetUrls(
+        element,
+        handleBase64Image ? { handleBase64Image } : {},
+      ),
+    );
 
     if (strategy === 'hoist') {
       htmlParts.push(element.outerHTML);
@@ -603,7 +659,9 @@ export default function takeDOMSnapshot({
     if (strategy === 'hoist') {
       const svgElementsWithSymbols = findSvgElementsWithSymbols(element);
       for (const svgElement of svgElementsWithSymbols) {
-        htmlParts.push(`<div style="display: none;">${svgElement.outerHTML}</div>`);
+        htmlParts.push(
+          `<div style="display: none;">${svgElement.outerHTML}</div>`,
+        );
       }
     }
     if (canvasCleanup) canvasCleanup();
@@ -617,7 +675,9 @@ export default function takeDOMSnapshot({
   // Remove our shadow content elements so that they don't affect the page
   for (const e of doc.querySelectorAll('happo-shadow-content')) e.remove();
   if (strategy === 'clip') {
-    for (const e of doc.querySelectorAll<HTMLElement | SVGElement>('[data-happo-clip]')) {
+    for (const e of doc.querySelectorAll<HTMLElement | SVGElement>(
+      '[data-happo-clip]',
+    )) {
       delete e.dataset.happoClip;
     }
   }

@@ -6,13 +6,17 @@ import { test } from '../index.ts';
 
 function assertError(error: unknown): asserts error is Error {
   if (!(error instanceof Error)) {
-    throw new Error(`Expected an error, got ${typeof error}: ${JSON.stringify(error)}`);
+    throw new Error(
+      `Expected an error, got ${typeof error}: ${JSON.stringify(error)}`,
+    );
   }
 }
 let serverInfo: ServerInfo;
 
 test.beforeAll(async () => {
-  serverInfo = await startTestServer('./src/playwright/__playwright__/fixtures');
+  serverInfo = await startTestServer(
+    './src/playwright/__playwright__/fixtures',
+  );
 });
 
 test.afterAll(async () => {
@@ -30,7 +34,10 @@ test('basic test', async ({ page, happoScreenshot }) => {
   await happoScreenshot(title, {
     component: 'Title',
     variant: 'default',
-    targets: ['chrome', { name: 'firefox-small', type: 'firefox', viewport: '400x800' }],
+    targets: [
+      'chrome',
+      { name: 'firefox-small', type: 'firefox', viewport: '400x800' },
+    ],
   });
 
   await happoScreenshot(await page.$('canvas'), {
