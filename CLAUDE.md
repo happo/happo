@@ -42,7 +42,7 @@ Unit tests are TypeScript files named `*.test.ts`. `vitest.config.ts` looks unde
 
 ### Environment
 
-`.env.local` (gitignored) is loaded automatically by `vitest.config.ts` and the `test:*` scripts. Use `env.example` as a template. Tests that hit the real Happo API require `HAPPO_API_KEY` and `HAPPO_API_SECRET`.
+`.env.local` (gitignored) is loaded automatically by `vitest.config.ts` and the `test:*` scripts. Use `.env.example` as a template. Tests that hit the real Happo API require `HAPPO_API_KEY` and `HAPPO_API_SECRET`.
 
 ## Architecture
 
