@@ -107,7 +107,17 @@
     "singleQuote": true,
     "trailingComma": "all",
     "arrowParens": "always",
-    "proseWrap": "never"
+    "overrides": [
+      {
+        "files": [
+          "*.md",
+          "*.mdx"
+        ],
+        "options": {
+          "proseWrap": "never"
+        }
+      }
+    ]
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
