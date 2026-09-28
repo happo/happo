@@ -307,6 +307,70 @@ describe('RemoteBrowserTarget', () => {
       });
     });
 
+    describe('when skip/only has cut the work down', () => {
+      // An explicit `chunks` is chosen for the whole suite. When `skip` or
+      // `only` leaves only a fraction of it renderable, booking a worker per
+      // chunk books workers with nothing to render.
+
+      async function chunkTotalFor({
+        chunks,
+        estimatedSnapsCount,
+      }: {
+        chunks: number;
+        estimatedSnapsCount?: number;
+      }) {
+        bulkCalls.length = 0;
+        const target = new RemoteBrowserTarget('chrome', {
+          ...baseTarget,
+          chunks,
+        });
+        await target.execute(
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            targetName: 'chrome',
+            ...(estimatedSnapsCount === undefined ? {} : { estimatedSnapsCount }),
+          },
+          config,
+        );
+        return bulkCalls.reduce((total, call) => total + call.items.length, 0);
+      }
+
+      it('trims chunks that would have almost nothing to render', async () => {
+        // 24 chunks over 30 snapshots is barely one snapshot each.
+        assert.strictEqual(
+          await chunkTotalFor({ chunks: 24, estimatedSnapsCount: 30 }),
+          3,
+        );
+      });
+
+      it('never goes below one chunk', async () => {
+        assert.strictEqual(
+          await chunkTotalFor({ chunks: 24, estimatedSnapsCount: 1 }),
+          1,
+        );
+      });
+
+      it('leaves an explicit chunks alone for a real workload', async () => {
+        // The point is not to second-guess someone who wants more parallelism
+        // than the default heuristic would pick.
+        assert.strictEqual(
+          await chunkTotalFor({ chunks: 24, estimatedSnapsCount: 6000 }),
+          24,
+        );
+      });
+
+      it('leaves an explicit chunks alone when the count is unknown', async () => {
+        assert.strictEqual(await chunkTotalFor({ chunks: 24 }), 24);
+      });
+
+      it('does not trim when the count exactly justifies the chunks', async () => {
+        assert.strictEqual(
+          await chunkTotalFor({ chunks: 20, estimatedSnapsCount: 200 }),
+          20,
+        );
+      });
+    });
+
     describe('with snapPayloads and estimatedSnapsCount (no staticPackage)', () => {
       it('sends a single bulk request with one item (estimatedSnapsCount ignored for snapPayloads)', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
