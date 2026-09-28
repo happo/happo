@@ -30,9 +30,7 @@ function renderWithDecorator(
 ) {
   setChannel(mockChannel());
 
-  const decorated = applyHooks(defaultDecorateStory)(() => storyOutput, [
-    withHappo,
-  ]);
+  const decorated = applyHooks(defaultDecorateStory)(() => storyOutput, [withHappo]);
 
   return decorated({
     parameters,

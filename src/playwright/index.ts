@@ -14,16 +14,9 @@ import type {
 import { test as base } from '@playwright/test';
 
 import Controller from '../e2e/controller.ts';
-import {
-  isInSkipSet,
-  parseSkip,
-  toSkipSet,
-} from '../isomorphic/parseSkip.ts';
+import { isInSkipSet, parseSkip, toSkipSet } from '../isomorphic/parseSkip.ts';
 
-const pathToBrowserBuild = path.resolve(
-  import.meta.dirname,
-  '../../dist/browser/main.js',
-);
+const pathToBrowserBuild = path.resolve(import.meta.dirname, '../../dist/browser/main.js');
 
 if (!fs.existsSync(pathToBrowserBuild)) {
   throw new Error(`Browser build not found at ${pathToBrowserBuild}.`);
@@ -118,9 +111,7 @@ export const test: TestType<
         : false;
 
     const skippedFilePath = process.env.HAPPO_SKIP_FILE;
-    const rawSkipped = skippedFilePath
-      ? fs.readFileSync(skippedFilePath, 'utf8')
-      : undefined;
+    const rawSkipped = skippedFilePath ? fs.readFileSync(skippedFilePath, 'utf8') : undefined;
     const skipSet = toSkipSet(parseSkip(rawSkipped));
 
     const happoScreenshot: ScreenshotFunction = async (
@@ -132,9 +123,7 @@ export const test: TestType<
       }
 
       if (!handleOrLocator) {
-        throw new Error(
-          'handleOrLocator must be an element handle or a locator, received null.',
-        );
+        throw new Error('handleOrLocator must be an element handle or a locator, received null.');
       }
       if (handleOrLocator instanceof Promise) {
         throw new TypeError(

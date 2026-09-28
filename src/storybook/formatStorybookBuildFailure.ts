@@ -50,8 +50,7 @@ const MAX_REASON_LENGTH = 100;
  */
 export function extractFailureReason(output: string): string | undefined {
   const plain = stripVTControlCharacters(output);
-  const match =
-    STORYBOOK_ERROR_LINE.exec(plain) ?? GENERIC_ERROR_LINE.exec(plain);
+  const match = STORYBOOK_ERROR_LINE.exec(plain) ?? GENERIC_ERROR_LINE.exec(plain);
   const reason = match?.[1]?.trim();
 
   if (!reason) {
@@ -133,12 +132,8 @@ export default function formatStorybookBuildFailure({
         'Storybook produced no output before it stopped.',
   );
 
-  const exitDescription = signal
-    ? `terminated by ${signal}`
-    : `exit code ${exitCode}`;
-  sections.push(
-    `The command Happo ran was (${exitDescription}):\n  ${command.join(' ')}`,
-  );
+  const exitDescription = signal ? `terminated by ${signal}` : `exit code ${exitCode}`;
+  sections.push(`The command Happo ran was (${exitDescription}):\n  ${command.join(' ')}`);
 
   return sections.join('\n\n');
 }

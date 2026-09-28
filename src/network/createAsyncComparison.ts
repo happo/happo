@@ -36,15 +36,7 @@ function assertResultIsCreateAsyncComparisonResult(
  */
 export default async function createAsyncComparison(
   config: ConfigWithDefaults,
-  {
-    beforeSha,
-    afterSha,
-    link,
-    message,
-    authorEmail,
-    notify,
-    fallbackShas,
-  }: EnvironmentResult,
+  { beforeSha, afterSha, link, message, authorEmail, notify, fallbackShas }: EnvironmentResult,
   logger: Logger,
 ): Promise<CreateAsyncComparisonResult> {
   if (beforeSha === afterSha) {

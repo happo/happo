@@ -165,10 +165,7 @@ describe('findConfigFile', () => {
 
     const foundConfigFile = findConfigFile();
     assert.ok(foundConfigFile);
-    assert.strictEqual(
-      foundConfigFile,
-      path.join(tmpDir, 'projects', 'pizza', 'happo.config.ts'),
-    );
+    assert.strictEqual(foundConfigFile, path.join(tmpDir, 'projects', 'pizza', 'happo.config.ts'));
   });
 
   it('finds the config file in a subdirectory with a different extension', () => {
@@ -186,10 +183,7 @@ describe('findConfigFile', () => {
 
     const foundConfigFile = findConfigFile();
     assert.ok(foundConfigFile);
-    assert.strictEqual(
-      foundConfigFile,
-      path.join(tmpDir, 'projects', 'pizza', 'happo.config.ts'),
-    );
+    assert.strictEqual(foundConfigFile, path.join(tmpDir, 'projects', 'pizza', 'happo.config.ts'));
   });
 
   it('throws an error if no config file is found', () => {
@@ -202,8 +196,7 @@ describe('findConfigFile', () => {
 
   it('uses the HAPPO_CONFIG_FILE environment variable if it is set', () => {
     tmpfs.mock({
-      'happo.config.ts':
-        'export default { apiKey: "test-api-key", apiSecret: "test-api-secret" };',
+      'happo.config.ts': 'export default { apiKey: "test-api-key", apiSecret: "test-api-secret" };',
     });
 
     process.env.HAPPO_CONFIG_FILE = 'my-happo.config.ts';
@@ -535,10 +528,7 @@ describe('loadConfigFile', () => {
       ),
       /Missing `apiKey` and `apiSecret` in your Happo config/,
     );
-    assert.match(
-      logger.log.mock.calls[1]?.[0],
-      /Failed to obtain temporary pull-request token/,
-    );
+    assert.match(logger.log.mock.calls[1]?.[0], /Failed to obtain temporary pull-request token/);
   });
 
   it('loads the config file', async () => {
@@ -994,9 +984,7 @@ describe('loadConfigFile', () => {
         (error: Error) => {
           assert.match(error.message, /got string 'safari'\. For example:/);
           assert.ok(
-            error.message.includes(
-              "    safari: { type: 'safari', viewport: '1024x768' },",
-            ),
+            error.message.includes("    safari: { type: 'safari', viewport: '1024x768' },"),
             error.message,
           );
           return true;
@@ -1026,9 +1014,7 @@ describe('loadConfigFile', () => {
             /^Invalid target `desktop` in config file \S+: each target must be an object describing the browser, got string 'firefox'\. For example:/,
           );
           assert.ok(
-            error.message.includes(
-              "    desktop: { type: 'firefox', viewport: '1024x768' },",
-            ),
+            error.message.includes("    desktop: { type: 'firefox', viewport: '1024x768' },"),
             error.message,
           );
           return true;
@@ -1054,9 +1040,7 @@ describe('loadConfigFile', () => {
         (error: Error) => {
           assert.match(error.message, /got boolean true\. For example:/);
           assert.ok(
-            error.message.includes(
-              "    'my-target': { type: 'chrome', viewport: '1024x768' },",
-            ),
+            error.message.includes("    'my-target': { type: 'chrome', viewport: '1024x768' },"),
             error.message,
           );
           return true;
@@ -1118,9 +1102,7 @@ describe('loadConfigFile', () => {
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
         (error: Error) => {
           assert.ok(
-            error.message.includes(
-              `    "user's": { type: 'firefox', viewport: '1024x768' },`,
-            ),
+            error.message.includes(`    "user's": { type: 'firefox', viewport: '1024x768' },`),
             error.message,
           );
           return true;
@@ -1145,9 +1127,7 @@ describe('loadConfigFile', () => {
         loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
         (error: Error) => {
           assert.ok(
-            error.message.includes(
-              "    desktop: { type: 'chrome', viewport: '1024x768' },",
-            ),
+            error.message.includes("    desktop: { type: 'chrome', viewport: '1024x768' },"),
             error.message,
           );
           return true;
@@ -1177,9 +1157,7 @@ describe('loadConfigFile', () => {
             /^Invalid target `chrome` in config file \S+: `type` must be one of 'chrome', 'firefox', 'edge', 'safari', 'ios-safari', 'ipad-safari', 'accessibility', got nothing\. For example:/,
           );
           assert.ok(
-            error.message.includes(
-              "    chrome: { type: 'chrome', viewport: '1024x768' },",
-            ),
+            error.message.includes("    chrome: { type: 'chrome', viewport: '1024x768' },"),
             error.message,
           );
           return true;
@@ -1599,11 +1577,7 @@ describe('loadConfigFile', () => {
       });
 
       const logger = { log: vi.fn(), error: vi.fn() };
-      const config = await loadConfigFile(
-        findConfigFile(),
-        { link: undefined, ci: false },
-        logger,
-      );
+      const config = await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
 
       const warnings = logger.error.mock.calls.map((call) => call[0]);
       assert.strictEqual(warnings.length, 3);
@@ -1686,11 +1660,7 @@ describe('loadConfigFile', () => {
       });
 
       const logger = { log: vi.fn(), error: vi.fn() };
-      const config = await loadConfigFile(
-        findConfigFile(),
-        { link: undefined, ci: false },
-        logger,
-      );
+      const config = await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
 
       assert.strictEqual(logger.error.mock.calls.length, 1);
       assert.ok('shared' in config);
@@ -1788,11 +1758,7 @@ describe('loadConfigFile', () => {
           ci: false,
         });
 
-        assert.strictEqual(
-          config.endpoint,
-          'https://happo.io',
-          `endpoint: ${endpoint}`,
-        );
+        assert.strictEqual(config.endpoint, 'https://happo.io', `endpoint: ${endpoint}`);
         tmpfs.restore();
       }
     });
@@ -1974,10 +1940,7 @@ describe('loadConfigFile', () => {
           assert.ok(error instanceof TypeError);
           const lines = error.message.split('\n\n');
           assert.match(lines[0] ?? '', /^Found 3 problems in config file \S+:$/);
-          assert.match(
-            lines[1] ?? '',
-            /^- Invalid `endpoint` .+: must be a string, got: 5\.$/,
-          );
+          assert.match(lines[1] ?? '', /^- Invalid `endpoint` .+: must be a string, got: 5\.$/);
           assert.match(
             lines[2] ?? '',
             /^- Invalid `targets\.chrome\.maxHeight` .+: must be a number, got: '100'\.$/,

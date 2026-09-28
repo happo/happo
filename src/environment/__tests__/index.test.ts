@@ -61,16 +61,8 @@ describe('resolveEnvironment', () => {
     const afterSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
     const beforeSha = tmpfs.exec('git', ['rev-parse', 'main']).trim();
 
-    assert.equal(
-      result.afterSha,
-      afterSha,
-      'afterSha is not the same as the current HEAD sha',
-    );
-    assert.equal(
-      result.beforeSha,
-      beforeSha,
-      'beforeSha is not the same as the main branch sha',
-    );
+    assert.equal(result.afterSha, afterSha, 'afterSha is not the same as the current HEAD sha');
+    assert.equal(result.beforeSha, beforeSha, 'beforeSha is not the same as the main branch sha');
     assert.equal(
       result.message,
       'Add new-branch-file.txt',
@@ -180,10 +172,7 @@ describe('resolveEnvironment', () => {
 
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, beforeSha);
-    assert.equal(
-      result.link,
-      `https://github.com/happo/happo-view/commit/${afterSha}`,
-    );
+    assert.equal(result.link, `https://github.com/happo/happo-view/commit/${afterSha}`);
     assert.ok(result.message !== undefined);
   });
 
@@ -347,21 +336,19 @@ describe('resolveEnvironment', () => {
     githubEnv.GITHUB_EVENT_PATH = pushToMainEventPath;
     result = await resolveEnvironment({}, githubEnv);
     assert.equal(result.afterSha, afterSha);
-    assert.equal(result.beforeSha, afterSha, 'push to default branch should not create a comparison');
+    assert.equal(
+      result.beforeSha,
+      afterSha,
+      'push to default branch should not create a comparison',
+    );
 
     // Try with a workflow_dispatch event
-    githubEnv.GITHUB_EVENT_PATH = path.resolve(
-      __dirname,
-      'github_workflow_dispatch.json',
-    );
+    githubEnv.GITHUB_EVENT_PATH = path.resolve(__dirname, 'github_workflow_dispatch.json');
     result = await resolveEnvironment({}, githubEnv);
 
     assert.equal(result.afterSha, afterSha);
     assert.equal(result.beforeSha, afterSha);
-    assert.equal(
-      result.link,
-      `https://github.com/octo-org/octo-repo/commit/${afterSha}`,
-    );
+    assert.equal(result.link, `https://github.com/octo-org/octo-repo/commit/${afterSha}`);
     assert.notEqual(result.message, undefined);
 
     // Try with a non-existing event path
@@ -391,14 +378,7 @@ describe('resolveEnvironment', () => {
     // Step 1: make 70 commits on main.
     tmpfs.exec('git', ['init', '--initial-branch=main', originDir]);
     tmpfs.exec('git', ['-C', originDir, 'config', 'user.name', 'Test User', '--local']);
-    tmpfs.exec('git', [
-      '-C',
-      originDir,
-      'config',
-      'user.email',
-      'test@example.com',
-      '--local',
-    ]);
+    tmpfs.exec('git', ['-C', originDir, 'config', 'user.email', 'test@example.com', '--local']);
 
     tmpfs.writeFile('origin-repo/README.md', 'commit 1\n');
     tmpfs.exec('git', ['-C', originDir, 'add', '.']);
@@ -411,9 +391,7 @@ describe('resolveEnvironment', () => {
     for (let i = 2; i <= 70; i += 1) {
       tmpfs.exec('git', ['-C', originDir, 'commit', '--allow-empty', '-m', `commit ${i}`]);
     }
-    const midMainSha = tmpfs
-      .exec('git', ['-C', originDir, 'rev-parse', 'HEAD~35'])
-      .trim();
+    const midMainSha = tmpfs.exec('git', ['-C', originDir, 'rev-parse', 'HEAD~35']).trim();
     const latestMainSha = tmpfs.exec('git', ['-C', originDir, 'rev-parse', 'HEAD']).trim();
 
     // Step 2: checkout only the first commit (PR head) and ensure later commits are missing.
@@ -490,14 +468,7 @@ describe('resolveEnvironment', () => {
     // - `orphan-base` is an orphan branch (no common ancestor with `main`)
     tmpfs.exec('git', ['init', '--initial-branch=main', originDir]);
     tmpfs.exec('git', ['-C', originDir, 'config', 'user.name', 'Test User', '--local']);
-    tmpfs.exec('git', [
-      '-C',
-      originDir,
-      'config',
-      'user.email',
-      'test@example.com',
-      '--local',
-    ]);
+    tmpfs.exec('git', ['-C', originDir, 'config', 'user.email', 'test@example.com', '--local']);
 
     tmpfs.writeFile('origin-repo-tries/README.md', 'commit 1\n');
     tmpfs.exec('git', ['-C', originDir, 'add', '.']);
@@ -640,13 +611,7 @@ describe('resolveEnvironment', () => {
     assert.equal(result.link, `https://github.com/owner/repo/commit/${afterSha}`);
 
     const fallbackShas = tmpfs
-      .exec('git', [
-        'log',
-        '--format=%H',
-        '--first-parent',
-        `--max-count=5`,
-        `${beforeSha}^`,
-      ])
+      .exec('git', ['log', '--format=%H', '--first-parent', `--max-count=5`, `${beforeSha}^`])
       .trim()
       .split('\n');
     assert.ok(fallbackShas.length > 0);
@@ -686,10 +651,7 @@ describe('resolveEnvironment', () => {
           GITHUB_RUN_ATTEMPT: '2',
         },
       );
-      assert.equal(
-        result.ciJobUrl,
-        'https://github.com/happo/happo/actions/runs/123/attempts/2',
-      );
+      assert.equal(result.ciJobUrl, 'https://github.com/happo/happo/actions/runs/123/attempts/2');
     });
 
     it('defaults the GitHub server URL and omits the attempt when unknown', async () => {
@@ -698,10 +660,7 @@ describe('resolveEnvironment', () => {
         {},
         { GITHUB_REPOSITORY: 'happo/happo', GITHUB_RUN_ID: '123' },
       );
-      assert.equal(
-        result.ciJobUrl,
-        'https://github.com/happo/happo/actions/runs/123',
-      );
+      assert.equal(result.ciJobUrl, 'https://github.com/happo/happo/actions/runs/123');
     });
 
     it('resolves a CircleCI build URL', async () => {
@@ -735,10 +694,7 @@ describe('resolveEnvironment', () => {
           BUILD_BUILDID: '789',
         },
       );
-      assert.equal(
-        result.ciJobUrl,
-        'https://dev.azure.com/happo/happo/_build/results?buildId=789',
-      );
+      assert.equal(result.ciJobUrl, 'https://dev.azure.com/happo/happo/_build/results?buildId=789');
     });
   });
 

@@ -8,9 +8,7 @@ export interface StorybookServerInfo {
   port: number;
 }
 
-export default function startStorybookServer(
-  port: number = 9900,
-): Promise<StorybookServerInfo> {
+export default function startStorybookServer(port: number = 9900): Promise<StorybookServerInfo> {
   return new Promise((resolve, reject) => {
     const child = spawn('pnpm', ['storybook:dev'], {
       stdio: 'pipe',
@@ -43,11 +41,7 @@ export default function startStorybookServer(
     // Listen for server ready message
     child.stdout?.on('data', (data) => {
       const output = data.toString();
-      if (
-        output.includes('Local:') &&
-        output.includes(`http://localhost:${port}`) &&
-        !resolved
-      ) {
+      if (output.includes('Local:') && output.includes(`http://localhost:${port}`) && !resolved) {
         resolved = true;
         resolve({
           close: async () => {

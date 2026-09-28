@@ -5,8 +5,7 @@ import { afterEach, beforeEach, describe, it } from 'vitest';
 import * as tmpfs from '../../src/test-utils/tmpfs.ts';
 import getSkip from '../getSkip.ts';
 
-const INTERACTIVE_STORIES =
-  'src/storybook/__tests__/storybook-app/Interactive.stories.ts';
+const INTERACTIVE_STORIES = 'src/storybook/__tests__/storybook-app/Interactive.stories.ts';
 const STORY_STORIES = 'src/storybook/__tests__/storybook-app/Story.stories.ts';
 
 // Days are 0 (Sun) – 6 (Sat). With two story files in the rotation, even days

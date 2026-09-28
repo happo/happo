@@ -49,10 +49,7 @@ function buildDetail({
   const parts: Array<string> = [];
 
   if (command && command.length > 0) {
-    const commandString = truncate(
-      toSingleLine(command.join(' ')),
-      MAX_COMMAND_LENGTH,
-    );
+    const commandString = truncate(toSingleLine(command.join(' ')), MAX_COMMAND_LENGTH);
     parts.push(
       exitCode === undefined
         ? `"${commandString}" did not complete`

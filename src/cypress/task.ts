@@ -51,10 +51,7 @@ interface HappoScreenshotConfig {
 interface HappoTask {
   isRegisteredCorrectly: boolean;
   register(on: Cypress.PluginEvents): void;
-  handleAfterSpec(
-    spec: Cypress.Spec,
-    results: CypressCommandLine.RunResult,
-  ): Promise<void>;
+  handleAfterSpec(spec: Cypress.Spec, results: CypressCommandLine.RunResult): Promise<void>;
   happoRegisterSnapshot(snapshot: SnapshotRegistrationParams): Promise<null>;
   happoRegisterBase64Image(params: {
     base64Chunk: string;
@@ -80,10 +77,7 @@ const task: HappoTask = {
     task.isRegisteredCorrectly = true;
   },
 
-  async handleAfterSpec(
-    _spec: Cypress.Spec,
-    results: CypressCommandLine.RunResult,
-  ): Promise<void> {
+  async handleAfterSpec(_spec: Cypress.Spec, results: CypressCommandLine.RunResult): Promise<void> {
     if (!controller.isActive()) {
       return;
     }

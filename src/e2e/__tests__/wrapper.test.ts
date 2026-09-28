@@ -80,9 +80,7 @@ beforeAll(async () => {
       }
 
       if (req.url?.match(/^\/api\/jobs\//)) {
-        res.end(
-          JSON.stringify({ id: 1, url: `http://localhost:${serverPort}/job/1` }),
-        );
+        res.end(JSON.stringify({ id: 1, url: `http://localhost:${serverPort}/job/1` }));
         return;
       }
 
@@ -133,33 +131,17 @@ const childCommand = [
 ];
 
 describe('runWithWrapper', () => {
-  it(
-    'creates a comparison when beforeSha differs from afterSha',
-    { timeout: 5000 },
-    async () => {
-      await runWithWrapper(
-        childCommand,
-        happoConfig(),
-        baseEnvironment,
-        console,
-        'happo.config.js',
-      );
-      assert.equal(comparisonEndpointHits, 1);
-    },
-  );
+  it('creates a comparison when beforeSha differs from afterSha', { timeout: 5000 }, async () => {
+    await runWithWrapper(childCommand, happoConfig(), baseEnvironment, console, 'happo.config.js');
+    assert.equal(comparisonEndpointHits, 1);
+  });
 
   it(
     'skips comparison when beforeSha equals afterSha (default branch build)',
     { timeout: 5000 },
     async () => {
       const environment = { ...baseEnvironment, beforeSha: AFTER_SHA };
-      await runWithWrapper(
-        childCommand,
-        happoConfig(),
-        environment,
-        console,
-        'happo.config.js',
-      );
+      await runWithWrapper(childCommand, happoConfig(), environment, console, 'happo.config.js');
       assert.equal(comparisonEndpointHits, 0);
     },
   );
@@ -178,9 +160,7 @@ describe('runWithWrapper', () => {
         JSON.stringify(skip),
       );
 
-      const extendsRequest = requests.find((r) =>
-        r.url.includes('/snap-requests/extends-report'),
-      );
+      const extendsRequest = requests.find((r) => r.url.includes('/snap-requests/extends-report'));
       assert.ok(extendsRequest, 'expected an extends-report request');
       assert.deepStrictEqual(
         (extendsRequest.body as { extendedSnaps: unknown }).extendedSnaps,
@@ -193,14 +173,10 @@ describe('runWithWrapper', () => {
 
       // Without a nonce the async report is finalized by this POST, so the
       // extends-report id has to be included in it.
-      const reportRequest = requests.find(
-        (r) => r.url === `/api/async-reports/${AFTER_SHA}`,
-      );
+      const reportRequest = requests.find((r) => r.url === `/api/async-reports/${AFTER_SHA}`);
       assert.ok(reportRequest, 'expected an async report request');
       assert.ok(
-        (reportRequest.body as { requestIds: Array<number> }).requestIds.includes(
-          4242,
-        ),
+        (reportRequest.body as { requestIds: Array<number> }).requestIds.includes(4242),
         'expected the extends-report id in the async report',
       );
     },
@@ -225,30 +201,26 @@ describe('runWithWrapper', () => {
     },
   );
 
-  it(
-    'still posts the report when no baseline is found',
-    { timeout: 5000 },
-    async () => {
-      baselineSha = null;
-      await runWithWrapper(
-        childCommand,
-        happoConfig(),
-        baseEnvironment,
-        console,
-        'happo.config.js',
-        JSON.stringify([{ component: 'Button', variant: 'Primary' }]),
-      );
+  it('still posts the report when no baseline is found', { timeout: 5000 }, async () => {
+    baselineSha = null;
+    await runWithWrapper(
+      childCommand,
+      happoConfig(),
+      baseEnvironment,
+      console,
+      'happo.config.js',
+      JSON.stringify([{ component: 'Button', variant: 'Primary' }]),
+    );
 
-      assert.strictEqual(
-        requests.find((r) => r.url.includes('/extends-report')),
-        undefined,
-      );
-      assert.ok(
-        requests.find((r) => r.url === `/api/async-reports/${AFTER_SHA}`),
-        'expected an async report request anyway',
-      );
-    },
-  );
+    assert.strictEqual(
+      requests.find((r) => r.url.includes('/extends-report')),
+      undefined,
+    );
+    assert.ok(
+      requests.find((r) => r.url === `/api/async-reports/${AFTER_SHA}`),
+      'expected an async report request anyway',
+    );
+  });
 
   it(
     'rejects an invalid skip list before starting the e2e server or job',

@@ -118,9 +118,7 @@ describe('staticFileHandler', () => {
     const { connect } = await import('node:net');
     const response = await new Promise<string>((resolve, reject) => {
       const socket = connect(serverInfo.port, 'localhost', () => {
-        socket.write(
-          'GET /bad%path HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n',
-        );
+        socket.write('GET /bad%path HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n');
       });
       let data = '';
       socket.on('data', (chunk) => (data += chunk.toString()));
@@ -133,9 +131,7 @@ describe('staticFileHandler', () => {
   it('does not serve files via a symlink that points outside the public directory', async () => {
     // Create a directory outside publicDir with a file whose content should
     // never be served.
-    const outsideDir = fs.realpathSync(
-      fs.mkdtempSync(path.join(os.tmpdir(), 'outside')),
-    );
+    const outsideDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'outside')));
     fs.writeFileSync(path.join(outsideDir, 'secret.txt'), 'secret content');
 
     try {

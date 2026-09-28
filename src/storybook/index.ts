@@ -41,14 +41,9 @@ function resolveBuildCommandParts() {
  * how the flag got set and regardless of framework, where parsing an arbitrary
  * TypeScript config would not.
  */
-export async function warnIfDevelopmentModeBuild(
-  outputDir: string,
-): Promise<void> {
+export async function warnIfDevelopmentModeBuild(outputDir: string): Promise<void> {
   try {
-    const raw = await fs.promises.readFile(
-      path.join(outputDir, 'project.json'),
-      'utf8',
-    );
+    const raw = await fs.promises.readFile(path.join(outputDir, 'project.json'), 'utf8');
     const project = JSON.parse(raw) as {
       features?: { developmentModeForBuild?: boolean };
     };
@@ -95,13 +90,7 @@ async function buildStorybook({
     throw new Error('Failed to resolve build command parts');
   }
 
-  const params = [
-    ...buildCommandParts,
-    '--output-dir',
-    outputDir,
-    '--config-dir',
-    configDir,
-  ];
+  const params = [...buildCommandParts, '--output-dir', outputDir, '--config-dir', configDir];
 
   if (staticDir) {
     params.push('--static-dir', staticDir);
@@ -151,9 +140,7 @@ async function buildStorybook({
         ...process.env,
         // Piping stdout makes Storybook think it is not talking to a terminal
         // and drop its colors. It is, via us, so say so.
-        ...(process.stdout.isTTY && !('FORCE_COLOR' in process.env)
-          ? { FORCE_COLOR: '1' }
-          : {}),
+        ...(process.stdout.isTTY && !('FORCE_COLOR' in process.env) ? { FORCE_COLOR: '1' } : {}),
       },
       shell: process.platform == 'win32',
     });
@@ -227,9 +214,7 @@ async function buildStorybook({
         try {
           fs.unlinkSync(path.join(outputDir, 'project.json'));
         } catch (error) {
-          console.warn(
-            `Ignoring error when attempting to remove project.json: ${error}`,
-          );
+          console.warn(`Ignoring error when attempting to remove project.json: ${error}`);
         }
         resolve();
       });
@@ -256,15 +241,7 @@ function resolveHappoRuntimeBundle(): string {
   const dirname = import.meta.dirname;
   const candidates = [
     path.resolve(dirname, 'standalone', 'register.js'),
-    path.resolve(
-      dirname,
-      '..',
-      '..',
-      'dist',
-      'storybook',
-      'standalone',
-      'register.js',
-    ),
+    path.resolve(dirname, '..', '..', 'dist', 'storybook', 'standalone', 'register.js'),
   ];
 
   const found = candidates.find((candidate) => fs.existsSync(candidate));
@@ -318,10 +295,7 @@ async function assertPackageIsRenderable(
     estimatedSnapsCount,
   }: { checkStoryCount: boolean; estimatedSnapsCount: number | undefined },
 ): Promise<void> {
-  const iframeContent = await fs.promises.readFile(
-    path.join(outputDir, 'iframe.html'),
-    'utf8',
-  );
+  const iframeContent = await fs.promises.readFile(path.join(outputDir, 'iframe.html'), 'utf8');
 
   // The injection above is a literal `<head>` replacement, which silently does
   // nothing against an iframe.html that spells its head tag any other way.

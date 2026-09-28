@@ -61,22 +61,14 @@ function HappoPanel() {
                 'tr',
                 { key: key },
                 createElement('td', null, createElement('code', null, `${key}:`)),
-                createElement(
-                  'td',
-                  null,
-                  createElement('code', null, JSON.stringify(val)),
-                ),
+                createElement('td', null, createElement('code', null, JSON.stringify(val))),
               );
             }),
             functionParams.map((param) => {
               return createElement(
                 'tr',
                 { key: param.key },
-                createElement(
-                  'td',
-                  null,
-                  createElement('code', null, `${param.key}:`),
-                ),
+                createElement('td', null, createElement('code', null, `${param.key}:`)),
                 createElement(
                   'td',
                   null,

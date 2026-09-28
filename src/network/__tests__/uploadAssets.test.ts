@@ -75,7 +75,6 @@ beforeEach(() => {
 });
 
 describe('uploadAssets', () => {
-
   describe('when the archive is zstd', () => {
     let requestedPaths: Array<string>;
 
@@ -104,11 +103,7 @@ describe('uploadAssets', () => {
     });
 
     it('asks for a zstd signed URL and finalizes as zstd', async () => {
-      const result = await uploadAssets(
-        buffer,
-        { hash: 'abc123', logger, format: 'zstd' },
-        config,
-      );
+      const result = await uploadAssets(buffer, { hash: 'abc123', logger, format: 'zstd' }, config);
 
       assert.strictEqual(result, '/new/path.zst');
       assert.deepStrictEqual(requestedPaths, [
@@ -118,11 +113,7 @@ describe('uploadAssets', () => {
     });
 
     it('uploads with the content type the server signed with', async () => {
-      await uploadAssets(
-        buffer,
-        { hash: 'abc123', logger, format: 'zstd' },
-        config,
-      );
+      await uploadAssets(buffer, { hash: 'abc123', logger, format: 'zstd' }, config);
 
       assert.strictEqual(s3Requests.length, 1);
       assert.strictEqual(s3Requests[0]?.headers['content-type'], 'application/zstd');
@@ -154,10 +145,7 @@ describe('uploadAssets', () => {
         );
 
         assert.strictEqual(result, '/new/path.zip');
-        assert.strictEqual(
-          s3Requests[0]?.headers['content-type'],
-          'application/zip',
-        );
+        assert.strictEqual(s3Requests[0]?.headers['content-type'], 'application/zip');
       });
     });
   });
@@ -172,9 +160,7 @@ describe('uploadAssets', () => {
 
       await uploadAssets(buffer, { hash: 'abc123', logger, format: 'zip' }, config);
 
-      assert.deepStrictEqual(requestedPaths, [
-        '/api/snap-requests/assets/abc123/signed-url',
-      ]);
+      assert.deepStrictEqual(requestedPaths, ['/api/snap-requests/assets/abc123/signed-url']);
     });
   });
   describe('when assets are already uploaded', () => {

@@ -2,9 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { ConfigWithDefaults } from '../config/index.ts';
-import RemoteBrowserTarget, {
-  type ExecuteParams,
-} from '../config/RemoteBrowserTarget.ts';
+import RemoteBrowserTarget, { type ExecuteParams } from '../config/RemoteBrowserTarget.ts';
 import type { OnlyItem, SkipItem } from '../isomorphic/types.ts';
 import buildStorybookPackage from '../storybook/index.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
@@ -112,9 +110,7 @@ async function validatePackage(packageDir: string): Promise<void> {
   const iframePath = path.join(packageDir, 'iframe.html');
 
   if (!(await fileExists(iframePath))) {
-    throw new Error(
-      `Could not find iframe.html in static package at '${iframePath}'`,
-    );
+    throw new Error(`Could not find iframe.html in static package at '${iframePath}'`);
   }
 }
 
@@ -130,7 +126,12 @@ async function preparePackage(
   skip?: Array<SkipItem>,
   only?: Array<OnlyItem>,
 ): Promise<PreparePackageResult> {
-  const { packageDir, estimatedSnapsCount, resolvedSkip } = await buildPackage(config, logger, skip, only);
+  const { packageDir, estimatedSnapsCount, resolvedSkip } = await buildPackage(
+    config,
+    logger,
+    skip,
+    only,
+  );
 
   await validatePackage(packageDir);
 
@@ -188,16 +189,12 @@ export default async function prepareSnapRequests(
   }
 
   const prepareResult =
-    config.integration.type === 'pages'
-      ? null
-      : await preparePackage(config, logger, skip, only);
+    config.integration.type === 'pages' ? null : await preparePackage(config, logger, skip, only);
 
   const targetNames = Object.keys(config.targets);
   const tl = targetNames.length;
   logger.info(
-    `${logTag(config.project)}Generating screenshots in ${tl} target${
-      tl > 1 ? 's' : ''
-    }...`,
+    `${logTag(config.project)}Generating screenshots in ${tl} target${tl > 1 ? 's' : ''}...`,
   );
   const outerStartTime = Date.now();
   const snapRequestIds: Array<number> = [];
@@ -209,10 +206,7 @@ export default async function prepareSnapRequests(
         throw new Error(`Target ${name} not found in config`);
       }
 
-      const target = new RemoteBrowserTarget(
-        config.targets[name].type,
-        config.targets[name],
-      );
+      const target = new RemoteBrowserTarget(config.targets[name].type, config.targets[name]);
 
       const targetParams: ExecuteParams = {
         targetName: name,
@@ -231,10 +225,7 @@ export default async function prepareSnapRequests(
         targetParams.pages = config.integration.pages;
       }
 
-      if (
-        config.integration.type === 'storybook' &&
-        config.integration.navigatePerStory === true
-      ) {
+      if (config.integration.type === 'storybook' && config.integration.navigatePerStory === true) {
         targetParams.storybookNavigatePerStory = true;
       }
 

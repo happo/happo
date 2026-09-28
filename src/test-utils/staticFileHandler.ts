@@ -69,10 +69,7 @@ export default function staticFileHandler(
     const realPublicRoot = await realPublicRootPromise;
     try {
       const realResolved = await fs.realpath(resolved);
-      if (
-        realResolved !== realPublicRoot &&
-        !realResolved.startsWith(realPublicRoot + path.sep)
-      ) {
+      if (realResolved !== realPublicRoot && !realResolved.startsWith(realPublicRoot + path.sep)) {
         res.writeHead(403);
         res.end();
         return;

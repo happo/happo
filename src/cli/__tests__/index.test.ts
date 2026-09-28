@@ -41,8 +41,7 @@ const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(() 
     }
 
     if (fetchURL.includes('/api/snap-requests/bulk')) {
-      const items =
-        (request.body as { items?: Array<unknown> } | undefined)?.items ?? [];
+      const items = (request.body as { items?: Array<unknown> } | undefined)?.items ?? [];
 
       return {
         results: items.map((_, index) => ({
@@ -134,13 +133,12 @@ vi.mock('../../network/uploadAssets.ts', () => ({
   },
 }));
 
-const postGitHubCommentMock: Mock<
-  typeof import('../../network/postGitHubComment.ts').default
-> = vi.hoisted(() =>
-  vi.fn(async () => {
-    return true;
-  }),
-);
+const postGitHubCommentMock: Mock<typeof import('../../network/postGitHubComment.ts').default> =
+  vi.hoisted(() =>
+    vi.fn(async () => {
+      return true;
+    }),
+  );
 
 vi.mock('../../network/postGitHubComment.ts', () => ({
   default: postGitHubCommentMock,
@@ -232,10 +230,7 @@ describe('main', () => {
       };`,
       );
 
-      await main(
-        ['npx', 'happo', '--config', tmpfs.fullPath('custom.config.ts')],
-        logger,
-      );
+      await main(['npx', 'happo', '--config', tmpfs.fullPath('custom.config.ts')], logger);
 
       assert.equal(logger.log.mock.calls[0]?.[0], 'Running happo tests...');
     });
@@ -263,10 +258,7 @@ describe('main', () => {
     });
 
     it('fails when config file does not exist', async () => {
-      await main(
-        ['npx', 'happo', '--config', tmpfs.fullPath('non-existent.config.ts')],
-        logger,
-      );
+      await main(['npx', 'happo', '--config', tmpfs.fullPath('non-existent.config.ts')], logger);
 
       assert.strictEqual(process.exitCode, 1);
       assert.strictEqual(logger.error.mock.calls.length, 1);
@@ -320,14 +312,8 @@ describe('main', () => {
       assert.strictEqual(call[0]?.authToken, 'test-token');
       assert.strictEqual(call[0]?.link, 'https://github.com/owner/repo/pull/123');
       assert.strictEqual(call[0]?.githubApiUrl, 'https://api.github.com');
-      assert.strictEqual(
-        call[0]?.statusImageUrl,
-        'https://happo.io/api/reports/123/status-image',
-      );
-      assert.strictEqual(
-        call[0]?.compareUrl,
-        'https://happo.io/api/reports/123/compare',
-      );
+      assert.strictEqual(call[0]?.statusImageUrl, 'https://happo.io/api/reports/123/status-image');
+      assert.strictEqual(call[0]?.compareUrl, 'https://happo.io/api/reports/123/compare');
     });
 
     it('does not post GitHub comment when beforeSha equals afterSha', async () => {
@@ -419,13 +405,8 @@ describe('main', () => {
       await main(['npx', 'happo', 'unknown-command'], logger);
 
       assert.strictEqual(logger.error.mock.calls.length, 2);
-      assert.strictEqual(
-        logger.error.mock.calls[0]?.[0],
-        'Unknown command: unknown-command\n',
-      );
-      assert.ok(
-        logger.error.mock.calls[1]?.[0].includes(`Happo ${packageJson.version}`),
-      );
+      assert.strictEqual(logger.error.mock.calls[0]?.[0], 'Unknown command: unknown-command\n');
+      assert.ok(logger.error.mock.calls[1]?.[0].includes(`Happo ${packageJson.version}`));
       assert.strictEqual(process.exitCode, 1);
     });
 
@@ -627,10 +608,7 @@ describe('main', () => {
       it('generates a iframe.html file when it does not exist', async () => {
         await main(['npx', 'happo'], logger);
         assert(fs.existsSync(tmpfs.fullPath('happo-custom/iframe.html')));
-        const iframeContent = fs.readFileSync(
-          tmpfs.fullPath('happo-custom/iframe.html'),
-          'utf8',
-        );
+        const iframeContent = fs.readFileSync(tmpfs.fullPath('happo-custom/iframe.html'), 'utf8');
         assert.ok(iframeContent.includes('<script src="bundle.js"></script>'));
         assert.ok(iframeContent.includes('<body>'));
         assert.ok(iframeContent.includes('</body>'));
@@ -678,12 +656,7 @@ describe('main', () => {
         );
 
         await main(
-          [
-            'npx',
-            'happo',
-            '--skip',
-            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
-          ],
+          ['npx', 'happo', '--skip', JSON.stringify([{ storyFile: './src/Button.stories.tsx' }])],
           logger,
         );
 
@@ -764,12 +737,7 @@ describe('main', () => {
         );
 
         await main(
-          [
-            'npx',
-            'happo',
-            '--skip',
-            JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
-          ],
+          ['npx', 'happo', '--skip', JSON.stringify([{ storyFile: './src/Button.stories.tsx' }])],
           logger,
         );
 
@@ -785,18 +753,12 @@ describe('main', () => {
         await main(['npx', 'happo', '--'], logger);
 
         assert(logger.error.mock.calls.length >= 1);
-        assert.match(
-          logger.error.mock.calls[0]?.[0],
-          /Missing command for e2e action/,
-        );
+        assert.match(logger.error.mock.calls[0]?.[0], /Missing command for e2e action/);
         assert.strictEqual(process.exitCode, 1);
       });
 
       it('runs command when provided', async () => {
-        await main(
-          ['npx', 'happo', '--', 'touch', tmpfs.fullPath('happy-to-be-here.txt')],
-          logger,
-        );
+        await main(['npx', 'happo', '--', 'touch', tmpfs.fullPath('happy-to-be-here.txt')], logger);
 
         assert.strictEqual(process.exitCode, 0);
         assert(logger.log.mock.calls.length >= 1);
@@ -820,10 +782,7 @@ describe('main', () => {
         assert.strictEqual(process.exitCode, 1);
         assert(logger.error.mock.calls.length >= 1);
         const errorMessage = logger.error.mock.calls[0]?.[0];
-        assert.match(
-          errorMessage,
-          /Unsupported integration type used for e2e command: storybook/,
-        );
+        assert.match(errorMessage, /Unsupported integration type used for e2e command: storybook/);
         assert.match(errorMessage, /Supported.*cypress.*playwright/);
       });
 
@@ -853,18 +812,12 @@ describe('main', () => {
 
         assert.strictEqual(process.exitCode, 0);
 
-        const fileContents = fs.readFileSync(
-          tmpfs.fullPath('my-happo-config.ts'),
-          'utf8',
-        );
+        const fileContents = fs.readFileSync(tmpfs.fullPath('my-happo-config.ts'), 'utf8');
         assert.strictEqual(fileContents, 'changed it!');
       });
 
       it('exits with the exit code of the command', async () => {
-        await main(
-          ['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
-          logger,
-        );
+        await main(['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')], logger);
 
         // ls exits 1 on mac, but 2 in CI. Good enough to just assert that it's
         // not 0 here.
@@ -946,10 +899,7 @@ describe('main', () => {
           (attachCall[0]?.body as { requestIds: Array<number> }).requestIds,
           [123],
         );
-        assert.strictEqual(
-          (attachCall[0]?.body as { nonce: string }).nonce,
-          'test-nonce',
-        );
+        assert.strictEqual((attachCall[0]?.body as { nonce: string }).nonce, 'test-nonce');
 
         const finalizeCall = makeHappoAPIRequestMock.mock.calls.find((call) =>
           call[0]?.path?.includes('/finalize'),
@@ -1111,10 +1061,7 @@ describe('main', () => {
           logger,
         );
         assert.strictEqual(process.exitCode, 1);
-        assert.match(
-          String(logger.error.mock.calls[0]?.[0]),
-          /storyFile.*not supported/,
-        );
+        assert.match(String(logger.error.mock.calls[0]?.[0]), /storyFile.*not supported/);
       });
 
       describe('cancelling the Happo job', () => {
@@ -1163,10 +1110,7 @@ describe('main', () => {
             throw new Error('No cancel request found');
           }
           assert.strictEqual(cancelRequest[1]?.endpoint, 'https://happo.io');
-          assert.strictEqual(
-            cancelRequest[0]?.path,
-            '/api/jobs/foobar/barfoo/cancel',
-          );
+          assert.strictEqual(cancelRequest[0]?.path, '/api/jobs/foobar/barfoo/cancel');
           const { message } = cancelRequest[0]?.body as {
             message: string;
           };
@@ -1175,10 +1119,7 @@ describe('main', () => {
           // The exit code from `ls` differs between platforms, and the temp
           // directory path is long enough that the command gets truncated, so
           // we only check the shape of the message.
-          assert.match(
-            message,
-            /^Cypress run failed: "ls .+" exited with code \d+\./,
-          );
+          assert.match(message, /^Cypress run failed: "ls .+" exited with code \d+\./);
           assert.match(
             message,
             /Review the happo command output in your terminal for the full details\.$/,
@@ -1190,10 +1131,7 @@ describe('main', () => {
             'happo.config.ts',
             `export default { integration: { type: 'cypress', allowFailures: true }, apiKey: 'test-key', apiSecret: 'test-secret' };`,
           );
-          await main(
-            ['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')],
-            logger,
-          );
+          await main(['npx', 'happo', '--', 'ls', tmpfs.fullPath('non-existent.txt')], logger);
           assert.notStrictEqual(process.exitCode, 0);
           assert(makeHappoAPIRequestMock.mock.calls.length === 1);
           const startJobRequest = makeHappoAPIRequestMock.mock.calls.at(-1);

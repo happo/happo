@@ -5,8 +5,6 @@ import crypto from 'node:crypto';
  * @param data - The data to hash (string, Buffer, or TypedArray)
  * @returns The MD5 hash as a hexadecimal string
  */
-export default function createHash(
-  data: string | Buffer | NodeJS.TypedArray,
-): string {
+export default function createHash(data: string | Buffer | NodeJS.TypedArray): string {
   return crypto.createHash('md5').update(data).digest('hex');
 }

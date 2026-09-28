@@ -4,13 +4,7 @@ import path from 'node:path';
 import * as esbuild from 'esbuild';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
-const OUTFILE = path.join(
-  ROOT,
-  'dist',
-  'storybook',
-  'standalone',
-  'register.js',
-);
+const OUTFILE = path.join(ROOT, 'dist', 'storybook', 'standalone', 'register.js');
 
 /**
  * Builds the standalone Happo Storybook runtime if it is not already on disk.

@@ -5,11 +5,7 @@ import http from 'node:http';
 import multiparty from 'multiparty';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
-import type {
-  BrowserType,
-  ConfigWithDefaults,
-  TargetWithDefaults,
-} from '../index.ts';
+import type { BrowserType, ConfigWithDefaults, TargetWithDefaults } from '../index.ts';
 import RemoteBrowserTarget from '../RemoteBrowserTarget.ts';
 
 const baseTarget: TargetWithDefaults = {
@@ -22,8 +18,7 @@ describe('RemoteBrowserTarget', () => {
   describe('constructor', () => {
     it('throws when browserName is undefined', () => {
       assert.throws(
-        () =>
-          new RemoteBrowserTarget(undefined as unknown as BrowserType, baseTarget),
+        () => new RemoteBrowserTarget(undefined as unknown as BrowserType, baseTarget),
         /Invalid browser type/,
       );
     });
@@ -254,9 +249,9 @@ describe('RemoteBrowserTarget', () => {
         );
         assert.strictEqual(bulkCalls.length, 1);
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
-        const payload = JSON.parse(
-          bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { chunk?: unknown };
+        const payload = JSON.parse(bulkCalls[0]?.items[0]?.payloadString as string) as {
+          chunk?: unknown;
+        };
         assert.strictEqual(payload.chunk, undefined);
       });
     });
@@ -277,9 +272,9 @@ describe('RemoteBrowserTarget', () => {
         );
         assert.strictEqual(bulkCalls.length, 1);
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
-        const payload = JSON.parse(
-          bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { chunk?: unknown };
+        const payload = JSON.parse(bulkCalls[0]?.items[0]?.payloadString as string) as {
+          chunk?: unknown;
+        };
         assert.strictEqual(payload.chunk, undefined);
       });
 
@@ -312,9 +307,7 @@ describe('RemoteBrowserTarget', () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
           {
-            snapPayloads: [
-              { component: 'Foo', variant: 'default', html: '<b>hi</b>' },
-            ],
+            snapPayloads: [{ component: 'Foo', variant: 'default', html: '<b>hi</b>' }],
             estimatedSnapsCount: 200,
             targetName: 'chrome',
           },
@@ -337,16 +330,14 @@ describe('RemoteBrowserTarget', () => {
         });
         await target.execute(
           {
-            snapPayloads: [
-              { component: 'Foo', variant: 'default', html: '<b>hi</b>' },
-            ],
+            snapPayloads: [{ component: 'Foo', variant: 'default', html: '<b>hi</b>' }],
             targetName: 'chrome',
           },
           config,
         );
-        const payload = JSON.parse(
-          bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { allowedHostnames?: unknown };
+        const payload = JSON.parse(bulkCalls[0]?.items[0]?.payloadString as string) as {
+          allowedHostnames?: unknown;
+        };
         assert.deepStrictEqual(payload.allowedHostnames, [
           'fonts.gstatic.com',
           '*.mycdn.example.com',
@@ -363,16 +354,14 @@ describe('RemoteBrowserTarget', () => {
         });
         await target.execute(
           {
-            snapPayloads: [
-              { component: 'Foo', variant: 'default', html: '<b>hi</b>' },
-            ],
+            snapPayloads: [{ component: 'Foo', variant: 'default', html: '<b>hi</b>' }],
             targetName: 'chrome',
           },
           config,
         );
-        const payload = JSON.parse(
-          bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { allowedHostnames?: unknown };
+        const payload = JSON.parse(bulkCalls[0]?.items[0]?.payloadString as string) as {
+          allowedHostnames?: unknown;
+        };
         assert.deepStrictEqual(payload.allowedHostnames, []);
       });
     });
@@ -514,9 +503,9 @@ describe('RemoteBrowserTarget', () => {
         );
         assert.strictEqual(bulkCalls.length, 1);
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
-        const payload = JSON.parse(
-          bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { failOnWaitForTimeout?: unknown };
+        const payload = JSON.parse(bulkCalls[0]?.items[0]?.payloadString as string) as {
+          failOnWaitForTimeout?: unknown;
+        };
         assert.strictEqual(payload.failOnWaitForTimeout, false);
       });
 
@@ -528,9 +517,10 @@ describe('RemoteBrowserTarget', () => {
         );
         assert.strictEqual(bulkCalls.length, 1);
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
-        const payload = JSON.parse(
-          bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as Record<string, unknown>;
+        const payload = JSON.parse(bulkCalls[0]?.items[0]?.payloadString as string) as Record<
+          string,
+          unknown
+        >;
         assert.strictEqual('failOnWaitForTimeout' in payload, false);
       });
     });
@@ -570,9 +560,9 @@ describe('RemoteBrowserTarget', () => {
         );
         assert.strictEqual(bulkCalls.length, 1);
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
-        const payload = JSON.parse(
-          bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { storybookNavigatePerStory?: unknown };
+        const payload = JSON.parse(bulkCalls[0]?.items[0]?.payloadString as string) as {
+          storybookNavigatePerStory?: unknown;
+        };
         assert.strictEqual(payload.storybookNavigatePerStory, false);
       });
 
@@ -584,9 +574,10 @@ describe('RemoteBrowserTarget', () => {
         );
         assert.strictEqual(bulkCalls.length, 1);
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
-        const payload = JSON.parse(
-          bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as Record<string, unknown>;
+        const payload = JSON.parse(bulkCalls[0]?.items[0]?.payloadString as string) as Record<
+          string,
+          unknown
+        >;
         assert.strictEqual('storybookNavigatePerStory' in payload, false);
       });
     });

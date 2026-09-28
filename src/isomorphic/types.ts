@@ -30,10 +30,7 @@ export interface TakeDOMSnapshotOptions {
     selector: string;
     transform: (element: Element, doc: Document) => Element;
   };
-  handleBase64Image?: (params: {
-    base64Url: string;
-    element: HTMLImageElement;
-  }) => void;
+  handleBase64Image?: (params: { base64Url: string; element: HTMLImageElement }) => void;
   strategy?: 'hoist' | 'clip';
   /**
    * When true, extends the default pseudo-state handling by automatically
@@ -86,13 +83,7 @@ export interface AnimateTrigger {
    * animation or transition.
    */
   action:
-    | 'addClass'
-    | 'removeClass'
-    | 'setAttribute'
-    | 'removeAttribute'
-    | 'click'
-    | 'focus'
-    | 'hover';
+    'addClass' | 'removeClass' | 'setAttribute' | 'removeAttribute' | 'click' | 'focus' | 'hover';
 
   /**
    * The value associated with the action:
@@ -317,9 +308,7 @@ export interface StoryAnimateOptions extends Omit<AnimateOptions, 'trigger'> {
    * on by itself; set `mode`.
    */
   trigger?:
-    | AnimateTrigger
-    | ((context: { rootElement: HTMLElement }) => void | Promise<void>)
-    | null;
+    AnimateTrigger | ((context: { rootElement: HTMLElement }) => void | Promise<void>) | null;
 
   /**
    * Runs right before the story renders, inside its motion environment --
@@ -331,10 +320,7 @@ export interface StoryAnimateOptions extends Omit<AnimateOptions, 'trigger'> {
    */
   setup?: (context: {
     rootElement: HTMLElement;
-  }) =>
-    | void
-    | (() => void | Promise<void>)
-    | Promise<void | (() => void | Promise<void>)>;
+  }) => void | (() => void | Promise<void>) | Promise<void | (() => void | Promise<void>)>;
 
   /**
    * Runs after the capture with a trace of what was found. Throw to fail the
@@ -524,7 +510,6 @@ export interface WindowWithHappo extends Window {
 
 export type Logger = Pick<Console, 'log' | 'error'>;
 
-export type SkipItem =
-  { component: string; variant?: string } | { storyFile: string };
+export type SkipItem = { component: string; variant?: string } | { storyFile: string };
 
 export type OnlyItem = { component: string } | { storyFile: string };

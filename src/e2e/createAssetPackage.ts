@@ -5,10 +5,7 @@ import type { ReadableStream } from 'node:stream/web';
 import mime from 'mime-types';
 
 import fetchWithRetry from '../network/fetchWithRetry.ts';
-import type {
-  ArchiveContentEntry,
-  ArchiveFormat,
-} from '../utils/deterministicArchive.ts';
+import type { ArchiveContentEntry, ArchiveFormat } from '../utils/deterministicArchive.ts';
 import deterministicArchive from '../utils/deterministicArchive.ts';
 import makeAbsolute from './makeAbsolute.ts';
 
@@ -74,11 +71,7 @@ export default async function createAssetPackage(
     urls.map(async (item: AssetUrl) => {
       const { url, baseUrl } = item;
 
-      if (
-        /^(about|blob|javascript|file|chrome|chrome-extension|moz-extension):/i.test(
-          url,
-        )
-      ) {
+      if (/^(about|blob|javascript|file|chrome|chrome-extension|moz-extension):/i.test(url)) {
         return;
       }
 
@@ -111,9 +104,7 @@ export default async function createAssetPackage(
         const fetchUrl = makeAbsolute(url, baseUrl || '');
 
         if (HAPPO_DEBUG) {
-          console.log(
-            `[HAPPO] Fetching asset from ${fetchUrl} — storing as ${name}`,
-          );
+          console.log(`[HAPPO] Fetching asset from ${fetchUrl} — storing as ${name}`);
         }
 
         try {

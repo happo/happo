@@ -98,9 +98,7 @@ interface ArchiveEntry {
  * @param dirOrFile - The directory or file path to resolve
  * @returns Promise resolving to an array of file entries
  */
-async function resolveFilesRecursiveForDir(
-  dirOrFile: string,
-): Promise<Array<FileEntry>> {
+async function resolveFilesRecursiveForDir(dirOrFile: string): Promise<Array<FileEntry>> {
   const resolvedDirOrFile = path.resolve(dirOrFile);
   const isDir = (await fs.promises.lstat(resolvedDirOrFile)).isDirectory();
 
@@ -139,9 +137,7 @@ async function resolveFilesRecursiveForDir(
  * @param dirsAndFiles - Variable number of directory and file paths
  * @returns Promise resolving to a flattened array of file entries
  */
-async function resolveFilesRecursive(
-  ...dirsAndFiles: Array<string>
-): Promise<Array<FileEntry>> {
+async function resolveFilesRecursive(...dirsAndFiles: Array<string>): Promise<Array<FileEntry>> {
   const files = await Promise.all(
     dirsAndFiles.map((dirOrFile) => resolveFilesRecursiveForDir(dirOrFile)),
   );
@@ -152,9 +148,7 @@ async function resolveFilesRecursive(
 /**
  * Converts a stream to a Uint8Array
  */
-async function streamToUint8Array(
-  stream: fs.ReadStream | Readable,
-): Promise<Uint8Array> {
+async function streamToUint8Array(stream: fs.ReadStream | Readable): Promise<Uint8Array> {
   const chunks: Array<Uint8Array> = [];
   for await (const chunk of stream) {
     chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
@@ -200,9 +194,7 @@ interface EntryData {
  * depending on how the input happens to be chunked, which would break the
  * content hash.
  */
-async function createZstdArchive(
-  entryDataList: Array<EntryData>,
-): Promise<Buffer<ArrayBuffer>> {
+async function createZstdArchive(entryDataList: Array<EntryData>): Promise<Buffer<ArrayBuffer>> {
   const tar = await createTar(entryDataList);
 
   return zlib.zstdCompressSync(tar, {
@@ -216,9 +208,7 @@ async function createZstdArchive(
  * Builds a zip archive. Used when the running Node doesn't support zstd, and
  * when a user forces it with HAPPO_ARCHIVE_FORMAT=zip.
  */
-async function createZipArchive(
-  entryDataList: Array<EntryData>,
-): Promise<Buffer<ArrayBuffer>> {
+async function createZipArchive(entryDataList: Array<EntryData>): Promise<Buffer<ArrayBuffer>> {
   // Build zipData object in sorted order to ensure deterministic zip creation
   const zipData: Zippable = {};
   for (const entry of entryDataList) {
@@ -259,9 +249,9 @@ export default async function deterministicArchive(
 
   // Sort by name to make the output deterministic
   // Use simple string comparison instead of localeCompare for cross-platform determinism
-  const filesToArchiveSorted = (
-    await resolveFilesRecursive(...uniqueDirsAndFiles)
-  ).toSorted((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  const filesToArchiveSorted = (await resolveFilesRecursive(...uniqueDirsAndFiles)).toSorted(
+    (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
+  );
 
   const contentToArchiveSorted = contentToArchive.toSorted((a, b) =>
     a.name < b.name ? -1 : a.name > b.name ? 1 : 0,

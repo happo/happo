@@ -1,12 +1,7 @@
 import { ErrorWithStatusCode } from '../network/fetchWithRetry.ts';
 import makeHappoAPIRequest from '../network/makeHappoAPIRequest.ts';
 import createHash from '../utils/createHash.ts';
-import type {
-  BrowserType,
-  ConfigWithDefaults,
-  Page,
-  TargetWithDefaults,
-} from './index.ts';
+import type { BrowserType, ConfigWithDefaults, Page, TargetWithDefaults } from './index.ts';
 
 const VIEWPORT_PATTERN = /^([0-9]+)x([0-9]+)$/;
 
@@ -98,10 +93,7 @@ function getPageSlices(pages: Array<Page>, chunks: number): Array<PageSlice> {
   // First, split the raw pages into chunks
   const pagesPerChunk = Math.ceil(pages.length / chunks);
   for (let i = 0; i < chunks; i += 1) {
-    const pageSlice = pages.slice(
-      i * pagesPerChunk,
-      i * pagesPerChunk + pagesPerChunk,
-    );
+    const pageSlice = pages.slice(i * pagesPerChunk, i * pagesPerChunk + pagesPerChunk);
 
     if (pageSlice.length > 0) {
       result.push(pageSlice);
@@ -156,8 +148,7 @@ function buildChunkItem({
 
   const payloadHash = createHash(payloadString + (pageSlice ? Math.random() : ''));
 
-  const type =
-    pageSlice && pageSlice.extendsSha ? 'extends-report' : `browser-${browserName}`;
+  const type = pageSlice && pageSlice.extendsSha ? 'extends-report' : `browser-${browserName}`;
 
   const item: ChunkItem = { type, targetName, payloadString, payloadHash };
   if (pageSlice?.extendsSha) {
@@ -219,12 +210,7 @@ export default class RemoteBrowserTarget {
 
   constructor(
     browserName: BrowserType,
-    {
-      viewport = '1024x768',
-      chunks,
-      maxHeight,
-      ...otherOptions
-    }: TargetWithDefaults,
+    { viewport = '1024x768', chunks, maxHeight, ...otherOptions }: TargetWithDefaults,
   ) {
     if (!browserName) {
       throw new Error(
@@ -283,8 +269,7 @@ export default class RemoteBrowserTarget {
         items.push(
           buildChunkItem({
             ...buildItemParams,
-            chunk:
-              effectiveChunks > 1 ? { index: i, total: effectiveChunks } : undefined,
+            chunk: effectiveChunks > 1 ? { index: i, total: effectiveChunks } : undefined,
           }),
         );
       }
@@ -296,10 +281,7 @@ export default class RemoteBrowserTarget {
       const effectiveChunks = this.chunks ?? 1;
       const snapsPerChunk = Math.ceil((snapPayloads?.length ?? 0) / effectiveChunks);
       for (let i = 0; i < effectiveChunks; i += 1) {
-        const slice = snapPayloads?.slice(
-          i * snapsPerChunk,
-          i * snapsPerChunk + snapsPerChunk,
-        );
+        const slice = snapPayloads?.slice(i * snapsPerChunk, i * snapsPerChunk + snapsPerChunk);
         items.push(buildChunkItem({ ...buildItemParams, slice }));
       }
     }
@@ -324,10 +306,7 @@ export default class RemoteBrowserTarget {
         batchStart < items.length;
         batchStart += MAX_BULK_ITEMS_PER_REQUEST
       ) {
-        const batch = items.slice(
-          batchStart,
-          batchStart + MAX_BULK_ITEMS_PER_REQUEST,
-        );
+        const batch = items.slice(batchStart, batchStart + MAX_BULK_ITEMS_PER_REQUEST);
 
         const result = await makeHappoAPIRequest(
           {
@@ -351,8 +330,7 @@ export default class RemoteBrowserTarget {
           }>;
 
           for (const [i, r] of bulkResults.entries()) {
-            requestIds[batchStart + i] =
-              typeof r.requestId === 'number' ? r.requestId : undefined;
+            requestIds[batchStart + i] = typeof r.requestId === 'number' ? r.requestId : undefined;
           }
         } else {
           // The bulk endpoint responded with a 200 but an unexpected payload
@@ -373,9 +351,7 @@ export default class RemoteBrowserTarget {
 
       return requestIds.map((id, index) => {
         if (id === undefined) {
-          throw new Error(
-            `Failed to obtain snap request ID for item at index ${index}`,
-          );
+          throw new Error(`Failed to obtain snap request ID for item at index ${index}`);
         }
 
         return id;
@@ -383,12 +359,10 @@ export default class RemoteBrowserTarget {
     } catch (error) {
       // Fall back to individual requests only when the server explicitly
       // reports that the bulk endpoint is missing or not implemented.
-      if (
-        !(
-          error instanceof ErrorWithStatusCode &&
-          (error.statusCode === 404 || error.statusCode === 501)
-        )
-      ) {
+      if (!(
+        error instanceof ErrorWithStatusCode &&
+        (error.statusCode === 404 || error.statusCode === 501)
+      )) {
         throw error;
       }
     }

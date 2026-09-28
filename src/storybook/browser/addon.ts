@@ -6,13 +6,7 @@
 // so the duplication is kept explicit. Keep the two files in sync.
 import { createElement, useEffect, useState } from 'react';
 import { AddonPanel } from 'storybook/internal/components';
-import {
-  addons,
-  types,
-  useChannel,
-  useParameter,
-  useStorybookState,
-} from 'storybook/manager-api';
+import { addons, types, useChannel, useParameter, useStorybookState } from 'storybook/manager-api';
 
 const ADDON_ID = 'happo';
 const PANEL_ID = `${ADDON_ID}/panel`;
@@ -61,22 +55,14 @@ function HappoPanel() {
                 'tr',
                 { key: key },
                 createElement('td', null, createElement('code', null, `${key}:`)),
-                createElement(
-                  'td',
-                  null,
-                  createElement('code', null, JSON.stringify(val)),
-                ),
+                createElement('td', null, createElement('code', null, JSON.stringify(val))),
               );
             }),
             functionParams.map((param) => {
               return createElement(
                 'tr',
                 { key: param.key },
-                createElement(
-                  'td',
-                  null,
-                  createElement('code', null, `${param.key}:`),
-                ),
+                createElement('td', null, createElement('code', null, `${param.key}:`)),
                 createElement(
                   'td',
                   null,

@@ -7,9 +7,7 @@ import type {
   DOMSnapshotResult,
   TakeDOMSnapshotOptions,
 } from '../isomorphic/types.ts';
-import applyConstructedStylesPatch, {
-  recordedCSSSymbol,
-} from './applyConstructedStylesPatch.ts';
+import applyConstructedStylesPatch, { recordedCSSSymbol } from './applyConstructedStylesPatch.ts';
 import assertElement, { isElementWithDataset, isIterableCollection } from './assertElement.ts';
 import { MD5 } from './md5.ts';
 
@@ -41,14 +39,8 @@ function getContentFromStyleSheet(element: HTMLElement | CSSStyleSheet): string 
     recordedCSSSymbol in element &&
     (element as ExtendedHTMLElement | ExtendedCSSStyleSheet)[recordedCSSSymbol]
   ) {
-    lines = (element as ExtendedHTMLElement | ExtendedCSSStyleSheet)[
-      recordedCSSSymbol
-    ]!;
-  } else if (
-    'sheet' in element &&
-    element.sheet &&
-    (element.sheet as CSSStyleSheet).cssRules
-  ) {
+    lines = (element as ExtendedHTMLElement | ExtendedCSSStyleSheet)[recordedCSSSymbol]!;
+  } else if ('sheet' in element && element.sheet && (element.sheet as CSSStyleSheet).cssRules) {
     // Handle <style> or <link> elements that have a sheet property
     const cssRules = (element.sheet as CSSStyleSheet).cssRules as CSSRuleList;
     lines = Array.from(cssRules).map((rule: CSSRule) => rule.cssText);
@@ -118,10 +110,7 @@ function getElementAssetUrls(
   {
     handleBase64Image = defaultHandleBase64Image,
   }: {
-    handleBase64Image?: (params: {
-      base64Url: string;
-      element: HTMLImageElement;
-    }) => void;
+    handleBase64Image?: (params: { base64Url: string; element: HTMLImageElement }) => void;
   } = {},
 ): Array<AssetUrl> {
   const allUrls: Array<AssetUrl> = [];
@@ -132,8 +121,7 @@ function getElementAssetUrls(
       continue;
     }
     const srcset = element.getAttribute('srcset');
-    const imageHref =
-      element.tagName.toLowerCase() === 'image' && element.getAttribute('href');
+    const imageHref = element.tagName.toLowerCase() === 'image' && element.getAttribute('href');
     const linkHref =
       element.tagName.toLowerCase() === 'link' &&
       element.getAttribute('rel') === 'stylesheet' &&
@@ -264,9 +252,7 @@ function registerScrollPositions(doc: Document): void {
 }
 
 function registerCheckedInputs(doc: Document): void {
-  const elements = doc.body.querySelectorAll(
-    'input[type="checkbox"], input[type="radio"]',
-  );
+  const elements = doc.body.querySelectorAll('input[type="checkbox"], input[type="radio"]');
   for (const node of elements) {
     const input = node as HTMLInputElement;
     if (input.checked) {
@@ -374,9 +360,7 @@ function inlineShadowRoots(element: Element): void {
  * from all other dialogs.
  */
 function markModalDialogs(element: Element): void {
-  const cleanups = element.querySelectorAll<HTMLDialogElement>(
-    'dialog[data-happo-modal]',
-  );
+  const cleanups = element.querySelectorAll<HTMLDialogElement>('dialog[data-happo-modal]');
   for (const cleanup of cleanups) {
     delete cleanup.dataset.happoModal;
   }
@@ -579,11 +563,19 @@ export default function takeDOMSnapshot({
       // headless browsers querySelectorAll(':hover') / querySelectorAll(':active')
       // may not reflect the live state, but mouse events still fire reliably.
       const trackedHoverEl = getTrackedHoverElement(doc);
-      if (trackedHoverEl && isElementWithDataset(trackedHoverEl) && element.contains(trackedHoverEl)) {
+      if (
+        trackedHoverEl &&
+        isElementWithDataset(trackedHoverEl) &&
+        element.contains(trackedHoverEl)
+      ) {
         trackedHoverEl.dataset.happoHover = 'true';
       }
       const trackedActiveEl = getTrackedActiveElement(doc);
-      if (trackedActiveEl && isElementWithDataset(trackedActiveEl) && element.contains(trackedActiveEl)) {
+      if (
+        trackedActiveEl &&
+        isElementWithDataset(trackedActiveEl) &&
+        element.contains(trackedActiveEl)
+      ) {
         trackedActiveEl.dataset.happoActive = 'true';
       }
     }
@@ -591,12 +583,7 @@ export default function takeDOMSnapshot({
     inlineShadowRoots(element);
     markModalDialogs(element);
 
-    assetUrls.push(
-      ...getElementAssetUrls(
-        element,
-        handleBase64Image ? { handleBase64Image } : {},
-      ),
-    );
+    assetUrls.push(...getElementAssetUrls(element, handleBase64Image ? { handleBase64Image } : {}));
 
     if (strategy === 'hoist') {
       htmlParts.push(element.outerHTML);
@@ -630,9 +617,7 @@ export default function takeDOMSnapshot({
   // Remove our shadow content elements so that they don't affect the page
   for (const e of doc.querySelectorAll('happo-shadow-content')) e.remove();
   if (strategy === 'clip') {
-    for (const e of doc.querySelectorAll<HTMLElement | SVGElement>(
-      '[data-happo-clip]',
-    )) {
+    for (const e of doc.querySelectorAll<HTMLElement | SVGElement>('[data-happo-clip]')) {
       delete e.dataset.happoClip;
     }
   }

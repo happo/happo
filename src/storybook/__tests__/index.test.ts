@@ -146,12 +146,8 @@ describe('happoStorybookPlugin', () => {
     let withManagerDir: string;
 
     beforeAll(async () => {
-      defaultDir = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'happo-preview-only-'),
-      );
-      withManagerDir = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'happo-with-manager-'),
-      );
+      defaultDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'happo-preview-only-'));
+      withManagerDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'happo-with-manager-'));
       // No `previewOnly` here on purpose: this is what everyone gets.
       await happoStorybookPlugin({
         configDir: 'src/storybook/__tests__/storybook-app',
@@ -184,10 +180,7 @@ describe('happoStorybookPlugin', () => {
       // --preview-only ever started dropping one of them, rendering would
       // break rather than just get smaller.
       for (const file of ['iframe.html', 'index.json']) {
-        assert.ok(
-          fs.existsSync(path.join(defaultDir, file)),
-          `expected ${file} to exist`,
-        );
+        assert.ok(fs.existsSync(path.join(defaultDir, file)), `expected ${file} to exist`);
       }
       assert.ok(
         fs.readdirSync(path.join(defaultDir, 'assets')).length > 0,
@@ -199,10 +192,7 @@ describe('happoStorybookPlugin', () => {
       // The opt-out for people who download built packages and open them
       // locally, where a package without a sidebar is a lot less useful.
       for (const entry of ['index.html', 'sb-manager']) {
-        assert.ok(
-          fs.existsSync(path.join(withManagerDir, entry)),
-          `expected ${entry} to exist`,
-        );
+        assert.ok(fs.existsSync(path.join(withManagerDir, entry)), `expected ${entry} to exist`);
       }
     });
 

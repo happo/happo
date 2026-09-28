@@ -67,12 +67,10 @@ export default async function getShortLivedAPIToken(
   // Set up promise to wait for callback
   let resolveCallback: (value: { key: string; secret: string }) => void;
   let rejectCallback: (error: Error) => void;
-  const callbackPromise = new Promise<{ key: string; secret: string }>(
-    (resolve, reject) => {
-      resolveCallback = resolve;
-      rejectCallback = reject;
-    },
-  );
+  const callbackPromise = new Promise<{ key: string; secret: string }>((resolve, reject) => {
+    resolveCallback = resolve;
+    rejectCallback = reject;
+  });
 
   // Start local server on auto port
   const serverInfo = await startServer((req, res) => {

@@ -93,10 +93,7 @@ describe('getShortLivedAPIToken', () => {
     // Make promptUser reject to simulate user pressing a different key
     mockPromptUser.shouldReject = true;
 
-    await assert.rejects(
-      getShortLivedAPIToken(endpoint, logger),
-      /User cancelled authentication/,
-    );
+    await assert.rejects(getShortLivedAPIToken(endpoint, logger), /User cancelled authentication/);
 
     // Verify promptUser was called with the correct message
     assert.strictEqual(mockPromptUser.mock.calls.length, 1);
@@ -144,9 +141,7 @@ describe('getShortLivedAPIToken', () => {
     const callbackUrl = decodeURIComponent(callbackUrlMatch[1]);
     const pingResponse = await fetch(`${callbackUrl}?ping=true`);
     assert.strictEqual(pingResponse.status, 200);
-    const response = await fetch(
-      `${callbackUrl}?key=${testKey}&secret=${testSecret}`,
-    );
+    const response = await fetch(`${callbackUrl}?key=${testKey}&secret=${testSecret}`);
     assert.strictEqual(response.status, 200);
 
     // Wait for the promise to resolve

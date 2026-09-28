@@ -35,10 +35,7 @@ beforeAll(async () => {
       return;
     }
 
-    if (
-      path?.startsWith('/api/snap-requests/assets/') &&
-      path.endsWith('/signed-url')
-    ) {
+    if (path?.startsWith('/api/snap-requests/assets/') && path.endsWith('/signed-url')) {
       res.end(JSON.stringify({ path: '/path/to/asset', uploadedAt: '2021-01-01' }));
       return;
     }
@@ -152,9 +149,7 @@ describe('Controller', () => {
         variant: 'primary',
       },
     ]);
-    assert.deepStrictEqual(controller.assetUrls, [
-      { url: 'http://example.com/asset.jpg' },
-    ]);
+    assert.deepStrictEqual(controller.assetUrls, [{ url: 'http://example.com/asset.jpg' }]);
     assert.deepStrictEqual(controller.cssBlocks, []);
 
     await controller.finish();
@@ -334,10 +329,7 @@ describe('Controller', () => {
       isLast: true,
     });
 
-    assert.strictEqual(
-      fs.readFileSync('.happo-tmp/_inlined/single-chunk.bin', 'utf8'),
-      'hello',
-    );
+    assert.strictEqual(fs.readFileSync('.happo-tmp/_inlined/single-chunk.bin', 'utf8'), 'hello');
     assert.strictEqual(fs.existsSync('.happo-tmp/_inlined/single-chunk.bin.b64'), false);
 
     await controller.finish();
@@ -363,10 +355,7 @@ describe('Controller', () => {
       isLast: true,
     });
 
-    assert.strictEqual(
-      fs.readFileSync('.happo-tmp/_inlined/multi-chunk.bin', 'utf8'),
-      'chunked',
-    );
+    assert.strictEqual(fs.readFileSync('.happo-tmp/_inlined/multi-chunk.bin', 'utf8'), 'chunked');
     assert.strictEqual(fs.existsSync('.happo-tmp/_inlined/multi-chunk.bin.b64'), false);
 
     await controller.finish();

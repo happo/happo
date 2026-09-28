@@ -24,9 +24,7 @@ export function isElementWithDataset(
   return true;
 }
 
-export function isIterableCollection(
-  element: NonNullable<unknown>,
-): element is Iterable<unknown> {
+export function isIterableCollection(element: NonNullable<unknown>): element is Iterable<unknown> {
   if (typeof element !== 'object') {
     return false;
   }

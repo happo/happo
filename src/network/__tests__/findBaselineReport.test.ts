@@ -91,11 +91,7 @@ describe('findBaselineReport', () => {
     };
     assert.ok(body);
     assert.strictEqual(body.project, 'test-project');
-    assert.deepStrictEqual(body.shas, [
-      'before-sha',
-      'fallback-sha-1',
-      'fallback-sha-2',
-    ]);
+    assert.deepStrictEqual(body.shas, ['before-sha', 'fallback-sha-1', 'fallback-sha-2']);
   });
 
   it('uses only beforeSha in shas when there are no fallbackShas', async () => {

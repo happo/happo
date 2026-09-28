@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import startStorybookServer, {
-  type StorybookServerInfo,
-} from './startStorybookServer.ts';
+import startStorybookServer, { type StorybookServerInfo } from './startStorybookServer.ts';
 
 let serverInfo: StorybookServerInfo;
 
@@ -16,9 +14,7 @@ test.afterAll(async () => {
 
 test('can interact with ModifyGlobalState story', async ({ page }) => {
   // Navigate to the ModifyGlobalState story
-  await page.goto(
-    `http://localhost:${serverInfo.port}/?path=/story/stories--modify-global-state`,
-  );
+  await page.goto(`http://localhost:${serverInfo.port}/?path=/story/stories--modify-global-state`);
 
   // Find and click the Happo tab
   const happoTab = await page.getByRole('tab', { name: 'Happo' });

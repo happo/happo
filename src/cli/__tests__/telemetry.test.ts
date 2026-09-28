@@ -127,10 +127,7 @@ describe('telemetry', () => {
     });
 
     it('is true when HAPPO_DISABLE_TELEMETRY is set', () => {
-      assert.strictEqual(
-        isTelemetryDisabled({ HAPPO_DISABLE_TELEMETRY: '1' }),
-        true,
-      );
+      assert.strictEqual(isTelemetryDisabled({ HAPPO_DISABLE_TELEMETRY: '1' }), true);
     });
 
     it('is false in generic test environments', () => {
@@ -157,9 +154,7 @@ describe('telemetry', () => {
 
     it('can capture exceptions', async () => {
       const reporter = createReporter();
-      await reporter.captureException(
-        new Error('Test error from happo package test suite'),
-      );
+      await reporter.captureException(new Error('Test error from happo package test suite'));
     });
   });
 });

@@ -24,7 +24,9 @@ export default async function createExtendsReportSnapRequest(
   );
 
   if (!result || !('requestId' in result) || typeof result.requestId !== 'number') {
-    throw new Error(`Invalid response from extends-report snap request API: ${JSON.stringify(result)}`);
+    throw new Error(
+      `Invalid response from extends-report snap request API: ${JSON.stringify(result)}`,
+    );
   }
 
   return result.requestId;

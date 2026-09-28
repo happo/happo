@@ -8,9 +8,7 @@ export interface StartJobResult {
   url: string;
 }
 
-function assertResultIsStartJobResult(
-  result: unknown,
-): asserts result is StartJobResult {
+function assertResultIsStartJobResult(result: unknown): asserts result is StartJobResult {
   if (typeof result !== 'object' || result === null) {
     throw new TypeError('Result is not an object');
   }

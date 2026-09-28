@@ -157,9 +157,7 @@ it('resolves version from a parent node_modules (workspace hoisting / Yarn PnP-s
     },
   });
 
-  const version = getStorybookVersionFromPackageJson(
-    tmpfs.fullPath('packages/app/package.json'),
-  );
+  const version = getStorybookVersionFromPackageJson(tmpfs.fullPath('packages/app/package.json'));
   assert.strictEqual(version, 9);
 });
 
@@ -220,9 +218,7 @@ it('resolves version when the package is hoisted AND has an exports field that h
     },
   });
 
-  const version = getStorybookVersionFromPackageJson(
-    tmpfs.fullPath('packages/app/package.json'),
-  );
+  const version = getStorybookVersionFromPackageJson(tmpfs.fullPath('packages/app/package.json'));
   assert.strictEqual(version, 9);
 });
 

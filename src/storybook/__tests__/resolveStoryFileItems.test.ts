@@ -2,9 +2,7 @@ import assert from 'node:assert';
 
 import { describe, it, vi } from 'vitest';
 
-import resolveStoryFileItems, {
-  type StorybookIndexEntry,
-} from '../resolveStoryFileItems.ts';
+import resolveStoryFileItems, { type StorybookIndexEntry } from '../resolveStoryFileItems.ts';
 
 const entries: Record<string, StorybookIndexEntry> = {
   'button--primary': {
@@ -31,35 +29,23 @@ const entries: Record<string, StorybookIndexEntry> = {
 
 describe('resolveStoryFileItems', () => {
   it('passes through component items unchanged', () => {
-    const result = resolveStoryFileItems(
-      [{ component: 'Button', variant: 'Primary' }],
-      entries,
-    );
+    const result = resolveStoryFileItems([{ component: 'Button', variant: 'Primary' }], entries);
     assert.deepStrictEqual(result, [{ component: 'Button', variant: 'Primary' }]);
   });
 
   it('resolves storyFile to component name', () => {
-    const result = resolveStoryFileItems(
-      [{ storyFile: './src/Button.stories.tsx' }],
-      entries,
-    );
+    const result = resolveStoryFileItems([{ storyFile: './src/Button.stories.tsx' }], entries);
     assert.deepStrictEqual(result, [{ component: 'Button' }]);
   });
 
   it('resolves storyFile without leading ./', () => {
-    const result = resolveStoryFileItems(
-      [{ storyFile: 'src/Input.stories.tsx' }],
-      entries,
-    );
+    const result = resolveStoryFileItems([{ storyFile: 'src/Input.stories.tsx' }], entries);
     assert.deepStrictEqual(result, [{ component: 'Input' }]);
   });
 
   it('returns one entry per unique component title, not per story', () => {
     // Button has two stories but one title — should produce one resolved item
-    const result = resolveStoryFileItems(
-      [{ storyFile: 'src/Button.stories.tsx' }],
-      entries,
-    );
+    const result = resolveStoryFileItems([{ storyFile: 'src/Button.stories.tsx' }], entries);
     assert.strictEqual(result.length, 1);
     assert.strictEqual(result[0]?.component, 'Button');
   });
@@ -78,10 +64,7 @@ describe('resolveStoryFileItems', () => {
   it('warns and skips storyFile items not found in the index', () => {
     const warnMock = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      const result = resolveStoryFileItems(
-        [{ storyFile: 'src/NotFound.stories.tsx' }],
-        entries,
-      );
+      const result = resolveStoryFileItems([{ storyFile: 'src/NotFound.stories.tsx' }], entries);
       assert.deepStrictEqual(result, []);
       assert.strictEqual(warnMock.mock.calls.length, 1);
       assert.match(String(warnMock.mock.calls[0]?.[0]), /NotFound/);

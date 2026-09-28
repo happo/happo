@@ -34,9 +34,7 @@ export interface TarEntry {
  * (ustar prefix where it fits, PAX otherwise), so no path we can build is
  * rejected here.
  */
-export default async function createTar(
-  entries: Array<TarEntry>,
-): Promise<Buffer<ArrayBuffer>> {
+export default async function createTar(entries: Array<TarEntry>): Promise<Buffer<ArrayBuffer>> {
   const packed = await packTar(
     entries.map((entry) => ({
       header: {

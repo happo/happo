@@ -58,11 +58,7 @@ const time = globalThis.happoTime || {
 
 const STORY_STORE_TIMEOUT = 10_000;
 
-type HookFunction = ({
-  rootElement,
-}: {
-  rootElement: HTMLElement;
-}) => void | Promise<void>;
+type HookFunction = ({ rootElement }: { rootElement: HTMLElement }) => void | Promise<void>;
 
 interface Example {
   component: string;
@@ -160,13 +156,10 @@ function isDefined<T>(value: T): value is NonNullable<T> {
 async function getStoryStore(startTime = time.originalDateNow()) {
   const duration = time.originalDateNow() - startTime;
   if (duration >= STORY_STORE_TIMEOUT) {
-    throw new Error(
-      `Timeout: Could not find Storybook Client API after ${STORY_STORE_TIMEOUT}ms`,
-    );
+    throw new Error(`Timeout: Could not find Storybook Client API after ${STORY_STORE_TIMEOUT}ms`);
   }
 
-  const { __STORYBOOK_CLIENT_API__: clientApi, __STORYBOOK_PREVIEW__: preview } =
-    globalThis;
+  const { __STORYBOOK_CLIENT_API__: clientApi, __STORYBOOK_PREVIEW__: preview } = globalThis;
 
   if (clientApi && clientApi._storyStore) {
     return clientApi._storyStore;
@@ -258,10 +251,7 @@ async function getExamples(): Promise<Array<Example>> {
     });
 }
 
-function filterExamples(
-  all: Array<Example>,
-  initConfig: InitConfig,
-): Array<Example> {
+function filterExamples(all: Array<Example>, initConfig: InitConfig): Array<Example> {
   const { chunk, targetName, only } = initConfig;
 
   if (globalThis.happoOnly) {
@@ -300,9 +290,7 @@ function filterExamples(
   }
 
   if (only) {
-    all = all.filter(
-      (e) => e.component === only.component && e.variant === only.variant,
-    );
+    all = all.filter((e) => e.component === only.component && e.variant === only.variant);
   }
 
   return all;
@@ -514,9 +502,7 @@ globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> 
       await waitForWaitFor(waitFor);
     }
 
-    const highlightsRootElement = document.querySelector(
-      '#storybook-highlights-root',
-    );
+    const highlightsRootElement = document.querySelector('#storybook-highlights-root');
     if (
       highlightsRootElement &&
       (highlightsRootElement instanceof HTMLElement ||
@@ -581,9 +567,7 @@ export function setRenderTimeoutMs(timeoutMs: number): void {
   state.renderTimeoutMs = timeoutMs;
 }
 
-export function setThemeSwitcher(
-  func: (theme: string, channel: Channel) => Promise<void>,
-): void {
+export function setThemeSwitcher(func: (theme: string, channel: Channel) => Promise<void>): void {
   state.themeSwitcher = func;
 }
 
@@ -596,9 +580,7 @@ export function setShouldWaitForCompletedEvent(swfce: boolean): void {
  * the worker. The hooks already reached the page through
  * `happoAnimate.beforeRender()`, and functions can't travel to the worker.
  */
-function withoutHooks(
-  animate: StoryAnimateConfig | undefined,
-): AnimateConfig | undefined {
+function withoutHooks(animate: StoryAnimateConfig | undefined): AnimateConfig | undefined {
   if (!animate || typeof animate !== 'object') {
     return animate;
   }

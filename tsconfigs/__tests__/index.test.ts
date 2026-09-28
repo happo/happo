@@ -49,11 +49,7 @@ function readTsconfigJson(tsconfigPath: string): object {
 
 function readAndParseTsconfig(tsconfigPath: string): ts.ParsedCommandLine {
   const configDir = path.dirname(tsconfigPath);
-  return ts.parseJsonConfigFileContent(
-    readTsconfigJson(tsconfigPath),
-    ts.sys,
-    configDir,
-  );
+  return ts.parseJsonConfigFileContent(readTsconfigJson(tsconfigPath), ts.sys, configDir);
 }
 
 function tsconfigListFiles(tsconfigPath: string): Array<string> {
@@ -62,10 +58,7 @@ function tsconfigListFiles(tsconfigPath: string): Array<string> {
 }
 
 function isTSConfigForPublishedCode(tsconfigPath: string): boolean {
-  return (
-    !tsconfigPath.includes('tsconfig.tests.') &&
-    !tsconfigPath.includes('tsconfig.dev.')
-  );
+  return !tsconfigPath.includes('tsconfig.tests.') && !tsconfigPath.includes('tsconfig.dev.');
 }
 
 describe('getAllTsConfigs', () => {
@@ -83,9 +76,7 @@ describe('tsconfig.json', () => {
     assert.ok(rootTsconfig.projectReferences);
     const tsconfigPaths = getAllTsconfigs()
       // Remove the base config that everything extends
-      .filter(
-        (tsconfig) => tsconfig !== path.join(tsconfigDirName, 'tsconfig.base.json'),
-      )
+      .filter((tsconfig) => tsconfig !== path.join(tsconfigDirName, 'tsconfig.base.json'))
       // Normalize the paths to be relative to the tsconfig.json file
       .map((tsconfig) => `./${tsconfig.split(path.sep).join('/')}`);
 
@@ -180,10 +171,7 @@ describe('tsconfigs', () => {
     for (const [tsconfigFile, files] of filesCoveredByTsconfigs) {
       for (const file of files) {
         for (const bannedDirectory of bannedDirectories) {
-          assert.ok(
-            !file.startsWith(`${bannedDirectory}/`),
-            `${tsconfigFile} includes ${file}`,
-          );
+          assert.ok(!file.startsWith(`${bannedDirectory}/`), `${tsconfigFile} includes ${file}`);
         }
       }
     }

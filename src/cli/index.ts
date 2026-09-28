@@ -21,9 +21,7 @@ async function getVersion() {
   return packageJson.default.version;
 }
 
-function parseDashdashCommandParts(
-  rawArgs: Array<string>,
-): Array<string> | undefined {
+function parseDashdashCommandParts(rawArgs: Array<string>): Array<string> | undefined {
   const dashdashIndex = rawArgs.indexOf('--');
   if (dashdashIndex === -1) {
     return undefined;
@@ -53,10 +51,7 @@ function parseRawArgs(rawArgs: Array<string>) {
 
       if (match && match[1]) {
         const unknownOption = match[1];
-        const suggestion = findClosestMatch(
-          unknownOption.slice(2),
-          Object.keys(parseOptions),
-        );
+        const suggestion = findClosestMatch(unknownOption.slice(2), Object.keys(parseOptions));
 
         if (suggestion !== undefined) {
           throw new TypeError(
@@ -198,10 +193,7 @@ export async function main(
       return;
     }
 
-    if (
-      args.values.skip !== undefined &&
-      args.values.skippedExamples !== undefined
-    ) {
+    if (args.values.skip !== undefined && args.values.skippedExamples !== undefined) {
       logger.error(
         '[HAPPO] Use either --skip or --skippedExamples, not both. They are two names for the same option.',
       );
@@ -211,8 +203,7 @@ export async function main(
 
     // --skip and --skippedExamples are aliases. Report problems using whichever
     // one the user actually typed.
-    const skipFlag =
-      args.values.skippedExamples === undefined ? '--skip' : '--skippedExamples';
+    const skipFlag = args.values.skippedExamples === undefined ? '--skip' : '--skippedExamples';
 
     const environment = await resolveEnvironment(args.values);
 
@@ -234,10 +225,7 @@ export async function main(
         try {
           skipItems = validateSkip(environment.skip, skipFlag);
         } catch (e) {
-          logger.error(
-            `[HAPPO] Invalid ${skipFlag}:`,
-            e instanceof Error ? e.message : String(e),
-          );
+          logger.error(`[HAPPO] Invalid ${skipFlag}:`, e instanceof Error ? e.message : String(e));
           process.exitCode = 1;
           return;
         }
@@ -267,10 +255,7 @@ export async function main(
         try {
           skipItems = validateSkip(environment.skip, skipFlag);
         } catch (e) {
-          logger.error(
-            `[HAPPO] Invalid ${skipFlag}:`,
-            e instanceof Error ? e.message : String(e),
-          );
+          logger.error(`[HAPPO] Invalid ${skipFlag}:`, e instanceof Error ? e.message : String(e));
           process.exitCode = 1;
           return;
         }
@@ -379,18 +364,12 @@ async function handleDefaultCommand(
       try {
         skip = validateSkip(environment.skip, skipFlag);
       } catch (e) {
-        logger.error(
-          `[HAPPO] Invalid ${skipFlag}:`,
-          e instanceof Error ? e.message : String(e),
-        );
+        logger.error(`[HAPPO] Invalid ${skipFlag}:`, e instanceof Error ? e.message : String(e));
         process.exitCode = 1;
         return;
       }
 
-      if (
-        config.integration.type !== 'storybook' &&
-        skip.some((item) => 'storyFile' in item)
-      ) {
+      if (config.integration.type !== 'storybook' && skip.some((item) => 'storyFile' in item)) {
         logger.error(
           `[HAPPO] storyFile items in ${skipFlag} are only supported for the storybook integration (current integration: '${config.integration.type}')`,
         );
@@ -398,8 +377,7 @@ async function handleDefaultCommand(
         return;
       }
 
-      const findBaselineReport = (await import('../network/findBaselineReport.ts'))
-        .default;
+      const findBaselineReport = (await import('../network/findBaselineReport.ts')).default;
       baselineSha = await findBaselineReport(environment, config, logger);
       if (!baselineSha) {
         logger.log(
@@ -424,10 +402,7 @@ async function handleDefaultCommand(
       try {
         only = validateOnly(environment.only);
       } catch (e) {
-        logger.error(
-          '[HAPPO] Invalid --only:',
-          e instanceof Error ? e.message : String(e),
-        );
+        logger.error('[HAPPO] Invalid --only:', e instanceof Error ? e.message : String(e));
         process.exitCode = 1;
         return;
       }
@@ -435,8 +410,7 @@ async function handleDefaultCommand(
       // Find a baseline to borrow the excluded stories from, unless --skip
       // already resolved one.
       if (!baselineSha) {
-        const findBaselineReport = (await import('../network/findBaselineReport.ts'))
-          .default;
+        const findBaselineReport = (await import('../network/findBaselineReport.ts')).default;
         baselineSha = await findBaselineReport(environment, config, logger);
       }
 
@@ -457,11 +431,7 @@ async function handleDefaultCommand(
     // Prepare the snap requests for the job. This includes bundling static
     // assets and uploading them. Only pass the skip list when we have a
     // baseline to borrow the skipped examples from.
-    const { snapRequestIds, resolvedSkip } = await prepareSnapRequests(
-      config,
-      skip,
-      only,
-    );
+    const { snapRequestIds, resolvedSkip } = await prepareSnapRequests(config, skip, only);
 
     let allSnapRequestIds = snapRequestIds;
 
@@ -492,29 +462,19 @@ async function handleDefaultCommand(
     }
 
     // Put together a report from the snap requests.
-    const asyncReport = await createAsyncReport(
-      allSnapRequestIds,
-      config,
-      environment,
-      logger,
-    );
+    const asyncReport = await createAsyncReport(allSnapRequestIds, config, environment, logger);
 
     // Create an async comparison.
     logger.log(`[HAPPO] Async report URL: ${asyncReport.url}`);
     if (environment.beforeSha !== environment.afterSha) {
-      const asyncComparison = await createAsyncComparison(
-        config,
-        environment,
-        logger,
-      );
+      const asyncComparison = await createAsyncComparison(config, environment, logger);
       logger.log(`[HAPPO] Async comparison URL: ${asyncComparison.compareUrl}`);
 
       if (environment.link && environment.githubToken && config.githubApiUrl) {
         // githubToken and githubApiUrl are set which means that we should post
         // a comment to the PR.
         // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
-        const postGitHubComment = (await import('../network/postGitHubComment.ts'))
-          .default;
+        const postGitHubComment = (await import('../network/postGitHubComment.ts')).default;
         await postGitHubComment({
           authToken: environment.githubToken,
           link: environment.link,
@@ -527,11 +487,10 @@ async function handleDefaultCommand(
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     logger.error(`${config.integration.type} run failed: ${message}`, e);
-    const [{ default: cancelJob }, { default: formatFailureMessage }] =
-      await Promise.all([
-        import('../network/cancelJob.ts'),
-        import('../network/formatFailureMessage.ts'),
-      ]);
+    const [{ default: cancelJob }, { default: formatFailureMessage }] = await Promise.all([
+      import('../network/cancelJob.ts'),
+      import('../network/formatFailureMessage.ts'),
+    ]);
     await cancelJob(
       'failure',
       formatFailureMessage({
@@ -607,8 +566,7 @@ async function handleFlakeCommand(
     return;
   }
 
-  const { default: getFlakes, formatFlakeOutput } =
-    await import('../network/getFlakes.ts');
+  const { default: getFlakes, formatFlakeOutput } = await import('../network/getFlakes.ts');
   const project = allProjects ? undefined : (projectOverride ?? config.project);
   const flakes = await getFlakes(
     {

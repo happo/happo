@@ -38,9 +38,7 @@ describe('token caching', () => {
       // Each Date.now() call returns a new second, so independently-minted
       // tokens would have different exp values and thus different JWT strings.
       let nowMs = 0;
-      const dateNowMock = vi
-        .spyOn(Date, 'now')
-        .mockImplementation(() => (nowMs += 1001));
+      const dateNowMock = vi.spyOn(Date, 'now').mockImplementation(() => (nowMs += 1001));
       try {
         const [token1, token2] = await Promise.all([
           getSignedToken('key', 'secret'),

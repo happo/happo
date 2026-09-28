@@ -152,8 +152,7 @@ function ClickToReveal(): ReactNode {
 }
 
 export const Themed: StoryObj = {
-  render: (): ReactNode =>
-    createElement('div', { style: { color: 'gray' } }, 'My color is gray'),
+  render: (): ReactNode => createElement('div', { style: { color: 'gray' } }, 'My color is gray'),
   parameters: {
     happo: { themes: ['black', 'white'] as const },
   },
@@ -255,8 +254,7 @@ export const AsyncWithWaitForDataSelector: StoryObj = {
   render: (): ReactNode => createElement(Async2),
   parameters: {
     happo: {
-      waitFor: (): boolean | null =>
-        !!document.querySelector('[data-async-ready=true]'),
+      waitFor: (): boolean | null => !!document.querySelector('[data-async-ready=true]'),
     },
   },
 };
@@ -271,16 +269,11 @@ export const ButtonFirefoxOnly: StoryObj = {
   },
 };
 export const ButtonWithImage: StoryObj = {
-  render: (): ReactNode =>
-    createElement(Button, null, createElement('img', { src: testImage })),
+  render: (): ReactNode => createElement(Button, null, createElement('img', { src: testImage })),
 };
 export const ButtonWithStaticImage: StoryObj = {
   render: (): ReactNode =>
-    createElement(
-      Button,
-      null,
-      createElement('img', { src: '/assets/staticImage.png' }),
-    ),
+    createElement(Button, null, createElement('img', { src: '/assets/staticImage.png' })),
 };
 export const ButtonWithSomeEmoji: StoryObj = {
   render: (): ReactNode =>
@@ -324,10 +317,6 @@ function fallbackRender({ error }: { error: unknown }): ReactNode {
 }
 export const MiscFailing: StoryObj = {
   render: (): ReactNode =>
-    createElement(
-      ErrorBoundary,
-      { fallbackRender },
-      createElement(ComponentThatThrows),
-    ),
+    createElement(ErrorBoundary, { fallbackRender }, createElement(ComponentThatThrows)),
   parameters: { happo: { delay: 300 } },
 };

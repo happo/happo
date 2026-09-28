@@ -43,29 +43,18 @@ export function formatFlakeOutput(flakes: Array<FlakeEntry>): string {
     return 'No flakes found.';
   }
 
-  const lines = [
-    `Found ${flakes.length} flake${flakes.length === 1 ? '' : 's'}:`,
-  ];
+  const lines = [`Found ${flakes.length} flake${flakes.length === 1 ? '' : 's'}:`];
 
   for (const flake of flakes) {
-    const parts = [
-      flake.component,
-      flake.variant,
-      flake.target,
-    ].filter(Boolean);
+    const parts = [flake.component, flake.variant, flake.target].filter(Boolean);
     const label = parts.length > 0 ? parts.join(' / ') : 'Unknown flake';
     const projectLabel = flake.project ? `[${flake.project}] ` : '';
     const snapshotUrls = (flake.snapshots ?? [])
       .map((snapshot) => snapshot.url)
       .filter(Boolean) as Array<string>;
-    const snapshotsLabel =
-      snapshotUrls.length > 0 ? ` [${snapshotUrls.join(', ')}]` : '';
-    const comparisonLabel = flake.comparison?.url
-      ? ` (${flake.comparison.url})`
-      : '';
-    lines.push(
-      `- ${projectLabel}${label}${snapshotsLabel}${comparisonLabel}`,
-    );
+    const snapshotsLabel = snapshotUrls.length > 0 ? ` [${snapshotUrls.join(', ')}]` : '';
+    const comparisonLabel = flake.comparison?.url ? ` (${flake.comparison.url})` : '';
+    lines.push(`- ${projectLabel}${label}${snapshotsLabel}${comparisonLabel}`);
   }
 
   lines.push('Tip: use --format=json to see full details.');

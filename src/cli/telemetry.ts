@@ -411,22 +411,15 @@ export async function parseFrames(
 
     const rawAbsPath = match.groups.absPath ?? '';
 
-    const absPath = rawAbsPath.startsWith('node:')
-      ? rawAbsPath
-      : path.relative(cwd, rawAbsPath);
-    const filename = rawAbsPath.startsWith('node:')
-      ? rawAbsPath
-      : path.basename(rawAbsPath);
+    const absPath = rawAbsPath.startsWith('node:') ? rawAbsPath : path.relative(cwd, rawAbsPath);
+    const filename = rawAbsPath.startsWith('node:') ? rawAbsPath : path.basename(rawAbsPath);
 
     const functionName = match.groups.functionName ?? '';
 
-    const lineno = match.groups.lineno
-      ? Number.parseInt(match.groups.lineno, 10)
-      : undefined;
+    const lineno = match.groups.lineno ? Number.parseInt(match.groups.lineno, 10) : undefined;
 
     // Read context lines from the source file (only for package files)
-    const context =
-      rawAbsPath && lineno ? await readContextLines(rawAbsPath, lineno) : {};
+    const context = rawAbsPath && lineno ? await readContextLines(rawAbsPath, lineno) : {};
 
     // https://develop.sentry.dev/sdk/data-model/event-payloads/stacktrace/#frame-attributes
     const frame: SentryFrame = {
@@ -438,9 +431,7 @@ export async function parseFrames(
 
       lineno,
 
-      colno: match.groups.colno
-        ? Number.parseInt(match.groups.colno, 10)
-        : undefined,
+      colno: match.groups.colno ? Number.parseInt(match.groups.colno, 10) : undefined,
 
       ...context,
     };

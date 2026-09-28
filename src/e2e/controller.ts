@@ -158,9 +158,7 @@ async function downloadCSSContent(blocks: Array<CSSBlock>): Promise<void> {
     }
   });
 
-  await Promise.all(
-    actions.map(limitConcur(5, (action: () => Promise<void>) => action())),
-  );
+  await Promise.all(actions.map(limitConcur(5, (action: () => Promise<void>) => action())));
 }
 
 class Controller {
@@ -364,9 +362,7 @@ class Controller {
       );
       if (this.happoDebug) {
         console.log(
-          `[HAPPO] Snap-request(s) for target=${name} created with ID(s)=${requestIds.join(
-            ',',
-          )}`,
+          `[HAPPO] Snap-request(s) for target=${name} created with ID(s)=${requestIds.join(',')}`,
         );
       }
       allRequestIds.push(...requestIds);
@@ -423,9 +419,7 @@ class Controller {
   removeSnapshotsMadeBetween({ start, end }: TimeframeParams): void {
     if (this.happoDebug) {
       console.log(
-        `[HAPPO] Removing snapshots made between ${new Date(
-          start,
-        )} and ${new Date(end)}`,
+        `[HAPPO] Removing snapshots made between ${new Date(start)} and ${new Date(end)}`,
       );
     }
 
@@ -440,9 +434,7 @@ class Controller {
   removeDuplicatesInTimeframe({ start, end }: TimeframeParams): void {
     if (this.happoDebug) {
       console.log(
-        `[HAPPO] Removing duplicate snapshots made between ${new Date(
-          start,
-        )} and ${new Date(end)}`,
+        `[HAPPO] Removing duplicate snapshots made between ${new Date(start)} and ${new Date(end)}`,
       );
     }
 
@@ -637,9 +629,7 @@ class Controller {
       throw new Error('No url in uploadResult');
     }
 
-    return typeof uploadResult.url === 'string'
-      ? uploadResult.url
-      : String(uploadResult.url);
+    return typeof uploadResult.url === 'string' ? uploadResult.url : String(uploadResult.url);
   }
 
   async registerBase64ImageChunk({

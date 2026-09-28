@@ -118,10 +118,7 @@ export class MD5 {
     return ho.join('');
   }
 
-  private static _md5cycle(
-    x: Int32Array | Uint32Array,
-    k: Int32Array | Uint32Array,
-  ) {
+  private static _md5cycle(x: Int32Array | Uint32Array, k: Int32Array | Uint32Array) {
     let a = x[0]!;
     let b = x[1]!;
     let c = x[2]!;
@@ -316,10 +313,7 @@ export class MD5 {
         buf8[bufLen++] = ((code >>> 6) & 0x3f) | 0x80;
         buf8[bufLen++] = (code & 0x3f) | 0x80;
       } else {
-        code =
-          (code - 0xd8_00) * 0x4_00 +
-          (str.codePointAt(++i) ?? 0 - 0xdc_00) +
-          0x1_00_00;
+        code = (code - 0xd8_00) * 0x4_00 + (str.codePointAt(++i) ?? 0 - 0xdc_00) + 0x1_00_00;
         if (code > 0x10_ff_ff) {
           throw new Error('Unicode standard supports code points up to U+10FFFF');
         }

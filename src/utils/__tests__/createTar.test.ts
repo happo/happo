@@ -93,10 +93,11 @@ test('is readable by the system tar', async () => {
     ]),
   );
 
-  assert.deepStrictEqual(
-    [...files.keys()].toSorted(),
-    ['assets/app.js', 'assets/nested/deep.css', 'index.html'],
-  );
+  assert.deepStrictEqual([...files.keys()].toSorted(), [
+    'assets/app.js',
+    'assets/nested/deep.css',
+    'index.html',
+  ]);
   assert.strictEqual(files.get('index.html')?.toString(), '<html></html>');
 });
 
@@ -140,16 +141,10 @@ test('writes non-ASCII names whose byte length exceeds 255', async () => {
   const typeFlag = String.fromCodePoint(tar[156] as number);
   assert.strictEqual(typeFlag, 'x', 'should be a PAX extended header');
 
-  const paxSize = Number.parseInt(
-    tar.toString('utf8', 124, 136).replace(/\0.*$/, '').trim(),
-    8,
-  );
+  const paxSize = Number.parseInt(tar.toString('utf8', 124, 136).replace(/\0.*$/, '').trim(), 8);
   const paxRecords = tar.toString('utf8', BLOCK_SIZE, BLOCK_SIZE + paxSize);
 
-  assert(
-    paxRecords.includes(`path=${name}`),
-    'the PAX records should carry the full path',
-  );
+  assert(paxRecords.includes(`path=${name}`), 'the PAX records should carry the full path');
 });
 
 test('round-trips empty files', async () => {
@@ -186,28 +181,18 @@ test('round-trips sizes around the 512 byte block boundary', async () => {
 });
 
 test('round-trips binary content byte for byte', async () => {
-  const binary = new Uint8Array(
-    Array.from({ length: 5000 }, (_, i) => (i * 31) % 256),
-  );
+  const binary = new Uint8Array(Array.from({ length: 5000 }, (_, i) => (i * 31) % 256));
 
-  const files = await extractWithSystemTar(
-    await createTar([{ name: 'image.png', data: binary }]),
-  );
+  const files = await extractWithSystemTar(await createTar([{ name: 'image.png', data: binary }]));
 
-  assert.deepStrictEqual(
-    new Uint8Array(files.get('image.png') as Buffer),
-    binary,
-  );
+  assert.deepStrictEqual(new Uint8Array(files.get('image.png') as Buffer), binary);
 });
 
 test('ends with the two zero blocks that mark end of archive', async () => {
   const tar = await createTar([{ name: 'a.txt', data: u8('hi') }]);
 
   assert.strictEqual(tar.length % BLOCK_SIZE, 0);
-  assert.deepStrictEqual(
-    tar.subarray(tar.length - BLOCK_SIZE * 2),
-    Buffer.alloc(BLOCK_SIZE * 2),
-  );
+  assert.deepStrictEqual(tar.subarray(tar.length - BLOCK_SIZE * 2), Buffer.alloc(BLOCK_SIZE * 2));
 });
 
 test('produces an empty archive for no entries', async () => {

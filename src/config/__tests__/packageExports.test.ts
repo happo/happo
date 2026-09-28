@@ -57,10 +57,7 @@ function collectAllTsConfigs(tsConfigPath: string): Set<string> {
   return tsConfigs;
 }
 
-function getAllOutputFilesFromTsConfig(
-  tsConfigPath: string,
-  rootDir: string,
-): Array<string> {
+function getAllOutputFilesFromTsConfig(tsConfigPath: string, rootDir: string): Array<string> {
   // First pass: collect all unique tsconfig files
   const allTsConfigs = collectAllTsConfigs(tsConfigPath);
 
@@ -88,10 +85,7 @@ function getAllOutputFilesFromTsConfig(
       const sourceWithoutExt = relativeSourcePath.replace(/\.ts$/, '');
 
       if (options.declaration) {
-        const declarationPath = path.join(
-          declarationDir,
-          `${sourceWithoutExt}.d.ts`,
-        );
+        const declarationPath = path.join(declarationDir, `${sourceWithoutExt}.d.ts`);
 
         const relativeDeclarationPath = path.relative(
           rootDir,
@@ -102,10 +96,7 @@ function getAllOutputFilesFromTsConfig(
       }
 
       if (options.declarationMap) {
-        const declarationMapPath = path.join(
-          declarationDir,
-          `${sourceWithoutExt}.d.ts.map`,
-        );
+        const declarationMapPath = path.join(declarationDir, `${sourceWithoutExt}.d.ts.map`);
 
         const relativeDeclarationMapPath = path.relative(
           rootDir,
@@ -125,24 +116,15 @@ describe('package.json exports', () => {
 
   it('has exports defined', () => {
     assert.ok(packageJson.exports, 'package.json should have exports field');
-    assert.ok(
-      typeof packageJson.exports === 'object',
-      'exports should be an object',
-    );
+    assert.ok(typeof packageJson.exports === 'object', 'exports should be an object');
   });
 
   it('has valid export paths', () => {
-    const exports = packageJson.exports as Record<
-      string,
-      { default: string; types: string }
-    >;
+    const exports = packageJson.exports as Record<string, { default: string; types: string }>;
 
     for (const [exportPath, exportConfig] of Object.entries(exports)) {
       // Check that export path starts with '.' (relative path)
-      assert.ok(
-        exportPath.startsWith('.'),
-        `Export path "${exportPath}" should start with '.'`,
-      );
+      assert.ok(exportPath.startsWith('.'), `Export path "${exportPath}" should start with '.'`);
 
       // Check that export config is an object
       assert.ok(
@@ -165,10 +147,7 @@ describe('package.json exports', () => {
     });
 
     it('has a built file for each export', () => {
-      const exports = packageJson.exports as Record<
-        string,
-        { default: string; types: string }
-      >;
+      const exports = packageJson.exports as Record<string, { default: string; types: string }>;
 
       for (const [exportPath, exportConfig] of Object.entries(exports)) {
         if ('default' in exportConfig) {
@@ -185,23 +164,15 @@ describe('package.json exports', () => {
   it('has a type definition file for all exports', () => {
     const mainTsConfigPath = path.resolve(rootDir, 'tsconfig.json');
     const outputFiles = getAllOutputFilesFromTsConfig(mainTsConfigPath, rootDir);
-    const typesFilesSet = new Set(
-      outputFiles.filter((file) => file.endsWith('.d.ts')),
-    );
+    const typesFilesSet = new Set(outputFiles.filter((file) => file.endsWith('.d.ts')));
 
-    const exports = packageJson.exports as Record<
-      string,
-      { default: string; types: string }
-    >;
+    const exports = packageJson.exports as Record<string, { default: string; types: string }>;
 
     const entries = Object.entries(exports);
     assert.ok(entries.length > 0, 'Should have at least one export');
 
     for (const [exportPath, exportConfig] of entries) {
-      assert.ok(
-        exportConfig.types,
-        `Export "${exportPath}" should have a types field`,
-      );
+      assert.ok(exportConfig.types, `Export "${exportPath}" should have a types field`);
 
       const expectedTypesFile = path.resolve(rootDir, exportConfig.types);
       const relativePath = path.relative(rootDir, expectedTypesFile);
@@ -214,10 +185,7 @@ describe('package.json exports', () => {
   });
 
   it('has no duplicate export paths', () => {
-    const exports = packageJson.exports as Record<
-      string,
-      { default: string; types: string }
-    >;
+    const exports = packageJson.exports as Record<string, { default: string; types: string }>;
     const exportPaths = Object.keys(exports);
     const uniquePaths = new Set(exportPaths);
 
@@ -229,10 +197,7 @@ describe('package.json exports', () => {
   });
 
   it('has proper file extensions in export paths', () => {
-    const exports = packageJson.exports as Record<
-      string,
-      { default: string; types: string }
-    >;
+    const exports = packageJson.exports as Record<string, { default: string; types: string }>;
 
     for (const [, exportConfig] of Object.entries(exports)) {
       if ('default' in exportConfig) {

@@ -61,9 +61,7 @@ async function getPullRequestSecret(
   );
 
   if (!res || !res.ok) {
-    throw new Error(
-      `Failed to get pull request secret: ${res.status} - ${await res.text()}`,
-    );
+    throw new Error(`Failed to get pull request secret: ${res.status} - ${await res.text()}`);
   }
 
   const json = await res.json();
@@ -80,19 +78,13 @@ async function getFallbackApiToken(
   if (environment?.link) {
     try {
       // Fetch pull request auth
-      const pullRequestSecret = await getPullRequestSecret(
-        endpoint,
-        environment.link,
-        logger,
-      );
+      const pullRequestSecret = await getPullRequestSecret(endpoint, environment.link, logger);
       return {
         key: environment.link,
         secret: pullRequestSecret,
       };
     } catch {
-      logger.log(
-        `Failed to obtain temporary pull-request token for URL: ${environment.link}`,
-      );
+      logger.log(`Failed to obtain temporary pull-request token for URL: ${environment.link}`);
     }
   }
 
@@ -136,11 +128,7 @@ export async function loadConfigFile(
   try {
     config = (await import(pathToFileURL(configFilePath).href)).default;
   } catch (error) {
-    if (
-      error instanceof Error &&
-      'code' in error &&
-      error.code === 'ERR_UNKNOWN_FILE_EXTENSION'
-    ) {
+    if (error instanceof Error && 'code' in error && error.code === 'ERR_UNKNOWN_FILE_EXTENSION') {
       // Older versions of Node don't support .ts files natively, so let's throw
       // a more helpful error message.
       const extension = path.extname(configFilePath);
@@ -195,14 +183,8 @@ export async function loadConfigFile(
       .map((key) => `\`${key}\``)
       .join(' and ');
 
-    logger.log(
-      `Missing ${missing} in Happo config. Attempting alternative authentication.`,
-    );
-    const fallbackApiToken = await getFallbackApiToken(
-      parsedConfig.endpoint,
-      environment,
-      logger,
-    );
+    logger.log(`Missing ${missing} in Happo config. Attempting alternative authentication.`);
+    const fallbackApiToken = await getFallbackApiToken(parsedConfig.endpoint, environment, logger);
     if (!fallbackApiToken) {
       throw new Error(
         `Missing ${missing} in your Happo config. Reference yours at https://happo.io/settings`,

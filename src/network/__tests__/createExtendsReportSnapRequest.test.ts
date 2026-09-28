@@ -42,9 +42,8 @@ beforeEach(async () => {
 
   makeHappoAPIRequestImpl = async () => ({ requestId: 42 });
 
-  ({ default: createExtendsReportSnapRequest } = await import(
-    '../createExtendsReportSnapRequest.ts'
-  ));
+  ({ default: createExtendsReportSnapRequest } =
+    await import('../createExtendsReportSnapRequest.ts'));
 });
 
 describe('createExtendsReportSnapRequest', () => {
@@ -75,11 +74,7 @@ describe('createExtendsReportSnapRequest', () => {
   });
 
   it('returns the requestId from the response', async () => {
-    const result = await createExtendsReportSnapRequest(
-      'baseline-sha',
-      skip,
-      config,
-    );
+    const result = await createExtendsReportSnapRequest('baseline-sha', skip, config);
 
     assert.strictEqual(result, 42);
   });

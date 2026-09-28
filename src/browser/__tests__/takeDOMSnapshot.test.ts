@@ -248,7 +248,11 @@ describe('takeDOMSnapshot', () => {
       );
 
       // With autoApplyPseudoStateAttributes, we traverse shadow roots to find the real focused element
-      const snapshot = takeDOMSnapshot({ doc, element: main, autoApplyPseudoStateAttributes: true });
+      const snapshot = takeDOMSnapshot({
+        doc,
+        element: main,
+        autoApplyPseudoStateAttributes: true,
+      });
       const parser = new globalThis.window.DOMParser();
       const snapshotDoc = parser.parseFromString(snapshot.html, 'text/html');
       const focusedInput = snapshotDoc.querySelector<HTMLElement>('#shadow-input');
@@ -305,7 +309,11 @@ describe('takeDOMSnapshot', () => {
 
       // When snapshotting the host directly, collectAllRoots must include
       // the host's own shadowRoot (not just its light-DOM descendants).
-      const snapshot = takeDOMSnapshot({ doc, element: host, autoApplyPseudoStateAttributes: true });
+      const snapshot = takeDOMSnapshot({
+        doc,
+        element: host,
+        autoApplyPseudoStateAttributes: true,
+      });
       assert.ok(
         !snapshot.html.includes('data-happo-hover'),
         'stale data-happo-hover inside the host shadow root should be cleared',
@@ -330,12 +338,8 @@ describe('takeDOMSnapshot', () => {
 </html>
   `);
     const { document: doc } = globalThis.window;
-    const radioInput = doc.querySelector<HTMLInputElement>(
-      'input[type="radio"][value="a"]',
-    );
-    const checkboxInput = doc.querySelector<HTMLInputElement>(
-      'input[type="checkbox"][name="baz"]',
-    );
+    const radioInput = doc.querySelector<HTMLInputElement>('input[type="radio"][value="a"]');
+    const checkboxInput = doc.querySelector<HTMLInputElement>('input[type="checkbox"][name="baz"]');
     if (!radioInput || !checkboxInput) {
       throw new Error('Input elements not found');
     }

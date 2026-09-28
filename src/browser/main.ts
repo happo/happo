@@ -44,9 +44,13 @@ document.addEventListener(
   },
   true,
 );
-document.addEventListener('mouseup', () => {
-  _happoActiveElement = null;
-}, true);
+document.addEventListener(
+  'mouseup',
+  () => {
+    _happoActiveElement = null;
+  },
+  true,
+);
 
 Object.defineProperty(globalThis, '__happoHoveredElement', {
   get: () => _happoHoveredElement,

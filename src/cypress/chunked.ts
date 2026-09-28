@@ -1,7 +1,4 @@
-export default function chunked(
-  string: string,
-  charactersPerChunk: number,
-): Array<string> {
+export default function chunked(string: string, charactersPerChunk: number): Array<string> {
   if (string.length < charactersPerChunk) {
     // micro-optimization for small lists
     return [string];

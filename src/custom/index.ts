@@ -1,8 +1,4 @@
-import {
-  isInSkipSet,
-  parseSkip,
-  toSkipSet,
-} from '../isomorphic/parseSkip.ts';
+import { isInSkipSet, parseSkip, toSkipSet } from '../isomorphic/parseSkip.ts';
 import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
 
 interface HappoStaticExample extends NextExampleResult {
@@ -30,15 +26,9 @@ const happoStatic = {
         // into iframe.html. Filtering up front means the skip list is
         // robust against any DOM mutation an example might perform.
         const happoSkippedEl =
-          typeof document === 'undefined'
-            ? null
-            : document.getElementById('happo-skipped');
-        const skipSet = toSkipSet(
-          parseSkip(happoSkippedEl?.textContent ?? undefined),
-        );
-        examples = examples.filter(
-          (e) => !isInSkipSet(skipSet, e.component, e.variant),
-        );
+          typeof document === 'undefined' ? null : document.getElementById('happo-skipped');
+        const skipSet = toSkipSet(parseSkip(happoSkippedEl?.textContent ?? undefined));
+        examples = examples.filter((e) => !isInSkipSet(skipSet, e.component, e.variant));
 
         if (only) {
           examples = examples.filter(

@@ -32,10 +32,7 @@ function readVersionFrom(filePath: string): string | undefined {
   }
 }
 
-function findPackageJsonForEntryPath(
-  entryPath: string,
-  pkgName: string,
-): string | undefined {
+function findPackageJsonForEntryPath(entryPath: string, pkgName: string): string | undefined {
   // Walk up from a resolved entry file to the nearest package.json whose
   // `name` matches `pkgName`. Node's resolution always places the entry inside
   // the package's own tree (even under pnpm's .pnpm virtual store or Yarn
@@ -55,24 +52,17 @@ function findPackageJsonForEntryPath(
   return undefined;
 }
 
-function readInstalledVersion(
-  pkg: string,
-  projectRoot: string,
-): string | undefined {
+function readInstalledVersion(pkg: string, projectRoot: string): string | undefined {
   // Prefer Node's module resolution so we work with every layout that Node
   // itself understands: flat node_modules (npm/yarn classic), pnpm's symlinked
   // tree, hoisted packages in parent node_modules, and Yarn Plug'n'Play when
   // the process has PnP hooks installed.
-  const requireFromProject = createRequire(
-    path.join(projectRoot, 'package.json'),
-  );
+  const requireFromProject = createRequire(path.join(projectRoot, 'package.json'));
 
   // Tier 1: resolve `${pkg}/package.json` directly. The happy path for most
   // packages regardless of layout.
   try {
-    const version = readVersionFrom(
-      requireFromProject.resolve(`${pkg}/package.json`),
-    );
+    const version = readVersionFrom(requireFromProject.resolve(`${pkg}/package.json`));
     if (version) {
       return version;
     }
@@ -103,9 +93,7 @@ function readInstalledVersion(
   // for cases where the file exists on disk but require.resolve cannot reach
   // it (e.g. both `.` and `./package.json` hidden behind a restrictive
   // exports map).
-  return readVersionFrom(
-    path.join(projectRoot, 'node_modules', pkg, 'package.json'),
-  );
+  return readVersionFrom(path.join(projectRoot, 'node_modules', pkg, 'package.json'));
 }
 
 export default function getStorybookVersionFromPackageJson(
@@ -145,9 +133,7 @@ export default function getStorybookVersionFromPackageJson(
   //
   // plus `overrides` / `resolutions` / patched installs, which a specifier
   // cannot express at all.
-  const installedMajor = parseMajorVersion(
-    readInstalledVersion(storybookPackage, projectRoot),
-  );
+  const installedMajor = parseMajorVersion(readInstalledVersion(storybookPackage, projectRoot));
   if (installedMajor !== undefined) {
     return installedMajor;
   }

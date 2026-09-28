@@ -18,9 +18,7 @@ export default function startServer(
       }
       resolve({
         close: () =>
-          new Promise((resolve, reject) =>
-            server.close((err) => (err ? reject(err) : resolve())),
-          ),
+          new Promise((resolve, reject) => server.close((err) => (err ? reject(err) : resolve()))),
         port: address.port,
       });
     });

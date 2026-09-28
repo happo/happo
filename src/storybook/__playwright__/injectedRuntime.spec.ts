@@ -70,10 +70,7 @@ test('the package carries the runtime rather than relying on the preview', () =>
 });
 
 test('the injected copy is the only one in the package', () => {
-  const runtime = fs.readFileSync(
-    path.join(OUTPUT_DIR, 'happo-storybook-runtime.js'),
-    'utf8',
-  );
+  const runtime = fs.readFileSync(path.join(OUTPUT_DIR, 'happo-storybook-runtime.js'), 'utf8');
   expect(runtime).toContain(RUNTIME_MARKER);
 
   // An import added anywhere under the fixture would bundle a second copy and
@@ -104,9 +101,7 @@ test('the injected runtime alone can drive the Storybook', async ({ page }) => {
     const { happo } = globalThis as unknown as {
       happo: {
         init: (config: Record<string, unknown>) => Promise<void>;
-        nextExample: () => Promise<
-          { component: string; variant: string } | undefined
-        >;
+        nextExample: () => Promise<{ component: string; variant: string } | undefined>;
       };
     };
 

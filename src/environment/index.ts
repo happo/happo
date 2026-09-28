@@ -111,10 +111,9 @@ async function resolveLink(
     try {
       parsed = new URL(cliArgs.link);
     } catch (e) {
-      throw new TypeError(
-        `link must be a valid http/https URL. Invalid URL: '${cliArgs.link}'`,
-        { cause: e },
-      );
+      throw new TypeError(`link must be a valid http/https URL. Invalid URL: '${cliArgs.link}'`, {
+        cause: e,
+      });
     }
 
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
@@ -181,10 +180,7 @@ async function resolveLink(
   }
 
   if (BUILD_REPOSITORY_URI && BUILD_SOURCEVERSION) {
-    return `${BUILD_REPOSITORY_URI}/commit/${BUILD_SOURCEVERSION}`.replace(
-      /[^/]+@/,
-      '',
-    );
+    return `${BUILD_REPOSITORY_URI}/commit/${BUILD_SOURCEVERSION}`.replace(/[^/]+@/, '');
   }
 
   const githubBase = 'https://github.com';
@@ -212,9 +208,7 @@ async function resolveLink(
  * Resolve a URL pointing at the logs for the CI job we are running in. This is
  * used to point developers at the full output when something goes wrong.
  */
-function resolveCIJobUrl(
-  env: Record<string, string | undefined>,
-): string | undefined {
+function resolveCIJobUrl(env: Record<string, string | undefined>): string | undefined {
   const {
     // https://learn.microsoft.com/en-us/azure/devops/pipelines/build/variables
     BUILD_BUILDID,
@@ -364,9 +358,7 @@ function resolveShaFromTagMatcher(tagMatcher: string): string | undefined {
   });
 
   if (commitRes.status !== 0) {
-    throw new Error(
-      `Failed to resolve commit sha from tag "${tag}". Error: ${res.stderr}`,
-    );
+    throw new Error(`Failed to resolve commit sha from tag "${tag}". Error: ${res.stderr}`);
   }
 
   return commitRes.stdout.trim();
@@ -376,13 +368,9 @@ function fetchMoreHistory(
   ref: string, // can be a full SHA or a ref/branch name
   numberOfCommitsToFetch: number,
 ): boolean {
-  const fetchRes = spawnSync(
-    'git',
-    ['fetch', 'origin', ref, `--depth=${numberOfCommitsToFetch}`],
-    {
-      encoding: 'utf8',
-    },
-  );
+  const fetchRes = spawnSync('git', ['fetch', 'origin', ref, `--depth=${numberOfCommitsToFetch}`], {
+    encoding: 'utf8',
+  });
   const success = fetchRes.status === 0;
   if (!success) {
     console.error(
@@ -457,18 +445,13 @@ async function resolveBeforeSha(
     }
   }
 
-  const { TRAVIS_COMMIT_RANGE, GITHUB_EVENT_PATH, SYSTEM_PULLREQUEST_TARGETBRANCH } =
-    env;
+  const { TRAVIS_COMMIT_RANGE, GITHUB_EVENT_PATH, SYSTEM_PULLREQUEST_TARGETBRANCH } = env;
 
   if (GITHUB_EVENT_PATH) {
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
 
     if (ghEvent.pull_request) {
-      const resolvedSha = resolveMergeBase(
-        ghEvent.pull_request.base.sha,
-        afterSha,
-        debugMode,
-      );
+      const resolvedSha = resolveMergeBase(ghEvent.pull_request.base.sha, afterSha, debugMode);
 
       if (resolvedSha) {
         return resolvedSha;
@@ -503,10 +486,9 @@ async function resolveBeforeSha(
 
   let baseAzureBranch;
   if (SYSTEM_PULLREQUEST_TARGETBRANCH) {
-    baseAzureBranch = [
-      'origin',
-      SYSTEM_PULLREQUEST_TARGETBRANCH.split('/').toReversed()[0],
-    ].join('/');
+    baseAzureBranch = ['origin', SYSTEM_PULLREQUEST_TARGETBRANCH.split('/').toReversed()[0]].join(
+      '/',
+    );
   }
 
   const baseBranch = cliArgs.baseBranch || baseAzureBranch || 'origin/main';
@@ -667,13 +649,7 @@ function resolveFallbackShas(
 
   const res = spawnSync(
     'git',
-    [
-      'log',
-      '--format=%H',
-      '--first-parent',
-      `--max-count=${fallbackShasCount}`,
-      `${beforeSha}^`,
-    ],
+    ['log', '--format=%H', '--first-parent', `--max-count=${fallbackShasCount}`, `${beforeSha}^`],
     {
       encoding: 'utf8',
     },
@@ -686,9 +662,7 @@ function resolveFallbackShas(
   return res.stdout.split('\n').filter(Boolean);
 }
 
-function getRawEnv(
-  env: Record<string, string | undefined>,
-): Record<string, string | undefined> {
+function getRawEnv(env: Record<string, string | undefined>): Record<string, string | undefined> {
   const res: Record<string, string | undefined> = {};
   for (const key of envKeys) {
     res[key] = env[key];

@@ -16,9 +16,7 @@ describe('validateSkip', () => {
   });
 
   it('accepts storyFile items', () => {
-    const result = validateSkip(
-      JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]),
-    );
+    const result = validateSkip(JSON.stringify([{ storyFile: './src/Button.stories.tsx' }]));
     assert.deepStrictEqual(result, [{ storyFile: './src/Button.stories.tsx' }]);
   });
 
@@ -49,10 +47,7 @@ describe('validateSkip', () => {
   });
 
   it('rejects items with neither component nor storyFile', () => {
-    assert.throws(
-      () => validateSkip(JSON.stringify([{ variant: 'Primary' }])),
-      TypeError,
-    );
+    assert.throws(() => validateSkip(JSON.stringify([{ variant: 'Primary' }])), TypeError);
   });
 
   it('rejects non-array JSON', () => {
@@ -85,20 +80,14 @@ describe('parseSkip', () => {
   });
 
   it('returns parsed items for valid JSON', () => {
-    const items = [
-      { component: 'Button' },
-      { storyFile: './src/Input.stories.tsx' },
-    ];
+    const items = [{ component: 'Button' }, { storyFile: './src/Input.stories.tsx' }];
     assert.deepStrictEqual(parseSkip(JSON.stringify(items)), items);
   });
 });
 
 describe('toSkipSet', () => {
   it('builds a skip set from component items', () => {
-    const set = toSkipSet([
-      { component: 'Button', variant: 'Primary' },
-      { component: 'Input' },
-    ]);
+    const set = toSkipSet([{ component: 'Button', variant: 'Primary' }, { component: 'Input' }]);
     assert.ok(isInSkipSet(set, 'Button', 'Primary'));
     assert.ok(isInSkipSet(set, 'Input', 'Default'));
     assert.ok(!isInSkipSet(set, 'Button', 'Secondary'));
@@ -111,10 +100,7 @@ describe('toSkipSet', () => {
   });
 
   it('handles a mix of component and storyFile items', () => {
-    const set = toSkipSet([
-      { component: 'Card' },
-      { storyFile: './src/Button.stories.tsx' },
-    ]);
+    const set = toSkipSet([{ component: 'Card' }, { storyFile: './src/Button.stories.tsx' }]);
     assert.ok(isInSkipSet(set, 'Card', 'Default'));
     assert.ok(!isInSkipSet(set, 'Button', 'Primary'));
   });
