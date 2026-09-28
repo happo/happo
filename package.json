@@ -103,7 +103,7 @@
     ]
   },
   "prettier": {
-    "printWidth": 85,
+    "printWidth": 100,
     "singleQuote": true,
     "trailingComma": "all",
     "arrowParens": "always"
