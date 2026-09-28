@@ -129,7 +129,7 @@ beforeEach(() => {
 // Using a fixture file avoids cmd.exe quoting issues on Windows.
 const childCommand = [
   process.execPath,
-  path.join(import.meta.dirname, 'fixtures', 'post-snap-request.cjs'),
+  path.join(import.meta.dirname, '__fixtures__', 'post-snap-request.cjs'),
 ];
 
 describe('runWithWrapper', () => {
