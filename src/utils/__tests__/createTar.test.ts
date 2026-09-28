@@ -93,10 +93,11 @@ test('is readable by the system tar', async () => {
     ]),
   );
 
-  assert.deepStrictEqual(
-    [...files.keys()].toSorted(),
-    ['assets/app.js', 'assets/nested/deep.css', 'index.html'],
-  );
+  assert.deepStrictEqual([...files.keys()].toSorted(), [
+    'assets/app.js',
+    'assets/nested/deep.css',
+    'index.html',
+  ]);
   assert.strictEqual(files.get('index.html')?.toString(), '<html></html>');
 });
 

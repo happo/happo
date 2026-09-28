@@ -55,7 +55,10 @@ describe('staticFileHandler', () => {
   it('serves a JS file with the correct content-type', async () => {
     const res = await get('/script.js');
     assert.equal(res.status, 200);
-    assert.match(res.headers.get('content-type') ?? '', /application\/javascript/);
+    assert.match(
+      res.headers.get('content-type') ?? '',
+      /application\/javascript/,
+    );
   });
 
   it('serves an index.html for a directory path', async () => {

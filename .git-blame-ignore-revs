@@ -1,0 +1,15 @@
+# Commits that only made mechanical, mass changes (formatting, autofixes, renames).
+# Skip them in git blame with:
+#
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# GitHub's blame view reads this file automatically.
+
+# Reformat with Prettier
+fc356f21158f4359f4f23ab97ad2fb39df13827a
+
+# Reformat Markdown with Prettier
+820afec415786bf897083918eb5fd3c3235a9d99
+
+# Reformat with Prettier
+81ea3ce2b89921b7979404b459839335cb4912a6

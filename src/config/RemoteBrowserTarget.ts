@@ -154,10 +154,14 @@ function buildChunkItem({
     storybookNavigatePerStory,
   });
 
-  const payloadHash = createHash(payloadString + (pageSlice ? Math.random() : ''));
+  const payloadHash = createHash(
+    payloadString + (pageSlice ? Math.random() : ''),
+  );
 
   const type =
-    pageSlice && pageSlice.extendsSha ? 'extends-report' : `browser-${browserName}`;
+    pageSlice && pageSlice.extendsSha
+      ? 'extends-report'
+      : `browser-${browserName}`;
 
   const item: ChunkItem = { type, targetName, payloadString, payloadHash };
   if (pageSlice?.extendsSha) {
@@ -278,13 +282,16 @@ export default class RemoteBrowserTarget {
 
     if (staticPackage) {
       const effectiveChunks =
-        this.chunks ?? Math.max(1, computeDefaultChunks(estimatedSnapsCount ?? 0));
+        this.chunks ??
+        Math.max(1, computeDefaultChunks(estimatedSnapsCount ?? 0));
       for (let i = 0; i < effectiveChunks; i += 1) {
         items.push(
           buildChunkItem({
             ...buildItemParams,
             chunk:
-              effectiveChunks > 1 ? { index: i, total: effectiveChunks } : undefined,
+              effectiveChunks > 1
+                ? { index: i, total: effectiveChunks }
+                : undefined,
           }),
         );
       }
@@ -294,7 +301,9 @@ export default class RemoteBrowserTarget {
       }
     } else {
       const effectiveChunks = this.chunks ?? 1;
-      const snapsPerChunk = Math.ceil((snapPayloads?.length ?? 0) / effectiveChunks);
+      const snapsPerChunk = Math.ceil(
+        (snapPayloads?.length ?? 0) / effectiveChunks,
+      );
       for (let i = 0; i < effectiveChunks; i += 1) {
         const slice = snapPayloads?.slice(
           i * snapsPerChunk,
@@ -383,12 +392,10 @@ export default class RemoteBrowserTarget {
     } catch (error) {
       // Fall back to individual requests only when the server explicitly
       // reports that the bulk endpoint is missing or not implemented.
-      if (
-        !(
-          error instanceof ErrorWithStatusCode &&
-          (error.statusCode === 404 || error.statusCode === 501)
-        )
-      ) {
+      if (!(
+        error instanceof ErrorWithStatusCode &&
+        (error.statusCode === 404 || error.statusCode === 501)
+      )) {
         throw error;
       }
     }

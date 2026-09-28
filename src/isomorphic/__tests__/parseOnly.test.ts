@@ -31,7 +31,9 @@ describe('validateOnly', () => {
     assert.throws(
       () =>
         validateOnly(
-          JSON.stringify([{ storyFile: './src/Button.stories.tsx', variant: 'Primary' }]),
+          JSON.stringify([
+            { storyFile: './src/Button.stories.tsx', variant: 'Primary' },
+          ]),
         ),
       TypeError,
     );
@@ -48,7 +50,10 @@ describe('validateOnly', () => {
 
   it('rejects items with both component and storyFile', () => {
     assert.throws(
-      () => validateOnly(JSON.stringify([{ component: 'Button', storyFile: './foo.tsx' }])),
+      () =>
+        validateOnly(
+          JSON.stringify([{ component: 'Button', storyFile: './foo.tsx' }]),
+        ),
       TypeError,
     );
   });
@@ -61,7 +66,10 @@ describe('validateOnly', () => {
   });
 
   it('rejects non-array JSON', () => {
-    assert.throws(() => validateOnly(JSON.stringify({ component: 'Button' })), TypeError);
+    assert.throws(
+      () => validateOnly(JSON.stringify({ component: 'Button' })),
+      TypeError,
+    );
   });
 
   it('throws on invalid JSON', () => {

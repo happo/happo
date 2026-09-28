@@ -29,7 +29,10 @@ describe('happoStorybookPlugin', () => {
   });
 
   it('removes the project.json after build', () => {
-    assert.strictEqual(fs.existsSync(path.join(packageDir, 'project.json')), false);
+    assert.strictEqual(
+      fs.existsSync(path.join(packageDir, 'project.json')),
+      false,
+    );
   });
 
   it('returns estimatedSnapsCount read from the real Storybook index.json', () => {
@@ -75,7 +78,8 @@ describe('happoStorybookPlugin', () => {
         usePrebuiltPackage: true,
         only: [
           {
-            storyFile: './src/storybook/__tests__/storybook-app/Story.stories.ts',
+            storyFile:
+              './src/storybook/__tests__/storybook-app/Story.stories.ts',
           },
         ],
       });

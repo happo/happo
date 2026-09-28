@@ -1,4 +1,7 @@
-import type { ConfigWithDefaults, DeepCompareSettings } from '../config/index.ts';
+import type {
+  ConfigWithDefaults,
+  DeepCompareSettings,
+} from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
@@ -20,7 +23,10 @@ function assertResultIsCreateAsyncComparisonResult(
     throw new TypeError('Result is missing id');
   }
 
-  if (!('statusImageUrl' in result) || typeof result.statusImageUrl !== 'string') {
+  if (
+    !('statusImageUrl' in result) ||
+    typeof result.statusImageUrl !== 'string'
+  ) {
     throw new TypeError('Result is missing statusImageUrl');
   }
 

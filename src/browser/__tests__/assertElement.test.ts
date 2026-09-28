@@ -109,7 +109,6 @@ describe('assertElement', () => {
   });
 });
 
-
 describe('isElementWithDataset', () => {
   it('returns true if the element is an HTMLElement', () => {
     initDOM('<!DOCTYPE html>');

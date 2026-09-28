@@ -10,7 +10,10 @@ import createAssetPackage from '../createAssetPackage.ts';
 let serverInfo: ServerInfo;
 
 beforeEach(async () => {
-  serverInfo = await startTestServer(`${import.meta.dirname}/fixtures`, 3412);
+  serverInfo = await startTestServer(
+    `${import.meta.dirname}/__fixtures__`,
+    3412,
+  );
 });
 
 afterEach(async () => {

@@ -35,7 +35,9 @@ describe('resolveStoryFileItems', () => {
       [{ component: 'Button', variant: 'Primary' }],
       entries,
     );
-    assert.deepStrictEqual(result, [{ component: 'Button', variant: 'Primary' }]);
+    assert.deepStrictEqual(result, [
+      { component: 'Button', variant: 'Primary' },
+    ]);
   });
 
   it('resolves storyFile to component name', () => {
@@ -66,7 +68,10 @@ describe('resolveStoryFileItems', () => {
 
   it('handles a mix of component and storyFile items', () => {
     const result = resolveStoryFileItems(
-      [{ component: 'Card', variant: 'Default' }, { storyFile: 'src/Input.stories.tsx' }],
+      [
+        { component: 'Card', variant: 'Default' },
+        { storyFile: 'src/Input.stories.tsx' },
+      ],
       entries,
     );
     assert.deepStrictEqual(result, [
@@ -98,7 +103,10 @@ describe('resolveStoryFileItems', () => {
   it('returns empty array when entries are empty', () => {
     const warnMock = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      const result = resolveStoryFileItems([{ storyFile: 'src/Button.stories.tsx' }], {});
+      const result = resolveStoryFileItems(
+        [{ storyFile: 'src/Button.stories.tsx' }],
+        {},
+      );
       assert.deepStrictEqual(result, []);
       assert.strictEqual(warnMock.mock.calls.length, 1);
     } finally {

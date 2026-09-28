@@ -62,8 +62,12 @@ export default async function uploadAssets(
     // we can return it now.
     const { path: signedUrlPath } = signedUrlRes;
 
-    logger.info(`${logTag(project)}Reusing existing assets at ${signedUrlPath}`);
-    return typeof signedUrlPath === 'string' ? signedUrlPath : String(signedUrlPath);
+    logger.info(
+      `${logTag(project)}Reusing existing assets at ${signedUrlPath}`,
+    );
+    return typeof signedUrlPath === 'string'
+      ? signedUrlPath
+      : String(signedUrlPath);
   }
 
   if (!('signedUrl' in signedUrlRes)) {
@@ -77,7 +81,8 @@ export default async function uploadAssets(
   // The signed URL commits to a Content-Type, so we have to send back exactly
   // what the server signed with rather than picking one ourselves.
   const contentType =
-    'contentType' in signedUrlRes && typeof signedUrlRes.contentType === 'string'
+    'contentType' in signedUrlRes &&
+    typeof signedUrlRes.contentType === 'string'
       ? signedUrlRes.contentType
       : DEFAULT_CONTENT_TYPE;
 
@@ -155,5 +160,7 @@ export default async function uploadAssets(
 
   const { path: finalizedPath } = finalizeRes;
 
-  return typeof finalizedPath === 'string' ? finalizedPath : String(finalizedPath);
+  return typeof finalizedPath === 'string'
+    ? finalizedPath
+    : String(finalizedPath);
 }

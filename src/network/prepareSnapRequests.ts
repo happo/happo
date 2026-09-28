@@ -63,9 +63,15 @@ async function injectSkippedIntoIframe(
   skipped: Array<SkipItem>,
 ): Promise<void> {
   const content = await fs.promises.readFile(iframePath, 'utf8');
-  const skippedJson = JSON.stringify(skipped).replaceAll(/<\/script>/gi, String.raw`<\/script>`);
+  const skippedJson = JSON.stringify(skipped).replaceAll(
+    /<\/script>/gi,
+    String.raw`<\/script>`,
+  );
   const skippedScript = `<script type="application/json" id="happo-skipped">${skippedJson}</script>`;
-  const injected = content.replace(/<head\b[^>]*>/i, (match) => `${match}${skippedScript}`);
+  const injected = content.replace(
+    /<head\b[^>]*>/i,
+    (match) => `${match}${skippedScript}`,
+  );
   if (injected === content) {
     throw new Error(
       `Failed to inject skipped examples into iframe.html at '${iframePath}': could not find an opening <head> tag`,
@@ -81,7 +87,8 @@ async function buildPackage(
   only?: Array<OnlyItem>,
 ): Promise<BuildPackageResult> {
   if (integration.type === 'custom') {
-    const { rootDir, entryPoint, estimatedSnapsCount } = await integration.build();
+    const { rootDir, entryPoint, estimatedSnapsCount } =
+      await integration.build();
     await createIframeHTML(rootDir, entryPoint, logger);
 
     if (skip && skip.length > 0) {
@@ -130,7 +137,12 @@ async function preparePackage(
   skip?: Array<SkipItem>,
   only?: Array<OnlyItem>,
 ): Promise<PreparePackageResult> {
-  const { packageDir, estimatedSnapsCount, resolvedSkip } = await buildPackage(config, logger, skip, only);
+  const { packageDir, estimatedSnapsCount, resolvedSkip } = await buildPackage(
+    config,
+    logger,
+    skip,
+    only,
+  );
 
   await validatePackage(packageDir);
 
@@ -195,9 +207,7 @@ export default async function prepareSnapRequests(
   const targetNames = Object.keys(config.targets);
   const tl = targetNames.length;
   logger.info(
-    `${logTag(config.project)}Generating screenshots in ${tl} target${
-      tl > 1 ? 's' : ''
-    }...`,
+    `${logTag(config.project)}Generating screenshots in ${tl} target${tl > 1 ? 's' : ''}...`,
   );
   const outerStartTime = Date.now();
   const snapRequestIds: Array<number> = [];

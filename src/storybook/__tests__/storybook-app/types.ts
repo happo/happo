@@ -18,8 +18,12 @@ export interface HappoParameters {
   targets?: ReadonlyArray<string>;
   waitForContent?: string;
   waitFor?: () => boolean | null;
-  beforeScreenshot?: (args?: { rootElement?: HTMLElement }) => void | Promise<void>;
-  afterScreenshot?: (args?: { rootElement?: HTMLElement }) => void | Promise<void>;
+  beforeScreenshot?: (args?: {
+    rootElement?: HTMLElement;
+  }) => void | Promise<void>;
+  afterScreenshot?: (args?: {
+    rootElement?: HTMLElement;
+  }) => void | Promise<void>;
   delay?: number;
 }
 

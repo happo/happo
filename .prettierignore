@@ -3,3 +3,11 @@ node_modules
 pnpm-lock.yaml
 test-results
 tmp
+
+# Served e2e fixtures and test assets: tests and Happo screenshots depend on
+# their exact bytes (whitespace text nodes, CSS value formatting).
+src/browser/__playwright__/test-assets/
+src/cypress/__cypress__/fixtures/
+src/e2e/__tests__/__fixtures__/
+src/playwright/__playwright__/fixtures/
+src/storybook/__tests__/storybook-app/public/

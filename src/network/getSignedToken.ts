@@ -14,7 +14,10 @@ function getCacheKey(apiKey: string, apiSecret: string): string {
   return `${apiKey}:${apiSecret}`;
 }
 
-export async function getSignedToken(apiKey: string, apiSecret: string): Promise<string> {
+export async function getSignedToken(
+  apiKey: string,
+  apiSecret: string,
+): Promise<string> {
   const cacheKey = getCacheKey(apiKey, apiSecret);
   const cachedPromise = cache.get(cacheKey);
 

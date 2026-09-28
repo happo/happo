@@ -382,7 +382,9 @@ export interface AnimateTrace {
   /** How many stages were captured. See `stages`. */
   stageCount: number;
   /** What each stage found. */
-  stages: Array<Pick<AnimateTrace, 'animationCount' | 'durationMs' | 'animations'>>;
+  stages: Array<
+    Pick<AnimateTrace, 'animationCount' | 'durationMs' | 'animations'>
+  >;
 }
 
 /**

@@ -60,7 +60,9 @@ export interface Reporter {
   captureException(e: unknown): Promise<void>;
 }
 
-export function detectCI(env: Record<string, string | undefined> = process.env): CI {
+export function detectCI(
+  env: Record<string, string | undefined> = process.env,
+): CI {
   if (env.GITHUB_ACTIONS) {
     return 'github';
   }

@@ -25,7 +25,9 @@ function HappoPanel() {
   const happoParams = useParameter('happo', null);
   const state = useStorybookState();
   const emit = useChannel({});
-  const [functionParams, setFunctionParams] = useState<Array<FunctionParam>>([]);
+  const [functionParams, setFunctionParams] = useState<Array<FunctionParam>>(
+    [],
+  );
 
   useEffect(() => {
     function listen(event: { params: Array<FunctionParam> }) {
@@ -60,7 +62,11 @@ function HappoPanel() {
               return createElement(
                 'tr',
                 { key: key },
-                createElement('td', null, createElement('code', null, `${key}:`)),
+                createElement(
+                  'td',
+                  null,
+                  createElement('code', null, `${key}:`),
+                ),
                 createElement(
                   'td',
                   null,

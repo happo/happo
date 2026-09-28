@@ -103,10 +103,21 @@
     ]
   },
   "prettier": {
-    "printWidth": 85,
+    "printWidth": 80,
     "singleQuote": true,
     "trailingComma": "all",
-    "arrowParens": "always"
+    "arrowParens": "always",
+    "overrides": [
+      {
+        "files": [
+          "*.md",
+          "*.mdx"
+        ],
+        "options": {
+          "proseWrap": "never"
+        }
+      }
+    ]
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

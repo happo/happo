@@ -81,7 +81,9 @@ test('the injected copy is the only one in the package', () => {
   const bundled = readJsFiles(path.join(OUTPUT_DIR, 'assets')).filter((file) =>
     fs.readFileSync(file, 'utf8').includes(RUNTIME_MARKER),
   );
-  expect(bundled, `${CONFIG_DIR} imports the Happo runtime somewhere`).toEqual([]);
+  expect(bundled, `${CONFIG_DIR} imports the Happo runtime somewhere`).toEqual(
+    [],
+  );
 });
 
 test('the injected runtime alone can drive the Storybook', async ({ page }) => {
@@ -95,7 +97,9 @@ test('the injected runtime alone can drive the Storybook', async ({ page }) => {
   // regression here fails in seconds pointing at this line rather than
   // running out the whole test's clock.
   await page.waitForFunction(
-    () => typeof (globalThis as { happo?: { init?: unknown } }).happo?.init === 'function',
+    () =>
+      typeof (globalThis as { happo?: { init?: unknown } }).happo?.init ===
+      'function',
     undefined,
     { timeout: 30_000 },
   );

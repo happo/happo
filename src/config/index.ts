@@ -334,7 +334,8 @@ export interface Config {
 }
 
 type MobileSafariBrowserType = 'ios-safari' | 'ipad-safari';
-type DesktopBrowserType = 'chrome' | 'firefox' | 'edge' | 'safari' | 'accessibility';
+type DesktopBrowserType =
+  'chrome' | 'firefox' | 'edge' | 'safari' | 'accessibility';
 export type BrowserType = MobileSafariBrowserType | DesktopBrowserType;
 
 interface BaseTarget {

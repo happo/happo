@@ -79,9 +79,13 @@ Cypress.on('window:before:load', (win: Window) => {
     },
     true,
   );
-  win.document.addEventListener('mouseup', () => {
-    _happoActiveElement = null;
-  }, true);
+  win.document.addEventListener(
+    'mouseup',
+    () => {
+      _happoActiveElement = null;
+    },
+    true,
+  );
 
   Object.defineProperty(win, '__happoHoveredElement', {
     get: () => _happoHoveredElement,
@@ -95,7 +99,9 @@ Cypress.on('window:before:load', (win: Window) => {
 
 // nodeType 1 === Element. Cross-frame safe alternative to instanceof Element.
 function isEventTargetElement(target: EventTarget | null): target is Element {
-  return target != null && 'nodeType' in target && (target as Node).nodeType === 1;
+  return (
+    target != null && 'nodeType' in target && (target as Node).nodeType === 1
+  );
 }
 
 interface CypressConfig {
@@ -207,11 +213,13 @@ Cypress.Commands.add(
     };
 
     if (cachedAutoApplyPseudoStateAttributes === null) {
-      cy.task<{ autoApplyPseudoStateAttributes: boolean; skip: Array<SkipItem> } | null>(
-        'happoGetIntegrationConfig',
-        null,
-        { ...taskOptions, log: false },
-      ).then((happoSettings) => {
+      cy.task<{
+        autoApplyPseudoStateAttributes: boolean;
+        skip: Array<SkipItem>;
+      } | null>('happoGetIntegrationConfig', null, {
+        ...taskOptions,
+        log: false,
+      }).then((happoSettings) => {
         cachedAutoApplyPseudoStateAttributes =
           happoSettings?.autoApplyPseudoStateAttributes ?? false;
         cachedSkipSet = toSkipSet(happoSettings?.skip ?? []);

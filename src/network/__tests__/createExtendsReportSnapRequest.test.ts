@@ -7,13 +7,16 @@ import type { ConfigWithDefaults } from '../../config/index.ts';
 import type { SkipItem } from '../../isomorphic/types.ts';
 import type makeHappoAPIRequest from '../makeHappoAPIRequest.ts';
 
-type MakeHappoAPIRequestImpl = (...args: Array<unknown>) => Promise<object | null>;
+type MakeHappoAPIRequestImpl = (
+  ...args: Array<unknown>
+) => Promise<object | null>;
 
 let makeHappoAPIRequestImpl: MakeHappoAPIRequestImpl;
-const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(() =>
-  vi.fn(async (...args: Array<unknown>) => {
-    return await makeHappoAPIRequestImpl(...args);
-  }),
+const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(
+  () =>
+    vi.fn(async (...args: Array<unknown>) => {
+      return await makeHappoAPIRequestImpl(...args);
+    }),
 );
 
 vi.mock('../makeHappoAPIRequest.ts', () => ({
@@ -42,9 +45,8 @@ beforeEach(async () => {
 
   makeHappoAPIRequestImpl = async () => ({ requestId: 42 });
 
-  ({ default: createExtendsReportSnapRequest } = await import(
-    '../createExtendsReportSnapRequest.ts'
-  ));
+  ({ default: createExtendsReportSnapRequest } =
+    await import('../createExtendsReportSnapRequest.ts'));
 });
 
 describe('createExtendsReportSnapRequest', () => {

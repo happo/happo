@@ -34,7 +34,9 @@ export default async function buildHappoStorybookRuntime(): Promise<void> {
   const scratchFile = `${OUTFILE}.${process.pid}.tmp`;
 
   await esbuild.build({
-    entryPoints: [path.join(ROOT, 'src', 'storybook', 'browser', 'register.ts')],
+    entryPoints: [
+      path.join(ROOT, 'src', 'storybook', 'browser', 'register.ts'),
+    ],
     outfile: scratchFile,
     bundle: true,
     packages: 'bundle',

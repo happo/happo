@@ -81,7 +81,10 @@ beforeAll(async () => {
 
       if (req.url?.match(/^\/api\/jobs\//)) {
         res.end(
-          JSON.stringify({ id: 1, url: `http://localhost:${serverPort}/job/1` }),
+          JSON.stringify({
+            id: 1,
+            url: `http://localhost:${serverPort}/job/1`,
+          }),
         );
         return;
       }
@@ -129,7 +132,7 @@ beforeEach(() => {
 // Using a fixture file avoids cmd.exe quoting issues on Windows.
 const childCommand = [
   process.execPath,
-  path.join(import.meta.dirname, 'fixtures', 'post-snap-request.cjs'),
+  path.join(import.meta.dirname, '__fixtures__', 'post-snap-request.cjs'),
 ];
 
 describe('runWithWrapper', () => {
@@ -198,9 +201,9 @@ describe('runWithWrapper', () => {
       );
       assert.ok(reportRequest, 'expected an async report request');
       assert.ok(
-        (reportRequest.body as { requestIds: Array<number> }).requestIds.includes(
-          4242,
-        ),
+        (
+          reportRequest.body as { requestIds: Array<number> }
+        ).requestIds.includes(4242),
         'expected the extends-report id in the async report',
       );
     },

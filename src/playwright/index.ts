@@ -14,11 +14,7 @@ import type {
 import { test as base } from '@playwright/test';
 
 import Controller from '../e2e/controller.ts';
-import {
-  isInSkipSet,
-  parseSkip,
-  toSkipSet,
-} from '../isomorphic/parseSkip.ts';
+import { isInSkipSet, parseSkip, toSkipSet } from '../isomorphic/parseSkip.ts';
 
 const pathToBrowserBuild = path.resolve(
   import.meta.dirname,

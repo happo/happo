@@ -92,7 +92,6 @@ describe('format selection', () => {
   });
 });
 
-
 describe('golden hashes', () => {
   // These pin the exact bytes we produce for a fixed set of in-memory content.
   // The hash is the dedupe key for uploads, so it has to be identical on every
@@ -221,14 +220,20 @@ for (const format of ['zstd', 'zip'] satisfies Array<ArchiveFormat>) {
         tmpdir, // absolute path
         testAssetsDir, // additional test directory
       ];
-      const resultNormal = await deterministicArchive([tmpdir, ...publicFolders]);
+      const resultNormal = await deterministicArchive([
+        tmpdir,
+        ...publicFolders,
+      ]);
       const resultWithPossibleDuplicates = await deterministicArchive([
         tmpdir,
         tmpdir,
         ...publicFolders,
         ...publicFolders,
       ]);
-      assert.deepStrictEqual(resultNormal.hash, resultWithPossibleDuplicates.hash);
+      assert.deepStrictEqual(
+        resultNormal.hash,
+        resultWithPossibleDuplicates.hash,
+      );
       assert.deepStrictEqual(
         resultNormal.buffer,
         resultWithPossibleDuplicates.buffer,
@@ -269,18 +274,27 @@ for (const format of ['zstd', 'zip'] satisfies Array<ArchiveFormat>) {
       const singleFilePath = path.join(tmpdir, 'subfolder', 'nested.txt');
       const result = await deterministicArchive([singleFilePath]);
 
-      assert.deepStrictEqual(entryNames(result.buffer), ['subfolder/nested.txt']);
+      assert.deepStrictEqual(entryNames(result.buffer), [
+        'subfolder/nested.txt',
+      ]);
     });
 
     test('keeps folder structure when adding single files with absolute paths', async () => {
       const singleFilePath = path.join(tmpdir, 'subfolder', 'nested.txt');
       const result = await deterministicArchive([singleFilePath]);
 
-      assert.deepStrictEqual(entryNames(result.buffer), ['subfolder/nested.txt']);
+      assert.deepStrictEqual(entryNames(result.buffer), [
+        'subfolder/nested.txt',
+      ]);
     });
 
     test('handles deeply nested paths', async () => {
-      const deepDir = path.join(tmpdir, 'a'.repeat(30), 'b'.repeat(30), 'c'.repeat(30));
+      const deepDir = path.join(
+        tmpdir,
+        'a'.repeat(30),
+        'b'.repeat(30),
+        'c'.repeat(30),
+      );
       fs.mkdirSync(deepDir, { recursive: true });
       fs.writeFileSync(path.join(deepDir, 'deep.txt'), 'deep contents');
 

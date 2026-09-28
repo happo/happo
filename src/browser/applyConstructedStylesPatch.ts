@@ -23,7 +23,8 @@ interface ExtendedWindow extends Window {
 export function isExtendedWindow(w: Window): w is ExtendedWindow {
   return (
     'CSSStyleSheet' in w &&
-    typeof (w as unknown as { CSSStyleSheet: unknown }).CSSStyleSheet === 'function'
+    typeof (w as unknown as { CSSStyleSheet: unknown }).CSSStyleSheet ===
+      'function'
   );
 }
 
@@ -177,7 +178,9 @@ export default function applyConstructedStylesPatch(
   const originalReplaceSync = win.CSSStyleSheet.prototype.replaceSync;
   win.CSSStyleSheet.prototype.replaceSync = function (text: string): void {
     const extendedThis = this as ExtendedCSSStyleSheet;
-    extendedThis[recordedCSSSymbol] = text.split('\n').map((rule) => rule.trim());
+    extendedThis[recordedCSSSymbol] = text
+      .split('\n')
+      .map((rule) => rule.trim());
     extendedThis[hasBrokenIndexesSymbol] = true;
     return originalReplaceSync.call(this, text);
   };
@@ -188,7 +191,9 @@ export default function applyConstructedStylesPatch(
     text: string,
   ): Promise<CSSStyleSheet> {
     const sheet = this as ExtendedCSSStyleSheet;
-    return originalReplace.call(sheet, text).then(function (result: CSSStyleSheet) {
+    return originalReplace.call(sheet, text).then(function (
+      result: CSSStyleSheet,
+    ) {
       sheet[recordedCSSSymbol] = text.split('\n').map((rule) => rule.trim());
       sheet[hasBrokenIndexesSymbol] = true;
       return result;

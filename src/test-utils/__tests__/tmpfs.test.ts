@@ -30,7 +30,9 @@ it('creates the files in the temp dir', () => {
 
   const allFiles = fs.readdirSync(tmpfs.getTempDir());
   assert.deepStrictEqual(allFiles, ['subdir', 'test.txt']);
-  assert.deepStrictEqual(fs.readdirSync(tmpfs.fullPath('subdir')), ['test2.txt']);
+  assert.deepStrictEqual(fs.readdirSync(tmpfs.fullPath('subdir')), [
+    'test2.txt',
+  ]);
 });
 
 it('throws if called twice without restore', () => {

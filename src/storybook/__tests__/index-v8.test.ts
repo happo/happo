@@ -24,7 +24,10 @@ describe('happoStorybookPlugin (v8-compatible app)', () => {
   });
 
   it('removes project.json after build', () => {
-    assert.strictEqual(fs.existsSync(path.join(packageDir, 'project.json')), false);
+    assert.strictEqual(
+      fs.existsSync(path.join(packageDir, 'project.json')),
+      false,
+    );
   });
 
   it('returns estimatedSnapsCount from index.json', () => {

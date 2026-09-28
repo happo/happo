@@ -23,7 +23,10 @@ describe('RemoteBrowserTarget', () => {
     it('throws when browserName is undefined', () => {
       assert.throws(
         () =>
-          new RemoteBrowserTarget(undefined as unknown as BrowserType, baseTarget),
+          new RemoteBrowserTarget(
+            undefined as unknown as BrowserType,
+            baseTarget,
+          ),
         /Invalid browser type/,
       );
     });
@@ -249,14 +252,19 @@ describe('RemoteBrowserTarget', () => {
       it('sends a single bulk request with one item and no chunk metadata', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
-          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            targetName: 'chrome',
+          },
           config,
         );
         assert.strictEqual(bulkCalls.length, 1);
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
         const payload = JSON.parse(
           bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { chunk?: unknown };
+        ) as {
+          chunk?: unknown;
+        };
         assert.strictEqual(payload.chunk, undefined);
       });
     });
@@ -279,7 +287,9 @@ describe('RemoteBrowserTarget', () => {
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
         const payload = JSON.parse(
           bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { chunk?: unknown };
+        ) as {
+          chunk?: unknown;
+        };
         assert.strictEqual(payload.chunk, undefined);
       });
 
@@ -346,7 +356,9 @@ describe('RemoteBrowserTarget', () => {
         );
         const payload = JSON.parse(
           bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { allowedHostnames?: unknown };
+        ) as {
+          allowedHostnames?: unknown;
+        };
         assert.deepStrictEqual(payload.allowedHostnames, [
           'fonts.gstatic.com',
           '*.mycdn.example.com',
@@ -372,7 +384,9 @@ describe('RemoteBrowserTarget', () => {
         );
         const payload = JSON.parse(
           bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { allowedHostnames?: unknown };
+        ) as {
+          allowedHostnames?: unknown;
+        };
         assert.deepStrictEqual(payload.allowedHostnames, []);
       });
     });
@@ -384,7 +398,10 @@ describe('RemoteBrowserTarget', () => {
           chunks: 55,
         });
         await target.execute(
-          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            targetName: 'chrome',
+          },
           config,
         );
         assert.strictEqual(bulkCalls.length, 2);
@@ -398,7 +415,10 @@ describe('RemoteBrowserTarget', () => {
           chunks: 55,
         });
         const requestIds = await target.execute(
-          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            targetName: 'chrome',
+          },
           config,
         );
         assert.strictEqual(requestIds.length, 55);
@@ -516,14 +536,19 @@ describe('RemoteBrowserTarget', () => {
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
         const payload = JSON.parse(
           bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { failOnWaitForTimeout?: unknown };
+        ) as {
+          failOnWaitForTimeout?: unknown;
+        };
         assert.strictEqual(payload.failOnWaitForTimeout, false);
       });
 
       it('omits failOnWaitForTimeout from the payload when not provided', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
-          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            targetName: 'chrome',
+          },
           config,
         );
         assert.strictEqual(bulkCalls.length, 1);
@@ -572,14 +597,19 @@ describe('RemoteBrowserTarget', () => {
         assert.strictEqual(bulkCalls[0]?.items.length, 1);
         const payload = JSON.parse(
           bulkCalls[0]?.items[0]?.payloadString as string,
-        ) as { storybookNavigatePerStory?: unknown };
+        ) as {
+          storybookNavigatePerStory?: unknown;
+        };
         assert.strictEqual(payload.storybookNavigatePerStory, false);
       });
 
       it('omits storybookNavigatePerStory from the payload when not provided', async () => {
         const target = new RemoteBrowserTarget('chrome', baseTarget);
         await target.execute(
-          { staticPackage: 'https://example.com/pkg.zip', targetName: 'chrome' },
+          {
+            staticPackage: 'https://example.com/pkg.zip',
+            targetName: 'chrome',
+          },
           config,
         );
         assert.strictEqual(bulkCalls.length, 1);

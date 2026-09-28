@@ -59,7 +59,10 @@ beforeAll(async () => {
       return;
     }
 
-    if (req.url === '/success' || (req.url === '/failure-retry' && errorTries > 2)) {
+    if (
+      req.url === '/success' ||
+      (req.url === '/failure-retry' && errorTries > 2)
+    ) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({

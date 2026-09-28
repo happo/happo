@@ -69,7 +69,11 @@ describe('the built package', () => {
       runtime.includes('globalThis.happo'),
       'runtime does not define globalThis.happo',
     );
-    assert.doesNotMatch(runtime, /^\s*import\s/m, 'runtime is not self-contained');
+    assert.doesNotMatch(
+      runtime,
+      /^\s*import\s/m,
+      'runtime is not self-contained',
+    );
   });
 
   it('loads the runtime from iframe.html', async () => {

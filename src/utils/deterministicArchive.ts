@@ -297,7 +297,9 @@ export default async function deterministicArchive(
 
   // Sort all entries by name to ensure deterministic order
   // Use simple string comparison instead of localeCompare for cross-platform determinism
-  entryDataList.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  entryDataList.sort((a, b) =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+  );
 
   const format = resolveFormat();
   const buffer =

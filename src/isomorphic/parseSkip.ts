@@ -5,7 +5,10 @@ import type { SkipItem } from './types.ts';
  * - [0]: component-only skips (match all variants of the component)
  * - [1]: component+variant skips (match a specific variant, keyed as "component\0variant")
  */
-export type SkipSet = readonly [componentOnly: Set<string>, componentVariant: Set<string>];
+export type SkipSet = readonly [
+  componentOnly: Set<string>,
+  componentVariant: Set<string>,
+];
 
 function isSkipItem(item: unknown): item is SkipItem {
   if (typeof item !== 'object' || item === null) return false;
@@ -14,7 +17,10 @@ function isSkipItem(item: unknown): item is SkipItem {
   const hasStoryFile = typeof record['storyFile'] === 'string';
   if (hasComponent && hasStoryFile) return false;
   if (hasStoryFile) return record['variant'] === undefined;
-  if (hasComponent) return record['variant'] === undefined || typeof record['variant'] === 'string';
+  if (hasComponent)
+    return (
+      record['variant'] === undefined || typeof record['variant'] === 'string'
+    );
   return false;
 }
 
@@ -76,5 +82,8 @@ export function isInSkipSet(
   component: string,
   variant: string,
 ): boolean {
-  return componentOnly.has(component) || componentVariant.has(`${component}\0${variant}`);
+  return (
+    componentOnly.has(component) ||
+    componentVariant.has(`${component}\0${variant}`)
+  );
 }

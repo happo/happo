@@ -22,105 +22,106 @@ let logger: Logger;
 let main: (argv: Array<string>, logger: Logger) => Promise<void>;
 let flakeResponseOverride: object | null = null;
 let findBaselineResponseOverride: object | null = null;
-const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(() =>
-  vi.fn(async (request: RequestAttributes, config: ConfigWithDefaults) => {
-    const { url, path } = request;
-    const fetchURL = path ? `${config.endpoint}${path}` : url;
-    if (!fetchURL) {
-      throw new Error(
-        'No fetch URL provided. Either `path` (preferred) or `url` must be provided.',
-      );
-    }
-
-    if (fetchURL.includes('/api/jobs')) {
-      return { id: 99, url: 'https://happo.io/api/jobs/99' };
-    }
-
-    if (fetchURL.includes('/find-baseline')) {
-      return findBaselineResponseOverride ?? { sha: 'baseline-sha' };
-    }
-
-    if (fetchURL.includes('/api/snap-requests/bulk')) {
-      const items =
-        (request.body as { items?: Array<unknown> } | undefined)?.items ?? [];
-
-      return {
-        results: items.map((_, index) => ({
-          requestId: index + 1,
-        })),
-      };
-    }
-
-    if (fetchURL.includes('/api/snap-requests')) {
-      return { requestId: 123 };
-    }
-
-    if (fetchURL.includes('/api/async-reports')) {
-      return { id: 123, url: 'https://happo.io/api/async-reports/123' };
-    }
-
-    if (/\/api\/.+\/compare\/.+$/.test(fetchURL)) {
-      return {
-        id: 123,
-        statusImageUrl: 'https://happo.io/api/reports/123/status-image',
-        compareUrl: 'https://happo.io/api/reports/123/compare',
-      };
-    }
-
-    if (fetchURL.includes('/api/flake')) {
-      if (flakeResponseOverride !== null) {
-        return flakeResponseOverride;
+const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(
+  () =>
+    vi.fn(async (request: RequestAttributes, config: ConfigWithDefaults) => {
+      const { url, path } = request;
+      const fetchURL = path ? `${config.endpoint}${path}` : url;
+      if (!fetchURL) {
+        throw new Error(
+          'No fetch URL provided. Either `path` (preferred) or `url` must be provided.',
+        );
       }
-      return [
-        {
-          project: 'test-project',
-          component: 'Button',
-          variant: 'primary',
-          target: 'chrome',
-          snapshots: [
-            {
-              url: 'https://happo.io/snapshots/1.png',
-              width: 100,
-              height: 80,
-            },
-            {
-              url: 'https://happo.io/snapshots/2.png',
-              width: 100,
-              height: 80,
-            },
-          ],
-          comparison: {
-            status: 'failure',
-            url: 'https://happo.io/comparisons/1',
-          },
-        },
-        {
-          project: 'test-project',
-          component: 'Card',
-          variant: 'hover',
-          target: 'firefox',
-          snapshots: [
-            {
-              url: 'https://happo.io/snapshots/3.png',
-              width: 120,
-              height: 90,
-            },
-            {
-              url: 'https://happo.io/snapshots/4.png',
-              width: 120,
-              height: 90,
-            },
-          ],
-          comparison: {
-            status: 'success',
-            url: 'https://happo.io/comparisons/2',
-          },
-        },
-      ];
-    }
 
-    return {};
-  }),
+      if (fetchURL.includes('/api/jobs')) {
+        return { id: 99, url: 'https://happo.io/api/jobs/99' };
+      }
+
+      if (fetchURL.includes('/find-baseline')) {
+        return findBaselineResponseOverride ?? { sha: 'baseline-sha' };
+      }
+
+      if (fetchURL.includes('/api/snap-requests/bulk')) {
+        const items =
+          (request.body as { items?: Array<unknown> } | undefined)?.items ?? [];
+
+        return {
+          results: items.map((_, index) => ({
+            requestId: index + 1,
+          })),
+        };
+      }
+
+      if (fetchURL.includes('/api/snap-requests')) {
+        return { requestId: 123 };
+      }
+
+      if (fetchURL.includes('/api/async-reports')) {
+        return { id: 123, url: 'https://happo.io/api/async-reports/123' };
+      }
+
+      if (/\/api\/.+\/compare\/.+$/.test(fetchURL)) {
+        return {
+          id: 123,
+          statusImageUrl: 'https://happo.io/api/reports/123/status-image',
+          compareUrl: 'https://happo.io/api/reports/123/compare',
+        };
+      }
+
+      if (fetchURL.includes('/api/flake')) {
+        if (flakeResponseOverride !== null) {
+          return flakeResponseOverride;
+        }
+        return [
+          {
+            project: 'test-project',
+            component: 'Button',
+            variant: 'primary',
+            target: 'chrome',
+            snapshots: [
+              {
+                url: 'https://happo.io/snapshots/1.png',
+                width: 100,
+                height: 80,
+              },
+              {
+                url: 'https://happo.io/snapshots/2.png',
+                width: 100,
+                height: 80,
+              },
+            ],
+            comparison: {
+              status: 'failure',
+              url: 'https://happo.io/comparisons/1',
+            },
+          },
+          {
+            project: 'test-project',
+            component: 'Card',
+            variant: 'hover',
+            target: 'firefox',
+            snapshots: [
+              {
+                url: 'https://happo.io/snapshots/3.png',
+                width: 120,
+                height: 90,
+              },
+              {
+                url: 'https://happo.io/snapshots/4.png',
+                width: 120,
+                height: 90,
+              },
+            ],
+            comparison: {
+              status: 'success',
+              url: 'https://happo.io/comparisons/2',
+            },
+          },
+        ];
+      }
+
+      return {};
+    }),
 );
 
 // mock makeHappoAPIRequest.ts *before* importing ../index.ts
@@ -251,15 +252,24 @@ describe('main', () => {
       };`,
       );
 
-      await main(['npx', 'happo', '-c', tmpfs.fullPath('custom.config.ts')], logger);
+      await main(
+        ['npx', 'happo', '-c', tmpfs.fullPath('custom.config.ts')],
+        logger,
+      );
 
-      assert.strictEqual(logger.log.mock.calls[0]?.[0], 'Running happo tests...');
+      assert.strictEqual(
+        logger.log.mock.calls[0]?.[0],
+        'Running happo tests...',
+      );
     });
 
     it('uses default config file when no --config flag', async () => {
       await main(['npx', 'happo'], logger);
 
-      assert.strictEqual(logger.log.mock.calls[0]?.[0], 'Running happo tests...');
+      assert.strictEqual(
+        logger.log.mock.calls[0]?.[0],
+        'Running happo tests...',
+      );
     });
 
     it('fails when config file does not exist', async () => {
@@ -281,7 +291,10 @@ describe('main', () => {
     it('runs default command when no positional args', async () => {
       await main(['npx', 'happo'], logger);
 
-      assert.strictEqual(logger.log.mock.calls[0]?.[0], 'Running happo tests...');
+      assert.strictEqual(
+        logger.log.mock.calls[0]?.[0],
+        'Running happo tests...',
+      );
     });
 
     it('posts GitHub comment when conditions are met', async () => {
@@ -318,7 +331,10 @@ describe('main', () => {
       const call = postGitHubCommentMock.mock.calls[0];
       assert.ok(call);
       assert.strictEqual(call[0]?.authToken, 'test-token');
-      assert.strictEqual(call[0]?.link, 'https://github.com/owner/repo/pull/123');
+      assert.strictEqual(
+        call[0]?.link,
+        'https://github.com/owner/repo/pull/123',
+      );
       assert.strictEqual(call[0]?.githubApiUrl, 'https://api.github.com');
       assert.strictEqual(
         call[0]?.statusImageUrl,
@@ -424,7 +440,9 @@ describe('main', () => {
         'Unknown command: unknown-command\n',
       );
       assert.ok(
-        logger.error.mock.calls[1]?.[0].includes(`Happo ${packageJson.version}`),
+        logger.error.mock.calls[1]?.[0].includes(
+          `Happo ${packageJson.version}`,
+        ),
       );
       assert.strictEqual(process.exitCode, 1);
     });
@@ -794,7 +812,13 @@ describe('main', () => {
 
       it('runs command when provided', async () => {
         await main(
-          ['npx', 'happo', '--', 'touch', tmpfs.fullPath('happy-to-be-here.txt')],
+          [
+            'npx',
+            'happo',
+            '--',
+            'touch',
+            tmpfs.fullPath('happy-to-be-here.txt'),
+          ],
           logger,
         );
 
@@ -876,7 +900,10 @@ describe('main', () => {
         await main(['npx', 'happo', 'finalize'], logger);
         assert.equal(process.exitCode, 1);
         assert(logger.error.mock.calls.length >= 1);
-        assert.match(logger.error.mock.calls[0]?.[0], /Missing --nonce argument/);
+        assert.match(
+          logger.error.mock.calls[0]?.[0],
+          /Missing --nonce argument/,
+        );
       });
 
       it('can finalize a report when --nonce is set', async () => {
@@ -939,7 +966,8 @@ describe('main', () => {
         const attachCall = makeHappoAPIRequestMock.mock.calls.find(
           (call) =>
             call[0]?.path === '/api/async-reports/test-sha' &&
-            (call[0]?.body as { requestIds?: Array<number> })?.requestIds?.length,
+            (call[0]?.body as { requestIds?: Array<number> })?.requestIds
+              ?.length,
         );
         assert.ok(attachCall, 'expected the extends-report to be attached');
         assert.deepStrictEqual(
@@ -1065,7 +1093,9 @@ describe('main', () => {
           logger,
         );
         assert.strictEqual(process.exitCode, 1);
-        const message = logger.error.mock.calls.map((c) => c.join(' ')).join('\n');
+        const message = logger.error.mock.calls
+          .map((c) => c.join(' '))
+          .join('\n');
         assert.match(message, /--skippedExamples must be a JSON array/);
         assert.doesNotMatch(message, /--skip must be a JSON array/);
       });

@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents working with code in this repository.
 
 ## Overview
 
@@ -42,7 +42,7 @@ Unit tests are TypeScript files named `*.test.ts`. `vitest.config.ts` looks unde
 
 ### Environment
 
-`.env.local` (gitignored) is loaded automatically by `vitest.config.ts` and the `test:*` scripts. Use `env.example` as a template. Tests that hit the real Happo API require `HAPPO_API_KEY` and `HAPPO_API_SECRET`.
+`.env.local` (gitignored) is loaded automatically by `vitest.config.ts` and the `test:*` scripts. Use `.env.example` as a template. Tests that hit the real Happo API require `HAPPO_API_KEY` and `HAPPO_API_SECRET`.
 
 ## Architecture
 
@@ -50,16 +50,16 @@ Unit tests are TypeScript files named `*.test.ts`. `vitest.config.ts` looks unde
 
 The library produces multiple distinct bundles from `scripts/build.ts` using esbuild:
 
-| Entry point                            | Output                    | Platform | Notes                                                 |
-| -------------------------------------- | ------------------------- | -------- | ----------------------------------------------------- |
-| `src/cli/main.ts`                      | `dist/cli/main.js`        | node     | Executable CLI                                        |
-| `src/config/index.ts`                  | `dist/config/`            | node     | Public types + `defineConfig`                         |
-| `src/browser/main.ts`                  | `dist/browser/`           | browser  | IIFE bundle for in-browser snapshot capture           |
-| `src/storybook/browser/`               | `dist/storybook/browser/` | browser  | Storybook addon/decorator                             |
-| `src/storybook/index.ts` + `preset.ts` | `dist/storybook/`         | node     | Storybook integration (build Storybook, prep package) |
-| `src/cypress/`                         | `dist/cypress/`           | node     | Cypress task + commands                               |
-| `src/playwright/index.ts`              | `dist/playwright/`        | node     | Playwright integration                                |
-| `src/custom/index.ts`                  | `dist/custom/`            | node     | Custom integration helper                             |
+| Entry point | Output | Platform | Notes |
+| --- | --- | --- | --- |
+| `src/cli/main.ts` | `dist/cli/main.js` | node | Executable CLI |
+| `src/config/index.ts` | `dist/config/` | node | Public types + `defineConfig` |
+| `src/browser/main.ts` | `dist/browser/` | browser | IIFE bundle for in-browser snapshot capture |
+| `src/storybook/browser/` | `dist/storybook/browser/` | browser | Storybook addon/decorator |
+| `src/storybook/index.ts` + `preset.ts` | `dist/storybook/` | node | Storybook integration (build Storybook, prep package) |
+| `src/cypress/` | `dist/cypress/` | node | Cypress task + commands |
+| `src/playwright/index.ts` | `dist/playwright/` | node | Playwright integration |
+| `src/custom/index.ts` | `dist/custom/` | node | Custom integration helper |
 
 ### Source Directory Map
 

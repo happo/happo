@@ -148,7 +148,9 @@ function makeAbsolute(configFilePath: string): string {
 }
 
 function installErrorHandlers(reporter: Reporter, logger: Logger) {
-  const unhandledRejectionHandler: NodeJS.UnhandledRejectionListener = (reason) => {
+  const unhandledRejectionHandler: NodeJS.UnhandledRejectionListener = (
+    reason,
+  ) => {
     if (reason instanceof Error) {
       reporter.captureException(reason);
       logger.error(reason.stack || reason.message || String(reason));
@@ -161,7 +163,9 @@ function installErrorHandlers(reporter: Reporter, logger: Logger) {
     return;
   };
 
-  const uncaughtExceptionHandler: NodeJS.UncaughtExceptionListener = (error) => {
+  const uncaughtExceptionHandler: NodeJS.UncaughtExceptionListener = (
+    error,
+  ) => {
     reporter.captureException(error);
     logger.error(error.stack || error.message || String(error));
     process.exitCode = 1;
@@ -212,7 +216,9 @@ export async function main(
     // --skip and --skippedExamples are aliases. Report problems using whichever
     // one the user actually typed.
     const skipFlag =
-      args.values.skippedExamples === undefined ? '--skip' : '--skippedExamples';
+      args.values.skippedExamples === undefined
+        ? '--skip'
+        : '--skippedExamples';
 
     const environment = await resolveEnvironment(args.values);
 
@@ -398,8 +404,9 @@ async function handleDefaultCommand(
         return;
       }
 
-      const findBaselineReport = (await import('../network/findBaselineReport.ts'))
-        .default;
+      const findBaselineReport = (
+        await import('../network/findBaselineReport.ts')
+      ).default;
       baselineSha = await findBaselineReport(environment, config, logger);
       if (!baselineSha) {
         logger.log(
@@ -435,8 +442,9 @@ async function handleDefaultCommand(
       // Find a baseline to borrow the excluded stories from, unless --skip
       // already resolved one.
       if (!baselineSha) {
-        const findBaselineReport = (await import('../network/findBaselineReport.ts'))
-          .default;
+        const findBaselineReport = (
+          await import('../network/findBaselineReport.ts')
+        ).default;
         baselineSha = await findBaselineReport(environment, config, logger);
       }
 
@@ -513,8 +521,9 @@ async function handleDefaultCommand(
         // githubToken and githubApiUrl are set which means that we should post
         // a comment to the PR.
         // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
-        const postGitHubComment = (await import('../network/postGitHubComment.ts'))
-          .default;
+        const postGitHubComment = (
+          await import('../network/postGitHubComment.ts')
+        ).default;
         await postGitHubComment({
           authToken: environment.githubToken,
           link: environment.link,

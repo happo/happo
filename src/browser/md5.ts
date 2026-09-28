@@ -321,7 +321,9 @@ export class MD5 {
           (str.codePointAt(++i) ?? 0 - 0xdc_00) +
           0x1_00_00;
         if (code > 0x10_ff_ff) {
-          throw new Error('Unicode standard supports code points up to U+10FFFF');
+          throw new Error(
+            'Unicode standard supports code points up to U+10FFFF',
+          );
         }
         buf8[bufLen++] = (code >>> 18) + 0xf0;
         buf8[bufLen++] = ((code >>> 12) & 0x3f) | 0x80;

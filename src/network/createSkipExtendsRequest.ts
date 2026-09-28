@@ -40,5 +40,9 @@ export default async function createSkipExtendsRequest(
     return undefined;
   }
 
-  return await createExtendsReportSnapRequest(baselineSha, componentItems, config);
+  return await createExtendsReportSnapRequest(
+    baselineSha,
+    componentItems,
+    config,
+  );
 }

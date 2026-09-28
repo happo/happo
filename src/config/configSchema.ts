@@ -160,7 +160,9 @@ const animateOptionsEntries = {
   expect: v.exactOptional(v.nullable(plainObject(animateExpectationsEntries))),
   onExpectationFailure: v.exactOptional(v.picklist(['image', 'fail', 'warn'])),
   drivers: v.exactOptional(v.nullable(v.array(v.string()))),
-  stages: v.exactOptional(v.union([v.number(), plainObject(animateStagesEntries)])),
+  stages: v.exactOptional(
+    v.union([v.number(), plainObject(animateStagesEntries)]),
+  ),
 } satisfies EntriesOf<AnimateOptions>;
 
 const animateConfig = v.union([
@@ -278,7 +280,10 @@ const pagesIntegrationEntries = {
 
 const deepCompareEntries = {
   compareThreshold: betweenZeroAndOne,
-  diffAlgorithm: v.exactOptional(v.picklist(['color-delta', 'ssim']), 'color-delta'),
+  diffAlgorithm: v.exactOptional(
+    v.picklist(['color-delta', 'ssim']),
+    'color-delta',
+  ),
   ignoreThreshold: v.exactOptional(betweenZeroAndOne),
   ignoreWhitespace: v.exactOptional(v.boolean()),
   applyBlur: v.exactOptional(v.boolean()),
@@ -433,7 +438,8 @@ function exampleTargetsSnippet(
     // `inspect` gives us a properly escaped string literal for keys that
     // aren't valid identifiers, e.g. `'my-target'` or `"user's"`.
     const key = IDENTIFIER_PATTERN.test(name) ? name : inspect(name);
-    const exampleType = TARGET_TYPES.find((known) => known === type) ?? 'chrome';
+    const exampleType =
+      TARGET_TYPES.find((known) => known === type) ?? 'chrome';
     return `    ${key}: { type: '${exampleType}', viewport: '${DEFAULT_VIEWPORT}' },`;
   });
 
@@ -525,7 +531,11 @@ function formatIssue(
   configFilePath: string,
 ): string {
   if (path[0] === 'targets') {
-    const targetsMessage = formatTargetsIssue(path, issue.input, configFilePath);
+    const targetsMessage = formatTargetsIssue(
+      path,
+      issue.input,
+      configFilePath,
+    );
     if (targetsMessage) {
       return targetsMessage;
     }
@@ -554,7 +564,10 @@ function formatIssue(
 
 const MAX_REPORTED_ISSUES = 10;
 
-function formatIssues(issues: ReadonlyArray<Issue>, configFilePath: string): string {
+function formatIssues(
+  issues: ReadonlyArray<Issue>,
+  configFilePath: string,
+): string {
   const messages = flattenIssues(issues).map(({ issue, path }) =>
     formatIssue(issue, path, configFilePath),
   );
@@ -640,7 +653,11 @@ function findUnknownOptions(
         );
       }
     }
-  } else if ('item' in schema && isSchema(schema.item) && Array.isArray(value)) {
+  } else if (
+    'item' in schema &&
+    isSchema(schema.item) &&
+    Array.isArray(value)
+  ) {
     for (const [index, item] of value.entries()) {
       unknownOptions.push(
         ...findUnknownOptions(schema.item, item, [...path, index]),
@@ -720,7 +737,10 @@ export function parseConfig(
     throw new TypeError(formatIssues(result.issues, configFilePath));
   }
 
-  for (const { path, knownOptions } of findUnknownOptions(configSchema, input)) {
+  for (const { path, knownOptions } of findUnknownOptions(
+    configSchema,
+    input,
+  )) {
     const suggestion = findClosestMatch(String(path.at(-1)), knownOptions);
     onUnknownOption(
       `Unknown option \`${formatPath(path)}\` in config file ${configFilePath}.${suggestion ? ` Did you mean \`${suggestion}\`?` : ''} This will be an error in the next major version of Happo.`,

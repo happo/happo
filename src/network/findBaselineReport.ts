@@ -8,7 +8,10 @@ export default async function findBaselineReport(
   config: ConfigWithDefaults,
   logger: Logger,
 ): Promise<string | undefined> {
-  const shas = [environment.beforeSha, ...(environment.fallbackShas ?? [])].filter(Boolean);
+  const shas = [
+    environment.beforeSha,
+    ...(environment.fallbackShas ?? []),
+  ].filter(Boolean);
 
   try {
     const result = await makeHappoAPIRequest(
@@ -28,7 +31,9 @@ export default async function findBaselineReport(
     if (result && 'sha' in result && typeof result.sha === 'string') {
       return result.sha;
     }
-    throw new Error(`Unexpected response from find-baseline API: ${JSON.stringify(result)}`);
+    throw new Error(
+      `Unexpected response from find-baseline API: ${JSON.stringify(result)}`,
+    );
   } catch (e) {
     logger.error('[HAPPO] Failed to find baseline report:', e);
   }

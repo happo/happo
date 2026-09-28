@@ -408,7 +408,10 @@ describe('loadConfigFile', () => {
       });
 
       assert.ok(config);
-      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(
+        config.apiKey,
+        'https://github.com/happo/happo/pull/123',
+      );
       assert.strictEqual(config.apiSecret, testSecret);
     } finally {
       await close();
@@ -445,7 +448,10 @@ describe('loadConfigFile', () => {
       );
 
       assert.ok(config);
-      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(
+        config.apiKey,
+        'https://github.com/happo/happo/pull/123',
+      );
       assert.strictEqual(config.apiSecret, testSecret);
       assert.match(logger.error.mock.calls[0]?.[0], /Retrying/);
     } finally {
@@ -475,7 +481,10 @@ describe('loadConfigFile', () => {
       });
 
       assert.ok(config);
-      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(
+        config.apiKey,
+        'https://github.com/happo/happo/pull/123',
+      );
       assert.strictEqual(config.apiSecret, testSecret);
     } finally {
       await close();
@@ -504,7 +513,10 @@ describe('loadConfigFile', () => {
       });
 
       assert.ok(config);
-      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(
+        config.apiKey,
+        'https://github.com/happo/happo/pull/123',
+      );
       assert.strictEqual(config.apiSecret, testSecret);
     } finally {
       await close();
@@ -832,7 +844,9 @@ describe('loadConfigFile', () => {
         ci: false,
       });
 
-      assert.deepStrictEqual(config.targets['tablet']?.animate, { mode: 'off' });
+      assert.deepStrictEqual(config.targets['tablet']?.animate, {
+        mode: 'off',
+      });
     });
 
     it('allows animate on a desktop target and passes it through unchanged', async () => {
@@ -1640,7 +1654,11 @@ describe('loadConfigFile', () => {
       });
 
       const logger = { log: vi.fn(), error: vi.fn() };
-      await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
+      await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+      );
 
       assert.match(
         logger.error.mock.calls[0]?.[0],
@@ -1695,7 +1713,9 @@ describe('loadConfigFile', () => {
       assert.strictEqual(logger.error.mock.calls.length, 1);
       assert.ok('shared' in config);
       const { shared } = config;
-      assert.ok(typeof shared === 'object' && shared !== null && 'self' in shared);
+      assert.ok(
+        typeof shared === 'object' && shared !== null && 'self' in shared,
+      );
       assert.strictEqual(shared.self, shared);
     });
 
@@ -1725,7 +1745,11 @@ describe('loadConfigFile', () => {
       });
 
       const logger = { log: vi.fn(), error: vi.fn() };
-      await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
+      await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+      );
 
       assert.strictEqual(logger.error.mock.calls.length, 0);
     });
@@ -1973,7 +1997,10 @@ describe('loadConfigFile', () => {
         (error: Error) => {
           assert.ok(error instanceof TypeError);
           const lines = error.message.split('\n\n');
-          assert.match(lines[0] ?? '', /^Found 3 problems in config file \S+:$/);
+          assert.match(
+            lines[0] ?? '',
+            /^Found 3 problems in config file \S+:$/,
+          );
           assert.match(
             lines[1] ?? '',
             /^- Invalid `endpoint` .+: must be a string, got: 5\.$/,

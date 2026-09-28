@@ -26,7 +26,8 @@ it('passes the self test', () => {
 });
 
 it('hashes a 64 byte string', () => {
-  const str = '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592',
+  const str =
+      '5d41402abc4b2a76b9719d911017c5925d41402abc4b2a76b9719d911017c592',
     expectedResult = 'e0b153045b08d59d4e18a98ab823ac42',
     arr = stringToArray(str);
 
@@ -78,7 +79,9 @@ it('works incrementally', () => {
   md5.start();
   md5.appendByteArray(stringToArray('5d41402abc4b2a421456'));
   md5.appendByteArray(
-    stringToArray('5d41402abc4b2a4214565d41402abc4b2a4214565d41402abc4b2a421456'),
+    stringToArray(
+      '5d41402abc4b2a4214565d41402abc4b2a4214565d41402abc4b2a421456',
+    ),
   );
   md5.appendByteArray(stringToArray('5d41402abc4b2a421456'));
   assert.strictEqual(md5.end(), '45762198a57a35c8523915898fb8c68c');

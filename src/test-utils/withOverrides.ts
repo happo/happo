@@ -40,7 +40,9 @@ export default function withOverrides(
 
       const originalDescriptor = overridden[key];
 
-      const enumerable = hasOwn ? (originalDescriptor?.enumerable ?? true) : true;
+      const enumerable = hasOwn
+        ? (originalDescriptor?.enumerable ?? true)
+        : true;
       const writable = hasOwn ? (originalDescriptor?.writable ?? true) : true;
 
       Object.defineProperty(originalObject, key, {

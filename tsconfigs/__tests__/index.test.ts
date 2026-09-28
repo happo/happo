@@ -78,13 +78,16 @@ describe('getAllTsConfigs', () => {
 describe('tsconfig.json', () => {
   it('extends all other tsconfig.json files', () => {
     const rootDir = findRootDir();
-    const rootTsconfig = readAndParseTsconfig(path.join(rootDir, 'tsconfig.json'));
+    const rootTsconfig = readAndParseTsconfig(
+      path.join(rootDir, 'tsconfig.json'),
+    );
 
     assert.ok(rootTsconfig.projectReferences);
     const tsconfigPaths = getAllTsconfigs()
       // Remove the base config that everything extends
       .filter(
-        (tsconfig) => tsconfig !== path.join(tsconfigDirName, 'tsconfig.base.json'),
+        (tsconfig) =>
+          tsconfig !== path.join(tsconfigDirName, 'tsconfig.base.json'),
       )
       // Normalize the paths to be relative to the tsconfig.json file
       .map((tsconfig) => `./${tsconfig.split(path.sep).join('/')}`);
@@ -93,7 +96,8 @@ describe('tsconfig.json', () => {
 
     // parseJsonConfigFileContent resolves project reference paths to absolute paths.
     const referencePaths = rootTsconfig.projectReferences.map(
-      (ref) => `./${path.relative(rootDir, ref.path).split(path.sep).join('/')}`,
+      (ref) =>
+        `./${path.relative(rootDir, ref.path).split(path.sep).join('/')}`,
     );
     assert.deepStrictEqual(referencePaths, tsconfigPaths);
   });
@@ -103,7 +107,10 @@ describe('tsconfigs', () => {
   it('do have overlapping includes', () => {
     const tsconfigs = getAllTsconfigs();
     const tsconfigFiles = new Map(
-      tsconfigs.map((tsconfig) => [tsconfig, new Set(tsconfigListFiles(tsconfig))]),
+      tsconfigs.map((tsconfig) => [
+        tsconfig,
+        new Set(tsconfigListFiles(tsconfig)),
+      ]),
     );
 
     for (const [tsconfigFile, files] of tsconfigFiles) {
@@ -126,7 +133,9 @@ describe('tsconfigs', () => {
   it('covers all TypeScript files', () => {
     const rootDir = findRootDir();
     const normalizePath = (file: string): string => {
-      const absolute = path.isAbsolute(file) ? file : path.resolve(rootDir, file);
+      const absolute = path.isAbsolute(file)
+        ? file
+        : path.resolve(rootDir, file);
       return path.relative(rootDir, absolute).split(path.sep).join('/');
     };
 
@@ -164,7 +173,10 @@ describe('tsconfigs', () => {
   it('does not include unexpected files', () => {
     const tsconfigs = getAllTsconfigs();
     const filesCoveredByTsconfigs = new Map(
-      tsconfigs.map((tsconfig) => [tsconfig, new Set(tsconfigListFiles(tsconfig))]),
+      tsconfigs.map((tsconfig) => [
+        tsconfig,
+        new Set(tsconfigListFiles(tsconfig)),
+      ]),
     );
 
     const bannedDirectories = [
