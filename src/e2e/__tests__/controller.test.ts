@@ -257,8 +257,8 @@ describe('Controller', () => {
           component: 'Button',
           variant: 'primary',
           cssBlocks: [],
-          // @ts-expect-error: deliberately malformed
           targets: [
+            // @ts-expect-error: deliberately malformed
             { name: 'firefox-small', browser: 'firefox', viewport: '400x800' },
           ],
         }),
