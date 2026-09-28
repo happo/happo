@@ -106,7 +106,8 @@
     "printWidth": 100,
     "singleQuote": true,
     "trailingComma": "all",
-    "arrowParens": "always"
+    "arrowParens": "always",
+    "proseWrap": "never"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
