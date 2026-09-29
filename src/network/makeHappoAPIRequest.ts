@@ -72,17 +72,15 @@ export default async function makeHappoAPIRequest(
     );
   }
 
-  const signed = await getSignedToken(apiKey, apiSecret);
-
-  const headers = {
-    Authorization: `Bearer ${signed}`,
-  };
-
   const response = await fetchWithRetry(
     fetchURL,
     {
       method,
-      headers,
+      // Resolve the token on every attempt so that retries don't reuse a token
+      // that expired while earlier attempts were timing out or backing off.
+      headers: async () => ({
+        Authorization: `Bearer ${await getSignedToken(apiKey, apiSecret)}`,
+      }),
       formData,
       body,
       timeout,
