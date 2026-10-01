@@ -101,7 +101,7 @@ export default defineConfig({
 });
 ```
 
-Since this lives in the config, you can enable a condition in a single pull request (and fix the problems there) without affecting other work in the repository. A condition that is left out falls back to the setting on your Happo account, if there is one. `renderErrors` only has an effect if render errors are reported for your account.
+Since this lives in the config, you can enable a condition in a single pull request (and fix the problems there) without affecting other work in the repository. A condition that is left out falls back to the setting on your Happo account, if there is one.
 
 ### Browser Targets
 

@@ -256,8 +256,7 @@ export interface DeepCompareSettings {
 export interface BlockApprovalSettings {
   /**
    * Block approval when the report for the current commit has examples that
-   * failed to render. This only has an effect if render errors are reported
-   * for your Happo account.
+   * failed to render.
    */
   renderErrors?: boolean;
 
