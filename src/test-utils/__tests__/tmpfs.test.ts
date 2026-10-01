@@ -1,7 +1,8 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { afterEach, beforeEach, describe, it } from 'vitest';
 
 import * as tmpfs from '../tmpfs.ts';
 
@@ -29,7 +30,9 @@ it('creates the files in the temp dir', () => {
 
   const allFiles = fs.readdirSync(tmpfs.getTempDir());
   assert.deepStrictEqual(allFiles, ['subdir', 'test.txt']);
-  assert.deepStrictEqual(fs.readdirSync(tmpfs.fullPath('subdir')), ['test2.txt']);
+  assert.deepStrictEqual(fs.readdirSync(tmpfs.fullPath('subdir')), [
+    'test2.txt',
+  ]);
 });
 
 it('throws if called twice without restore', () => {

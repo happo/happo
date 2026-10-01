@@ -3,8 +3,9 @@ import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { test } from 'node:test';
 import { promisify } from 'node:util';
+
+import { test } from 'vitest';
 
 import createTar from '../createTar.ts';
 
@@ -92,10 +93,11 @@ test('is readable by the system tar', async () => {
     ]),
   );
 
-  assert.deepStrictEqual(
-    [...files.keys()].toSorted(),
-    ['assets/app.js', 'assets/nested/deep.css', 'index.html'],
-  );
+  assert.deepStrictEqual([...files.keys()].toSorted(), [
+    'assets/app.js',
+    'assets/nested/deep.css',
+    'index.html',
+  ]);
   assert.strictEqual(files.get('index.html')?.toString(), '<html></html>');
 });
 

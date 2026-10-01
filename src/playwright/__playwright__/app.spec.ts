@@ -14,7 +14,9 @@ function assertError(error: unknown): asserts error is Error {
 let serverInfo: ServerInfo;
 
 test.beforeAll(async () => {
-  serverInfo = await startTestServer('./src/playwright/__playwright__/fixtures');
+  serverInfo = await startTestServer(
+    './src/playwright/__playwright__/fixtures',
+  );
 });
 
 test.afterAll(async () => {
@@ -100,7 +102,6 @@ test('basic test', async ({ page, happoScreenshot }) => {
     component: 'Button',
     variant: 'focus-visible',
   });
-
 
   // Hover a button that has nested content
   await page.hover('#interactive-nested-btn');

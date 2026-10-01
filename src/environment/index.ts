@@ -88,7 +88,9 @@ const envKeys: ReadonlyArray<string> = [
   'TRAVIS_REPO_SLUG',
 ];
 
-async function resolveGithubEvent(GITHUB_EVENT_PATH: string): Promise<GitHubEvent> {
+async function resolveGithubEvent(
+  GITHUB_EVENT_PATH: string,
+): Promise<GitHubEvent> {
   try {
     const fs = await import('node:fs/promises');
     const content = await fs.readFile(GITHUB_EVENT_PATH, 'utf8');
@@ -113,7 +115,9 @@ async function resolveLink(
     } catch (e) {
       throw new TypeError(
         `link must be a valid http/https URL. Invalid URL: '${cliArgs.link}'`,
-        { cause: e },
+        {
+          cause: e,
+        },
       );
     }
 
@@ -173,7 +177,10 @@ async function resolveLink(
     }
   }
 
-  if (SYSTEM_PULLREQUEST_PULLREQUESTID && SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI) {
+  if (
+    SYSTEM_PULLREQUEST_PULLREQUESTID &&
+    SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
+  ) {
     return `${SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI}/pullrequest/${SYSTEM_PULLREQUEST_PULLREQUESTID}`.replace(
       /[^/]+@/,
       '',
@@ -238,9 +245,14 @@ function resolveCIJobUrl(
   if (GITHUB_REPOSITORY && GITHUB_RUN_ID) {
     // Enterprise setups sometimes configure the server URL with a trailing
     // slash, which would double up with the one we add below.
-    const serverUrl = (GITHUB_SERVER_URL || 'https://github.com').replace(/\/$/, '');
+    const serverUrl = (GITHUB_SERVER_URL || 'https://github.com').replace(
+      /\/$/,
+      '',
+    );
     const runUrl = `${serverUrl}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`;
-    return GITHUB_RUN_ATTEMPT ? `${runUrl}/attempts/${GITHUB_RUN_ATTEMPT}` : runUrl;
+    return GITHUB_RUN_ATTEMPT
+      ? `${runUrl}/attempts/${GITHUB_RUN_ATTEMPT}`
+      : runUrl;
   }
 
   if (CIRCLE_BUILD_URL) {
@@ -251,7 +263,11 @@ function resolveCIJobUrl(
     return TRAVIS_JOB_WEB_URL || TRAVIS_BUILD_WEB_URL;
   }
 
-  if (SYSTEM_TEAMFOUNDATIONCOLLECTIONURI && SYSTEM_TEAMPROJECT && BUILD_BUILDID) {
+  if (
+    SYSTEM_TEAMFOUNDATIONCOLLECTIONURI &&
+    SYSTEM_TEAMPROJECT &&
+    BUILD_BUILDID
+  ) {
     const collectionUri = SYSTEM_TEAMFOUNDATIONCOLLECTIONURI.replace(/\/$/, '');
     return `${collectionUri}/${SYSTEM_TEAMPROJECT}/_build/results?buildId=${BUILD_BUILDID}`;
   }
@@ -457,8 +473,11 @@ async function resolveBeforeSha(
     }
   }
 
-  const { TRAVIS_COMMIT_RANGE, GITHUB_EVENT_PATH, SYSTEM_PULLREQUEST_TARGETBRANCH } =
-    env;
+  const {
+    TRAVIS_COMMIT_RANGE,
+    GITHUB_EVENT_PATH,
+    SYSTEM_PULLREQUEST_TARGETBRANCH,
+  } = env;
 
   if (GITHUB_EVENT_PATH) {
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
@@ -540,9 +559,13 @@ function getHeadShaWithLocalChanges(): {
     return { headSha, headShaWithLocalChanges: headSha };
   }
 
-  const lsRes = spawnSync('git', ['ls-files', '--other', '--exclude-standard'], {
-    encoding: 'utf8',
-  });
+  const lsRes = spawnSync(
+    'git',
+    ['ls-files', '--other', '--exclude-standard'],
+    {
+      encoding: 'utf8',
+    },
+  );
 
   if (lsRes.status !== 0) {
     return { headSha, headShaWithLocalChanges: headSha };
@@ -610,7 +633,8 @@ async function resolveAfterSha(
 
   if (SYSTEM_PULLREQUEST_SOURCEBRANCH) {
     // azure pull request
-    const rawBranchName = SYSTEM_PULLREQUEST_SOURCEBRANCH.split('/').toReversed()[0];
+    const rawBranchName =
+      SYSTEM_PULLREQUEST_SOURCEBRANCH.split('/').toReversed()[0];
     const res = spawnSync('git', ['rev-parse', `origin/${rawBranchName}`], {
       encoding: 'utf8',
     });
@@ -703,7 +727,8 @@ export default async function resolveEnvironment(
   const debugMode = !!env.HAPPO_DEBUG;
   const afterSha = await resolveAfterSha(cliArgs, env);
 
-  const realAfterSha = typeof afterSha === 'string' ? afterSha : afterSha.headSha;
+  const realAfterSha =
+    typeof afterSha === 'string' ? afterSha : afterSha.headSha;
   const afterShaWithLocalChanges =
     typeof afterSha === 'string' ? afterSha : afterSha.headShaWithLocalChanges;
 

@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { describe, it } from 'node:test';
+
+import { describe, it } from 'vitest';
 
 import formatFailureMessage from '../formatFailureMessage.ts';
 
@@ -66,7 +67,8 @@ describe('formatFailureMessage', () => {
   it('is always a single line', () => {
     const message = formatFailureMessage({
       integrationType: 'storybook',
-      error: 'Failed to build\n  at doThing (thing.js:1:1)\n  at other (o.js:2:2)',
+      error:
+        'Failed to build\n  at doThing (thing.js:1:1)\n  at other (o.js:2:2)',
       environment: ciEnvironment,
     });
 
@@ -85,7 +87,10 @@ describe('formatFailureMessage', () => {
       environment: ciEnvironment,
     });
 
-    assert.match(message, /"npx some-very-long-command.{0,60}…" did not complete/);
+    assert.match(
+      message,
+      /"npx some-very-long-command.{0,60}…" did not complete/,
+    );
     // The ellipsis stands in for the sentence-ending period.
     assert.match(message, /: a{119}… Review/);
   });

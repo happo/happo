@@ -23,7 +23,9 @@ export default function validateArchive(
     size: entry.size || 0,
   }));
 
-  for (const file of fileSizes.toSorted((a, b) => b.size - a.size).slice(0, 20)) {
+  for (const file of fileSizes
+    .toSorted((a, b) => b.size - a.size)
+    .slice(0, 20)) {
     messageBits.push(
       `${file.name}: ${Math.round(file.size / 1024 / 1024)} MB (${file.size} bytes)`,
     );

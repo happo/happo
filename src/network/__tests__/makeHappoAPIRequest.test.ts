@@ -1,11 +1,21 @@
 import assert from 'node:assert';
 import http from 'node:http';
-import type { Mock } from 'node:test';
-import { after, before, beforeEach, describe, it, mock } from 'node:test';
 
+import { decodeJwt } from 'jose';
 import multiparty from 'multiparty';
+import type { Mock } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  it,
+  vi,
+} from 'vitest';
 
 import type { ConfigWithDefaults } from '../../config/index.ts';
+import { clearTokenCache } from '../getSignedToken.ts';
 import type {
   MakeHappoAPIRequestOptions,
   RequestAttributes,
@@ -39,11 +49,13 @@ let config: ConfigWithDefaults;
 
 let httpServer: http.Server;
 let errorTries: number;
+let authorizationHeaders: Array<string | undefined>;
+let onAuthRequest: (() => void) | undefined;
 
-before(async () => {
+beforeAll(async () => {
   logger = {
-    log: mock.fn(),
-    error: mock.fn(),
+    log: vi.fn(),
+    error: vi.fn(),
   };
 
   httpServer = http.createServer((req, res) => {
@@ -59,7 +71,23 @@ before(async () => {
       return;
     }
 
-    if (req.url === '/success' || (req.url === '/failure-retry' && errorTries > 2)) {
+    if (req.url === '/auth-failure-retry') {
+      authorizationHeaders.push(req.headers.authorization);
+      onAuthRequest?.();
+      if (authorizationHeaders.length < 2) {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Nope');
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ result: 'Hello world!' }));
+      return;
+    }
+
+    if (
+      req.url === '/success' ||
+      (req.url === '/failure-retry' && errorTries > 2)
+    ) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
@@ -105,7 +133,7 @@ before(async () => {
   });
 });
 
-after(async () => {
+afterAll(async () => {
   await new Promise<void>((resolve) => {
     httpServer.close(() => resolve());
   });
@@ -113,6 +141,8 @@ after(async () => {
 
 beforeEach(() => {
   errorTries = 0;
+  authorizationHeaders = [];
+  onAuthRequest = undefined;
   props = {
     url: 'http://localhost:8990/success',
     method: 'GET',
@@ -336,6 +366,45 @@ describe('when the request fails repeatedly', () => {
     await assert.rejects(
       () => makeHappoAPIRequest(props, config, options, logger),
       /Nope/,
+    );
+  });
+});
+
+describe('when the token expires between retries', () => {
+  beforeEach(() => {
+    clearTokenCache();
+    props.url = 'http://localhost:8990/auth-failure-retry';
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('signs a fresh token for the retry', async () => {
+    let nowMs = Date.parse('2026-01-01T00:00:00Z');
+    vi.spyOn(Date, 'now').mockImplementation(() => nowMs);
+
+    // Jump past the token TTL after the first attempt, as if the first
+    // attempt had timed out and the retry happened minutes later.
+    onAuthRequest = () => {
+      nowMs += 10 * 60 * 1000;
+      onAuthRequest = undefined;
+    };
+
+    const response = await makeHappoAPIRequest(props, config, options, logger);
+    assert.deepStrictEqual(response, { result: 'Hello world!' });
+
+    assert.strictEqual(authorizationHeaders.length, 2);
+    const [firstHeader, retryHeader] = authorizationHeaders;
+    assert.ok(firstHeader);
+    assert.ok(retryHeader);
+    assert.notStrictEqual(retryHeader, firstHeader);
+
+    const { exp } = decodeJwt(retryHeader.replace(/^Bearer /, ''));
+    assert.ok(exp);
+    assert.ok(
+      exp > nowMs / 1000,
+      `Expected retry token to be unexpired (exp ${exp}, now ${nowMs / 1000})`,
     );
   });
 });

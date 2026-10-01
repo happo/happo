@@ -109,7 +109,11 @@ export async function finalizeAll({
       logger,
     );
 
-    if (environment.link && environment.githubToken && happoConfig.githubApiUrl) {
+    if (
+      environment.link &&
+      environment.githubToken &&
+      happoConfig.githubApiUrl
+    ) {
       // githubToken and githubApiUrl are set which means that we should post
       // a comment to the PR.
       // https://docs.happo.io/docs/continuous-integration#posting-statuses-without-installing-the-happo-github-app
@@ -302,11 +306,15 @@ export default async function runWithWrapper(
         childEnv.HAPPO_SKIP_FILE = skipFilePath;
       }
 
-      const child = spawn(dashdashCommandParts[0]!, dashdashCommandParts.slice(1), {
-        stdio: 'inherit',
-        env: childEnv,
-        shell: process.platform == 'win32',
-      });
+      const child = spawn(
+        dashdashCommandParts[0]!,
+        dashdashCommandParts.slice(1),
+        {
+          stdio: 'inherit',
+          env: childEnv,
+          shell: process.platform == 'win32',
+        },
+      );
 
       child.on('error', (e) => {
         return reject(e);

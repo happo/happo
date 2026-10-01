@@ -1,4 +1,4 @@
-import { afterEach, beforeEach } from 'node:test';
+import { afterEach, beforeEach } from 'vitest';
 
 /**
  * Helper for overriding object properties in tests.
@@ -40,7 +40,9 @@ export default function withOverrides(
 
       const originalDescriptor = overridden[key];
 
-      const enumerable = hasOwn ? (originalDescriptor?.enumerable ?? true) : true;
+      const enumerable = hasOwn
+        ? (originalDescriptor?.enumerable ?? true)
+        : true;
       const writable = hasOwn ? (originalDescriptor?.writable ?? true) : true;
 
       Object.defineProperty(originalObject, key, {

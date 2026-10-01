@@ -1,7 +1,8 @@
 import assert from 'node:assert';
 import http from 'node:http';
 import path from 'node:path';
-import { afterEach, describe, it, mock } from 'node:test';
+
+import { afterEach, describe, it, vi } from 'vitest';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import { findConfigFile, loadConfigFile } from '../loadConfig.ts';
@@ -407,7 +408,10 @@ describe('loadConfigFile', () => {
       });
 
       assert.ok(config);
-      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(
+        config.apiKey,
+        'https://github.com/happo/happo/pull/123',
+      );
       assert.strictEqual(config.apiSecret, testSecret);
     } finally {
       await close();
@@ -431,8 +435,8 @@ describe('loadConfigFile', () => {
       });
 
       const logger = {
-        log: mock.fn(),
-        error: mock.fn(),
+        log: vi.fn(),
+        error: vi.fn(),
       };
       const config = await loadConfigFile(
         findConfigFile(),
@@ -444,9 +448,12 @@ describe('loadConfigFile', () => {
       );
 
       assert.ok(config);
-      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(
+        config.apiKey,
+        'https://github.com/happo/happo/pull/123',
+      );
       assert.strictEqual(config.apiSecret, testSecret);
-      assert.match(logger.error.mock.calls[0]?.arguments[0], /Retrying/);
+      assert.match(logger.error.mock.calls[0]?.[0], /Retrying/);
     } finally {
       await close();
     }
@@ -474,7 +481,10 @@ describe('loadConfigFile', () => {
       });
 
       assert.ok(config);
-      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(
+        config.apiKey,
+        'https://github.com/happo/happo/pull/123',
+      );
       assert.strictEqual(config.apiSecret, testSecret);
     } finally {
       await close();
@@ -503,7 +513,10 @@ describe('loadConfigFile', () => {
       });
 
       assert.ok(config);
-      assert.strictEqual(config.apiKey, 'https://github.com/happo/happo/pull/123');
+      assert.strictEqual(
+        config.apiKey,
+        'https://github.com/happo/happo/pull/123',
+      );
       assert.strictEqual(config.apiSecret, testSecret);
     } finally {
       await close();
@@ -512,8 +525,8 @@ describe('loadConfigFile', () => {
 
   it('rejects with an error if the pull-request authentication fails', async () => {
     const logger = {
-      log: mock.fn(),
-      error: mock.fn(),
+      log: vi.fn(),
+      error: vi.fn(),
     };
     tmpfs.mock({
       'happo.config.ts': `
@@ -535,7 +548,7 @@ describe('loadConfigFile', () => {
       /Missing `apiKey` and `apiSecret` in your Happo config/,
     );
     assert.match(
-      logger.log.mock.calls[1]?.arguments[0],
+      logger.log.mock.calls[1]?.[0],
       /Failed to obtain temporary pull-request token/,
     );
   });
@@ -831,7 +844,9 @@ describe('loadConfigFile', () => {
         ci: false,
       });
 
-      assert.deepStrictEqual(config.targets['tablet']?.animate, { mode: 'off' });
+      assert.deepStrictEqual(config.targets['tablet']?.animate, {
+        mode: 'off',
+      });
     });
 
     it('allows animate on a desktop target and passes it through unchanged', async () => {
@@ -1330,10 +1345,14 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
-      await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
+      const logger = { log: vi.fn(), error: vi.fn() };
+      await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+      );
 
-      const warnings = logger.error.mock.calls.map((call) => call.arguments[0]);
+      const warnings = logger.error.mock.calls.map((call) => call[0]);
       assert.strictEqual(warnings.length, 1);
       assert.match(
         warnings[0],
@@ -1733,14 +1752,14 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
+      const logger = { log: vi.fn(), error: vi.fn() };
       const config = await loadConfigFile(
         findConfigFile(),
         { link: undefined, ci: false },
         logger,
       );
 
-      const warnings = logger.error.mock.calls.map((call) => call.arguments[0]);
+      const warnings = logger.error.mock.calls.map((call) => call[0]);
       assert.strictEqual(warnings.length, 3);
       assert.match(
         warnings[0],
@@ -1774,11 +1793,15 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
-      await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
+      const logger = { log: vi.fn(), error: vi.fn() };
+      await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+      );
 
       assert.match(
-        logger.error.mock.calls[0]?.arguments[0],
+        logger.error.mock.calls[0]?.[0],
         /Unknown option `integration\.pages\[0\]\.titles` in config file \S+\. Did you mean `title`\?/,
       );
     });
@@ -1794,7 +1817,7 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
+      const logger = { log: vi.fn(), error: vi.fn() };
       const config = await loadConfigFile(
         findConfigFile(),
         { link: undefined, ci: false },
@@ -1802,7 +1825,7 @@ describe('loadConfigFile', () => {
         { reportUnknownOptions: false },
       );
 
-      assert.strictEqual(logger.error.mock.callCount(), 0);
+      assert.strictEqual(logger.error.mock.calls.length, 0);
       assert.ok('stylesheets' in config);
       assert.deepStrictEqual(config.stylesheets, ['main.css']);
     });
@@ -1820,17 +1843,19 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
+      const logger = { log: vi.fn(), error: vi.fn() };
       const config = await loadConfigFile(
         findConfigFile(),
         { link: undefined, ci: false },
         logger,
       );
 
-      assert.strictEqual(logger.error.mock.callCount(), 1);
+      assert.strictEqual(logger.error.mock.calls.length, 1);
       assert.ok('shared' in config);
       const { shared } = config;
-      assert.ok(typeof shared === 'object' && shared !== null && 'self' in shared);
+      assert.ok(
+        typeof shared === 'object' && shared !== null && 'self' in shared,
+      );
       assert.strictEqual(shared.self, shared);
     });
 
@@ -1859,10 +1884,14 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
-      await loadConfigFile(findConfigFile(), { link: undefined, ci: false }, logger);
+      const logger = { log: vi.fn(), error: vi.fn() };
+      await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+      );
 
-      assert.strictEqual(logger.error.mock.callCount(), 0);
+      assert.strictEqual(logger.error.mock.calls.length, 0);
     });
   });
 
@@ -2108,7 +2137,10 @@ describe('loadConfigFile', () => {
         (error: Error) => {
           assert.ok(error instanceof TypeError);
           const lines = error.message.split('\n\n');
-          assert.match(lines[0] ?? '', /^Found 3 problems in config file \S+:$/);
+          assert.match(
+            lines[0] ?? '',
+            /^Found 3 problems in config file \S+:$/,
+          );
           assert.match(
             lines[1] ?? '',
             /^- Invalid `endpoint` .+: must be a string, got: 5\.$/,
@@ -2133,12 +2165,12 @@ describe('loadConfigFile', () => {
         `,
       });
 
-      const logger = { log: mock.fn(), error: mock.fn() };
+      const logger = { log: vi.fn(), error: vi.fn() };
       await assert.rejects(
         loadConfigFile(findConfigFile(), { link: undefined, ci: true }, logger),
         /Invalid `failOnWaitForTimeout`/,
       );
-      assert.strictEqual(logger.log.mock.callCount(), 0);
+      assert.strictEqual(logger.log.mock.calls.length, 0);
     });
   });
 

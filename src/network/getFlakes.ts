@@ -48,11 +48,9 @@ export function formatFlakeOutput(flakes: Array<FlakeEntry>): string {
   ];
 
   for (const flake of flakes) {
-    const parts = [
-      flake.component,
-      flake.variant,
-      flake.target,
-    ].filter(Boolean);
+    const parts = [flake.component, flake.variant, flake.target].filter(
+      Boolean,
+    );
     const label = parts.length > 0 ? parts.join(' / ') : 'Unknown flake';
     const projectLabel = flake.project ? `[${flake.project}] ` : '';
     const snapshotUrls = (flake.snapshots ?? [])
@@ -63,9 +61,7 @@ export function formatFlakeOutput(flakes: Array<FlakeEntry>): string {
     const comparisonLabel = flake.comparison?.url
       ? ` (${flake.comparison.url})`
       : '';
-    lines.push(
-      `- ${projectLabel}${label}${snapshotsLabel}${comparisonLabel}`,
-    );
+    lines.push(`- ${projectLabel}${label}${snapshotsLabel}${comparisonLabel}`);
   }
 
   lines.push('Tip: use --format=json to see full details.');
@@ -102,7 +98,9 @@ export default async function getFlakes(
   }
 
   const query = searchParams.toString();
-  const path = (query ? `/api/flake?${query}` : '/api/flake') as `/api/${string}`;
+  const path = (
+    query ? `/api/flake?${query}` : '/api/flake'
+  ) as `/api/${string}`;
 
   const response = await makeHappoAPIRequest(
     { path, method: 'GET' },

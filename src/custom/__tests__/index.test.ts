@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { afterEach, beforeEach, describe, it } from 'vitest';
 
 import type { WindowWithHappo } from '../../isomorphic/types.ts';
 import type { WindowHappo } from '../../isomorphic/types.ts';

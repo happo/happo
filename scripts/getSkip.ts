@@ -33,7 +33,9 @@ const componentExamples = [
 ];
 
 const storyFileExamples = [
-  { storyFile: './src/storybook/__tests__/storybook-app/Interactive.stories.ts' },
+  {
+    storyFile: './src/storybook/__tests__/storybook-app/Interactive.stories.ts',
+  },
   { storyFile: './src/storybook/__tests__/storybook-app/Story.stories.ts' },
 ];
 
@@ -126,7 +128,9 @@ export default function getSkip({
   }
 
   const storyFileItem =
-    unchangedStoryFileExamples[day % Math.max(unchangedStoryFileExamples.length, 1)];
+    unchangedStoryFileExamples[
+      day % Math.max(unchangedStoryFileExamples.length, 1)
+    ];
 
   return storyFileItem ? [componentItem, storyFileItem] : [componentItem];
 }

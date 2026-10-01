@@ -2,7 +2,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, before, describe, it } from 'node:test';
+
+import { afterEach, beforeAll, describe, it } from 'vitest';
 
 import buildHappoStorybookRuntime from '../../test-utils/buildHappoStorybookRuntime.ts';
 import buildStorybookPackage from '../index.ts';
@@ -42,7 +43,7 @@ function createPackage({
 }
 
 describe('the built package', () => {
-  before(async () => {
+  beforeAll(async () => {
     await buildHappoStorybookRuntime();
   });
 
@@ -68,7 +69,11 @@ describe('the built package', () => {
       runtime.includes('globalThis.happo'),
       'runtime does not define globalThis.happo',
     );
-    assert.doesNotMatch(runtime, /^\s*import\s/m, 'runtime is not self-contained');
+    assert.doesNotMatch(
+      runtime,
+      /^\s*import\s/m,
+      'runtime is not self-contained',
+    );
   });
 
   it('loads the runtime from iframe.html', async () => {

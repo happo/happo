@@ -1,9 +1,8 @@
-import {
-  isInSkipSet,
-  parseSkip,
-  toSkipSet,
-} from '../isomorphic/parseSkip.ts';
-import type { NextExampleResult, WindowWithHappo } from '../isomorphic/types.ts';
+import { isInSkipSet, parseSkip, toSkipSet } from '../isomorphic/parseSkip.ts';
+import type {
+  NextExampleResult,
+  WindowWithHappo,
+} from '../isomorphic/types.ts';
 
 interface HappoStaticExample extends NextExampleResult {
   component: Required<NextExampleResult>['component'];
@@ -100,17 +99,23 @@ const happoStatic = {
 
     const compType = typeof props.component;
     if (compType !== 'string') {
-      throw new Error(`Property \`component\` must be a string. Got "${compType}".`);
+      throw new Error(
+        `Property \`component\` must be a string. Got "${compType}".`,
+      );
     }
 
     const varType = typeof props.variant;
     if (varType !== 'string') {
-      throw new Error(`Property \`variant\` must be a string. Got "${varType}".`);
+      throw new Error(
+        `Property \`variant\` must be a string. Got "${varType}".`,
+      );
     }
 
     const rendType = typeof props.render;
     if (rendType !== 'function') {
-      throw new Error(`Property \`render\` must be a function. Got "${rendType}".`);
+      throw new Error(
+        `Property \`render\` must be a function. Got "${rendType}".`,
+      );
     }
 
     examples.push(props);

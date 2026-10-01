@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 
-import Controller, { type SnapshotRegistrationParams } from '../e2e/controller.ts';
+import Controller, {
+  type SnapshotRegistrationParams,
+} from '../e2e/controller.ts';
 import { parseSkip } from '../isomorphic/parseSkip.ts';
 import type { SkipItem } from '../isomorphic/types.ts';
 
@@ -113,7 +115,9 @@ const task: HappoTask = {
     await controller.finish();
   },
 
-  async happoRegisterSnapshot(snapshot: SnapshotRegistrationParams): Promise<null> {
+  async happoRegisterSnapshot(
+    snapshot: SnapshotRegistrationParams,
+  ): Promise<null> {
     if (!controller.isActive()) {
       return null;
     }

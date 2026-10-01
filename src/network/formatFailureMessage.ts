@@ -62,7 +62,9 @@ function buildDetail({
     parts.push(`Exited with code ${exitCode}`);
   }
 
-  const errorText = error ? truncate(toSingleLine(error), MAX_ERROR_LENGTH) : '';
+  const errorText = error
+    ? truncate(toSingleLine(error), MAX_ERROR_LENGTH)
+    : '';
   if (errorText) {
     parts.push(errorText);
   }

@@ -1,17 +1,18 @@
 import assert from 'node:assert';
-import { afterEach, it, mock } from 'node:test';
+
+import { afterEach, it, vi } from 'vitest';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import { warnIfDevelopmentModeBuild } from '../index.ts';
 
 afterEach(() => {
   tmpfs.restore();
-  mock.restoreAll();
+  vi.restoreAllMocks();
 });
 
 function captureWarnings(): Array<string> {
   const warnings: Array<string> = [];
-  mock.method(console, 'warn', (...args: Array<unknown>) => {
+  vi.spyOn(console, 'warn').mockImplementation((...args: Array<unknown>) => {
     warnings.push(args.join(' '));
   });
   return warnings;

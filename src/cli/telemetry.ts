@@ -60,7 +60,9 @@ export interface Reporter {
   captureException(e: unknown): Promise<void>;
 }
 
-export function detectCI(env: Record<string, string | undefined> = process.env): CI {
+export function detectCI(
+  env: Record<string, string | undefined> = process.env,
+): CI {
   if (env.GITHUB_ACTIONS) {
     return 'github';
   }
@@ -453,10 +455,10 @@ export async function parseFrames(
 }
 
 /**
- * Our own test runner (scripts/test.ts) sets this so that the test suite
- * doesn't report to Sentry. We deliberately don't sniff for generic test
- * environments (NODE_ENV, JEST_WORKER_ID, etc.) because customers run happo
- * in those too, and we want to hear about their errors.
+ * Our own test setup (src/test-utils/disableTelemetry.ts) sets this so that
+ * the test suite doesn't report to Sentry. We deliberately don't sniff for
+ * generic test environments (NODE_ENV, JEST_WORKER_ID, VITEST, etc.) because
+ * customers run happo in those too, and we want to hear about their errors.
  */
 export function isTelemetryDisabled(
   env: Record<string, string | undefined> = process.env,

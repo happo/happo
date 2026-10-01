@@ -129,8 +129,7 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 3. Build the project: `pnpm build`
 4. Run all tests and checks: `pnpm all`
 
-To run the tests you will need a `.env.local` file with some keys. Use
-`env.example` as a starting point.
+To run the tests you will need a `.env.local` file with some keys. Use `.env.example` as a starting point.
 
 ### Code Style
 

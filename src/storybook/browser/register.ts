@@ -100,8 +100,10 @@ interface RegisterState {
   examples: Array<Example> | undefined;
   currentIndex: number;
   defaultDelay: number | undefined;
-  themeSwitcher: ((theme: string, channel: Channel) => Promise<void>) | undefined;
-  forcedHappoScreenshotSteps: Array<{ stepLabel: string; done: boolean }> | undefined;
+  themeSwitcher:
+    ((theme: string, channel: Channel) => Promise<void>) | undefined;
+  forcedHappoScreenshotSteps:
+    Array<{ stepLabel: string; done: boolean }> | undefined;
   shouldWaitForCompletedEvent: boolean;
 }
 
@@ -134,7 +136,10 @@ async function waitForWaitFor(
   const duration = time.originalDateNow() - start;
   if (!waitFor() && duration < state.renderTimeoutMs) {
     return new Promise((resolve) =>
-      time.originalSetTimeout(() => resolve(waitForWaitFor(waitFor, start)), 50),
+      time.originalSetTimeout(
+        () => resolve(waitForWaitFor(waitFor, start)),
+        50,
+      ),
     );
   }
 
@@ -165,8 +170,10 @@ async function getStoryStore(startTime = time.originalDateNow()) {
     );
   }
 
-  const { __STORYBOOK_CLIENT_API__: clientApi, __STORYBOOK_PREVIEW__: preview } =
-    globalThis;
+  const {
+    __STORYBOOK_CLIENT_API__: clientApi,
+    __STORYBOOK_PREVIEW__: preview,
+  } = globalThis;
 
   if (clientApi && clientApi._storyStore) {
     return clientApi._storyStore;
@@ -266,7 +273,9 @@ function filterExamples(
 
   if (globalThis.happoOnly) {
     const happoOnly = globalThis.happoOnly;
-    all = all.filter((e) => happoOnly.some((item) => item.component === e.component));
+    all = all.filter((e) =>
+      happoOnly.some((item) => item.component === e.component),
+    );
   }
 
   if (globalThis.happoSkipped) {
@@ -335,7 +344,10 @@ function renderStory(
 
   return new Promise((resolve) => {
     const timeout = time.originalSetTimeout(resolve, state.renderTimeoutMs);
-    function handleRenderPhaseChanged(ev: { storyId: string; newPhase: string }) {
+    function handleRenderPhaseChanged(ev: {
+      storyId: string;
+      newPhase: string;
+    }) {
       if (!channel) {
         throw new Error('Missing Storybook Addons Channel');
       }
@@ -401,7 +413,9 @@ function renderStory(
   });
 }
 
-function assertHTMLElement(element: Element | null): asserts element is HTMLElement {
+function assertHTMLElement(
+  element: Element | null,
+): asserts element is HTMLElement {
   if (element === null) {
     throw new Error('element cannot be null');
   }
@@ -410,7 +424,9 @@ function assertHTMLElement(element: Element | null): asserts element is HTMLElem
   }
 }
 
-globalThis.happo.nextExample = async (): Promise<NextExampleResult | undefined> => {
+globalThis.happo.nextExample = async (): Promise<
+  NextExampleResult | undefined
+> => {
   if (!state.examples) {
     throw new Error(
       'Missing examples. Make sure to call the init function before calling nextExample.',

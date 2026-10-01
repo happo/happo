@@ -1,5 +1,4 @@
 import assert from 'node:assert';
-import { describe, it } from 'node:test';
 
 import {
   applyHooks,
@@ -8,6 +7,7 @@ import {
   mockChannel,
   setChannel,
 } from 'storybook/internal/preview-api';
+import { describe, it } from 'vitest';
 
 import withHappo from '../decorator.ts';
 
@@ -30,9 +30,10 @@ function renderWithDecorator(
 ) {
   setChannel(mockChannel());
 
-  const decorated = applyHooks(defaultDecorateStory)(() => storyOutput, [
-    withHappo,
-  ]);
+  const decorated = applyHooks(defaultDecorateStory)(
+    () => storyOutput,
+    [withHappo],
+  );
 
   return decorated({
     parameters,

@@ -2,7 +2,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { afterEach, beforeEach, describe, it } from 'vitest';
 
 import startServer, { type ServerInfo } from '../../network/startServer.ts';
 import staticFileHandler from '../staticFileHandler.ts';
@@ -54,7 +55,10 @@ describe('staticFileHandler', () => {
   it('serves a JS file with the correct content-type', async () => {
     const res = await get('/script.js');
     assert.equal(res.status, 200);
-    assert.match(res.headers.get('content-type') ?? '', /application\/javascript/);
+    assert.match(
+      res.headers.get('content-type') ?? '',
+      /application\/javascript/,
+    );
   });
 
   it('serves an index.html for a directory path', async () => {

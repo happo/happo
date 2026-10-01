@@ -1,6 +1,7 @@
 import assert from 'node:assert';
-import type { Mock } from 'node:test';
-import { beforeEach, describe, it, mock } from 'node:test';
+
+import type { Mock } from 'vitest';
+import { beforeEach, describe, it, vi } from 'vitest';
 
 import type { ConfigWithDefaults } from '../../config/index.ts';
 import type { EnvironmentResult } from '../../environment/index.ts';
@@ -11,18 +12,21 @@ interface TestLogger {
   error: Mock<Console['error']>;
 }
 
-type MakeHappoAPIRequestImpl = (...args: Array<unknown>) => Promise<object | null>;
+type MakeHappoAPIRequestImpl = (
+  ...args: Array<unknown>
+) => Promise<object | null>;
 
 let makeHappoAPIRequestImpl: MakeHappoAPIRequestImpl;
-const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
-  async (...args: Array<unknown>) => {
-    return await makeHappoAPIRequestImpl(...args);
-  },
+const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(
+  () =>
+    vi.fn(async (...args: Array<unknown>) => {
+      return await makeHappoAPIRequestImpl(...args);
+    }),
 );
 
-mock.module('../makeHappoAPIRequest.ts', {
-  defaultExport: makeHappoAPIRequestMock,
-});
+vi.mock('../makeHappoAPIRequest.ts', () => ({
+  default: makeHappoAPIRequestMock,
+}));
 
 let logger: TestLogger;
 let config: ConfigWithDefaults;
@@ -31,8 +35,8 @@ let findBaselineReport: typeof import('../findBaselineReport.ts').default;
 
 beforeEach(async () => {
   logger = {
-    log: mock.fn(),
-    error: mock.fn(),
+    log: vi.fn(),
+    error: vi.fn(),
   };
 
   config = {
@@ -66,21 +70,17 @@ beforeEach(async () => {
   makeHappoAPIRequestImpl = async () => ({ sha: 'baseline-sha-123' });
 
   ({ default: findBaselineReport } = await import('../findBaselineReport.ts'));
-  makeHappoAPIRequestMock.mock.resetCalls();
 });
 
 describe('findBaselineReport', () => {
   it('posts to the correct endpoint using afterSha', async () => {
     await findBaselineReport(environment, config, logger);
 
-    assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+    assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
-    assert.strictEqual(
-      call.arguments[0]?.path,
-      '/api/reports/after-sha/find-baseline',
-    );
-    assert.strictEqual(call.arguments[0]?.method, 'POST');
+    assert.strictEqual(call[0]?.path, '/api/reports/after-sha/find-baseline');
+    assert.strictEqual(call[0]?.method, 'POST');
   });
 
   it('includes project and shas (beforeSha + fallbackShas) in the request body', async () => {
@@ -88,7 +88,7 @@ describe('findBaselineReport', () => {
 
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
-    const body = call.arguments[0]?.body as {
+    const body = call[0]?.body as {
       project?: string;
       shas?: Array<string>;
     };
@@ -108,7 +108,7 @@ describe('findBaselineReport', () => {
 
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
-    const body = call.arguments[0]?.body as { shas?: Array<string> };
+    const body = call[0]?.body as { shas?: Array<string> };
     assert.ok(body);
     assert.deepStrictEqual(body.shas, ['before-sha']);
   });
@@ -135,6 +135,6 @@ describe('findBaselineReport', () => {
     const result = await findBaselineReport(environment, config, logger);
 
     assert.strictEqual(result, undefined);
-    assert.strictEqual(logger.error.mock.callCount(), 1);
+    assert.strictEqual(logger.error.mock.calls.length, 1);
   });
 });

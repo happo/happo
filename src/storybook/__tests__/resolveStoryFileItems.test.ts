@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { describe, it, mock } from 'node:test';
+
+import { describe, it, vi } from 'vitest';
 
 import resolveStoryFileItems, {
   type StorybookIndexEntry,
@@ -34,7 +35,9 @@ describe('resolveStoryFileItems', () => {
       [{ component: 'Button', variant: 'Primary' }],
       entries,
     );
-    assert.deepStrictEqual(result, [{ component: 'Button', variant: 'Primary' }]);
+    assert.deepStrictEqual(result, [
+      { component: 'Button', variant: 'Primary' },
+    ]);
   });
 
   it('resolves storyFile to component name', () => {
@@ -65,7 +68,10 @@ describe('resolveStoryFileItems', () => {
 
   it('handles a mix of component and storyFile items', () => {
     const result = resolveStoryFileItems(
-      [{ component: 'Card', variant: 'Default' }, { storyFile: 'src/Input.stories.tsx' }],
+      [
+        { component: 'Card', variant: 'Default' },
+        { storyFile: 'src/Input.stories.tsx' },
+      ],
       entries,
     );
     assert.deepStrictEqual(result, [
@@ -75,17 +81,17 @@ describe('resolveStoryFileItems', () => {
   });
 
   it('warns and skips storyFile items not found in the index', () => {
-    const warnMock = mock.method(console, 'warn', () => {});
+    const warnMock = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const result = resolveStoryFileItems(
         [{ storyFile: 'src/NotFound.stories.tsx' }],
         entries,
       );
       assert.deepStrictEqual(result, []);
-      assert.strictEqual(warnMock.mock.callCount(), 1);
-      assert.match(String(warnMock.mock.calls[0]?.arguments[0]), /NotFound/);
+      assert.strictEqual(warnMock.mock.calls.length, 1);
+      assert.match(String(warnMock.mock.calls[0]?.[0]), /NotFound/);
     } finally {
-      warnMock.mock.restore();
+      warnMock.mockRestore();
     }
   });
 
@@ -95,13 +101,16 @@ describe('resolveStoryFileItems', () => {
   });
 
   it('returns empty array when entries are empty', () => {
-    const warnMock = mock.method(console, 'warn', () => {});
+    const warnMock = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      const result = resolveStoryFileItems([{ storyFile: 'src/Button.stories.tsx' }], {});
+      const result = resolveStoryFileItems(
+        [{ storyFile: 'src/Button.stories.tsx' }],
+        {},
+      );
       assert.deepStrictEqual(result, []);
-      assert.strictEqual(warnMock.mock.callCount(), 1);
+      assert.strictEqual(warnMock.mock.calls.length, 1);
     } finally {
-      warnMock.mock.restore();
+      warnMock.mockRestore();
     }
   });
 });

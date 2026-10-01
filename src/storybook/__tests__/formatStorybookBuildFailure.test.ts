@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { describe, it } from 'node:test';
+
+import { describe, it } from 'vitest';
 
 import formatFailureMessage from '../../network/formatFailureMessage.ts';
 import formatStorybookBuildFailure, {
@@ -74,7 +75,9 @@ describe('formatStorybookBuildFailure', () => {
   });
 
   it('keeps only the tail of a long build log', () => {
-    const output = Array.from({ length: 200 }, (_, i) => `line ${i}`).join('\n');
+    const output = Array.from({ length: 200 }, (_, i) => `line ${i}`).join(
+      '\n',
+    );
     const message = formatStorybookBuildFailure({
       command: COMMAND,
       exitCode: 1,
@@ -185,7 +188,9 @@ describe('extractFailureReason', () => {
 
   it('falls back to a builder error line when Storybook has no code for it', () => {
     const reason = extractFailureReason(
-      ['transforming...', 'Error: Failed to resolve import "./missing"'].join('\n'),
+      ['transforming...', 'Error: Failed to resolve import "./missing"'].join(
+        '\n',
+      ),
     );
 
     assert.strictEqual(reason, 'Error: Failed to resolve import "./missing"');
@@ -193,7 +198,9 @@ describe('extractFailureReason', () => {
 
   it('never picks a stack frame', () => {
     const reason = extractFailureReason(
-      ['  at Object.<anonymous> (/app/x.js:1:1)', '  at Module._compile'].join('\n'),
+      ['  at Object.<anonymous> (/app/x.js:1:1)', '  at Module._compile'].join(
+        '\n',
+      ),
     );
 
     assert.strictEqual(reason, undefined);
@@ -207,7 +214,10 @@ describe('extractFailureReason', () => {
     const reason = extractFailureReason(`Error: ${'x'.repeat(500)}`);
 
     assert.ok(reason);
-    assert.ok(reason.length <= 100, `expected <= 100 chars, got ${reason.length}`);
+    assert.ok(
+      reason.length <= 100,
+      `expected <= 100 chars, got ${reason.length}`,
+    );
     assert.match(reason, /…$/);
   });
 });

@@ -2,14 +2,17 @@ import assert from 'node:assert';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { before, describe, it } from 'node:test';
 
 import ts from 'typescript';
+import { beforeAll, describe, it } from 'vitest';
 
 import packageJson from '../../../package.json' with { type: 'json' };
 
 function findRootDir() {
-  const packageJsonPath = path.resolve(import.meta.dirname, '../../../package.json');
+  const packageJsonPath = path.resolve(
+    import.meta.dirname,
+    '../../../package.json',
+  );
   return path.dirname(packageJsonPath);
 }
 
@@ -46,7 +49,10 @@ function collectAllTsConfigs(tsConfigPath: string): Set<string> {
   // Recursively collect project references
   if (parsedCommandLine.projectReferences) {
     for (const projectRef of parsedCommandLine.projectReferences) {
-      const projectPath = path.resolve(path.dirname(tsConfigPath), projectRef.path);
+      const projectPath = path.resolve(
+        path.dirname(tsConfigPath),
+        projectRef.path,
+      );
       const subConfigs = collectAllTsConfigs(projectPath);
       for (const config of subConfigs) {
         tsConfigs.add(config);
@@ -159,7 +165,7 @@ describe('package.json exports', () => {
   });
 
   describe('after build:dist', () => {
-    before(() => {
+    beforeAll(() => {
       execSync('pnpm clean', { stdio: 'inherit', cwd: rootDir });
       execSync('pnpm build:dist', { stdio: 'inherit', cwd: rootDir });
     });
@@ -184,7 +190,10 @@ describe('package.json exports', () => {
 
   it('has a type definition file for all exports', () => {
     const mainTsConfigPath = path.resolve(rootDir, 'tsconfig.json');
-    const outputFiles = getAllOutputFilesFromTsConfig(mainTsConfigPath, rootDir);
+    const outputFiles = getAllOutputFilesFromTsConfig(
+      mainTsConfigPath,
+      rootDir,
+    );
     const typesFilesSet = new Set(
       outputFiles.filter((file) => file.endsWith('.d.ts')),
     );

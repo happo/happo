@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { afterEach, describe, it } from 'node:test';
+
+import { afterEach, describe, it } from 'vitest';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import getStorybookStoryCount from '../getStorybookStoryCount.ts';

@@ -13,11 +13,12 @@ async function main() {
   ];
 
   await Promise.all(
-    dirsToRemove.map((dir) => fs.promises.rm(dir, { recursive: true, force: true })),
+    dirsToRemove.map((dir) =>
+      fs.promises.rm(dir, { recursive: true, force: true }),
+    ),
   );
 }
 
 if (import.meta.main) {
   await main();
 }
-

@@ -39,7 +39,11 @@ export function findConfigFile(): string {
 function assertIsPullRequestTokenResponse(
   response: unknown,
 ): asserts response is { secret: string } {
-  if (typeof response !== 'object' || response === null || !('secret' in response)) {
+  if (
+    typeof response !== 'object' ||
+    response === null ||
+    !('secret' in response)
+  ) {
     throw new TypeError('Unexpected pull request token response');
   }
 }
@@ -120,13 +124,18 @@ export async function loadConfigFile(
   try {
     const stats = await fs.promises.stat(configFilePath);
     if (!stats.isFile()) {
-      throw new Error(`Happo config file path is not a file: ${configFilePath}`);
+      throw new Error(
+        `Happo config file path is not a file: ${configFilePath}`,
+      );
     }
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      throw new Error(`Happo config file could not be found: ${configFilePath}`, {
-        cause: error,
-      });
+      throw new Error(
+        `Happo config file could not be found: ${configFilePath}`,
+        {
+          cause: error,
+        },
+      );
     }
 
     throw error;

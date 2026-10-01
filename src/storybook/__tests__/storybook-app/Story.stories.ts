@@ -74,7 +74,9 @@ function DataFetchComponent(): ReactNode {
 
 function BlockedDataFetchComponent(): ReactNode {
   const [xhr, setXhr] = useState<'pending' | 'ready' | 'blocked'>('pending');
-  const [fetch, setFetch] = useState<'pending' | 'ready' | 'blocked'>('pending');
+  const [fetch, setFetch] = useState<'pending' | 'ready' | 'blocked'>(
+    'pending',
+  );
   useEffect(() => {
     // A CORS-friendly URL that would succeed without an allowlist. Happo
     // runs with `allowedHostnames: []`, so both requests fail and the
@@ -83,7 +85,9 @@ function BlockedDataFetchComponent(): ReactNode {
 
     const request = new XMLHttpRequest();
     request.addEventListener('loadend', () => {
-      setXhr(request.status >= 200 && request.status < 300 ? 'ready' : 'blocked');
+      setXhr(
+        request.status >= 200 && request.status < 300 ? 'ready' : 'blocked',
+      );
     });
     request.open('GET', apiUrl, true);
     request.send();
@@ -217,9 +221,10 @@ export const DataFetch: StoryObj = {
 export const DataFetchBlocked: StoryObj = {
   render: (): ReactNode => createElement(BlockedDataFetchComponent),
 };
-export const ExecuteAGraphQLMutationAndHandleTheResponseWhenReceived: StoryObj = {
-  render: (): ReactNode => createElement('div', null, 'I am done'),
-};
+export const ExecuteAGraphQLMutationAndHandleTheResponseWhenReceived: StoryObj =
+  {
+    render: (): ReactNode => createElement('div', null, 'I am done'),
+  };
 export const AsyncWithWaitForContent: StoryObj = {
   render: (): ReactNode => createElement(AsyncContent),
   parameters: {
@@ -287,7 +292,11 @@ export const ButtonWithSomeEmoji: StoryObj = {
     createElement(
       Button,
       null,
-      createElement('span', { role: 'img', 'aria-label': 'so cool' }, '😀 😎 👍 💯'),
+      createElement(
+        'span',
+        { role: 'img', 'aria-label': 'so cool' },
+        '😀 😎 👍 💯',
+      ),
     ),
 };
 

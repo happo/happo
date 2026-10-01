@@ -1,7 +1,8 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import http from 'node:http';
-import { after, before, describe, it } from 'node:test';
+
+import { afterAll, beforeAll, describe, it } from 'vitest';
 
 import * as tmpfs from '../../test-utils/tmpfs.ts';
 import Controller from '../controller.ts';
@@ -15,7 +16,7 @@ let server: http.Server;
 const TEST_API_KEY = 'test-api-key';
 const TEST_API_SECRET = 'test-api-secret';
 
-before(async () => {
+beforeAll(async () => {
   process.env.HAPPO_E2E_PORT = port.toString();
 
   let requestId = 0;
@@ -38,7 +39,9 @@ before(async () => {
       path?.startsWith('/api/snap-requests/assets/') &&
       path.endsWith('/signed-url')
     ) {
-      res.end(JSON.stringify({ path: '/path/to/asset', uploadedAt: '2021-01-01' }));
+      res.end(
+        JSON.stringify({ path: '/path/to/asset', uploadedAt: '2021-01-01' }),
+      );
       return;
     }
 
@@ -105,7 +108,7 @@ before(async () => {
   });
 });
 
-after(() => {
+afterAll(() => {
   server.close();
 
   process.env = { ...originalEnv };
@@ -227,10 +230,14 @@ describe('Controller', () => {
       component: 'Button',
       variant: 'primary',
       cssBlocks: [],
-      targets: [{ name: 'firefox-small', type: 'firefox', viewport: '400x800' }],
+      targets: [
+        { name: 'firefox-small', type: 'firefox', viewport: '400x800' },
+      ],
     });
 
-    assert.deepStrictEqual(controller.snapshotsList[0]?.targets, ['firefox-small']);
+    assert.deepStrictEqual(controller.snapshotsList[0]?.targets, [
+      'firefox-small',
+    ]);
     assert.deepStrictEqual(controller.config?.targets['firefox-small'], {
       viewport: '400x800',
       type: 'firefox',
@@ -250,8 +257,10 @@ describe('Controller', () => {
           component: 'Button',
           variant: 'primary',
           cssBlocks: [],
-          // @ts-expect-error: deliberately malformed
-          targets: [{ name: 'firefox-small', browser: 'firefox', viewport: '400x800' }],
+          targets: [
+            // @ts-expect-error: deliberately malformed
+            { name: 'firefox-small', browser: 'firefox', viewport: '400x800' },
+          ],
         }),
       /Invalid dynamic target: missing required field\(s\) `type`.*`browser`\/`browserType` field was renamed to `type`/s,
     );
@@ -313,7 +322,10 @@ describe('Controller', () => {
       },
     ]);
     assert.deepStrictEqual(controller.cssBlocks, [
-      { key: 'http://example.com/sheet.css', href: 'http://example.com/sheet.css' },
+      {
+        key: 'http://example.com/sheet.css',
+        href: 'http://example.com/sheet.css',
+      },
     ]);
 
     await controller.finish();
@@ -337,7 +349,10 @@ describe('Controller', () => {
       fs.readFileSync('.happo-tmp/_inlined/single-chunk.bin', 'utf8'),
       'hello',
     );
-    assert.strictEqual(fs.existsSync('.happo-tmp/_inlined/single-chunk.bin.b64'), false);
+    assert.strictEqual(
+      fs.existsSync('.happo-tmp/_inlined/single-chunk.bin.b64'),
+      false,
+    );
 
     await controller.finish();
   });
@@ -366,7 +381,10 @@ describe('Controller', () => {
       fs.readFileSync('.happo-tmp/_inlined/multi-chunk.bin', 'utf8'),
       'chunked',
     );
-    assert.strictEqual(fs.existsSync('.happo-tmp/_inlined/multi-chunk.bin.b64'), false);
+    assert.strictEqual(
+      fs.existsSync('.happo-tmp/_inlined/multi-chunk.bin.b64'),
+      false,
+    );
 
     await controller.finish();
   });

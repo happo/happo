@@ -10,7 +10,10 @@ interface Files {
   [key: string]: string | Files;
 }
 
-function flattenFiles(files: Files, prefix: string = ''): Record<string, string> {
+function flattenFiles(
+  files: Files,
+  prefix: string = '',
+): Record<string, string> {
   const flattened: Record<string, string> = {};
 
   for (const [filePath, content] of Object.entries(files)) {

@@ -32,9 +32,18 @@ function prepareFormData(data: Record<string, FormDataValue>): FormData | null {
   return form;
 }
 
+type RequestHeaders = Record<string, string>;
+
 interface FetchParams {
   method?: string;
-  headers?: Record<string, string>;
+
+  /**
+   * Headers to send with the request. When a function is provided, it is
+   * called before every attempt, which lets retries pick up fresh values
+   * (e.g. an auth token that may have expired while waiting to retry).
+   */
+  headers?: RequestHeaders | (() => Promise<RequestHeaders>);
+
   formData?: Record<string, FormDataValue> | undefined;
   body?: unknown;
 
@@ -94,21 +103,28 @@ export default async function fetchWithRetry(
           ? JSON.stringify(jsonBody)
           : null;
 
+      const attemptHeaders: RequestHeaders = {
+        ...defaultHeaders,
+        ...(typeof headers === 'function' ? await headers() : headers),
+      };
+
       if (jsonBody) {
-        headers['Content-Type'] = 'application/json';
+        attemptHeaders['Content-Type'] = 'application/json';
       }
 
       let response: Response;
       try {
         response = await fetch(url, {
           method,
-          headers: { ...defaultHeaders, ...headers },
+          headers: attemptHeaders,
           signal: AbortSignal.timeout(timeout),
           body,
         });
       } catch (maybeError) {
         const originalError =
-          maybeError instanceof Error ? maybeError : new Error(String(maybeError));
+          maybeError instanceof Error
+            ? maybeError
+            : new Error(String(maybeError));
 
         const message =
           originalError.name === 'TimeoutError'

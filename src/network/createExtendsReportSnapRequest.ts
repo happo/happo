@@ -13,7 +13,8 @@ export default async function createExtendsReportSnapRequest(
       method: 'POST',
       body: {
         extendedSnaps: skip.filter(
-          (item): item is { component: string; variant?: string } => 'component' in item,
+          (item): item is { component: string; variant?: string } =>
+            'component' in item,
         ),
         extendsSha,
         project: config.project,
@@ -23,8 +24,14 @@ export default async function createExtendsReportSnapRequest(
     { retryCount: 3 },
   );
 
-  if (!result || !('requestId' in result) || typeof result.requestId !== 'number') {
-    throw new Error(`Invalid response from extends-report snap request API: ${JSON.stringify(result)}`);
+  if (
+    !result ||
+    !('requestId' in result) ||
+    typeof result.requestId !== 'number'
+  ) {
+    throw new Error(
+      `Invalid response from extends-report snap request API: ${JSON.stringify(result)}`,
+    );
   }
 
   return result.requestId;

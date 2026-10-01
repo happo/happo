@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { afterEach, beforeEach, describe, it } from 'vitest';
 
 import type { ServerInfo } from '../../network/startServer.ts';
 import { archiveEntryNames } from '../../test-utils/readArchive.ts';
@@ -9,7 +10,10 @@ import createAssetPackage from '../createAssetPackage.ts';
 let serverInfo: ServerInfo;
 
 beforeEach(async () => {
-  serverInfo = await startTestServer(`${import.meta.dirname}/fixtures`, 3412);
+  serverInfo = await startTestServer(
+    `${import.meta.dirname}/__fixtures__`,
+    3412,
+  );
 });
 
 afterEach(async () => {

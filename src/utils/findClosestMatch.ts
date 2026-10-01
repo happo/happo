@@ -7,7 +7,8 @@ function levenshtein(a: string, b: string): number {
     row[0] = i;
     for (let j = 1; j <= n; j++) {
       const temp = row[j]!;
-      row[j] = a[i - 1] === b[j - 1] ? prev : 1 + Math.min(prev, temp, row[j - 1]!);
+      row[j] =
+        a[i - 1] === b[j - 1] ? prev : 1 + Math.min(prev, temp, row[j - 1]!);
       prev = temp;
     }
   }

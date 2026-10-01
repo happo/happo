@@ -10,7 +10,9 @@ import formatStorybookBuildFailure, {
 } from './formatStorybookBuildFailure.ts';
 import getStorybookBuildCommandParts from './getStorybookBuildCommandParts.ts';
 import getStorybookVersionFromPackageJson from './getStorybookVersionFromPackageJson.ts';
-import resolveStoryFileItems, { type StorybookIndexEntry } from './resolveStoryFileItems.ts';
+import resolveStoryFileItems, {
+  type StorybookIndexEntry,
+} from './resolveStoryFileItems.ts';
 
 const { HAPPO_DEBUG } = process.env;
 
@@ -133,7 +135,9 @@ async function buildStorybook({
   }
 
   if (HAPPO_DEBUG) {
-    console.log(`[happo] Using build command \`${binary} ${params.join(' ')}\``);
+    console.log(
+      `[happo] Using build command \`${binary} ${params.join(' ')}\``,
+    );
   }
 
   const command = [binary, ...params];
@@ -327,7 +331,10 @@ async function assertPackageIsRenderable(
   // nothing against an iframe.html that spells its head tag any other way.
   // Matching the script tag rather than the bare filename keeps a document
   // that merely mentions the name from passing for one that loads it.
-  const escapedFilename = HAPPO_RUNTIME_FILENAME.replaceAll('.', String.raw`\.`);
+  const escapedFilename = HAPPO_RUNTIME_FILENAME.replaceAll(
+    '.',
+    String.raw`\.`,
+  );
   const runtimeScriptTag = new RegExp(
     String.raw`<script[^>]+src=["']\./` + escapedFilename + String.raw`["']`,
   );
@@ -427,7 +434,8 @@ export default async function buildStorybookPackage({
 
     // Read index.json once to compute story count and resolve storyFile items.
     let estimatedSnapsCount: number | undefined;
-    let resolvedSkip: Array<{ component: string; variant?: string }> | undefined;
+    let resolvedSkip:
+      Array<{ component: string; variant?: string }> | undefined;
     let resolvedOnly: Array<{ component: string }> | undefined;
 
     const indexPath = path.join(outputDir, 'index.json');
@@ -439,7 +447,9 @@ export default async function buildStorybookPackage({
       };
       const entries = indexData.entries ?? indexData.stories ?? {};
 
-      const storyEntries = Object.values(entries).filter((e) => e.type === 'story');
+      const storyEntries = Object.values(entries).filter(
+        (e) => e.type === 'story',
+      );
       estimatedSnapsCount = storyEntries.length;
 
       if (skip !== undefined) {
@@ -463,9 +473,10 @@ export default async function buildStorybookPackage({
           resolvedSkip = [...allComponents].map((component) => ({ component }));
           estimatedSnapsCount = 0;
         } else {
-          resolvedOnly = resolveStoryFileItems(only as Array<SkipItem>, entries).map(
-            ({ component }) => ({ component }),
-          );
+          resolvedOnly = resolveStoryFileItems(
+            only as Array<SkipItem>,
+            entries,
+          ).map(({ component }) => ({ component }));
           if (resolvedOnly.length === 0) {
             console.warn(
               '[HAPPO] --only: no matching stories found in Storybook index. Generating a full report instead.',
@@ -474,7 +485,9 @@ export default async function buildStorybookPackage({
           } else {
             // Adjust the count so auto-chunking reflects only the stories that
             // will actually be rendered (only matching examples need a chunk slot).
-            const onlyComponents = new Set(resolvedOnly.map((item) => item.component));
+            const onlyComponents = new Set(
+              resolvedOnly.map((item) => item.component),
+            );
             estimatedSnapsCount = storyEntries.filter((e) =>
               onlyComponents.has(e.title ?? ''),
             ).length;
@@ -496,7 +509,8 @@ export default async function buildStorybookPackage({
       if (skip !== undefined) {
         // Fall back to passing through only component-based items
         resolvedSkip = skip.filter(
-          (item): item is { component: string; variant?: string } => 'component' in item,
+          (item): item is { component: string; variant?: string } =>
+            'component' in item,
         );
       }
       if (only !== undefined) {

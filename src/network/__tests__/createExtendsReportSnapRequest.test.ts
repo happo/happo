@@ -1,23 +1,27 @@
 import assert from 'node:assert';
-import type { Mock } from 'node:test';
-import { beforeEach, describe, it, mock } from 'node:test';
+
+import type { Mock } from 'vitest';
+import { beforeEach, describe, it, vi } from 'vitest';
 
 import type { ConfigWithDefaults } from '../../config/index.ts';
 import type { SkipItem } from '../../isomorphic/types.ts';
 import type makeHappoAPIRequest from '../makeHappoAPIRequest.ts';
 
-type MakeHappoAPIRequestImpl = (...args: Array<unknown>) => Promise<object | null>;
+type MakeHappoAPIRequestImpl = (
+  ...args: Array<unknown>
+) => Promise<object | null>;
 
 let makeHappoAPIRequestImpl: MakeHappoAPIRequestImpl;
-const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = mock.fn(
-  async (...args: Array<unknown>) => {
-    return await makeHappoAPIRequestImpl(...args);
-  },
+const makeHappoAPIRequestMock: Mock<typeof makeHappoAPIRequest> = vi.hoisted(
+  () =>
+    vi.fn(async (...args: Array<unknown>) => {
+      return await makeHappoAPIRequestImpl(...args);
+    }),
 );
 
-mock.module('../makeHappoAPIRequest.ts', {
-  defaultExport: makeHappoAPIRequestMock,
-});
+vi.mock('../makeHappoAPIRequest.ts', () => ({
+  default: makeHappoAPIRequestMock,
+}));
 
 let config: ConfigWithDefaults;
 let createExtendsReportSnapRequest: typeof import('../createExtendsReportSnapRequest.ts').default;
@@ -41,21 +45,19 @@ beforeEach(async () => {
 
   makeHappoAPIRequestImpl = async () => ({ requestId: 42 });
 
-  ({ default: createExtendsReportSnapRequest } = await import(
-    '../createExtendsReportSnapRequest.ts'
-  ));
-  makeHappoAPIRequestMock.mock.resetCalls();
+  ({ default: createExtendsReportSnapRequest } =
+    await import('../createExtendsReportSnapRequest.ts'));
 });
 
 describe('createExtendsReportSnapRequest', () => {
   it('posts to the extends-report endpoint', async () => {
     await createExtendsReportSnapRequest('baseline-sha', skip, config);
 
-    assert.strictEqual(makeHappoAPIRequestMock.mock.callCount(), 1);
+    assert.strictEqual(makeHappoAPIRequestMock.mock.calls.length, 1);
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
-    assert.strictEqual(call.arguments[0]?.path, '/api/snap-requests/extends-report');
-    assert.strictEqual(call.arguments[0]?.method, 'POST');
+    assert.strictEqual(call[0]?.path, '/api/snap-requests/extends-report');
+    assert.strictEqual(call[0]?.method, 'POST');
   });
 
   it('sends extendedSnaps, extendsSha, and project in the request body', async () => {
@@ -63,7 +65,7 @@ describe('createExtendsReportSnapRequest', () => {
 
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
-    const body = call.arguments[0]?.body as {
+    const body = call[0]?.body as {
       extendedSnaps?: Array<SkipItem>;
       extendsSha?: string;
       project?: string;
@@ -89,7 +91,7 @@ describe('createExtendsReportSnapRequest', () => {
 
     const call = makeHappoAPIRequestMock.mock.calls[0];
     assert.ok(call);
-    const body = call.arguments[0]?.body as { extendedSnaps?: Array<SkipItem> };
+    const body = call[0]?.body as { extendedSnaps?: Array<SkipItem> };
     assert.ok(body);
     assert.deepStrictEqual(body.extendedSnaps, []);
   });
