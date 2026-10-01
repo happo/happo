@@ -262,7 +262,7 @@ export interface BlockApprovalSettings {
 
   /**
    * Block approval when the comparison introduces new accessibility
-   * violations. When left out, the setting on your Happo account is used.
+   * violations.
    */
   accessibilityViolations?: boolean;
 }
@@ -335,10 +335,6 @@ export interface Config {
    * Because this is part of the config, it can be turned on in a single
    * branch or pull request (e.g. to fix existing render errors before
    * merging) without affecting other work in the repository.
-   *
-   * Leaving out a condition is not the same as setting it to `false`: a
-   * condition that is left out falls back to the setting on your Happo
-   * account, if there is one.
    *
    * @example
    * blockApproval: {

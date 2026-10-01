@@ -85,8 +85,6 @@ export default async function createAsyncComparison(
   }
 
   if (config.blockApproval) {
-    // Conditions that are left out are not sent, so that the server can tell
-    // them apart from `false` and fall back to the account's settings.
     body.blockApproval = config.blockApproval;
   }
 
