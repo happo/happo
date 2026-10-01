@@ -11,6 +11,7 @@ import type {
   AnimateSamplingStop,
   AnimateStages,
   AnimateTrigger,
+  BlockApprovalSettings,
   BrowserType,
   Config,
   DeepCompareSettings,
@@ -284,6 +285,11 @@ const deepCompareEntries = {
   applyBlur: v.exactOptional(v.boolean()),
 } satisfies EntriesOf<DeepCompareSettings>;
 
+const blockApprovalEntries = {
+  renderErrors: v.exactOptional(v.boolean()),
+  accessibilityViolations: v.exactOptional(v.boolean()),
+} satisfies EntriesOf<BlockApprovalSettings>;
+
 // These are functions so that every parse gets its own objects. Code later on
 // adds to `config.targets` (e.g. dynamic targets in e2e/controller.ts).
 function getDefaultTargets() {
@@ -338,6 +344,7 @@ const configEntries = {
     getDefaultIntegration,
   ),
   deepCompare: v.exactOptional(v.nullable(plainObject(deepCompareEntries))),
+  blockApproval: v.exactOptional(plainObject(blockApprovalEntries)),
   failOnWaitForTimeout: v.exactOptional(v.boolean(), true),
 } satisfies EntriesOf<Config>;
 

@@ -1,4 +1,8 @@
-import type { ConfigWithDefaults, DeepCompareSettings } from '../config/index.ts';
+import type {
+  BlockApprovalSettings,
+  ConfigWithDefaults,
+  DeepCompareSettings,
+} from '../config/index.ts';
 import type { EnvironmentResult } from '../environment/index.ts';
 import type { Logger } from '../isomorphic/types.ts';
 import makeHappoAPIRequest from './makeHappoAPIRequest.ts';
@@ -62,6 +66,7 @@ export default async function createAsyncComparison(
     notify: string | undefined;
     fallbackShas: Array<string> | undefined;
     deepCompare?: DeepCompareSettings;
+    blockApproval?: BlockApprovalSettings;
   } = {
     link,
     message,
@@ -74,6 +79,12 @@ export default async function createAsyncComparison(
 
   if (config.deepCompare) {
     body.deepCompare = config.deepCompare;
+  }
+
+  if (config.blockApproval) {
+    // Conditions that are left out are not sent, so that the server can tell
+    // them apart from `false` and fall back to the account's settings.
+    body.blockApproval = config.blockApproval;
   }
 
   const result = await makeHappoAPIRequest(

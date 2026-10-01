@@ -82,6 +82,26 @@ The library automatically detects configuration files in the following order:
 - **`integration`**: Set up the integration type
 - **`targets`**: Target configurations, including regular browsers and accessibility targets
 - **`project`**: Optional project name
+- **`deepCompare`**: Optional settings for how diffs are computed
+- **`blockApproval`**: Optional conditions that block a comparison from being approved
+
+### Blocking Approval
+
+Use `blockApproval` to prevent a comparison from being approved until certain problems are resolved:
+
+```ts
+export default defineConfig({
+  // ...
+  blockApproval: {
+    // Block when the report has examples that failed to render
+    renderErrors: true,
+    // Block when the comparison introduces new accessibility violations
+    accessibilityViolations: true,
+  },
+});
+```
+
+Since this lives in the config, you can enable a condition in a single pull request (and fix the problems there) without affecting other work in the repository. A condition that is left out falls back to the setting on your Happo account, if there is one. `renderErrors` only has an effect if render errors are reported for your account.
 
 ### Browser Targets
 
