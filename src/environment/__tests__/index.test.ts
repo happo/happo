@@ -402,6 +402,67 @@ describe('resolveEnvironment', () => {
     );
   });
 
+  it('warns when a pull request checks out a merge instead of its head', async () => {
+    const { beforeSha, afterSha, branch } = initGitRepo();
+
+    // Advance main after branching, then check out what actions/checkout does
+    // by default on a pull request: the head merged into the base branch's tip.
+    tmpfs.exec('git', ['checkout', 'main']);
+    commitNewFile('main-advance.txt', 'We advanced main');
+    const latestMainSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
+    tmpfs.exec('git', ['checkout', '--detach', latestMainSha]);
+    tmpfs.exec('git', ['merge', '--no-ff', branch, '-m', 'Merge into main']);
+    const mergeSha = tmpfs.exec('git', ['rev-parse', 'HEAD']).trim();
+
+    const prEvent = fs
+      .readFileSync(
+        path.resolve(__dirname, 'github_pull_request_event.json'),
+        'utf8',
+      )
+      .replaceAll('ec26c3e57ca3a959ca5aad62de7213c562f8c821', afterSha)
+      .replaceAll('f95f852bd8fca8fcc58a9a2d6c842781e32a215e', latestMainSha);
+    tmpfs.writeFile('github_pull_request_event.json', prEvent);
+    const githubEnv = {
+      GITHUB_SHA: mergeSha,
+      GITHUB_EVENT_PATH: tmpfs.fullPath('github_pull_request_event.json'),
+    };
+
+    const originalConsoleWarn = console.warn;
+    const warnings: Array<string> = [];
+    console.warn = (...args: Array<unknown>) => {
+      warnings.push(args.map(String).join(' '));
+    };
+
+    try {
+      const result = await resolveEnvironment({}, githubEnv);
+
+      // The comparison is still the head's, as the checkout is what is wrong.
+      assert.equal(result.afterSha, afterSha);
+      assert.equal(result.beforeSha, beforeSha);
+      assert.equal(warnings.length, 1);
+      assert.ok(
+        warnings[0]?.includes(
+          `The checked-out commit (${mergeSha}) is not the pull request's head (${afterSha})`,
+        ),
+        warnings[0],
+      );
+      assert.ok(
+        warnings[0]?.includes(
+          'https://docs.happo.io/docs/spurious-diffs#ci-merge-commits-and-mixed-baselines',
+        ),
+        warnings[0],
+      );
+
+      // Checking out the head, as the docs say to, warns about nothing.
+      warnings.length = 0;
+      tmpfs.exec('git', ['checkout', branch]);
+      await resolveEnvironment({}, { ...githubEnv, GITHUB_SHA: afterSha });
+      assert.deepEqual(warnings, []);
+    } finally {
+      console.warn = originalConsoleWarn;
+    }
+  });
+
   it('resolves the GitHub Actions merge base when the base SHA is missing locally', async () => {
     const originDir = tmpfs.fullPath('origin-repo');
     const actionsDir = tmpfs.fullPath('actions-repo');

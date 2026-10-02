@@ -606,6 +606,37 @@ function getHeadShaWithLocalChanges(): {
   return { headSha, headShaWithLocalChanges };
 }
 
+/**
+ * On a pull request, Happo files the screenshots under the pull request's head
+ * and compares them with the head's merge base. GitHub Actions' checkout step
+ * checks out a merge of the pull request into its base branch unless told
+ * otherwise, though, and screenshots of that merge include everything the base
+ * branch changed since the pull request branched off, which then shows up as
+ * the pull request's diffs.
+ */
+function warnIfCheckoutIsNotPullRequestHead(headSha: string): void {
+  const res = spawnSync('git', ['rev-parse', 'HEAD'], {
+    encoding: 'utf8',
+  });
+
+  if (res.status !== 0) {
+    return;
+  }
+
+  const checkedOutSha = res.stdout.trim();
+
+  if (!checkedOutSha || checkedOutSha === headSha) {
+    return;
+  }
+
+  console.warn(
+    `[HAPPO] The checked-out commit (${checkedOutSha}) is not the pull request's head (${headSha}), which Happo files these screenshots under and compares with its merge base. ` +
+      "If it is a merge of the pull request into its base branch, as GitHub Actions' checkout step makes by default, anything the base branch changed since the pull request branched off will show up as this pull request's diffs. " +
+      'To check out the head instead, give actions/checkout `ref: ${{ github.event.pull_request.head.sha }}`. ' +
+      'See https://docs.happo.io/docs/spurious-diffs#ci-merge-commits-and-mixed-baselines',
+  );
+}
+
 async function resolveAfterSha(
   cliArgs: ParsedCLIArgs,
   env: Record<string, string | undefined>,
@@ -652,6 +683,7 @@ async function resolveAfterSha(
   if (GITHUB_EVENT_PATH) {
     const ghEvent = await resolveGithubEvent(GITHUB_EVENT_PATH);
     if (ghEvent.pull_request) {
+      warnIfCheckoutIsNotPullRequestHead(ghEvent.pull_request.head.sha);
       return ghEvent.pull_request.head.sha;
     }
     if (ghEvent.merge_group) {
