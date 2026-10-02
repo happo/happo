@@ -1,3 +1,5 @@
+> **Note:** Development of the `happo` package has moved to Happo's internal repository, and the code in this repository is no longer updated. The package is still published to npm as [`happo`](https://www.npmjs.com/package/happo). Issues are still welcome here, but pull requests to this repository won't be merged.
+
 # Happo
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
