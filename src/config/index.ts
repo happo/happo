@@ -250,6 +250,23 @@ export interface DeepCompareSettings {
   applyBlur?: boolean;
 }
 
+/**
+ * Conditions that block a comparison from being approved
+ */
+export interface BlockApprovalSettings {
+  /**
+   * Block approval when the report for the current commit has examples that
+   * failed to render.
+   */
+  renderErrors?: boolean;
+
+  /**
+   * Block approval when the comparison introduces new accessibility
+   * violations.
+   */
+  accessibilityViolations?: boolean;
+}
+
 export interface Config {
   /**
    * Key used to authenticate with the Happo API. Never store this in plain
@@ -310,6 +327,22 @@ export interface Config {
    * An object with settings for deep compare.
    */
   deepCompare?: DeepCompareSettings;
+
+  /**
+   * Conditions that block a comparison from being approved in the Happo UI
+   * until they are resolved.
+   *
+   * Because this is part of the config, it can be turned on in a single
+   * branch or pull request (e.g. to fix existing render errors before
+   * merging) without affecting other work in the repository.
+   *
+   * @example
+   * blockApproval: {
+   *   renderErrors: true,
+   *   accessibilityViolations: true,
+   * }
+   */
+  blockApproval?: BlockApprovalSettings;
 
   /**
    * Controls how a Happo worker handles a per-example or per-page

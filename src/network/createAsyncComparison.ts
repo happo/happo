@@ -1,4 +1,5 @@
 import type {
+  BlockApprovalSettings,
   ConfigWithDefaults,
   DeepCompareSettings,
 } from '../config/index.ts';
@@ -68,6 +69,7 @@ export default async function createAsyncComparison(
     notify: string | undefined;
     fallbackShas: Array<string> | undefined;
     deepCompare?: DeepCompareSettings;
+    blockApproval?: BlockApprovalSettings;
   } = {
     link,
     message,
@@ -80,6 +82,10 @@ export default async function createAsyncComparison(
 
   if (config.deepCompare) {
     body.deepCompare = config.deepCompare;
+  }
+
+  if (config.blockApproval) {
+    body.blockApproval = config.blockApproval;
   }
 
   const result = await makeHappoAPIRequest(

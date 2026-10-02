@@ -1221,6 +1221,146 @@ describe('loadConfigFile', () => {
     });
   });
 
+  describe('blockApproval validation', () => {
+    it('accepts valid blockApproval settings', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            blockApproval: { renderErrors: true, accessibilityViolations: false },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.blockApproval, {
+        renderErrors: true,
+        accessibilityViolations: false,
+      });
+    });
+
+    it('does not fill in conditions that are left out', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            blockApproval: { renderErrors: true, accessibilityViolations: undefined },
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.blockApproval, { renderErrors: true });
+    });
+
+    it('leaves blockApproval out when it is not configured', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.strictEqual('blockApproval' in config, false);
+    });
+
+    it('throws an error if blockApproval is not an object', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            blockApproval: true,
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `blockApproval` in config file \S+: must be an object, got: true/,
+      );
+    });
+
+    it('throws an error if a condition is not a boolean', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            blockApproval: { renderErrors: 'yes' },
+          };
+        `,
+      });
+
+      await assert.rejects(
+        loadConfigFile(findConfigFile(), { link: undefined, ci: false }),
+        /Invalid `blockApproval\.renderErrors` in config file \S+: must be a boolean, got: 'yes'/,
+      );
+    });
+
+    it('warns about unknown conditions', async () => {
+      tmpfs.mock({
+        'happo.config.js': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+            targets: {
+              chrome: { type: 'chrome', viewport: '1024x768' },
+            },
+            blockApproval: { renderError: true },
+          };
+        `,
+      });
+
+      const logger = { log: vi.fn(), error: vi.fn() };
+      await loadConfigFile(
+        findConfigFile(),
+        { link: undefined, ci: false },
+        logger,
+      );
+
+      const warnings = logger.error.mock.calls.map((call) => call[0]);
+      assert.strictEqual(warnings.length, 1);
+      assert.match(
+        warnings[0],
+        /Unknown option `blockApproval\.renderError` in config file \S+\. Did you mean `renderErrors`\?/,
+      );
+    });
+  });
+
   describe('deepCompare validation', () => {
     it('accepts valid deepCompare settings', async () => {
       tmpfs.mock({
