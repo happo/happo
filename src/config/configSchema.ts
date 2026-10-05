@@ -293,8 +293,19 @@ const deepCompareEntries = {
   applyBlur: v.exactOptional(v.boolean()),
 } satisfies EntriesOf<DeepCompareSettings>;
 
+// The threshold docs.happo.io recommends starting from: two colors this close
+// can't be told apart on screen, and a change anyone could see is far past it.
+const DEFAULT_COMPARE_THRESHOLD = 0.002;
+
 // These are functions so that every parse gets its own objects. Code later on
 // adds to `config.targets` (e.g. dynamic targets in e2e/controller.ts).
+function getDefaultDeepCompare() {
+  return {
+    compareThreshold: DEFAULT_COMPARE_THRESHOLD,
+    diffAlgorithm: 'color-delta' as const,
+  };
+}
+
 function getDefaultTargets() {
   return { chrome: { type: 'chrome', viewport: DEFAULT_VIEWPORT } };
 }
@@ -345,7 +356,15 @@ const configEntries = {
     ),
     getDefaultIntegration,
   ),
-  deepCompare: v.exactOptional(v.nullable(plainObject(deepCompareEntries))),
+  deepCompare: v.exactOptional(
+    v.pipe(
+      v.unknown(),
+      // `false` turns the default off. `null` has always meant "no settings".
+      v.transform((deepCompare) => (deepCompare === false ? null : deepCompare)),
+      v.nullable(plainObject(deepCompareEntries)),
+    ),
+    getDefaultDeepCompare,
+  ),
   failOnWaitForTimeout: v.exactOptional(v.boolean(), true),
 } satisfies EntriesOf<Config>;
 
@@ -768,7 +787,9 @@ export function parseConfig(
     );
   }
 
-  // These have always treated `null` the same as leaving them out.
+  // `apiKey` and `apiSecret` have always treated `null` the same as leaving
+  // them out. A `deepCompare` that was turned off is left out as well, so that
+  // no settings are sent and the project's own apply.
   const { apiKey, apiSecret, deepCompare, ...output } = result.output;
   return {
     ...output,

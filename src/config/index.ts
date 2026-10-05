@@ -218,7 +218,7 @@ export interface DeepCompareSettings {
   /**
    * Threshold for comparing images with the given diff algorithm (float between
    * 0 and 1). 1 means all differences are allowed. 0 means no differences are
-   * allowed. A good starting value is 0.03 for color-delta and 0.01 for ssim.
+   * allowed. A good starting value is 0.002 for color-delta and 0.01 for ssim.
    */
   compareThreshold: number;
 
@@ -301,9 +301,15 @@ export interface Config {
     | PagesIntegration;
 
   /**
-   * An object with settings for deep compare.
+   * An object with settings for deep compare. These take the place of the
+   * deep compare settings of the project at happo.io.
+   *
+   * Defaults to `{ compareThreshold: 0.002, diffAlgorithm: 'color-delta' }`,
+   * which leaves out diffs where no pixel changed enough to be seen. Set to
+   * `false` to send no settings, and compare with the project's own (every
+   * difference is a diff, unless the project has a compare threshold).
    */
-  deepCompare?: DeepCompareSettings;
+  deepCompare?: DeepCompareSettings | false;
 
   /**
    * Controls how a Happo worker handles a per-example or per-page

@@ -1348,6 +1348,48 @@ describe('loadConfigFile', () => {
   });
 
   describe('deepCompare validation', () => {
+    it('defaults to a low color-delta compare threshold', async () => {
+      tmpfs.mock({
+        'happo.config.ts': `
+          export default {
+            apiKey: 'test-key',
+            apiSecret: 'test-secret',
+          };
+        `,
+      });
+
+      const config = await loadConfigFile(findConfigFile(), {
+        link: undefined,
+        ci: false,
+      });
+
+      assert.deepStrictEqual(config.deepCompare, {
+        compareThreshold: 0.002,
+        diffAlgorithm: 'color-delta',
+      });
+    });
+
+    for (const off of ['false', 'null']) {
+      it(`has no deepCompare settings when set to ${off}`, async () => {
+        tmpfs.mock({
+          'happo.config.ts': `
+            export default {
+              apiKey: 'test-key',
+              apiSecret: 'test-secret',
+              deepCompare: ${off},
+            };
+          `,
+        });
+
+        const config = await loadConfigFile(findConfigFile(), {
+          link: undefined,
+          ci: false,
+        });
+
+        assert.strictEqual('deepCompare' in config, false);
+      });
+    }
+
     it('accepts valid deepCompare settings', async () => {
       tmpfs.mock({
         'happo.config.ts': `
