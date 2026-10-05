@@ -16,7 +16,7 @@ autoInstallPeers: true
 savePrefix: ''
 dedupePeerDependents: true
 
-# Match dependabot npm cooldown (default-days: 2 in .github/dependabot.yml)
+# Install only releases at least two days old.
 minimumReleaseAge: 2880
 
 # Bypass minimumReleaseAge for packages we publish ourselves, so we can
