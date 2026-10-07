@@ -1,4 +1,6 @@
 > **Note:** Development of the `happo` package has moved to Happo's internal repository, and the code in this repository is no longer updated. The package is still published to npm as [`happo`](https://www.npmjs.com/package/happo). Issues are still welcome here, but pull requests to this repository won't be merged.
+>
+> Release notes for new versions are at [happo.io/release-notes/happo](https://happo.io/release-notes/happo). The [releases](https://github.com/happo/happo/releases) in this repository end at v6.21.0.
 
 # Happo
 
@@ -148,6 +150,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Documentation](https://docs.happo.io)
 - [happo.io](https://happo.io)
 - [npm package](https://www.npmjs.com/package/happo)
+- [Release notes](https://happo.io/release-notes/happo)
 
 ## 💡 Support
 
